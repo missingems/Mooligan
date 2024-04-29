@@ -11,7 +11,9 @@ let project = Project(
             infoPlist: .default,
             sources: ["Sources/**"],
             resources: [],
-            dependencies: []
+            dependencies: [
+              .external(name: "ScryfallKit")
+            ]
         ),
         .target(
             name: "NetworkingTests",
