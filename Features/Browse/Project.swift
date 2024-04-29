@@ -25,7 +25,7 @@ let project = Project(
       infoPlist: .default,
       sources: ["Sources/**"],
       resources: [],
-      dependencies: []
+      dependencies: [.project(target: "Networking", path: "../../Core/Networking")]
     ),
     .target(
       name: "BrowseTests",
