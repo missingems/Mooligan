@@ -13,8 +13,8 @@ let project = Project(
           "UILaunchStoryboardName": "LaunchScreen.storyboard",
         ]
       ),
-      sources: ["Browse/Runner/**"],
-      resources: ["Browse/Resources/**"],
+      sources: ["Runner/**"],
+      resources: ["Resources/**"],
       dependencies: [.target(name: "Browse")]
     ),
     .target(
@@ -23,7 +23,7 @@ let project = Project(
       product: .framework,
       bundleId: "io.tuist.Mooligan.Browse",
       infoPlist: .default,
-      sources: ["Browse/Sources/**"],
+      sources: ["Sources/**"],
       resources: [],
       dependencies: []
     ),
@@ -33,7 +33,7 @@ let project = Project(
       product: .unitTests,
       bundleId: "io.tuist.Mooligan.Browse",
       infoPlist: .default,
-      sources: ["Browse/Tests/**"],
+      sources: ["Tests/**"],
       resources: [],
       dependencies: [.target(name: "Browse")]
     ),

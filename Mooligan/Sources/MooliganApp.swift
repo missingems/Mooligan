@@ -1,10 +1,12 @@
+import Browse
 import SwiftUI
 
 @main
 struct MooliganApp: App {
-    var body: some Scene {
-        WindowGroup {
-            ContentView()
-        }
+  var body: some Scene {
+    WindowGroup {
+      ContentView()
     }
+  }
 }
+
