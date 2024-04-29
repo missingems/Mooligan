@@ -15,7 +15,9 @@ let project = Project(
       ),
       sources: ["Mooligan/Sources/**"],
       resources: ["Mooligan/Resources/**"],
-      dependencies: []
+      dependencies: [
+        .project(target: "Browse", path: .relativeToManifest("Features/Browse"))
+      ]
     ),
     .target(
       name: "MooliganTests",
@@ -26,20 +28,6 @@ let project = Project(
       sources: ["Mooligan/Tests/**"],
       resources: [],
       dependencies: [.target(name: "Mooligan")]
-    ),
-    .target(
-      name: "Browse",
-      destinations: .iOS,
-      product: .app,
-      bundleId: "io.tuist.Mooligan.Browse",
-      infoPlist: .extendingDefault(
-        with: [
-          "UILaunchStoryboardName": "LaunchScreen.storyboard",
-        ]
-      ),
-      sources: ["Features/Browse/Runner/**"],
-      resources: ["Features/Browse/Resources/**"],
-      dependencies: []
-    ),
+    )
   ]
 )

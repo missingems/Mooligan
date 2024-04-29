@@ -1,5 +1,4 @@
 import SwiftUI
-import Browse
 
 public struct ContentView: View {
     public init() {}
