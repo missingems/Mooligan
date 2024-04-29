@@ -1,6 +1,9 @@
+import Browse
 import SwiftUI
 
 public struct ContentView: View {
+  let compiler = Compiler()
+  
     public init() {}
 
     public var body: some View {

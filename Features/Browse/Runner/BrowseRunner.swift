@@ -1,10 +1,10 @@
 import SwiftUI
 
 @main
-struct BrowseApp: App {
+struct BrowseRunner: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            Text("hello")
         }
     }
 }
