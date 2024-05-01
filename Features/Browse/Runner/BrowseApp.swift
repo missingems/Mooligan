@@ -7,7 +7,7 @@ import ScryfallKit
 struct BrowseApp: App {
   var body: some Scene {
     WindowGroup {
-      ContentView(store: .init(initialState: Feature.State(), reducer: {
+      BrowseView(store: .init(initialState: Feature.State(), reducer: {
         Feature(client: ScryfallClient.init(networkLogLevel: .minimal))
       }))
     }
