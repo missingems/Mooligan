@@ -29,6 +29,8 @@ public struct Feature<Client: BrowseRequestClient> {
     Reduce { state, action in
       switch action {
       case .fetchSets:
+        state.isLoading = true
+        
         return .run { send in
           let objectList = try await client.getAllSets()
           await send(.updateSets(objectList))
@@ -40,6 +42,7 @@ public struct Feature<Client: BrowseRequestClient> {
         }
         
       case let .updateSets(value):
+        state.isLoading = false
         state.sets = value
         return .none
       }
