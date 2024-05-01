@@ -1,3 +1,4 @@
+import DesignComponents
 import SwiftUI
 
 struct SetRow: View {
@@ -123,7 +124,7 @@ extension SetRow {
   }
   
   private var iconImage: some View {
-    Text("icon")
+    IconLazyImage(viewModel.iconUrl, tintColor: tintColor)
   }
   
   private var titleLabel: some View {
