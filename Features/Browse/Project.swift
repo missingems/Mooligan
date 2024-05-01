@@ -25,7 +25,10 @@ let project = Project(
       infoPlist: .default,
       sources: ["Sources/**"],
       resources: [],
-      dependencies: [.project(target: "Networking", path: "../../Core/Networking")]
+      dependencies: [
+        .project(target: "Networking", path: "../../Core/Networking"),
+        .external(name: "ComposableArchitecture")
+      ]
     ),
     .target(
       name: "BrowseTests",
