@@ -3,7 +3,7 @@ import ScryfallKit
 import SwiftUI
 import Networking
 
-public struct ContentView<Client: BrowseRequestClient>: View {
+public struct BrowseView<Client: BrowseRequestClient>: View {
   private var store: StoreOf<Feature<Client>>
   
   public init(store: StoreOf<Feature<Client>>) {

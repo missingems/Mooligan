@@ -6,7 +6,7 @@ import SwiftUI
 struct MooliganApp: App {
   var body: some Scene {
     WindowGroup {
-      ContentView(
+      BrowseView(
         store: Store(
           initialState: Feature.State(),
           reducer: {
