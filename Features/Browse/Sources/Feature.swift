@@ -2,31 +2,27 @@ import ComposableArchitecture
 import Networking
 
 @Reducer
-public struct Feature {
-  private var request = BrowseRequest(.scryfall)
+public struct Feature<Client: BrowseRequestClient> {
+  private let client: Client
   
   @ObservableState
   public struct State: Equatable {
-    public static func == (lhs: Feature.State, rhs: Feature.State) -> Bool {
-      return true
-    }
-    
     var isLoading: Bool
-    var gameSetObjectList: ObjectList<any GameSet>
+    var sets: [Client.Model]
     
     public init(
       isLoading: Bool = false,
-      gameSetObjectList: ObjectList<any GameSet> = ObjectList<any GameSet>()
+      sets: [Client.Model] = []
     ) {
       self.isLoading = isLoading
-      self.gameSetObjectList = gameSetObjectList
+      self.sets = sets
     }
   }
   
   public enum Action: Equatable {
     case fetchSets
     case viewAppeared
-    case updateSets(ObjectList<any GameSet>)
+    case updateSets([Client.Model])
   }
   
   public var body: some ReducerOf<Self> {
@@ -34,8 +30,7 @@ public struct Feature {
       switch action {
       case .fetchSets:
         return .run { send in
-          let objectList = ObjectList(sets: try await request.client.getAllSets())
-          
+          let objectList = try await client.getAllSets()
           await send(.updateSets(objectList))
         }
         
@@ -45,17 +40,15 @@ public struct Feature {
         }
         
       case let .updateSets(value):
-        state.gameSetObjectList = value
+        state.sets = value
         return .none
       }
     }
     ._printChanges(.actionLabels)
   }
   
-  public init(
-    request: BrowseRequest = BrowseRequest(.scryfall)
-  ) {
-    self.request = request
+  public init(client: Client) {
+    self.client = client
   }
 }
 
