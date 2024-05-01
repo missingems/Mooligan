@@ -7,19 +7,15 @@ public struct Feature<Client: BrowseRequestClient> {
   
   @ObservableState
   public struct State: Equatable {
-    var isLoading: Bool
-    var sets: [Client.Model]
+    var isLoading: Bool = false
+    var selectedSet: Client.Model? = nil
+    var sets: [Client.Model] = []
     
-    public init(
-      isLoading: Bool = false,
-      sets: [Client.Model] = []
-    ) {
-      self.isLoading = isLoading
-      self.sets = sets
-    }
+    public init() {}
   }
   
   public enum Action: Equatable {
+    case didSelectSet(Client.Model)
     case fetchSets
     case viewAppeared
     case updateSets([Client.Model])
@@ -28,6 +24,10 @@ public struct Feature<Client: BrowseRequestClient> {
   public var body: some ReducerOf<Self> {
     Reduce { state, action in
       switch action {
+      case let .didSelectSet(set):
+        state.selectedSet = set
+        return .none
+        
       case .fetchSets:
         state.isLoading = true
         
@@ -54,4 +54,3 @@ public struct Feature<Client: BrowseRequestClient> {
     self.client = client
   }
 }
-

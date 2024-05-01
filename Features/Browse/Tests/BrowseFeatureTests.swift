@@ -52,11 +52,35 @@ extension BrowseFeatureTests {
       state.sets = expectedSets
     }
   }
+  
+  @MainActor
+  func test_sendDidSelectSet_shouldSetSelectedSet() async {
+    let expectedSet = MockGameSet()
+    
+    await store.send(.didSelectSet(expectedSet)) { state in
+      state.selectedSet = expectedSet
+    }
+  }
 }
 
 // MARK: - Test Effects
 
 extension BrowseFeatureTests {
+  @MainActor
+  func test_sendViewAppeared_shouldFetchSets() async {
+    await store.send(.viewAppeared)
+    
+    await store.receive(.fetchSets) { state in
+      state.isLoading = true
+      state.sets = []
+    }
+    
+    await store.receive(.updateSets([gameSet])) { state in
+      state.sets = [gameSet]
+      state.isLoading = false
+    }
+  }
+  
   @MainActor
   func test_sendFetchSets_shouldSetSets_withValue() async {
     let expectedSets = [gameSet]
