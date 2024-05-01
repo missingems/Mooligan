@@ -54,7 +54,7 @@ extension SetRow {
   
   private var backgroundColor: Color {
     if viewModel.isHighlighted {
-      if viewModel.isDarkMode {
+      if viewModel.colorScheme == .dark {
         return Color.accentColor.opacity(0.382)
       } else {
         return Color.accentColor
@@ -66,7 +66,7 @@ extension SetRow {
   
   private var foregroundColor: Color {
     if viewModel.isHighlighted {
-      if viewModel.isDarkMode {
+      if viewModel.colorScheme == .dark {
         return Color.accentColor
       } else {
         return Color.white
@@ -78,7 +78,7 @@ extension SetRow {
   
   private var tintColor: Color {
     if viewModel.isHighlighted {
-      if viewModel.isDarkMode {
+      if viewModel.colorScheme == .dark {
         return DesignComponentsAsset.accentColor.swiftUIColor
       } else {
         return Color.white
@@ -90,7 +90,7 @@ extension SetRow {
   
   private var tertiaryColor: Color {
     if viewModel.isHighlighted {
-      if viewModel.isDarkMode {
+      if viewModel.colorScheme == .dark {
         return DesignComponentsAsset.accentColor.swiftUIColor
       } else {
         return Color.white.opacity(0.618)
@@ -102,7 +102,7 @@ extension SetRow {
   
   private var secondaryColor: Color {
     if viewModel.isHighlighted {
-      if viewModel.isDarkMode {
+      if viewModel.colorScheme == .dark {
         return DesignComponentsAsset.accentColor.swiftUIColor
       } else {
         return Color.white.opacity(0.618)
@@ -153,7 +153,7 @@ extension SetRow {
     let disclosureIndicatorImageName: String
     let iconUrl: URL?
     let id: String
-    var isDarkMode: Bool
+    var colorScheme: ColorScheme
     var isHighlighted: Bool
     let shouldShowIndentIndicator: Bool
     let numberOfCardsLabel: String
@@ -163,7 +163,7 @@ extension SetRow {
     init(
       iconURL: URL?,
       id: String,
-      isDarkMode: Bool,
+      colorScheme: ColorScheme,
       isHighlighted: Bool,
       index: Int,
       numberOfCards: Int,
@@ -174,7 +174,7 @@ extension SetRow {
       disclosureIndicatorImageName = "chevron.right"
       iconUrl = iconURL
       self.id = id.uppercased()
-      self.isDarkMode = isDarkMode
+      self.colorScheme = colorScheme
       self.isHighlighted = isHighlighted
       self.shouldShowIndentIndicator = shouldShowIndentIndicator
       numberOfCardsLabel = String(localized: "\(numberOfCards) Cards")

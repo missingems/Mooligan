@@ -2,6 +2,7 @@ import Foundation
 
 public protocol GameSet: Equatable, Hashable, Identifiable {
   var id: UUID { get }
+  var isParent: Bool? { get }
   var code: String { get }
   var numberOfCards: Int { get }
   var name: String { get }

@@ -6,6 +6,10 @@ extension MTGSet: GameSet {
     cardCount
   }
   
+  public var isParent: Bool? {
+    parentSetCode == nil
+  }
+  
   public var iconURL: URL? {
     URL(string: iconSvgUri)
   }
