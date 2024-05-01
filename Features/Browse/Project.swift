@@ -27,6 +27,7 @@ let project = Project(
       resources: [],
       dependencies: [
         .project(target: "Networking", path: "../../Core/Networking"),
+        .project(target: "DesignComponents", path: "../../Core/DesignComponents"),
         .external(name: "ComposableArchitecture")
       ]
     ),

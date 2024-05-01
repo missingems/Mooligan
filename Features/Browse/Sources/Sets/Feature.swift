@@ -2,26 +2,24 @@ import ComposableArchitecture
 import Networking
 
 @Reducer
-public struct Feature<Client: BrowseRequestClient> {
-  private let client: Client
+struct Feature<Client: BrowseRequestClient> {
+  let client: Client
   
   @ObservableState
-  public struct State: Equatable {
+  struct State: Equatable {
     var isLoading: Bool = false
     var selectedSet: Client.Model? = nil
     var sets: [Client.Model] = []
-    
-    public init() {}
   }
   
-  public enum Action: Equatable {
+  enum Action: Equatable {
     case didSelectSet(Client.Model)
     case fetchSets
     case viewAppeared
     case updateSets([Client.Model])
   }
   
-  public var body: some ReducerOf<Self> {
+  var body: some ReducerOf<Self> {
     Reduce { state, action in
       switch action {
       case let .didSelectSet(set):
@@ -48,9 +46,5 @@ public struct Feature<Client: BrowseRequestClient> {
       }
     }
     ._printChanges(.actionLabels)
-  }
-  
-  public init(client: Client) {
-    self.client = client
   }
 }
