@@ -1,7 +1,8 @@
 import Foundation
 
-public protocol Set {
-  var id: String { get }
+public protocol GameSet: Hashable, Identifiable {
+  var id: UUID { get }
+  var code: String { get }
   var numberOfCards: Int { get }
   var name: String { get }
   var iconURL: URL? { get }

@@ -5,10 +5,10 @@ import ScryfallKit
 public struct BrowseRequest: Request {
   public enum ClientType {
     case scryfall
-    case mock(BrowseRequestClient)
+    case mock(any BrowseRequestClient)
   }
   
-  public let client: BrowseRequestClient
+  public let client: any BrowseRequestClient
   
   public init(_ clientType: ClientType = .scryfall) {
     switch clientType {
