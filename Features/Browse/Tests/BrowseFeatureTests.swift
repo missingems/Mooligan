@@ -4,6 +4,7 @@ import Networking
 import XCTest
 
 struct MockGameSet: GameSet {
+  var isParent: Bool? = false
   var id = UUID()
   var code = "123"
   var numberOfCards = 1
@@ -92,6 +93,13 @@ extension BrowseFeatureTests {
     await store.receive(.updateSets(expectedSets)) { state in
       state.sets = [gameSet]
       state.isLoading = false
+    }
+  }
+  
+  @MainActor
+  func test_sendDidSelectSet_shouldSelectSet() async {
+    await store.send(.didSelectSet(gameSet)) { state in
+      state.selectedSet = gameSet
     }
   }
 }
