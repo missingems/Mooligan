@@ -1,3 +1,3 @@
 protocol Request {
-  var client: BrowseRequestClient { get }
+  var client: any BrowseRequestClient { get }
 }

@@ -1,3 +1,4 @@
+import ComposableArchitecture
 import SwiftUI
 import Browse
 
@@ -5,7 +6,11 @@ import Browse
 struct BrowseApp: App {
   var body: some Scene {
     WindowGroup {
-      ContentView()
+      ContentView(
+        store: Store(initialState: Feature.State(), reducer: {
+          Feature()
+        })
+      )
     }
   }
 }

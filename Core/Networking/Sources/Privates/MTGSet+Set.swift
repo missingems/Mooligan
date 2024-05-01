@@ -1,11 +1,7 @@
 import Foundation
 import ScryfallKit
 
-extension MTGSet: Set {
-  public var id: String {
-    code
-  }
-  
+extension MTGSet: GameSet {
   public var numberOfCards: Int {
     cardCount
   }
