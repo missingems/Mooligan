@@ -4,6 +4,9 @@ import SwiftUI
 import Networking
 
 struct SetsView<Client: BrowseRequestClient>: View {
+  @Environment(\.colorScheme)
+  private var colorScheme
+  
   private var store: StoreOf<Feature<Client>>
   
   init(store: StoreOf<Feature<Client>>) {
@@ -14,20 +17,25 @@ struct SetsView<Client: BrowseRequestClient>: View {
     List(store.sets.indices, id: \.self) { index in
       let data = store.sets[index]
       
-      SetRow(
-        viewModel: SetRow.ViewModel(
-          iconURL: data.iconURL,
-          id: data.code,
-          isDarkMode: false,
-          isHighlighted: false,
-          index: index,
-          numberOfCards: data.numberOfCards,
-          shouldShowIndentIndicator: false,
-          title: data.name
+      Button {
+        store.send(.didSelectSet(data))
+      } label: {
+        SetRow(
+          viewModel: SetRow.ViewModel(
+            iconURL: data.iconURL,
+            id: data.code,
+            colorScheme: colorScheme,
+            isHighlighted: false,
+            index: index,
+            numberOfCards: data.numberOfCards,
+            shouldShowIndentIndicator: data.isParent == false,
+            title: data.name
+          )
         )
-      )
+      }
       .listRowSeparator(.hidden)
       .listRowInsets(EdgeInsets())
+      .buttonStyle(.plain)
     }
     .listStyle(.plain)
     .onAppear {
