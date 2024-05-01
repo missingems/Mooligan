@@ -79,19 +79,19 @@ extension SetRow {
   private var tintColor: Color {
     if viewModel.isHighlighted {
       if viewModel.isDarkMode {
-        return Color.accentColor
+        return DesignComponentsAsset.accentColor.swiftUIColor
       } else {
         return Color.white
       }
     } else {
-      return Color.accentColor
+      return DesignComponentsAsset.accentColor.swiftUIColor
     }
   }
   
   private var tertiaryColor: Color {
     if viewModel.isHighlighted {
       if viewModel.isDarkMode {
-        return Color.accentColor
+        return DesignComponentsAsset.accentColor.swiftUIColor
       } else {
         return Color.white.opacity(0.618)
       }
@@ -103,7 +103,7 @@ extension SetRow {
   private var secondaryColor: Color {
     if viewModel.isHighlighted {
       if viewModel.isDarkMode {
-        return Color.accentColor
+        return DesignComponentsAsset.accentColor.swiftUIColor
       } else {
         return Color.white.opacity(0.618)
       }
