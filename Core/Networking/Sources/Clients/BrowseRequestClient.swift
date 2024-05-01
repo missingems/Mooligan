@@ -1,3 +1,4 @@
 public protocol BrowseRequestClient {
-  func getAllSets() async throws -> [any GameSet]
+  associatedtype Model: GameSet
+  func getAllSets() async throws -> [Model]
 }

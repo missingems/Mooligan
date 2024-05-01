@@ -2,7 +2,7 @@ import Foundation
 import ScryfallKit
 
 extension ScryfallClient: BrowseRequestClient {
-  public func getAllSets() async throws -> [any GameSet] {
+  public func getAllSets() async throws -> [MTGSet] {
     return try await getSets().data.filter { !$0.digital && $0.cardCount != 0 }.folders()
   }
 }

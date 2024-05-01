@@ -1,6 +1,6 @@
 import Foundation
 
-public protocol GameSet: Hashable, Identifiable {
+public protocol GameSet: Equatable, Hashable, Identifiable {
   var id: UUID { get }
   var code: String { get }
   var numberOfCards: Int { get }
