@@ -132,7 +132,7 @@ extension SetRow {
   }
   
   private var setCodeLabel: some View {
-    Text(viewModel.id).font(.caption).monospaced().foregroundColor(foregroundColor)
+    PillText(viewModel.id).font(.caption).monospaced().foregroundColor(foregroundColor)
   }
   
   private var numberOfCardsLabel: some View {
