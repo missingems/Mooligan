@@ -11,7 +11,11 @@ let project = Project(
       infoPlist: .default,
       sources: ["Sources/**"],
       resources: ["Resources/**"],
-      dependencies: []
+      dependencies: [
+        .external(name: "NukeUI"),
+        .external(name: "SDWebImageSwiftUI"),
+        .external(name: "SDWebImageSVGNativeCoder"),
+      ]
     )
   ]
 )
