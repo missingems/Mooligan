@@ -13,7 +13,7 @@ struct BrowseApp: App {
   var body: some Scene {
     WindowGroup {
       NavigationView {
-        RootView().navigationTitle("Sets")
+        RootView()
       }
     }
   }
