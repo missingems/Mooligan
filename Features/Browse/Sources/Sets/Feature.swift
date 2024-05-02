@@ -10,6 +10,7 @@ struct Feature<Client: BrowseRequestClient> {
     var isLoading: Bool = false
     var selectedSet: Client.Model? = nil
     var sets: [Client.Model] = []
+    var title = String(localized: "Sets")
   }
   
   enum Action: Equatable {
