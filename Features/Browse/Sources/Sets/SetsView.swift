@@ -19,7 +19,10 @@ struct SetsView<Client: BrowseRequestClient>: View {
   }
   
   var body: some View {
-    List(store.sets.indices, id: \.self) { index in
+    List(
+      store.sets.indices,
+      id: \.self
+    ) { index in
       let data = store.sets[index]
       
       Button(
@@ -32,7 +35,7 @@ struct SetsView<Client: BrowseRequestClient>: View {
               iconURL: data.iconURL,
               id: data.code,
               colorScheme: colorScheme,
-              isHighlighted: false,
+              isSelected: store.selectedSet == data,
               index: index,
               numberOfCards: data.numberOfCards,
               shouldShowIndentIndicator: data.isParent == false,

@@ -43,11 +43,11 @@ extension SetRow {
   }
   
   private var backgroundColor: Color {
-    if viewModel.isHighlighted {
+    if viewModel.isSelected {
       if viewModel.colorScheme == .dark {
-        return Color.accentColor.opacity(0.382)
+        return DesignComponentsAsset.accentColor.swiftUIColor.opacity(0.382)
       } else {
-        return Color.accentColor
+        return DesignComponentsAsset.accentColor.swiftUIColor
       }
     } else {
       return viewModel.shouldSetBackground ? Color(.tertiarySystemFill) : Color.clear
@@ -55,9 +55,9 @@ extension SetRow {
   }
   
   private var foregroundColor: Color {
-    if viewModel.isHighlighted {
+    if viewModel.isSelected {
       if viewModel.colorScheme == .dark {
-        return Color.accentColor
+        return DesignComponentsAsset.accentColor.swiftUIColor
       } else {
         return Color.white
       }
@@ -67,7 +67,7 @@ extension SetRow {
   }
   
   private var tintColor: Color {
-    if viewModel.isHighlighted {
+    if viewModel.isSelected {
       if viewModel.colorScheme == .dark {
         return DesignComponentsAsset.accentColor.swiftUIColor
       } else {
@@ -79,7 +79,7 @@ extension SetRow {
   }
   
   private var tertiaryColor: Color {
-    if viewModel.isHighlighted {
+    if viewModel.isSelected {
       if viewModel.colorScheme == .dark {
         return DesignComponentsAsset.accentColor.swiftUIColor
       } else {
@@ -91,7 +91,7 @@ extension SetRow {
   }
   
   private var secondaryColor: Color {
-    if viewModel.isHighlighted {
+    if viewModel.isSelected {
       if viewModel.colorScheme == .dark {
         return DesignComponentsAsset.accentColor.swiftUIColor
       } else {
@@ -134,42 +134,5 @@ extension SetRow {
       .foregroundColor(tertiaryColor)
       .fontWeight(.medium)
       .imageScale(.small)
-  }
-}
-
-extension SetRow {
-  struct ViewModel: Equatable {
-    let childIndicatorImageName: String
-    let disclosureIndicatorImageName: String
-    let iconUrl: URL?
-    let id: String
-    var colorScheme: ColorScheme
-    var isHighlighted: Bool
-    let shouldShowIndentIndicator: Bool
-    let numberOfCardsLabel: String
-    let shouldSetBackground: Bool
-    let title: String
-    
-    init(
-      iconURL: URL?,
-      id: String,
-      colorScheme: ColorScheme,
-      isHighlighted: Bool,
-      index: Int,
-      numberOfCards: Int,
-      shouldShowIndentIndicator: Bool,
-      title: String
-    ) {
-      childIndicatorImageName = "arrow.turn.down.right"
-      disclosureIndicatorImageName = "chevron.right"
-      iconUrl = iconURL
-      self.id = id.uppercased()
-      self.colorScheme = colorScheme
-      self.isHighlighted = isHighlighted
-      self.shouldShowIndentIndicator = shouldShowIndentIndicator
-      numberOfCardsLabel = String(localized: "\(numberOfCards) Cards")
-      shouldSetBackground = index.isMultiple(of: 2)
-      self.title = title
-    }
   }
 }
