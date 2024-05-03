@@ -12,6 +12,10 @@ struct SetsView<Client: BrowseRequestClient>: View {
   
   init(store: StoreOf<Feature<Client>>) {
     self.store = store
+    
+    #if DEBUG
+    DesignComponents.Main().setup()
+    #endif
   }
   
   var body: some View {
@@ -47,4 +51,15 @@ struct SetsView<Client: BrowseRequestClient>: View {
       store.send(.viewAppeared)
     }
   }
+}
+
+#Preview("Live Data") {
+  SetsView(
+    store: Store(
+      initialState: Feature.State(),
+      reducer: {
+        Feature(client: ScryfallClient())
+      }
+    )
+  )
 }
