@@ -4,12 +4,6 @@
     "Sets" : {
       "extractionState" : "manual",
       "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sets"
-          }
-        },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
