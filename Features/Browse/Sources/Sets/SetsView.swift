@@ -19,7 +19,7 @@ struct SetsView<Client: BrowseRequestClient>: View {
       let data = store.sets[index]
       
       Button(
-        action: { 
+        action: {
           store.send(.didSelectSet(data))
         },
         label: {
@@ -40,6 +40,7 @@ struct SetsView<Client: BrowseRequestClient>: View {
       .buttonStyle(.sinkableButtonStyle)
       .listRowSeparator(.hidden)
       .listRowInsets(EdgeInsets())
+      .safeAreaPadding(.horizontal, nil)
     }
     .listStyle(.plain)
     .onAppear {

@@ -27,7 +27,6 @@ struct SetRow: View {
     .padding(insets)
     .background { backgroundColor }
     .clipShape(.buttonBorder)
-    .padding(margins)
   }
 }
 
@@ -40,15 +39,6 @@ extension SetRow {
       leading: 13,
       bottom: viewModel.shouldSetBackground ? 11 : 13,
       trailing: 13
-    )
-  }
-  
-  private var margins: EdgeInsets {
-    EdgeInsets(
-      top: 0,
-      leading: 11,
-      bottom: 0,
-      trailing: 11
     )
   }
   
