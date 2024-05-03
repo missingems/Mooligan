@@ -14,7 +14,7 @@ struct Feature<Client: BrowseRequestClient> {
   }
   
   enum Action: Equatable {
-    case didSelectSet(Client.Model)
+    case didSelectSet(Client.Model?)
     case fetchSets
     case viewAppeared
     case updateSets([Client.Model])

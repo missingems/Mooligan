@@ -18,7 +18,7 @@ extension SetRow {
       iconURL: URL?,
       id: String,
       colorScheme: ColorScheme,
-      isHighlighted: Bool,
+      isSelected: Bool,
       index: Int,
       numberOfCards: Int,
       shouldShowIndentIndicator: Bool,
@@ -29,7 +29,7 @@ extension SetRow {
       iconUrl = iconURL
       self.id = id.uppercased()
       self.colorScheme = colorScheme
-      self.isSelected = isHighlighted
+      self.isSelected = isSelected
       self.shouldShowIndentIndicator = shouldShowIndentIndicator
       numberOfCardsLabel = String(localized: "\(numberOfCards) Cards")
       shouldSetBackground = index.isMultiple(of: 2)
