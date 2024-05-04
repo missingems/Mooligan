@@ -16,7 +16,8 @@ let project = Project(
       sources: ["Mooligan/Sources/**"],
       resources: ["Mooligan/Resources/**"],
       dependencies: [
-        .project(target: "Browse", path: .relativeToManifest("Features/Browse"))
+        .project(target: "Query", path: .relativeToManifest("Features/Query")),
+        .project(target: "Browse", path: .relativeToManifest("Features/Browse")),
       ]
     ),
     .target(
