@@ -1,4 +1,5 @@
 import ComposableArchitecture
+import SwiftUI
 import Networking
 
 @Reducer
@@ -11,10 +12,22 @@ struct Feature<Client: BrowseRequestClient> {
     var selectedSet: Client.Model? = nil
     var sets: [Client.Model] = []
     var title = String(localized: "Sets")
+    
+    func getSetRowViewModel(
+      at index: Int,
+      colorScheme: ColorScheme
+    ) -> SetRow.ViewModel {
+      SetRow.ViewModel(
+        set: sets[index],
+        selectedSet: selectedSet,
+        index: index,
+        colorScheme: colorScheme
+      )
+    }
   }
   
   enum Action: Equatable {
-    case didSelectSet(Client.Model?)
+    case didSelectSet(index: Int)
     case fetchSets
     case viewAppeared
     case updateSets([Client.Model])
@@ -23,8 +36,8 @@ struct Feature<Client: BrowseRequestClient> {
   var body: some ReducerOf<Self> {
     Reduce { state, action in
       switch action {
-      case let .didSelectSet(set):
-        state.selectedSet = set
+      case let .didSelectSet(index):
+        state.selectedSet = state.sets[index]
         return .none
         
       case .fetchSets:

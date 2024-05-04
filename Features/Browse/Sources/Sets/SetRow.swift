@@ -2,32 +2,46 @@ import DesignComponents
 import SwiftUI
 
 struct SetRow: View {
-  let viewModel: ViewModel
+  private let viewModel: ViewModel
+  private var onSelect: () -> ()
   
   var body: some View {
-    HStack(spacing: 11.0) {
-      if viewModel.shouldShowIndentIndicator {
-        childIndicatorImage.frame(width: 30, height: 30)
-      }
-      
-      iconImage.frame(width: 30, height: 30, alignment: .center)
-      
-      VStack(alignment: .leading, spacing: 3.0) {
-        titleLabel
-        
-        HStack(spacing: 5.0) {
-          setCodeLabel
-          numberOfCardsLabel
+    Button(
+      action: {
+        onSelect()
+      },
+      label: {
+        HStack(spacing: 11.0) {
+          if viewModel.shouldShowIndentIndicator {
+            childIndicatorImage.frame(width: 30, height: 30)
+          }
+          
+          iconImage.frame(width: 30, height: 30, alignment: .center)
+          
+          VStack(alignment: .leading, spacing: 3.0) {
+            titleLabel
+            
+            HStack(spacing: 5.0) {
+              setCodeLabel
+              numberOfCardsLabel
+            }
+          }
+          
+          Spacer()
+          disclosureIndicator
         }
+        .padding(insets)
+        .background { backgroundColor }
+        .clipShape(.buttonBorder)
       }
-      
-      Spacer()
-      disclosureIndicator
-    }
-    .padding(insets)
-    .background { backgroundColor }
-    .clipShape(.buttonBorder)
+    )
   }
+  
+  init(viewModel: ViewModel, _ onSelect: @escaping () -> Void) {
+    self.viewModel = viewModel
+    self.onSelect = onSelect
+  }
+  
 }
 
 // MARK: - Configuration
