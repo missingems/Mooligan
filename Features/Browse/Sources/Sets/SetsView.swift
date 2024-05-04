@@ -42,6 +42,7 @@ struct SetsView<Client: BrowseRequestClient>: View {
               title: data.name
             )
           )
+          .animation(.spring, value: store.selectedSet)
         }
       )
       .buttonStyle(.sinkableButtonStyle)
