@@ -1,6 +1,9 @@
 import SwiftUI
 
 public struct SinkableButtonStyle: ButtonStyle {
+  @Environment(\.colorScheme)
+  var colorScheme
+  
   public func makeBody(configuration: Configuration) -> some View {
     configuration.label
       .scaleEffect(configuration.isPressed ? 0.98 : 1.0)
