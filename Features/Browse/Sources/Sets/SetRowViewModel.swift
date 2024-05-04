@@ -3,7 +3,7 @@ import Networking
 import SwiftUI
 
 extension SetRow {
-  struct ViewModel {
+  struct ViewModel: Equatable {
     let colorScheme: ColorScheme
     let childIndicatorImageName: String
     let disclosureIndicatorImageName: String

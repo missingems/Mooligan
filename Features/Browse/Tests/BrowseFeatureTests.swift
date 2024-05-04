@@ -41,8 +41,6 @@ final class BrowseFeatureTests: XCTestCase {
   }
 }
 
-// MARK: - Test State Changes
-
 extension BrowseFeatureTests {
   @MainActor
   func test_sendShowSets_shouldUpdateState() async {
@@ -58,15 +56,15 @@ extension BrowseFeatureTests {
   func test_sendDidSelectSet_shouldSetSelectedSet() async {
     let expectedSet = MockGameSet()
     
-    await store.send(.didSelectSet(expectedSet)) { state in
+    await store.send(.updateSets([expectedSet])) { state in
+      state.sets = [expectedSet]
+    }
+    
+    await store.send(.didSelectSet(index: 0)) { state in
       state.selectedSet = expectedSet
     }
   }
-}
-
-// MARK: - Test Effects
-
-extension BrowseFeatureTests {
+  
   @MainActor
   func test_sendViewAppeared_shouldFetchSets() async {
     await store.send(.viewAppeared)
@@ -97,10 +95,19 @@ extension BrowseFeatureTests {
   }
   
   @MainActor
-  func test_sendDidSelectSet_shouldSelectSet() async {
-    await store.send(.didSelectSet(gameSet)) { state in
-      state.selectedSet = gameSet
+  func test_setRowViewModel() async {
+    await store.send(.updateSets([gameSet])) { state in
+      state.sets = [gameSet]
     }
+    
+    let given = store.state.getSetRowViewModel(at: 0, colorScheme: .dark)
+    let expected = SetRow.ViewModel(
+      set: gameSet,
+      selectedSet: nil,
+      index: 0,
+      colorScheme: .light
+    )
+    
+    XCTAssertEqual(store.state.getSetRowViewModel(at: 0, colorScheme: .light), expected)
   }
 }
-
