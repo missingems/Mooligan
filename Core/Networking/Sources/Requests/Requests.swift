@@ -1,3 +1,3 @@
 protocol Request {
-  var client: any BrowseRequestClient { get }
+  var client: any GameSetRequestClient { get }
 }

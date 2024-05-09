@@ -4,7 +4,7 @@ import ScryfallKit
 import SwiftUI
 import Networking
 
-struct SetsView<Client: BrowseRequestClient>: View {
+struct SetsView<Client: GameSetRequestClient>: View {
   @Environment(\.colorScheme) private var colorScheme
   private var store: StoreOf<Feature<Client>>
   

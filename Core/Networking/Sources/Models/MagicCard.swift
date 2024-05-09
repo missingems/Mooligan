@@ -1,13 +1,6 @@
 import Foundation
 
-public protocol MagicCardLegalities {}
-public protocol MagicCardLayout {}
-public protocol MagicCardColor {}
-public protocol MagicCardFace { }
 public protocol MagicCardRelated { }
-public protocol MagicCardImageUris { }
-public protocol MagicCardPrices { }
-public protocol MagicCardRarity { }
 
 public protocol MagicCard: Equatable, Hashable, Identifiable {
   /// The identifier of this card on Scryfall
@@ -86,9 +79,6 @@ public protocol MagicCard: Equatable, Hashable, Identifiable {
   /// This card's flavor text if any
   var flavorText: String? { get }
   
-  /// An object listing available imagery for this card.
-  var imageUris: (any MagicCardImageUris)? { get }
-  
   /// An object containing daily price information for this card
   var prices: any MagicCardPrices { get }
   
@@ -118,4 +108,7 @@ public protocol MagicCard: Equatable, Hashable, Identifiable {
   
   /// This card's set code
   var set: String { get }
+  
+  /// Get card art in normal quality
+  func getImageURL() -> URL?
 }

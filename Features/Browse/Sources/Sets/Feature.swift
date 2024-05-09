@@ -3,7 +3,7 @@ import SwiftUI
 import Networking
 
 @Reducer
-struct Feature<Client: BrowseRequestClient> {
+struct Feature<Client: GameSetRequestClient> {
   let client: Client
   
   @ObservableState
