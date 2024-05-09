@@ -1,12 +1,10 @@
 import ScryfallKit
 
 extension ScryfallClient: MagicCardQueryRequestClient {
-  public func queryCards(
-    _ query: MagicCardQueryType
-  ) async throws -> [any MagicCard] {
+  public func queryCards(_ query: QueryType) async throws -> [Card] {
     switch query {
     case .search:
-      fatalError("Search is not implemented yet")
+      return []
       
     case let .set(gameSet, page):
       let result = try await searchCards(

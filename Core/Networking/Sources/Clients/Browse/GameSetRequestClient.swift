@@ -1,4 +1,4 @@
 public protocol GameSetRequestClient {
-  associatedtype Model: GameSet
-  func getAllSets() async throws -> [Model]
+  associatedtype GameSetModel: GameSet
+  func getAllSets() async throws -> [GameSetModel]
 }

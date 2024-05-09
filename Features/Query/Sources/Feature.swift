@@ -2,19 +2,18 @@ import ComposableArchitecture
 import Networking
 
 @Reducer
-struct Feature {
-  enum QueryType {
-    case set
-  }
+struct Feature<Client: MagicCardQueryRequestClient> {
+  let client: Client
   
   @ObservableState
   struct State: Equatable {
     let queryType: QueryType
+    var cards: [Client.MagicCardModel] = []
   }
   
   enum Action: Equatable {
     case fetchCards
-    case updateCards
+    case updateCards([Client.MagicCardModel])
     case viewAppeared
   }
   
@@ -22,13 +21,24 @@ struct Feature {
     Reduce { state, action in
       switch action {
       case .fetchCards:
-        return .none
+        let queryType = state.queryType
+        
+        return .run { send in
+          await send(
+            .updateCards(
+              try await client.queryCards(queryType)
+            )
+          )
+        }
       
-      case .updateCards:
+      case let .updateCards(value):
+        state.cards = value
         return .none
         
       case .viewAppeared:
-        return .none
+        return .run { send in
+          await send(.fetchCards)
+        }
       }
     }
   }

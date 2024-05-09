@@ -1,5 +1,6 @@
 import ScryfallKit
 
 public protocol MagicCardQueryRequestClient {
-  func queryCards(_ query: MagicCardQueryType) async throws -> [any MagicCard]
+  associatedtype MagicCardModel: MagicCard
+  func queryCards(_ query: QueryType) async throws -> [MagicCardModel]
 }
