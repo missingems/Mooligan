@@ -1,4 +1,4 @@
-public enum MagicCardColorValue: String {
+public enum MagicCardColorValue: String, Equatable, Sendable {
   case white = "W"
   case blue = "U"
   case black = "B"

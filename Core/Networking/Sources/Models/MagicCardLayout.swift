@@ -1,4 +1,4 @@
-public enum MagicCardLayoutValue: String {
+public enum MagicCardLayoutValue: String, Equatable, Sendable {
   case normal
   case split
   case flip
