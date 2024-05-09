@@ -1,6 +1,6 @@
 import Foundation
 
-public protocol GameSet: Equatable, Hashable, Identifiable {
+public protocol GameSet: Equatable, Hashable, Identifiable, Sendable {
   var id: UUID { get }
   var isParent: Bool? { get }
   var code: String { get }

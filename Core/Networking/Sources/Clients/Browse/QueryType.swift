@@ -1,8 +1,8 @@
-public enum MagicCardQueryType: Equatable {
+public enum QueryType: Equatable, Sendable {
   case set(any GameSet, page: Int)
   case search(String, page: Int)
   
-  public static func == (lhs: MagicCardQueryType, rhs: MagicCardQueryType) -> Bool {
+  public static func == (lhs: QueryType, rhs: QueryType) -> Bool {
     switch (lhs, rhs) {
     case let (.set(lhsGameSet, _), .set(rhsGameSet, _)):
       return lhsGameSet.id == rhsGameSet.id
