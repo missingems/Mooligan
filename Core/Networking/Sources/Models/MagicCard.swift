@@ -5,107 +5,94 @@ public protocol MagicCard: Equatable, Hashable, Identifiable {
   var id: UUID { get }
   
   /// The language that this specific printing was printed in
-  var lang: String { get }
-  
-  /// An array of related cards (tokens, meld parts, etc) or nil if there are none
-  var allParts: [any MagicCard]? { get }
+  func getLanguage() -> String
   
   /// An array of all the faces that a card has or nil if it's a single-faced card
-  var cardFaces: [any MagicCardFace]? { get }
+  func getCardFaces() -> [any MagicCardFace]?
   
   /// The converted mana cost of a card, now called the "mana value"
-  /// - Note: Scryfall's documentation lists this as required but it's nil for reversible cards
-  var manaValue: Double? { get }
+  func getManaValue() -> Double?
   
-  /// An array of colors representing this card's color identity.
-  ///
-  /// Color identity is used to determine what cards are legal in a Commander deck. See the [comprehensive rules](https://magic.wizards.com/en/rules) for more information
-  var colorIdentity: [any MagicCardColor] { get }
+  /// An array of colors representing this card's color identity
+  func getColorIdentity() -> [any MagicCardColor]
   
   /// An array of the colors in this card’s color indicator or nil if it doesn't have one
-  ///
-  /// Color indicators are used to specify the color of a card that has no mana symbols
-  var colorIndicator: [any MagicCardColor]? { get }
+  func getColorIndicator() -> [any MagicCardColor]?
   
   /// An array of the colors in this card's mana cost
-  var colors: [any MagicCardColor]? { get }
+  func getColors() -> [any MagicCardColor]?
   
   /// An array of the keywords on this card (deathouch, first strike, etc)
-  var keywords: [String] { get }
+  func getKeywords() -> [String]
   
   /// This card's layout (normal, transform, split, etc)
-  var layout: any MagicCardLayout { get }
+  func getLayout() -> any MagicCardLayout
   
   /// The formats that this card is legal in
-  var legalities: any MagicCardLegalities { get }
+  func getLegalities() -> any MagicCardLegalities
   
   /// This card's starting loyalty counters if it's a planeswalker
-  var loyalty: String? { get }
+  func getLoyalty() -> String?
   
-  /// The mana cost for this card.
-  ///
-  /// This value will be any empty string "" if the cost is absent. Remember that per the game rules, a missing mana cost and a mana cost of {0} are different values.
-  var manaCost: String? { get }
+  /// The mana cost for this card
+  func getManaCost() -> String?
   
   /// The name of this card
-  ///
-  /// If the card has multiple faces the names will be separated by a "//" such as "Wear // Tear"
-  var name: String { get }
+  func getName() -> String
   
   /// The oracle text for this card
-  var oracleText: String? { get }
+  func getOracleText() -> String?
   
   /// The power of this card if it's a creature
-  var power: String? { get }
+  func getPower() -> String?
   
-  /// The colors of mana that this card _could_ produce
-  var producedMana: [any MagicCardColor]? { get }
+  /// The colors of mana that this card could produce
+  func getProducedMana() -> [any MagicCardColor]?
   
   /// The toughness of this card if it's a creature
-  var toughness: String? { get }
+  func getToughness() -> String?
   
   /// This card's types, separated by a space
-  /// - Note: Tokens don't have type lines
-  var typeLine: String? { get }
+  func getTypeLine() -> String?
   
   /// The name of the artist who illustrated this card
-  var artist: String? { get }
+  func getArtist() -> String?
   
   /// This card's collector number
-  var collectorNumber: String { get }
+  func getCollectorNumber() -> String
   
   /// This card's flavor text if any
-  var flavorText: String? { get }
+  func getFlavorText() -> String?
   
   /// An object containing daily price information for this card
-  var prices: any MagicCardPrices { get }
+  func getPrices() -> any MagicCardPrices
   
-  /// The localized name printed on this card, if any.
-  var printedName: String? { get }
+  /// The localized name printed on this card, if any
+  func getPrintedName() -> String?
   
-  /// The localized text printed on this card, if any.
-  var printedText: String? { get }
+  /// The localized text printed on this card, if any
+  func getPrintedText() -> String?
   
-  /// The localized type line printed on this card, if any.
-  var printedTypeLine: String? { get }
+  /// The localized type line printed on this card, if any
+  func getPrintedTypeLine() -> String?
   
-  /// A dictionary of URIs to this card’s listing on major marketplaces.
-  var purchaseUris: [String: String]? { get }
+  /// A dictionary of URIs to this card’s listing on major marketplaces
+  func getPurchaseUris() -> [String: String]?
   
   /// This card's rarity
-  var rarity: any MagicCardRarity { get }
+  func getRarity() -> any MagicCardRarity
   
   /// A dictionary of links to other MTG resources
-  var relatedUris: [String: String] { get }
+  func getRelatedUris() -> [String: String]
   
   /// This card's release date
-  var releasedAt: String { get }
+  func getReleasedAt() -> String
   
   /// This card's full set name
-  var setName: String { get }
+  func getSetName() -> String
   
   /// This card's set code
-  var set: String { get }
+  func getSet() -> String
   
   /// Get card art in normal quality
   func getImageURL() -> URL?
