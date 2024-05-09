@@ -1,7 +1,5 @@
 import Foundation
 
-public protocol MagicCardRelated { }
-
 public protocol MagicCard: Equatable, Hashable, Identifiable {
   /// The identifier of this card on Scryfall
   var id: UUID { get }
