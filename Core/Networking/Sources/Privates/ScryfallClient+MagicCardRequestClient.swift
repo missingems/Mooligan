@@ -5,7 +5,7 @@ extension ScryfallClient: MagicCardQueryRequestClient {
     _ query: MagicCardQueryType
   ) async throws -> [any MagicCard] {
     switch query {
-    case let .search(query, page):
+    case .search:
       fatalError("Search is not implemented yet")
       
     case let .set(gameSet, page):
@@ -20,7 +20,8 @@ extension ScryfallClient: MagicCardQueryRequestClient {
         page: page
       )
       
-      return []
+      
+      return result.data
     }
   }
 }
