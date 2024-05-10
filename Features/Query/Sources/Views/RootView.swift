@@ -3,11 +3,11 @@ import Networking
 import ScryfallKit
 import SwiftUI
 
-public struct ContentView: View {
+public struct RootView: View {
   private var store: StoreOf<Feature<ScryfallClient>>
   
   public init(query: QueryType) {
-    store =  Store(initialState: Feature.State(queryType: query)) {
+    store = Store(initialState: Feature.State(queryType: query)) {
       Feature(client: ScryfallClient(networkLogLevel: .minimal))
     }
   }

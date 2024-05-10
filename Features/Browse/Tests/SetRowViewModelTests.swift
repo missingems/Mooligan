@@ -1,4 +1,5 @@
 @testable import Browse
+import Networking
 import Foundation
 import SwiftUI
 import XCTest

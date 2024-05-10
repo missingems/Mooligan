@@ -3,15 +3,6 @@ import ComposableArchitecture
 import Networking
 import XCTest
 
-struct MockGameSet: GameSet {
-  var isParent: Bool? = false
-  var id = UUID()
-  var code = "123"
-  var numberOfCards = 1
-  var name = "Stub"
-  var iconURL = URL(string: "https://mooligan.com")
-}
-
 private let gameSet = MockGameSet()
 
 final actor MockBrowseRequestClient: GameSetRequestClient {
