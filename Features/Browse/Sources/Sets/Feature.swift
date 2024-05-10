@@ -9,8 +9,8 @@ struct Feature<Client: GameSetRequestClient> {
   @ObservableState
   struct State: Equatable {
     var isLoading: Bool = false
-    var selectedSet: Client.Model? = nil
-    var sets: [Client.Model] = []
+    var selectedSet: Client.GameSetModel? = nil
+    var sets: [Client.GameSetModel] = []
     var title = String(localized: "Sets")
     
     func getSetRowViewModel(
@@ -30,7 +30,7 @@ struct Feature<Client: GameSetRequestClient> {
     case didSelectSet(index: Int)
     case fetchSets
     case viewAppeared
-    case updateSets([Client.Model])
+    case updateSets([Client.GameSetModel])
   }
   
   var body: some ReducerOf<Self> {
