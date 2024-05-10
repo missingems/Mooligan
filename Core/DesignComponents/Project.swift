@@ -15,6 +15,7 @@ let project = Project(
         .external(name: "NukeUI"),
         .external(name: "SDWebImageSwiftUI"),
         .external(name: "SDWebImageSVGNativeCoder"),
+        .external(name: "Shimmer")
       ]
     )
   ]

@@ -3,15 +3,6 @@ import ComposableArchitecture
 import Networking
 import XCTest
 
-struct MockGameSet: GameSet {
-  var isParent: Bool? = false
-  var id = UUID()
-  var code = "123"
-  var numberOfCards = 1
-  var name = "Stub"
-  var iconURL = URL(string: "https://mooligan.com")
-}
-
 private let gameSet = MockGameSet()
 
 final actor MockBrowseRequestClient: GameSetRequestClient {
@@ -42,7 +33,6 @@ final class BrowseFeatureTests: XCTestCase {
 }
 
 extension BrowseFeatureTests {
-  @MainActor
   func test_sendShowSets_shouldUpdateState() async {
     let expectedSets = [MockGameSet()]
     
@@ -52,7 +42,6 @@ extension BrowseFeatureTests {
     }
   }
   
-  @MainActor
   func test_sendDidSelectSet_shouldSetSelectedSet() async {
     let expectedSet = MockGameSet()
     
@@ -65,7 +54,6 @@ extension BrowseFeatureTests {
     }
   }
   
-  @MainActor
   func test_sendViewAppeared_shouldFetchSets() async {
     await store.send(.viewAppeared)
     
@@ -80,7 +68,6 @@ extension BrowseFeatureTests {
     }
   }
   
-  @MainActor
   func test_sendFetchSets_shouldSetSets_withValue() async {
     let expectedSets = [gameSet]
     
@@ -94,7 +81,6 @@ extension BrowseFeatureTests {
     }
   }
   
-  @MainActor
   func test_setRowViewModel() async {
     await store.send(.updateSets([gameSet])) { state in
       state.sets = [gameSet]

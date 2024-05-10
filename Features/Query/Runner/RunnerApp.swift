@@ -1,4 +1,5 @@
 import ComposableArchitecture
+import Networking
 import DesignComponents
 import SwiftUI
 import Query
@@ -8,7 +9,7 @@ struct BrowseApp: App {
   var body: some Scene {
     WindowGroup {
       NavigationView {
-        ContentView()
+        RootView(queryType: .set(MockGameSet(), page: 0))
       }
     }
   }

@@ -28,7 +28,9 @@ let project = Project(
       dependencies: [
         .project(target: "Networking", path: "../../Core/Networking"),
         .project(target: "DesignComponents", path: "../../Core/DesignComponents"),
-        .external(name: "ComposableArchitecture")
+        .external(name: "ComposableArchitecture"),
+        .external(name: "NukeUI"),
+        .external(name: "Shimmer")
       ]
     ),
     .target(
