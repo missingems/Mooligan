@@ -9,7 +9,7 @@ struct BrowseApp: App {
   var body: some Scene {
     WindowGroup {
       NavigationView {
-        RootView(query: .set(MockGameSet(), page: 0))
+        RootView(queryType: .set(MockGameSet(), page: 0))
       }
     }
   }
