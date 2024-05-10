@@ -14,7 +14,7 @@ struct MockGameSet: GameSet {
 
 private let gameSet = MockGameSet()
 
-final actor MockBrowseRequestClient: BrowseRequestClient {
+final actor MockBrowseRequestClient: GameSetRequestClient {
   typealias Model = MockGameSet
   
   func getAllSets() -> [MockGameSet] {
@@ -100,7 +100,7 @@ extension BrowseFeatureTests {
       state.sets = [gameSet]
     }
     
-    let given = store.state.getSetRowViewModel(at: 0, colorScheme: .dark)
+    let given = store.state.getSetRowViewModel(at: 0, colorScheme: .light)
     let expected = SetRow.ViewModel(
       set: gameSet,
       selectedSet: nil,
@@ -108,6 +108,6 @@ extension BrowseFeatureTests {
       colorScheme: .light
     )
     
-    XCTAssertEqual(store.state.getSetRowViewModel(at: 0, colorScheme: .light), expected)
+    XCTAssertEqual(given, expected)
   }
 }
