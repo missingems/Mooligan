@@ -20,16 +20,3 @@ public struct ContentView: View {
       })
   }
 }
-
-#Preview {
-  ContentView(query: .set(MockGameSet(), page: 0))
-}
-
-struct MockGameSet: GameSet {
-  var isParent: Bool? = false
-  var id = UUID()
-  var code = "OTJ"
-  var numberOfCards = 1
-  var name = "Stub"
-  var iconURL = URL(string: "https://mooligan.com")
-}
