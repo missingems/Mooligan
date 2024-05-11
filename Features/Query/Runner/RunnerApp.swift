@@ -1,11 +1,9 @@
-import ComposableArchitecture
 import Networking
-import DesignComponents
 import SwiftUI
 import Query
 
 @main
-struct BrowseApp: App {
+struct RunnerApp: App {
   var body: some Scene {
     WindowGroup {
       NavigationView {
