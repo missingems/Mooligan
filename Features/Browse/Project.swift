@@ -7,7 +7,7 @@ let project = Project(
       name: "BrowseRunner",
       destinations: .iOS,
       product: .app,
-      bundleId: "io.tuist.Mooligan.BrowseRunner",
+      bundleId: "com.missingems.Mooligan.BrowseRunner",
       infoPlist: .extendingDefault(
         with: [
           "UILaunchStoryboardName": "LaunchScreen.storyboard",
@@ -21,7 +21,7 @@ let project = Project(
       name: "Browse",
       destinations: .iOS,
       product: .framework,
-      bundleId: "io.tuist.Mooligan.Browse",
+      bundleId: "com.missingems.Mooligan.Browse",
       infoPlist: .default,
       sources: ["Sources/**"],
       resources: [],
@@ -35,7 +35,7 @@ let project = Project(
       name: "BrowseTests",
       destinations: .iOS,
       product: .unitTests,
-      bundleId: "io.tuist.Mooligan.Browse",
+      bundleId: "com.missingems.Mooligan.Browse",
       infoPlist: .default,
       sources: ["Tests/**"],
       resources: [],

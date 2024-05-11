@@ -5,6 +5,10 @@ import Networking
 struct Feature<Client: MagicCardQueryRequestClient> {
   let client: Client
   
+  enum Cancellables: Hashable {
+    case queryCards
+  }
+  
   @ObservableState
   struct State: Equatable {
     var queryType: QueryType
@@ -31,9 +35,11 @@ struct Feature<Client: MagicCardQueryRequestClient> {
         let queryType = state.queryType
         
         if currentIndex == state.dataSource.model.count - 1, state.dataSource.hasNextPage {
-          return .run { send in
-            await send(.fetchCards(queryType.next()))
-          }
+          return
+            .run { send in
+              await send(.fetchCards(queryType.next()))
+            }
+            .cancellable(id: Cancellables.queryCards, cancelInFlight: true)
         } else {
           return .none
         }

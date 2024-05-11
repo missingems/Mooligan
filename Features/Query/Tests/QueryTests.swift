@@ -3,13 +3,12 @@ import ComposableArchitecture
 import Networking
 import XCTest
 
-let magicCard = MockMagicCard()
+private let magicCard = MockMagicCard()
+private let gameSet = MockGameSet()
 
 final actor MockQueryRequestClient: MagicCardQueryRequestClient {
-  typealias MagicCardModel = MockMagicCard
-  
-  func queryCards(_ query: Networking.QueryType) async throws -> [MockMagicCard] {
-    return [magicCard]
+  func queryCards(_ query: QueryType) async throws -> ObjectList<[MockMagicCard]> {
+    return ObjectList(model: [magicCard], hasNextPage: true)
   }
 }
 
@@ -20,7 +19,7 @@ final class QueryTests: XCTestCase {
     super.setUp()
     
     store = TestStore(
-      initialState: Feature<MockQueryRequestClient>.State(queryType: .set(MockGameSet(), page: 0))
+      initialState: Feature<MockQueryRequestClient>.State(queryType: .set(gameSet, page: 0))
     ) {
       Feature<MockQueryRequestClient>(client: MockQueryRequestClient())
     }
@@ -33,9 +32,17 @@ final class QueryTests: XCTestCase {
   
   func test_sendViewAppeared_shouldSendFetchCards() async {
     await store.send(.viewAppeared)
-    await store.receive(.fetchCards)
-    await store.receive(.updateCards([magicCard])) { state in
-      state.cards = [magicCard]
+    await store.receive(.fetchCards(.set(gameSet, page: 1)))
+    await store.receive(.updateCards(ObjectList(model: [magicCard]))) { state in
+      state.dataSource = ObjectList(model: [magicCard], hasNextPage: true)
+    }
+  }
+  
+  func test_loadMoreCardsIfNeeded_shouldLoadMore() async {
+    await store.send(.loadMoreCardsIfNeeded(currentIndex: 0))
+    await store.receive(.fetchCards(.set(gameSet, page: 1)))
+    await store.receive(.updateCards(ObjectList(model: [magicCard], hasNextPage: true))) { state in
+      state.dataSource = ObjectList(model: [magicCard, magicCard], hasNextPage: true)
     }
   }
 }
