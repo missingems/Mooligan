@@ -7,37 +7,47 @@ struct Feature<Client: MagicCardQueryRequestClient> {
   
   @ObservableState
   struct State: Equatable {
-    let queryType: QueryType
-    var cards: [Client.MagicCardModel] = []
+    var queryType: QueryType
+    var dataSource = ObjectList<[Client.MagicCardModel]>(model: [])
   }
   
   enum Action: Equatable {
-    case fetchCards
-    case updateCards([Client.MagicCardModel])
+    case fetchCards(QueryType)
+    case loadMoreCardsIfNeeded(currentIndex: Int)
+    case updateCards(ObjectList<[Client.MagicCardModel]>)
     case viewAppeared
   }
   
   var body: some ReducerOf<Self> {
     Reduce { state, action in
       switch action {
-      case .fetchCards:
+      case let .fetchCards(queryType):
+        state.queryType = queryType
+        return .run { send in
+          await send(.updateCards(try await client.queryCards(queryType)))
+        }
+        
+      case let .loadMoreCardsIfNeeded(currentIndex):
         let queryType = state.queryType
         
-        return .run { send in
-          await send(
-            .updateCards(
-              try await client.queryCards(queryType)
-            )
-          )
+        if currentIndex == state.dataSource.model.count - 1, state.dataSource.hasNextPage {
+          return .run { send in
+            await send(.fetchCards(queryType.next()))
+          }
+        } else {
+          return .none
         }
       
       case let .updateCards(value):
-        state.cards = value
+        state.dataSource.model.append(contentsOf: value.model)
+        state.dataSource.hasNextPage = value.hasNextPage
         return .none
         
       case .viewAppeared:
+        let queryType = state.queryType
+        
         return .run { send in
-          await send(.fetchCards)
+          await send(.fetchCards(queryType))
         }
       }
     }

@@ -1,10 +1,10 @@
 import ScryfallKit
 
 extension ScryfallClient: MagicCardQueryRequestClient {
-  public func queryCards(_ query: QueryType) async throws -> [Card] {
+  public func queryCards(_ query: QueryType) async throws -> ObjectList<[Card]> {
     switch query {
     case .search:
-      return []
+      return ObjectList(model: [], hasNextPage: false)
       
     case let .set(gameSet, page):
       let result = try await searchCards(
@@ -19,7 +19,7 @@ extension ScryfallClient: MagicCardQueryRequestClient {
       )
       
       
-      return result.data
+      return ObjectList(model: result.data, hasNextPage: result.hasMore ?? false)
     }
   }
 }
