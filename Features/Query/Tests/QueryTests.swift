@@ -19,7 +19,7 @@ final class QueryTests: XCTestCase {
     super.setUp()
     
     store = TestStore(
-      initialState: Feature<MockQueryRequestClient>.State(queryType: .set(gameSet, page: 0))
+      initialState: Feature<MockQueryRequestClient>.State(queryType: .set(gameSet, page: 1))
     ) {
       Feature<MockQueryRequestClient>(client: MockQueryRequestClient())
     }
