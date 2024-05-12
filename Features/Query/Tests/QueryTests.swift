@@ -38,8 +38,7 @@ final class QueryTests: XCTestCase {
     }
   }
   
-  @MainActor
-  func test_loadMoreCardsIfNeeded_shouldLoadMore() async {
+  func test_hasNextPageIsTrue_whenLoadMoreCardsIfNeeded_shouldLoadMore() async {
     let store: TestStore<Feature<MockQueryRequestClient>.State, Feature<MockQueryRequestClient>.Action> = TestStore(
       initialState: Feature.State(
         queryType: .set(gameSet, page: 1),
@@ -57,5 +56,18 @@ final class QueryTests: XCTestCase {
     await store.receive(.updateCards(ObjectList(model: [magicCard], hasNextPage: true))) { state in
       state.dataSource = ObjectList(model: [magicCard, magicCard], hasNextPage: true)
     }
+  }
+  
+  func test_hasNextPageIsFalse_whenLoadMoreCardsIfNeeded_shouldNotLoadMore() async {
+    let store: TestStore<Feature<MockQueryRequestClient>.State, Feature<MockQueryRequestClient>.Action> = TestStore(
+      initialState: Feature.State(
+        queryType: .set(gameSet, page: 1),
+        dataSource: ObjectList(model: [magicCard], hasNextPage: false)
+      )
+    ) {
+      Feature(client: MockQueryRequestClient())
+    }
+    
+    await store.send(.loadMoreCardsIfNeeded(currentIndex: 0))
   }
 }
