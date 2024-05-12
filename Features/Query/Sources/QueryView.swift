@@ -41,7 +41,9 @@ struct QueryView<Client: MagicCardQueryRequestClient>: View {
             ),
             spacing: spacing
           ) {
-            ForEach(store.cards) { card in
+            ForEach(store.dataSource.model.indices, id: \.self) { index in
+              let card = store.dataSource.model[index]
+              
               Button(
                 action: {
                   print("Selected")
@@ -53,6 +55,9 @@ struct QueryView<Client: MagicCardQueryRequestClient>: View {
                 }
               )
               .buttonStyle(.sinkableButtonStyle)
+              .onAppear {
+                store.send(.loadMoreCardsIfNeeded(currentIndex: index))
+              }
             }
           }
         }

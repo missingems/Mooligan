@@ -7,7 +7,7 @@ let project = Project(
       name: "Mooligan",
       destinations: .iOS,
       product: .app,
-      bundleId: "io.tuist.Mooligan",
+      bundleId: "com.missingems.Mooligan",
       infoPlist: .extendingDefault(
         with: [
           "UILaunchStoryboardName": "LaunchScreen.storyboard",
@@ -24,7 +24,7 @@ let project = Project(
       name: "MooliganTests",
       destinations: .iOS,
       product: .unitTests,
-      bundleId: "io.tuist.MooliganTests",
+      bundleId: "com.missingems.MooliganTests",
       infoPlist: .default,
       sources: ["Mooligan/Tests/**"],
       resources: [],

@@ -7,7 +7,7 @@ let project = Project(
       name: "DesignComponents",
       destinations: .iOS,
       product: .framework,
-      bundleId: "io.tuist.DesignComponents",
+      bundleId: "com.missingems.DesignComponents",
       infoPlist: .default,
       sources: ["Sources/**"],
       resources: ["Resources/**"],

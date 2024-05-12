@@ -7,7 +7,7 @@ let project = Project(
       name: "QueryRunner",
       destinations: .iOS,
       product: .app,
-      bundleId: "io.tuist.Mooligan.QueryRunner",
+      bundleId: "com.missingems.Mooligan.QueryRunner",
       infoPlist: .extendingDefault(
         with: [
           "UILaunchStoryboardName": "LaunchScreen.storyboard",
@@ -21,7 +21,7 @@ let project = Project(
       name: "Query",
       destinations: .iOS,
       product: .framework,
-      bundleId: "io.tuist.Mooligan.Query",
+      bundleId: "com.missingems.Mooligan.Query",
       infoPlist: .default,
       sources: ["Sources/**"],
       resources: [],
@@ -37,7 +37,7 @@ let project = Project(
       name: "QueryTests",
       destinations: .iOS,
       product: .unitTests,
-      bundleId: "io.tuist.Mooligan.QueryTests",
+      bundleId: "com.missingems.QueryTests",
       infoPlist: .default,
       sources: ["Tests/**"],
       resources: [],
