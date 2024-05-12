@@ -33,7 +33,7 @@ final class QueryTests: XCTestCase {
   func test_sendViewAppeared_shouldSendFetchCards() async {
     await store.send(.viewAppeared)
     await store.receive(.fetchCards(.set(gameSet, page: 1)))
-    await store.receive(.updateCards(ObjectList(model: [magicCard], hasNextPage: true))) { state in
+    await store.receive(.updateCards(ObjectList(model: [magicCard], hasNextPage: true), .set(gameSet, page: 1))) { state in
       state.dataSource = ObjectList(model: [magicCard], hasNextPage: true)
     }
   }
@@ -49,12 +49,11 @@ final class QueryTests: XCTestCase {
     }
     
     await store.send(.loadMoreCardsIfNeeded(currentIndex: 0))
-    await store.receive(.fetchCards(.set(gameSet, page: 2))) { state in
-      state.queryType = .set(gameSet, page: 2)
-    }
+    await store.receive(.fetchCards(.set(gameSet, page: 2)))
     
-    await store.receive(.updateCards(ObjectList(model: [magicCard], hasNextPage: true))) { state in
+    await store.receive(.updateCards(ObjectList(model: [magicCard], hasNextPage: true), .set(gameSet, page: 2))) { state in
       state.dataSource = ObjectList(model: [magicCard, magicCard], hasNextPage: true)
+      state.queryType = .set(gameSet, page: 2)
     }
   }
   

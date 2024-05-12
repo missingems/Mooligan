@@ -18,7 +18,7 @@ struct Feature<Client: MagicCardQueryRequestClient> {
   enum Action: Equatable {
     case fetchCards(QueryType)
     case loadMoreCardsIfNeeded(currentIndex: Int)
-    case updateCards(ObjectList<[Client.MagicCardModel]>)
+    case updateCards(ObjectList<[Client.MagicCardModel]>, QueryType)
     case viewAppeared
   }
   
@@ -26,10 +26,8 @@ struct Feature<Client: MagicCardQueryRequestClient> {
     Reduce { state, action in
       switch action {
       case let .fetchCards(queryType):
-        state.queryType = queryType
-        
         return .run { send in
-          await send(.updateCards(try await client.queryCards(queryType)))
+          await send(.updateCards(try await client.queryCards(queryType), queryType))
         }
         
       case let .loadMoreCardsIfNeeded(currentIndex):
@@ -45,7 +43,8 @@ struct Feature<Client: MagicCardQueryRequestClient> {
           return .none
         }
       
-      case let .updateCards(value):
+      case let .updateCards(value, queryType):
+        state.queryType = queryType
         state.dataSource.model.append(contentsOf: value.model)
         state.dataSource.hasNextPage = value.hasNextPage
         return .none
@@ -58,5 +57,6 @@ struct Feature<Client: MagicCardQueryRequestClient> {
         }
       }
     }
+    ._printChanges(.actionLabels)
   }
 }
