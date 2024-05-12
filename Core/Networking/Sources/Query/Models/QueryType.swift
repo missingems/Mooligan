@@ -14,11 +14,11 @@ public enum QueryType: Equatable, Sendable {
   
   public static func == (lhs: QueryType, rhs: QueryType) -> Bool {
     switch (lhs, rhs) {
-    case let (.set(lhsGameSet, _), .set(rhsGameSet, _)):
-      return lhsGameSet.id == rhsGameSet.id
+    case let (.set(lhsGameSet, lhsPage), .set(rhsGameSet, rhsPage)):
+      return lhsGameSet.id == rhsGameSet.id && lhsPage == rhsPage
       
-    case let (.search(lhsText, _), .search(rhsText, page: _)):
-      return lhsText == rhsText
+    case let (.search(lhsText, lhsPage), .search(rhsText, rhsPage)):
+      return lhsText == rhsText && lhsPage == rhsPage
       
     default:
       return false

@@ -27,6 +27,7 @@ struct Feature<Client: MagicCardQueryRequestClient> {
       switch action {
       case let .fetchCards(queryType):
         state.queryType = queryType
+        
         return .run { send in
           await send(.updateCards(try await client.queryCards(queryType)))
         }
