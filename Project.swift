@@ -18,6 +18,7 @@ let project = Project(
       dependencies: [
         .project(target: "Query", path: .relativeToManifest("Features/Query")),
         .project(target: "Browse", path: .relativeToManifest("Features/Browse")),
+        .project(target: "CardDetail", path: .relativeToManifest("Features/CardDetail")),
       ]
     ),
     .target(
