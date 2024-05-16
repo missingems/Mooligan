@@ -1,8 +1,25 @@
-//
-//  Feature.swift
-//  CardDetail
-//
-//  Created by Jun on 15/5/24.
-//
+import ComposableArchitecture
+import SwiftUI
+import Networking
 
-import Foundation
+@Reducer
+struct Feature {
+  
+  @ObservableState
+  struct State: Equatable {
+  }
+  
+  enum Action: Equatable {
+    case loadCardDetail
+  }
+  
+  var body: some ReducerOf<Self> {
+    Reduce { state, action in
+      switch action {
+      case .loadCardDetail:
+        return .none
+      }
+    }
+    ._printChanges(.actionLabels)
+  }
+}
