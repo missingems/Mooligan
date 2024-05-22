@@ -11,7 +11,6 @@ struct RunnerApp: App {
   var body: some Scene {
     WindowGroup {
       NavigationView {
-        RootView()
       }
     }
   }
