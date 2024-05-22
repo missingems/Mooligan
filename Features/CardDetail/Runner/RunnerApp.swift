@@ -1,11 +1,9 @@
-import ComposableArchitecture
 import DesignComponents
 import SwiftUI
 import CardDetail
-import ScryfallKit
 
 @main
-struct BrowseApp: App {
+struct RunnerApp: App {
   init() {
     DesignComponents.Main().setup()
   }
@@ -13,7 +11,7 @@ struct BrowseApp: App {
   var body: some Scene {
     WindowGroup {
       NavigationView {
-        ContentView()
+        RootView()
       }
     }
   }

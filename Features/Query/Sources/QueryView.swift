@@ -5,15 +5,9 @@ import SwiftUI
 import NukeUI
 
 struct QueryView<Client: MagicCardQueryRequestClient>: View {
-  @Environment(\.horizontalSizeClass)
-  private var sizeClass
-  
-  @Bindable
+  @Environment(\.horizontalSizeClass) private var sizeClass
   private var store: StoreOf<Feature<Client>>
-  
-  private var horizontalSpacing: CGFloat {
-    spacing * 2
-  }
+  private var horizontalSpacing: CGFloat { spacing * 2 }
   
   init(store: StoreOf<Feature<Client>>) {
     self.store = store
