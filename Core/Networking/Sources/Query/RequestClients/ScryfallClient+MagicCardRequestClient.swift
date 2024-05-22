@@ -18,7 +18,6 @@ extension ScryfallClient: MagicCardQueryRequestClient {
         page: page
       )
       
-      
       return ObjectList(model: result.data, hasNextPage: result.hasMore ?? false)
     }
   }
