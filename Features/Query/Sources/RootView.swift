@@ -1,10 +1,3 @@
-//
-//  RootView.swift
-//  Query
-//
-//  Created by Jun on 10/5/24.
-//
-
 import Networking
 import ScryfallKit
 import ComposableArchitecture
