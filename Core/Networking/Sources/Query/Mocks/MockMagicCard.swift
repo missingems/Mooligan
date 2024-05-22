@@ -1,10 +1,3 @@
-//
-//  MockMagicCard.swift
-//  QueryTests
-//
-//  Created by Jun on 10/5/24.
-//
-
 import Foundation
 
 public struct MockMagicCard: MagicCard {
