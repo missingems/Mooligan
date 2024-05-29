@@ -1,6 +1,6 @@
 import ScryfallKit
 
-struct MagicCardFixture {
-  @Decode("cards.json")
-  static var stub: [Card]
+public struct MagicCardFixture {
+  @Decode<[Card]>("cards.json")
+  public static var stub
 }

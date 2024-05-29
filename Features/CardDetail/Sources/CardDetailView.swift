@@ -11,7 +11,7 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
   
   var body: some View {
     Text("\(store.card.id)")
-      .onAppear {
+      .task {
         store.send(.viewAppeared)
       }
   }

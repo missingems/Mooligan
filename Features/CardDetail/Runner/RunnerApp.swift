@@ -2,6 +2,7 @@ import CardDetail
 import DesignComponents
 import ScryfallKit
 import SwiftUI
+import Networking
 
 @main
 struct RunnerApp: App {
@@ -13,48 +14,7 @@ struct RunnerApp: App {
     WindowGroup {
       NavigationView {
         RootView(
-          card: Card(
-            id: UUID(),
-            oracleId: "",
-            lang: "en",
-            printsSearchUri: "",
-            rulingsUri: "",
-            scryfallUri: "",
-            uri: "",
-            cmc: 0,
-            colorIdentity: [.B],
-            keywords: [],
-            layout: .adventure,
-            legalities: <#T##Card.Legalities#>,
-            name: "Test",
-            oversized: false,
-            reserved: false,
-            booster: true,
-            borderColor: .black,
-            collectorNumber: "123",
-            digital: false,
-            finishes: [],
-            frame: .v2015,
-            fullArt: false,
-            games: [.paper],
-            highresImage: true,
-            imageStatus: .highresScan,
-            prices: Card.Prices(tix: "", usd: "", usdFoil: "", eur: ""),
-            promo: false,
-            rarity: .mythic,
-            relatedUris: [:],
-            releasedAt: "",
-            reprint: false,
-            scryfallSetUri: "",
-            setName: "",
-            setSearchUri: URL(string: "")!,
-            setType: .funny,
-            setUri: "",
-            set: "",
-            storySpotlight: false,
-            textless: false,
-            variation: false
-          ),
+          card: MagicCardFixture.stub.first!,
           client: ScryfallClient(networkLogLevel: .minimal)
         )
       }
