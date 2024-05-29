@@ -15,19 +15,20 @@ struct Decode<T: Decodable> {
   
   init(_ filename: String) {
     do {
-      self.value = try Decode.loadJSON(filename: filename)
+      value = try Decode.loadJSON(filename: filename)
     } catch {
       fatalError(error.localizedDescription)
     }
   }
   
   private static func loadJSON(filename: String) throws -> T {
-    guard let url = Bundle.main.url(forResource: filename, withExtension: nil) else {
+    guard let url = Bundle(for: Resource.self).url(forResource: filename, withExtension: nil) else {
       throw Error.fileNotFound
     }
     
     let data = try Data(contentsOf: url)
     let decoder = JSONDecoder()
+    decoder.keyDecodingStrategy = .convertFromSnakeCase
     return try decoder.decode(T.self, from: data)
   }
 }
