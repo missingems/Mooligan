@@ -16,7 +16,7 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
       }
     }
     .task {
-      store.send(.viewAppeared)
+      store.send(.start)
     }
   }
 }
