@@ -96,4 +96,9 @@ public protocol MagicCard: Equatable, Hashable, Identifiable, Sendable {
   
   /// Get card art in normal quality
   func getImageURL() -> URL?
+  
+  var isFlippable: Bool { get }
+  var isRotatable: Bool { get }
+  var isLandscape: Bool { get }
+  var isPhyrexian: Bool { get }
 }

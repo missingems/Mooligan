@@ -1,51 +1,48 @@
 import ComposableArchitecture
+import Foundation
 import Networking
 
 @Reducer
 struct Feature<Client: MagicCardDetailRequestClient> {
+  typealias Card = Client.MagicCardModel
   let client: Client
   
   @ObservableState
-  struct State: Equatable {
-    let card: Client.MagicCardModel
-    let page: Int = 0
-    var variants: [Client.MagicCardModel] = []
+  struct State {
+    let card: Card
+    var configuration: ContentConfiguration<Card>?
+    var prints: [Card] = []
+    
+    init(card: Card) {
+      self.card = card
+    }
   }
   
-  enum Action: Equatable {
-    case loadVariants
-    case updateVariants([Client.MagicCardModel])
+  enum Action {
     case viewAppeared
+    case showPrints([Card])
+    case updateConfiguration(ContentConfiguration<Card>)
   }
   
   var body: some ReducerOf<Self> {
     Reduce { state, action in
       switch action {
-      case .loadVariants:
-        let card = state.card
-        let page = state.page
-        
-        return .run { send in
-          await send(
-            .updateVariants(
-              try await client.getVariants(
-                of: card,
-                page: page
-              )
-            )
-          )
-        }
-        
-      case let .updateVariants(value):
-        state.variants = value
+      case let .updateConfiguration(configuration):
+        state.configuration = configuration
         return .none
         
       case .viewAppeared:
+        let card = state.card
+        
         return .run { send in
-          await send(.loadVariants)
+          try await send(.showPrints(client.getVariants(of: card, page: 0)))
         }
+        
+      case let .showPrints(cards):
+        print(cards)
+        return .none
       }
     }
-    ._printChanges(.actionLabels)
   }
 }
+

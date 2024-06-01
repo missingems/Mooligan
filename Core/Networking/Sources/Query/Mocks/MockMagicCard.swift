@@ -1,6 +1,14 @@
 import Foundation
 
 public struct MockMagicCard: MagicCard {
+  public var isFlippable: Bool { false }
+  
+  public var isRotatable: Bool { false }
+  
+  public var isLandscape: Bool { false }
+  
+  public var isPhyrexian: Bool { false }
+  
   public var id = UUID()
   
   public func getLanguage() -> String {

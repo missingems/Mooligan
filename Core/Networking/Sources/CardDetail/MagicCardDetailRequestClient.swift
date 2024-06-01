@@ -7,8 +7,10 @@ public protocol MagicCardDetailRequestClient {
 
 extension ScryfallClient: MagicCardDetailRequestClient {
   public func getVariants(of card: MagicCardModel, page: Int) async throws -> [MagicCardModel] {
-    try await searchCards(
-      filters: [.name(card.name), .game(.paper)],
+    guard let oracleID = card.getOracleID() else { return [] }
+    
+    return try await searchCards(
+      filters: [.oracleId(oracleID), .game(.paper)],
       unique: .prints,
       order: nil,
       sortDirection: nil,

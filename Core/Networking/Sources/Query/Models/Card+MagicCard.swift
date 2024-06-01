@@ -2,6 +2,7 @@ import Foundation
 import ScryfallKit
 
 extension Card: MagicCard {
+  public func getOracleID() -> String? { oracleId }
   public func getLanguage() -> String { lang }
   public func getCardFaces() -> [any MagicCardFace]? { cardFaces }
   public func getManaValue() -> Double? { cmc }
@@ -26,9 +27,9 @@ extension Card: MagicCard {
   public func getPrintedName() -> String? { printedName }
   public func getPrintedText() -> String? { printedText }
   public func getPrintedTypeLine() -> String? { printedTypeLine }
-  public func getPurchaseUris() -> [String : String]? { purchaseUris }
+  public func getPurchaseUris() -> [String: String]? { purchaseUris }
   public func getRarity() -> any MagicCardRarity { rarity }
-  public func getRelatedUris() -> [String : String] { relatedUris }
+  public func getRelatedUris() -> [String: String] { relatedUris }
   public func getReleasedAt() -> String { releasedAt }
   public func getSetName() -> String { setName }
   public func getSet() -> String { self.set }
@@ -42,5 +43,27 @@ extension Card: MagicCard {
     }
     
     return url
+  }
+  
+  public var isFlippable: Bool {
+    layout == .transform ||
+    layout == .modalDfc ||
+    layout == .reversibleCard ||
+    layout == .doubleSided ||
+    layout == .doubleFacedToken ||
+    layout == .battle ||
+    layout == .flip
+  }
+  
+  public var isRotatable: Bool {
+    layout == .flip
+  }
+  
+  public var isLandscape: Bool {
+    layout == .split
+  }
+  
+  public var isPhyrexian: Bool {
+    lang == "ph"
   }
 }
