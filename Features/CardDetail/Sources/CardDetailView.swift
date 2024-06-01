@@ -15,7 +15,7 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
         .background { Color(.secondarySystemBackground).ignoresSafeArea() }
       }
     }
-    .onAppear {
+    .task {
       store.send(.viewAppeared)
     }
   }

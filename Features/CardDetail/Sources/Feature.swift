@@ -5,44 +5,36 @@ import Networking
 @Reducer
 struct Feature<Client: MagicCardDetailRequestClient> {
   typealias Card = Client.MagicCardModel
-  let client: Client
+  private let client: Client
   
   @ObservableState
   struct State {
-    let card: Card
-    var configuration: ContentConfiguration<Card>?
-    var prints: [Card] = []
+    var content: Content<Card>
     
     init(card: Card) {
-      self.card = card
+      content = Content(card: card)
     }
   }
   
   enum Action {
-    case viewAppeared
-    case showPrints([Card])
-    case updateConfiguration(ContentConfiguration<Card>)
+    case start
+    case update(variants: [Card])
   }
   
   var body: some ReducerOf<Self> {
     Reduce { state, action in
       switch action {
-      case let .updateConfiguration(configuration):
-        state.configuration = configuration
+      case let .update(variants):
+        state.content.variants = variants
         return .none
         
-      case .viewAppeared:
-        let card = state.card
+      case .start:
+        let card = state.content.card
         
         return .run { send in
-          try await send(.showPrints(client.getVariants(of: card, page: 0)))
+          try await send(.update(variants: client.getVariants(of: card, page: 0)))
         }
-        
-      case let .showPrints(cards):
-        print(cards)
-        return .none
       }
     }
   }
 }
-

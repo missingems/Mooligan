@@ -1,7 +1,12 @@
 import Networking
 import Foundation
 
-struct ContentConfiguration<Card: MagicCard>: Equatable {
+struct Content<Card: MagicCard>: Equatable {
+  enum FaceDirection: Equatable {
+    case front
+    case back
+  }
+  
   let id: String?
   let name: String?
   let text: String?
@@ -23,8 +28,11 @@ struct ContentConfiguration<Card: MagicCard>: Equatable {
   let viewRulingsLabel: String
   let legalityLabel: String
   let displayReleasedDate: String
+  let card: Card
+  var variants: [Card] = []
   
-  init(card: Card, face: any MagicCardFace) {
+  init(card: Card, faceDirection: MagicCardFaceDirection = .front) {
+    self.card = card
     id = card.getOracleText()
     manaCost = []
     
@@ -44,6 +52,7 @@ struct ContentConfiguration<Card: MagicCard>: Equatable {
     }()
     
     // Selected Face Configuration
+    let face = card.getCardFace(for: faceDirection)
     imageURL = face.getImageURL()
     
     if card.isPhyrexian {

@@ -4,7 +4,6 @@ import ScryfallKit
 extension Card: MagicCard {
   public func getOracleID() -> String? { oracleId }
   public func getLanguage() -> String { lang }
-  public func getCardFaces() -> [any MagicCardFace]? { cardFaces }
   public func getManaValue() -> Double? { cmc }
   public func getColorIdentity() -> [any MagicCardColor] { colorIdentity }
   public func getColorIndicator() -> [any MagicCardColor]? { colorIndicator }
@@ -65,5 +64,33 @@ extension Card: MagicCard {
   
   public var isPhyrexian: Bool {
     lang == "ph"
+  }
+  
+  public func getCardFace(for direction: MagicCardFaceDirection) -> any MagicCardFace {
+    switch direction {
+    case  .front:
+      return self
+      
+    case .back:
+      return cardFaces?.last ?? self
+    }
+  }
+}
+
+extension Card: MagicCardFace {
+  public var manaValue: Double? {
+    getManaValue()
+  }
+  
+  public var magicColorIndicator: [any MagicCardColor]? {
+    getColorIndicator()
+  }
+  
+  public var magicColors: [any MagicCardColor]? {
+    getColors()
+  }
+  
+  public var manaCost: String {
+    getManaCost() ?? ""
   }
 }
