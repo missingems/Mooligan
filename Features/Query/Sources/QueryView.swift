@@ -15,52 +15,43 @@ struct QueryView<Client: MagicCardQueryRequestClient>: View {
   
   var body: some View {
     GeometryReader { proxy in
-      let proxyWidth = proxy.size.width
-      let numberOfColumns = Self.maxNumberOfColumns(width: proxyWidth, spacing: spacing)
-      let gridSpacing = CGFloat(numberOfColumns - 1) * spacing
-      
-      if proxyWidth > 0 {
-        let widthPerItem = Self.widthPerItem(
-          proxyWidth: proxyWidth,
-          gridSpacings: gridSpacing,
-          extraPaddings: horizontalSpacing,
-          numberOfColumns: numberOfColumns
-        )
-        
-        ScrollView {
-          LazyVGrid(
-            columns: [GridItem](
-              repeating: GridItem(.fixed(min(widthPerItem, Self.maxCardWidth())), spacing: spacing),
-              count: numberOfColumns
-            ),
-            spacing: spacing
-          ) {
-            ForEach(store.dataSource.model.indices, id: \.self) { index in
-              let card = store.dataSource.model[index]
-              
-              Button(
-                action: {
-                  print("Selected")
-                }, label: {
-                  AmbientWebImage(
-                    url: [card.getImageURL()],
-                    width: min(widthPerItem, Self.maxCardWidth())
+      ScrollView {
+        LazyVGrid(
+          columns: [GridItem](
+            repeating: GridItem(spacing: spacing),
+            count: 2
+          ),
+          spacing: spacing
+        ) {
+          ForEach(store.dataSource.model.indices, id: \.self) { index in
+            Button(
+              action: {
+                print("Selected")
+              }, label: {
+                let width = ((proxy.size.width - 24) / 2.0).rounded()
+                let height = width.multiplied(byRatio: .heightToWidth)
+                
+                AmbientWebImage(url: store.dataSource.model[index].getImageURL()!)
+                  .frame(
+                    width: width,
+                    height: height,
+                    alignment: .center
                   )
-                }
-              )
-              .buttonStyle(.sinkableButtonStyle)
-              .onAppear {
-                store.send(.loadMoreCardsIfNeeded(currentIndex: index))
               }
+            )
+            .buttonStyle(.sinkableButtonStyle)
+            .task {
+              store.send(.loadMoreCardsIfNeeded(currentIndex: index))
             }
           }
         }
+        .safeAreaPadding(.horizontal, 8.0)
+      }
+      .navigationBarTitleDisplayMode(.inline)
+      .task {
+        store.send(.viewAppeared)
       }
     }
-    .onAppear {
-      store.send(.viewAppeared)
-    }
-    .navigationBarTitleDisplayMode(.inline)
   }
 }
 
@@ -73,18 +64,3 @@ extension QueryView {
     }
   }
 }
-
-extension QueryView {
-  private static func maxCardWidth() -> CGFloat {
-    return 233.0
-  }
-  
-  private static func maxNumberOfColumns(width: CGFloat, spacing: CGFloat) -> Int {
-    return min(max(1, Int((width / (Self.maxCardWidth() + spacing)).rounded())), 8)
-  }
-  
-  private static func widthPerItem(proxyWidth: CGFloat, gridSpacings: CGFloat, extraPaddings: CGFloat, numberOfColumns: Int) -> CGFloat {
-    return max(144.0, ((proxyWidth - gridSpacings - extraPaddings) / CGFloat(numberOfColumns)).rounded())
-  }
-}
-

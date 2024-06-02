@@ -6,7 +6,7 @@ struct Feature<Client: MagicCardQueryRequestClient> {
   let client: Client
   
   enum Cancellables: Hashable {
-    case queryCards
+    case queryCards(page: Int)
   }
   
   @ObservableState
@@ -27,18 +27,22 @@ struct Feature<Client: MagicCardQueryRequestClient> {
       switch action {
       case let .fetchCards(queryType):
         return .run { send in
-          await send(.updateCards(try await client.queryCards(queryType), queryType))
+          do {
+            let cards = try await client.queryCards(queryType)
+            await send(.updateCards(cards, queryType))
+          } catch {
+            print(error.localizedDescription)
+          }
         }
         
       case let .loadMoreCardsIfNeeded(currentIndex):
-        let queryType = state.queryType
-        
         if currentIndex == state.dataSource.model.count - 1, state.dataSource.hasNextPage {
-          return
-            .run { send in
-              await send(.fetchCards(queryType.next()))
+          let nextPage = state.queryType.next()
+          
+          return .run { send in
+              await send(.fetchCards(nextPage))
             }
-            .cancellable(id: Cancellables.queryCards, cancelInFlight: true)
+            .cancellable(id: Cancellables.queryCards(page: nextPage.page), cancelInFlight: false)
         } else {
           return .none
         }

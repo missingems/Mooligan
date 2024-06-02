@@ -8,7 +8,7 @@ public protocol MagicCard: Equatable, Hashable, Identifiable, Sendable {
   func getLanguage() -> String
   
   /// An array of all the faces that a card has or nil if it's a single-faced card
-  func getCardFaces() -> [any MagicCardFace]?
+  func getCardFace(for direction: MagicCardFaceDirection) -> any MagicCardFace
   
   /// The converted mana cost of a card, now called the "mana value"
   func getManaValue() -> Double?
@@ -96,4 +96,14 @@ public protocol MagicCard: Equatable, Hashable, Identifiable, Sendable {
   
   /// Get card art in normal quality
   func getImageURL() -> URL?
+  
+  var isFlippable: Bool { get }
+  var isRotatable: Bool { get }
+  var isLandscape: Bool { get }
+  var isPhyrexian: Bool { get }
+}
+
+public enum MagicCardFaceDirection {
+  case front
+  case back
 }
