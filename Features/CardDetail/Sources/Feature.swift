@@ -4,9 +4,6 @@ import Networking
 
 @Reducer
 struct Feature<Client: MagicCardDetailRequestClient> {
-  typealias Card = Client.MagicCardModel
-  private let client: Client
-  
   @ObservableState
   struct State {
     var content: Content<Card>
@@ -19,6 +16,13 @@ struct Feature<Client: MagicCardDetailRequestClient> {
   enum Action {
     case start
     case update(variants: [Card])
+  }
+  
+  typealias Card = Client.MagicCardModel
+  private let client: Client
+  
+  init(client: Client) {
+    self.client = client
   }
   
   var body: some ReducerOf<Self> {

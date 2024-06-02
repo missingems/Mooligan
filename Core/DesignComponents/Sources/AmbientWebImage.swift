@@ -32,7 +32,7 @@ public struct Cycle {
 }
 
 public struct AmbientWebImage: View {
-  public let url: [URL?]
+  public let url: URL
   private let cornerRadius: CGFloat
   private let blurRadius: CGFloat
   private let offset: CGPoint
@@ -42,7 +42,7 @@ public struct AmbientWebImage: View {
   private let width: CGFloat?
   
   public init(
-    url: [URL?] = [],
+    url: URL,
     cornerRadius: CGFloat = 9,
     blurRadius: CGFloat = 13,
     offset: CGPoint = CGPoint(x: 0, y: 8),
@@ -72,55 +72,52 @@ public struct AmbientWebImage: View {
   }
   
   public var body: some View {
-    if url.isEmpty == false {
-      ZStack {
-        LazyImage(
-          request: ImageRequest(
-            url: url[cycle.current],
-            processors: transformers
-          )
-        ) { state in
-          if let image = state.image {
-            image.resizable().aspectRatio(contentMode: .fit)
-          }
-        }
-        .blur(radius: blurRadius, opaque: false)
-        .opacity(0.38)
-        .scaleEffect(scale)
-        .offset(x: offset.x, y: offset.y)
-        
-        LazyImage(
-          request: ImageRequest(
-            url: url[cycle.current],
-            processors: transformers
-          )
-        ) { state in
-          if state.isLoading {
-            RoundedRectangle(cornerRadius: cornerRadius).fill(Color(.systemFill)).shimmering(
-              gradient: Gradient(
-                colors: [.black.opacity(0.8), .black.opacity(1), .black.opacity(0.8)]
-              )
-            )
-          } else if let image = state.image {
-            image.resizable().aspectRatio(contentMode: .fit)
-          }
-        }
-        .clipShape(
-          .rect(
-            cornerRadii: .init(
-              topLeading: cornerRadius,
-              bottomLeading: cornerRadius,
-              bottomTrailing: cornerRadius,
-              topTrailing: cornerRadius
-            )
-          )
+    ZStack {
+      LazyImage(
+        request: ImageRequest(
+          url: url,
+          processors: transformers
         )
-        .overlay(
-          RoundedRectangle(cornerRadius: cornerRadius).stroke(.separator)
-        )
+      ) { state in
+        if let image = state.image {
+          image.resizable().aspectRatio(contentMode: .fit)
+        }
       }
-      .frame(width: width ?? 0, height: ((width ?? 0) * 1.3928).rounded())
+      .blur(radius: blurRadius, opaque: false)
+      .opacity(0.38)
+      .scaleEffect(scale)
+      .offset(x: offset.x, y: offset.y)
+      
+      LazyImage(
+        request: ImageRequest(
+          url: url,
+          processors: transformers
+        )
+      ) { state in
+        if state.isLoading {
+          RoundedRectangle(cornerRadius: cornerRadius).fill(Color(.systemFill)).shimmering(
+            gradient: Gradient(
+              colors: [.black.opacity(0.8), .black.opacity(1), .black.opacity(0.8)]
+            )
+          )
+        } else if let image = state.image {
+          image.resizable().aspectRatio(contentMode: .fit)
+        }
+      }
+      .clipShape(
+        .rect(
+          cornerRadii: .init(
+            topLeading: cornerRadius,
+            bottomLeading: cornerRadius,
+            bottomTrailing: cornerRadius,
+            topTrailing: cornerRadius
+          )
+        )
+      )
+      .overlay(
+        RoundedRectangle(cornerRadius: cornerRadius).stroke(.separator)
+      )
     }
+    .frame(width: width ?? 0, height: ((width ?? 0) * 1.3928).rounded())   
   }
 }
-
