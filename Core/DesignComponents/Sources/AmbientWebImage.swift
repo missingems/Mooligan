@@ -39,7 +39,6 @@ public struct AmbientWebImage: View {
   private let scale: CGSize
   private var cycle: Cycle
   private let transformers: [ImageProcessing]
-  private let width: CGFloat?
   
   public init(
     url: URL,
@@ -48,11 +47,10 @@ public struct AmbientWebImage: View {
     offset: CGPoint = CGPoint(x: 0, y: 8),
     scale: CGSize = CGSize(width: 1.05, height: 1.05),
     rotation: CGFloat = 0,
-    cycle: Cycle = Cycle(max: 1),
-    width: CGFloat? = nil
+    cycle: Cycle = Cycle(max: 1)
   ) {
     self.url = url
-    self.cornerRadius = width.map { 9 / 144 * $0 } ?? cornerRadius
+    self.cornerRadius = cornerRadius
     self.blurRadius = blurRadius
     self.offset = offset
     self.scale = scale
@@ -64,10 +62,6 @@ public struct AmbientWebImage: View {
       transformers.append(RotationImageProcessor(degrees: rotation))
     }
     
-    if let width {
-      transformers.append(.resize(width: width))
-    }
-    self.width = width
     self.transformers = transformers
   }
   
@@ -118,6 +112,5 @@ public struct AmbientWebImage: View {
         RoundedRectangle(cornerRadius: cornerRadius).stroke(.separator)
       )
     }
-    .frame(width: width ?? 0, height: ((width ?? 0) * 1.3928).rounded())   
   }
 }

@@ -12,6 +12,16 @@ public enum QueryType: Equatable, Sendable {
     }
   }
   
+  public var page: Int {
+    switch self {
+    case let .set(_, page):
+      return page
+      
+    case let .search(_, page):
+      return page
+    }
+  }
+  
   public static func == (lhs: QueryType, rhs: QueryType) -> Bool {
     switch (lhs, rhs) {
     case let (.set(lhsGameSet, lhsPage), .set(rhsGameSet, rhsPage)):
