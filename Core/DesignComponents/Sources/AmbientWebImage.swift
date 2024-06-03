@@ -1,10 +1,3 @@
-//
-//  AmbientWebImage.swift
-//  Mooligan
-//
-//  Created by Jun on 13/4/24.
-//
-
 import Nuke
 import NukeUI
 import SwiftUI
@@ -76,7 +69,7 @@ public struct AmbientWebImage: View {
       }
       .clipShape(
         .rect(
-          cornerRadii: .init(
+          cornerRadii: RectangleCornerRadii(
             topLeading: cornerRadius,
             bottomLeading: cornerRadius,
             bottomTrailing: cornerRadius,
