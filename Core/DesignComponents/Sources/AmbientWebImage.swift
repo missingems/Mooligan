@@ -10,34 +10,12 @@ import NukeUI
 import SwiftUI
 import Shimmer
 
-public struct Cycle {
-  let max: Int
-  private(set) var current: Int
-  
-  public init(max: Int) {
-    self.max = max
-    current = 0
-  }
-  
-  public mutating func next() {
-    var _current = current
-    _current += 1
-    
-    if _current >= max {
-      _current = 0
-    }
-    
-    self.current = _current
-  }
-}
-
 public struct AmbientWebImage: View {
   public let url: URL
   private let cornerRadius: CGFloat
   private let blurRadius: CGFloat
   private let offset: CGPoint
   private let scale: CGSize
-  private var cycle: Cycle
   private let transformers: [ImageProcessing]
   
   public init(
@@ -46,15 +24,13 @@ public struct AmbientWebImage: View {
     blurRadius: CGFloat = 13,
     offset: CGPoint = CGPoint(x: 0, y: 8),
     scale: CGSize = CGSize(width: 1.05, height: 1.05),
-    rotation: CGFloat = 0,
-    cycle: Cycle = Cycle(max: 1)
+    rotation: CGFloat = 0
   ) {
     self.url = url
     self.cornerRadius = cornerRadius
     self.blurRadius = blurRadius
     self.offset = offset
     self.scale = scale
-    self.cycle = cycle
     
     var transformers: [ImageProcessing] = []
     
