@@ -23,6 +23,7 @@ struct TitleView: View {
       .offset(CGSize(width: 0, height: 1))
     }
     .padding(.horizontal, 16.0)
+    .textSelection(.enabled)
   }
 }
 
