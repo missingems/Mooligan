@@ -15,11 +15,7 @@ public struct TitleView: View {
   
   public var body: some View {
     HStack(alignment: .top) {
-      TextView(
-        text: .constant(name),
-        font: .preferredFont(forTextStyle: .headline),
-        foregroundColor: .label
-      )
+      Text(name).font(.headline).textSelection(.enabled)
       
       Spacer(minLength: 10.0)
       
