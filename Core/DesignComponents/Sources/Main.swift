@@ -1,10 +1,3 @@
-//
-//  Main.swift
-//  DesignComponents
-//
-//  Created by Jun on 1/5/24.
-//
-
 import SDWebImageSVGNativeCoder
 
 public struct Main {
