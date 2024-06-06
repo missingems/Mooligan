@@ -23,6 +23,7 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
             )
             TypelineView(store.content.typeline)
             DescriptionView(store.content.text)
+            FlavorView(store.content.flavorText)
           }
         }
         .background { Color(.secondarySystemBackground).ignoresSafeArea() }
