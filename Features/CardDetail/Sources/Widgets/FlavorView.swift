@@ -12,7 +12,8 @@ struct FlavorView: View {
       .frame(maxWidth: .infinity, alignment: .leading)
   }
   
-  init(_ flavorText: String) {
+  init?(_ flavorText: String?) {
+    guard let flavorText else { return nil }
     self.flavorText = flavorText
   }
 }
