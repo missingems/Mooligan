@@ -4,7 +4,8 @@ import SwiftUI
 struct DescriptionView: View {
   let text: String
   
-  init(_ text: String) {
+  init?(_ text: String?) {
+    guard let text else { return nil }
     self.text = text
   }
   

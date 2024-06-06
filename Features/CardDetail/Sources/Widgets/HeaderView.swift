@@ -10,13 +10,15 @@ struct HeaderView: View {
   private let isFlippable: Bool
   private let layoutConfiguration: LayoutConfiguration
   
-  init(
-    imageURL: URL,
+  init?(
+    imageURL: URL?,
     isFlippable: Bool,
     orientation: LayoutConfiguration.Orientation,
     rotation: CGFloat,
     onTransformTapped: (() -> Void)? = nil
   ) {
+    guard let imageURL else { return nil }
+    
     self.imageURL = imageURL
     self.isFlippable = isFlippable
     self.onTransformTapped = onTransformTapped

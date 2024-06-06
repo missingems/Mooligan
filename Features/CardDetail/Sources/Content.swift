@@ -36,7 +36,7 @@ struct Content<Card: MagicCard>: Equatable {
     id = card.getOracleText()
     manaCost = []
     
-    // Card Configuration
+    // MARK: - Card Configuration
     usdPrice = card.getPrices().usd
     usdFoilPrice = card.getPrices().usdFoil
     tixPrice = card.getPrices().tix
@@ -51,7 +51,7 @@ struct Content<Card: MagicCard>: Equatable {
       }
     }()
     
-    // Selected Face Configuration
+    // MARK: - Selected Face Configuration
     let face = card.getCardFace(for: faceDirection)
     imageURL = face.getImageURL()
     
@@ -72,7 +72,7 @@ struct Content<Card: MagicCard>: Equatable {
     artist = face.artist
     displayReleasedDate = String(localized: "Release Date: \(card.getReleasedAt())")
     
-    // Static Labels
+    // MARK: - Static Labels
     illstrautedLabel = String(localized: "Artist")
     viewRulingsLabel = String(localized: "Rulings")
     legalityLabel = String(localized: "Legality")
