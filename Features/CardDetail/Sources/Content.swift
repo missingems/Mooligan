@@ -42,14 +42,8 @@ struct Content<Card: MagicCard>: Equatable {
     tixPrice = card.getPrices().tix
     manaValue = card.getManaValue()
     isLandscape = card.isLandscape
-    colorIdentity = {
-      let identity = card.getColorIdentity().map { "{\($0.value.rawValue)}" }
-      if identity.isEmpty {
-        return ["{C}"]
-      } else {
-        return identity
-      }
-    }()
+    let identity = card.getColorIdentity().map { "{\($0.value.rawValue)}" }
+    colorIdentity = identity.isEmpty ? ["{C}"] : identity
     
     // MARK: - Selected Face Configuration
     let face = card.getCardFace(for: faceDirection)
