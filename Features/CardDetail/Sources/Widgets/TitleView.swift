@@ -1,21 +1,13 @@
 import DesignComponents
 import SwiftUI
 
-public struct TitleView: View {
+struct TitleView: View {
   let name: String
   let manaCosts: [String]
   
-  public init(
-    name: String,
-    manaCosts: [String]
-  ) {
-    self.name = name
-    self.manaCosts = manaCosts
-  }
-  
-  public var body: some View {
+  var body: some View {
     HStack(alignment: .top) {
-      Text(name).font(.headline).textSelection(.enabled)
+      Text(name).font(.headline)
       
       Spacer(minLength: 10.0)
       
@@ -28,6 +20,16 @@ public struct TitleView: View {
         CGSize(width: 0.0, height: 1.0)
       )
     }
+  }
+  
+  init?(
+    name: String?,
+    manaCosts: [String]
+  ) {
+    guard let name else { return nil }
+    
+    self.name = name
+    self.manaCosts = manaCosts
   }
 }
 

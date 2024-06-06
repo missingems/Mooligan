@@ -12,17 +12,17 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
         ScrollView {
           VStack(alignment: .leading, spacing: 0) {
             HeaderView(
-              imageURL: store.content.card.getCardFace(for: .front).getImageURL()!,
+              imageURL: store.content.imageURL,
               isFlippable: false,
               orientation: .portrait,
               rotation: 0
             )
             TitleView(
-              name: store.content.name ?? "",
+              name: store.content.name,
               manaCosts: store.content.manaCost
             )
-            
-            DescriptionView(store.content.text ?? "")
+            TypelineView(store.content.typeline)
+            DescriptionView(store.content.text)
           }
         }
         .background { Color(.secondarySystemBackground).ignoresSafeArea() }
