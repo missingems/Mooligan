@@ -23,4 +23,3 @@ struct DescriptionView: View {
 #Preview {
   DescriptionView("Crazy 8 - {R}")
 }
-
