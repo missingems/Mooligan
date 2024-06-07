@@ -28,7 +28,9 @@ struct Content<Card: MagicCard>: Equatable {
   let viewRulingsLabel: String
   let legalityLabel: String
   let displayReleasedDate: String
-  let card: Card
+  let setCode: String
+  let setIconURL: URL
+  private let card: Card
   var variants: [Card] = []
   
   init(card: Card, faceDirection: MagicCardFaceDirection = .front) {
