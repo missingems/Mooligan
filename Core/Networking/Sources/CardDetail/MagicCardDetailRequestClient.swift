@@ -2,7 +2,10 @@ import ScryfallKit
 
 public protocol MagicCardDetailRequestClient {
   associatedtype MagicCardModel: MagicCard
+  associatedtype MagicCardSet: GameSet
+  
   func getVariants(of card: MagicCardModel, page: Int) async throws -> [MagicCardModel]
+  func getSet(of card: MagicCardModel) async throws -> MagicCardSet
 }
 
 extension ScryfallClient: MagicCardDetailRequestClient {
@@ -21,4 +24,9 @@ extension ScryfallClient: MagicCardDetailRequestClient {
     )
     .data
   }
+  
+  public func getSet(of card: Card) async throws -> some GameSet {
+    try await getSet(identifier: .code(code: card.set))
+  }
 }
+
