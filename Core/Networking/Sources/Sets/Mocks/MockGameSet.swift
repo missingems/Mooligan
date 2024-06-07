@@ -1,10 +1,3 @@
-//
-//  MockGameSet.swift
-//  Networking
-//
-//  Created by Jun on 10/5/24.
-//
-
 import Foundation
 
 public struct MockGameSet: GameSet {

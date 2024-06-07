@@ -4,6 +4,8 @@ import Networking
 
 @Reducer
 struct Feature<Client: MagicCardDetailRequestClient> {
+  typealias Card = Client.MagicCardModel
+  
   @ObservableState
   struct State {
     var content: Content<Card>
@@ -33,7 +35,6 @@ struct Feature<Client: MagicCardDetailRequestClient> {
     case updateSetIconURL(_ setIconURL: URL)
   }
   
-  typealias Card = Client.MagicCardModel
   private let client: Client
   
   init(client: Client) {
