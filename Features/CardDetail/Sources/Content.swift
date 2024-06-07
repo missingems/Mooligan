@@ -8,6 +8,7 @@ struct Content<Card: MagicCard>: Equatable {
   }
   
   let id: String?
+  let collectorNumber: String
   let name: String?
   let text: String?
   let typeline: String?
@@ -29,11 +30,15 @@ struct Content<Card: MagicCard>: Equatable {
   let legalityLabel: String
   let displayReleasedDate: String
   let setCode: String
-  let setIconURL: URL
-  private let card: Card
+  var setIconURL: URL?
   var variants: [Card] = []
+  let card: Card
   
-  init(card: Card, faceDirection: MagicCardFaceDirection = .front) {
+  init(
+    card: Card,
+    setIconURL: URL?,
+    faceDirection: MagicCardFaceDirection = .front
+  ) {
     self.card = card
     id = card.getOracleText()
     manaCost = []
@@ -72,5 +77,8 @@ struct Content<Card: MagicCard>: Equatable {
     illstrautedLabel = String(localized: "Artist")
     viewRulingsLabel = String(localized: "Rulings")
     legalityLabel = String(localized: "Legality")
+    setCode = card.getSet()
+    collectorNumber = card.getCollectorNumber()
+    self.setIconURL = setIconURL
   }
 }

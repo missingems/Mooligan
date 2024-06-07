@@ -29,10 +29,10 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
               toughness: store.content.toughness,
               loyaltyCounters: store.content.loyalty,
               manaValue: store.content.manaValue,
-              collectorNumber: "",
+              collectorNumber: store.content.collectorNumber,
               colorIdentity: store.content.colorIdentity,
-              setCode: store."",
-              setIconURL: nil
+              setCode: store.content.setCode,
+              setIconURL: store.content.setIconURL
             )
           }
         }
@@ -40,7 +40,7 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
       }
     }
     .task {
-      store.send(.start)
+      store.send(.viewAppeared)
     }
   }
 }

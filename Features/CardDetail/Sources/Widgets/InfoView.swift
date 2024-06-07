@@ -10,6 +10,7 @@ struct InfoView: View {
         ForEach(widgets) { $0.view }
       }
     }
+    .scrollIndicators(.hidden)
   }
   
   init(
@@ -186,7 +187,7 @@ private extension Widget {
     if let code, let iconURL {
       VStack(alignment: .center) {
         content {
-          DesignComponents.IconLazyImage(iconURL, tintColor: .primary).frame(width: 25, height: 25)
+          IconLazyImage(iconURL, tintColor: .primary).frame(width: 25, height: 25)
           Text(code.uppercased()).font(.body).fontDesign(.serif)
         }
         
@@ -234,7 +235,7 @@ extension Widget {
     power: "1",
     toughness: "2",
     loyaltyCounters: "1",
-    manaValue: "2",
+    manaValue: 2,
     collectorNumber: "123",
     colorIdentity: ["{R}"],
     setCode: "123",
