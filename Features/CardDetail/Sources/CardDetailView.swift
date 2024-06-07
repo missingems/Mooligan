@@ -24,6 +24,16 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
             TypelineView(store.content.typeline)
             DescriptionView(store.content.text)
             FlavorView(store.content.flavorText)
+            InfoView(
+              power: store.content.power,
+              toughness: store.content.toughness,
+              loyaltyCounters: store.content.loyalty,
+              manaValue: store.content.manaValue,
+              collectorNumber: "",
+              colorIdentity: store.content.colorIdentity,
+              setCode: store."",
+              setIconURL: nil
+            )
           }
         }
         .background { Color(.secondarySystemBackground).ignoresSafeArea() }
