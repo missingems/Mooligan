@@ -18,21 +18,21 @@ struct Feature<Client: MagicCardDetailRequestClient> {
       switch entryPoint {
       case .query:
         content = Content(card: card, setIconURL: nil)
-        start = .fetchSet
+        start = .fetchSet(card: card)
         
       case let .set(value):
         content = Content(card: card, setIconURL: value.iconURL)
-        start = .fetchVariants
+        start = .fetchVariants(card: card)
       }
     }
   }
   
-  enum Action: Equatable {
-    case fetchSet
-    case fetchVariants
+  indirect enum Action: Equatable {
+    case fetchSet(card: Card)
+    case fetchVariants(card: Card)
     case updateVariants(_ variants: [Card])
-    case updateSetIconURL(_ setIconURL: URL)
-    case viewAppeared
+    case updateSetIconURL(_ setIconURL: URL?)
+    case viewAppeared(initialAction: Action)
   }
   
   private let client: Client
@@ -52,20 +52,14 @@ struct Feature<Client: MagicCardDetailRequestClient> {
         state.content.setIconURL = value
         return .none
         
-      case .fetchSet:
-        let card = state.content.card
-        return .run { send in
-          guard let url = try await client.getSet(of: card).iconURL else { return }
-          await send(.updateSetIconURL(url))
-        }
+      case let .fetchSet(card):
+        return .run { try await $0(.updateSetIconURL(client.getSet(of: card).iconURL)) }
         
-      case .fetchVariants:
-        let card = state.content.card
+      case let .fetchVariants(card):
         return .run { try await $0(.updateVariants(await client.getVariants(of: card, page: 0))) }
         
-      case .viewAppeared:
-        let start = state.start
-        return .run { await $0(start) }
+      case let .viewAppeared(action):
+        return .run { await $0(action) }
       }
     }
   }
