@@ -34,6 +34,11 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
               setCode: store.content.setCode,
               setIconURL: store.content.setIconURL
             )
+            LegalityView(
+              title: store.content.legalityLabel,
+              displayReleaseDate: store.content.displayReleasedDate,
+              legalities: store.content.legalities
+            )
           }
         }
         .background { Color(.secondarySystemBackground).ignoresSafeArea() }
