@@ -10,12 +10,12 @@ final class FeatureTests: XCTestCase {
   
   func test_whenStateEntryPointIsQuery_startShouldFetchSet() {
     let state = Feature<Client>.State(card: card, entryPoint: .query)
-    XCTAssertEqual(state.start, .fetchSet)
+    XCTAssertEqual(state.start, .fetchSet(card: card))
   }
   
   func test_whenStateEntryPointIsSet_startShouldFetchVariants() {
-    let state = Feature<Client>.State(card: card, entryPoint: .query)
-    XCTAssertEqual(state.start, .fetchSet)
+    let state = Feature<Client>.State(card: card, entryPoint: .set(MockGameSet()))
+    XCTAssertEqual(state.start, .fetchVariants(card: card))
   }
   
   @MainActor
@@ -27,8 +27,8 @@ final class FeatureTests: XCTestCase {
       }
     )
     
-    await store.send(.viewAppeared)
-    await store.receive(.fetchSet)
+    await store.send(.viewAppeared(initialAction: store.state.start))
+    await store.receive(.fetchSet(card: card))
     await store.receive(.updateSetIconURL(URL(string: "https://mooligan.com")!)) { state in
       state.content.setIconURL = URL(string: "https://mooligan.com")
     }
@@ -41,8 +41,8 @@ final class FeatureTests: XCTestCase {
       reducer: { Feature(client: Client()) }
     )
     
-    await store.send(.viewAppeared)
-    await store.receive(.fetchVariants)
+    await store.send(.viewAppeared(initialAction: store.state.start))
+    await store.receive(.fetchVariants(card: card))
     await store.receive(.updateVariants(cards)) { [weak self] state in
       guard let cards = self?.cards else { return }
       state.content.variants = cards
