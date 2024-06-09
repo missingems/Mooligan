@@ -39,7 +39,7 @@ struct LegalityView: View {
     let color = Color(legality.backgroundColorName, bundle: DesignComponentsResources.bundle)
     
     HStack {
-      Text(legality.title)
+      Text(legality.value)
         .foregroundStyle(.white)
         .frame(minWidth: 0, maxWidth: .infinity).font(.system(size: 12))
         .padding(.vertical, 5.0)
@@ -48,7 +48,7 @@ struct LegalityView: View {
         .clipShape(ButtonBorderShape.roundedRectangle)
         .shadow(color: color.opacity(0.38), radius: 5.0)
       
-      Text(legality.value)
+      Text(legality.title)
         .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
         .font(.caption)
         .multilineTextAlignment(.leading)
