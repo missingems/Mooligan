@@ -29,4 +29,3 @@ extension ScryfallClient: MagicCardDetailRequestClient {
     try await getSet(identifier: .code(code: card.set))
   }
 }
-

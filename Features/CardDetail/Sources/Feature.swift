@@ -4,8 +4,10 @@ import Networking
 
 @Reducer
 struct Feature<Client: MagicCardDetailRequestClient> {
+  typealias Card = Client.MagicCardModel
+  
   @ObservableState
-  struct State {
+  struct State: Equatable {
     var content: Content<Card>
     let start: Action
     
@@ -25,15 +27,14 @@ struct Feature<Client: MagicCardDetailRequestClient> {
     }
   }
   
-  enum Action {
+  enum Action: Equatable {
     case fetchSet
     case fetchVariants
-    case viewAppeared
     case updateVariants(_ variants: [Card])
     case updateSetIconURL(_ setIconURL: URL)
+    case viewAppeared
   }
   
-  typealias Card = Client.MagicCardModel
   private let client: Client
   
   init(client: Client) {

@@ -19,10 +19,8 @@ final class BrowseFeatureTests: XCTestCase {
   override func setUp() {
     super.setUp()
     
-    store = TestStore(
-      initialState: Feature<MockBrowseRequestClient>.State()
-    ) {
-      Feature<MockBrowseRequestClient>(client: MockBrowseRequestClient())
+    store = TestStore(initialState: Feature.State()) {
+      Feature(client: MockBrowseRequestClient())
     }
   }
   
