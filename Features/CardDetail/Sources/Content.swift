@@ -33,6 +33,7 @@ struct Content<Card: MagicCard>: Equatable {
   var setIconURL: URL?
   var variants: [Card] = []
   let card: Card
+  let legalities: [MagicCardLegalitiesValue]
   
   init(
     card: Card,
@@ -79,6 +80,7 @@ struct Content<Card: MagicCard>: Equatable {
     legalityLabel = String(localized: "Legality")
     setCode = card.getSet()
     collectorNumber = card.getCollectorNumber()
+    legalities = card.getLegalities().value
     self.setIconURL = setIconURL
   }
 }

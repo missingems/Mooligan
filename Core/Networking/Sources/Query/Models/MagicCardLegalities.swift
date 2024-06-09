@@ -9,6 +9,55 @@ public enum MagicCardLegalitiesValue: Equatable, Sendable {
   case penny(MagicCardLegality)
   case commander(MagicCardLegality)
   case brawl(MagicCardLegality)
+  
+  public var value: String {
+    switch self {
+    case 
+      let .standard(magicCardLegality),
+      let .historic(magicCardLegality),
+      let .pioneer(magicCardLegality),
+      let .modern(magicCardLegality),
+      let .legacy(magicCardLegality),
+      let .pauper(magicCardLegality),
+      let .vintage(magicCardLegality),
+      let .penny(magicCardLegality),
+      let .commander(magicCardLegality),
+      let .brawl(magicCardLegality):
+      magicCardLegality.label
+    }
+  }
+  
+  public var backgroundColorName: String {
+    switch self {
+    case
+      let .standard(magicCardLegality),
+      let .historic(magicCardLegality),
+      let .pioneer(magicCardLegality),
+      let .modern(magicCardLegality),
+      let .legacy(magicCardLegality),
+      let .pauper(magicCardLegality),
+      let .vintage(magicCardLegality),
+      let .penny(magicCardLegality),
+      let .commander(magicCardLegality),
+      let .brawl(magicCardLegality):
+      magicCardLegality.backgroundColorName
+    }
+  }
+  
+  public var title: String {
+    switch self {
+    case .standard: String(localized: "Standard")
+    case .historic: String(localized: "Historic")
+    case .pioneer: String(localized: "Pioneer")
+    case .modern: String(localized: "Modern")
+    case .legacy: String(localized: "Legacy")
+    case .pauper: String(localized: "Pauper")
+    case .vintage: String(localized: "Vintage")
+    case .penny: String(localized: "Penny")
+    case .commander: String(localized: "Commander")
+    case .brawl: String(localized: "Brawl")
+    }
+  }
 }
 
 public enum MagicCardLegality: String, Equatable, Sendable {
@@ -23,14 +72,21 @@ public enum MagicCardLegality: String, Equatable, Sendable {
   
   public var label: String {
     switch self {
-    case .notLegal:
-      return "Not Legal"
-    default:
-      return rawValue.capitalized
+    case .notLegal: String(localized: "Not Legal")
+    default: String(localized: "\(rawValue.capitalized)")
+    }
+  }
+  
+  public var backgroundColorName: String {
+    switch self {
+    case .banned: "banned"
+    case .legal: "legal"
+    case .restricted: "restricted"
+    case .notLegal: "notLegal"
     }
   }
 }
 
-public protocol MagicCardLegalities {
+public protocol MagicCardLegalities: Equatable {
   var value: [MagicCardLegalitiesValue] { get }
 }
