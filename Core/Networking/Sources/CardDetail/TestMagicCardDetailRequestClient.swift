@@ -13,7 +13,7 @@ struct TestMagicCardDetailRequestClient: MagicCardDetailRequestClient {
       code: "123",
       numberOfCards: 123,
       name: "123",
-      iconURL: nil
+      iconURL: URL(string: "https://mooligan.com")
     )
   }
 }
