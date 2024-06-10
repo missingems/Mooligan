@@ -94,7 +94,7 @@ extension HeaderView {
         HeaderView(
           imageURL: card.getCardFace(for: .front).getImageURL()!,
           isFlippable: card.isFlippable,
-          orientation: card.isLandscape ? .landscape : .portrait,
+          orientation: card.isSplit ? .landscape : .portrait,
           rotation: 0
         )
       }

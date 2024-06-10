@@ -34,9 +34,6 @@ public protocol MagicCard: Equatable, Hashable, Identifiable, Sendable {
   /// This card's starting loyalty counters if it's a planeswalker
   func getLoyalty() -> String?
   
-  /// The mana cost for this card
-  func getManaCost() -> String?
-  
   /// The name of this card
   func getName() -> String
   
@@ -97,9 +94,13 @@ public protocol MagicCard: Equatable, Hashable, Identifiable, Sendable {
   /// Get card art in normal quality
   func getImageURL() -> URL?
   
+  func getDisplayName(faceDirection: MagicCardFaceDirection) -> String
+  func getDisplayText(faceDirection: MagicCardFaceDirection) -> String?
+  func getDisplayManaCost(faceDirection: MagicCardFaceDirection) -> String?
+  func getDisplayTypeline(faceDirection: MagicCardFaceDirection) -> String?
   var isFlippable: Bool { get }
   var isRotatable: Bool { get }
-  var isLandscape: Bool { get }
+  var isSplit: Bool { get }
   var isPhyrexian: Bool { get }
 }
 

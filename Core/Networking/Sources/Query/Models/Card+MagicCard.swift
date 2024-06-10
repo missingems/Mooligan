@@ -2,6 +2,25 @@ import Foundation
 import ScryfallKit
 
 extension Card: MagicCard {
+  public func getDisplayManaCost(faceDirection: MagicCardFaceDirection) -> String? {
+    getCardFace(for: faceDirection).manaCost
+  }
+  
+  public func getDisplayName(faceDirection: MagicCardFaceDirection) -> String {
+    let face = getCardFace(for: faceDirection)
+    return isPhyrexian ? face.name : face.printedName ?? face.name
+  }
+  
+  public func getDisplayText(faceDirection: MagicCardFaceDirection) -> String? {
+    let face = getCardFace(for: faceDirection)
+    return isPhyrexian ? face.oracleText : face.printedText ?? face.oracleText
+  }
+  
+  public func getDisplayTypeline(faceDirection: MagicCardFaceDirection) -> String? {
+    let face = getCardFace(for: faceDirection)
+    return isPhyrexian ? face.typeLine : face.printedTypeLine ?? face.typeLine
+  }
+  
   public func getOracleID() -> String? { oracleId }
   public func getLanguage() -> String { lang }
   public func getManaValue() -> Double? { cmc }
@@ -12,7 +31,6 @@ extension Card: MagicCard {
   public func getLayout() -> any MagicCardLayout { layout }
   public func getLegalities() -> any MagicCardLegalities { legalities }
   public func getLoyalty() -> String? { loyalty }
-  public func getManaCost() -> String? { manaCost }
   public func getName() -> String { name }
   public func getOracleText() -> String? { oracleText }
   public func getPower() -> String? { power }
@@ -58,7 +76,7 @@ extension Card: MagicCard {
     layout == .flip
   }
   
-  public var isLandscape: Bool {
+  public var isSplit: Bool {
     layout == .split
   }
   
@@ -91,6 +109,6 @@ extension Card: MagicCardFace {
   }
   
   public var manaCost: String {
-    getManaCost() ?? ""
+    self.manaCost
   }
 }

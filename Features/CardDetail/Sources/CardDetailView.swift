@@ -17,13 +17,17 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
               orientation: .portrait,
               rotation: 0
             )
-            TitleView(
-              name: store.content.name,
-              manaCosts: store.content.manaCost
-            )
-            TypelineView(store.content.typeline)
-            DescriptionView(store.content.text)
-            FlavorView(store.content.flavorText)
+            
+            ForEach(store.content.descriptions) { description in
+              TitleView(
+                name: description.name,
+                manaCost: []
+              )
+              TypelineView(description.typeline)
+              DescriptionView(description.text)
+              FlavorView(description.flavorText)
+            }
+            
             InfoView(
               power: store.content.power,
               toughness: store.content.toughness,
