@@ -2,25 +2,6 @@ import Foundation
 import ScryfallKit
 
 extension Card: MagicCard {
-  public func getDisplayManaCost(faceDirection: MagicCardFaceDirection) -> String? {
-    getCardFace(for: faceDirection).manaCost
-  }
-  
-  public func getDisplayName(faceDirection: MagicCardFaceDirection) -> String {
-    let face = getCardFace(for: faceDirection)
-    return isPhyrexian ? face.name : face.printedName ?? face.name
-  }
-  
-  public func getDisplayText(faceDirection: MagicCardFaceDirection) -> String? {
-    let face = getCardFace(for: faceDirection)
-    return isPhyrexian ? face.oracleText : face.printedText ?? face.oracleText
-  }
-  
-  public func getDisplayTypeline(faceDirection: MagicCardFaceDirection) -> String? {
-    let face = getCardFace(for: faceDirection)
-    return isPhyrexian ? face.typeLine : face.printedTypeLine ?? face.typeLine
-  }
-  
   public func getOracleID() -> String? { oracleId }
   public func getLanguage() -> String { lang }
   public func getManaValue() -> Double? { cmc }
@@ -50,11 +31,60 @@ extension Card: MagicCard {
   public func getReleasedAt() -> String { releasedAt }
   public func getSetName() -> String { setName }
   public func getSet() -> String { self.set }
+}
+
+extension Card: MagicCardFace {
+  public var manaValue: Double? {
+    return getManaValue()
+  }
+  
+  public var magicColorIndicator: [any MagicCardColor]? {
+    return getColorIndicator()
+  }
+  
+  public var magicColors: [any MagicCardColor]? {
+    return getColors()
+  }
+  
+  public func getManaCost() -> String? {
+    return manaCost
+  }
+}
+
+extension Card {
+  public func getDisplayManaCost(faceDirection: MagicCardFaceDirection) -> [String] {
+    let cost = getCardFace(for: faceDirection).getManaCost()
+    
+    if let manaCost = cost?.replacingOccurrences(of: "/", with: ":").replacingOccurrences(of: "∞", with: "INFINITY") {
+      let pattern = try! Regex("\\{[^}]+\\}")
+      
+      return manaCost.matches(of: pattern).compactMap { match in
+        return String(manaCost[match.range])
+      }
+    } else {
+      return []
+    }
+  }
+  
+  public func getDisplayName(faceDirection: MagicCardFaceDirection) -> String {
+    let face = getCardFace(for: faceDirection)
+    return isPhyrexian ? face.name : face.printedName ?? face.name
+  }
+  
+  public func getDisplayText(faceDirection: MagicCardFaceDirection) -> String? {
+    let face = getCardFace(for: faceDirection)
+    return isPhyrexian ? face.oracleText : face.printedText ?? face.oracleText
+  }
+  
+  public func getDisplayTypeline(faceDirection: MagicCardFaceDirection) -> String? {
+    let face = getCardFace(for: faceDirection)
+    return isPhyrexian ? face.typeLine : face.printedTypeLine ?? face.typeLine
+  }
   
   public func getImageURL() -> URL? {
-    guard 
+    guard
       let uri = imageUris?.normal,
-      let url = URL(string: uri) 
+      let url = URL(string: uri)
     else {
       return nil
     }
@@ -87,28 +117,10 @@ extension Card: MagicCard {
   public func getCardFace(for direction: MagicCardFaceDirection) -> any MagicCardFace {
     switch direction {
     case  .front:
-      return self
+      return cardFaces?.first ?? self
       
     case .back:
       return cardFaces?.last ?? self
     }
-  }
-}
-
-extension Card: MagicCardFace {
-  public var manaValue: Double? {
-    getManaValue()
-  }
-  
-  public var magicColorIndicator: [any MagicCardColor]? {
-    getColorIndicator()
-  }
-  
-  public var magicColors: [any MagicCardColor]? {
-    getColors()
-  }
-  
-  public var manaCost: String {
-    
   }
 }

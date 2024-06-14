@@ -8,7 +8,7 @@ struct Content<Card: MagicCard>: Equatable {
     let text: String?
     let typeline: String?
     let flavorText: String?
-    let manaCost: String?
+    let manaCost: [String]
   }
   
   enum FaceDirection: Equatable {
@@ -59,18 +59,14 @@ struct Content<Card: MagicCard>: Equatable {
     
     // MARK: - Selected Face Configuration
     let face = card.getCardFace(for: faceDirection)
-    imageURL = face.getImageURL()
+    imageURL = face.getImageURL() ?? card.getImageURL()
     
-    descriptions = {
-      if card.isSplit {
-        [
-          Self.makeDescription(faceDirection: .front, card: card),
-          Self.makeDescription(faceDirection: .back, card: card),
-        ]
-      } else {
-        [Self.makeDescription(faceDirection: faceDirection, card: card)]
-      }
-    }()
+    descriptions = card.isSplit ? [
+      Self.makeDescription(faceDirection: .front, card: card),
+      Self.makeDescription(faceDirection: .back, card: card)
+    ] : [
+      Self.makeDescription(faceDirection: faceDirection, card: card)
+    ]
     
     power = face.power
     toughness = face.toughness

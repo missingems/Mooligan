@@ -21,11 +21,6 @@ public protocol MagicCardFace {
   /// This card's starting loyalty counters if it's a planeswalker
   var loyalty: String? { get }
   
-  /// The mana cost for this card.
-  ///
-  /// This value will be any empty string "" if the cost is absent. Remember that per the game rules, a missing mana cost and a mana cost of {0} are different values.
-  var manaCost: String { get }
-  
   /// The name of this card
   ///
   /// If the card has multiple faces the names will be separated by a "//" such as "Wear // Tear"
@@ -55,4 +50,7 @@ public protocol MagicCardFace {
   
   /// Get card art in normal quality
   func getImageURL() -> URL?
+  
+  /// The mana cost for this card.
+  func getManaCost() -> String?
 }

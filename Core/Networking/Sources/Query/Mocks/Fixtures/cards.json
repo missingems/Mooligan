@@ -1,65 +1,64 @@
 [
   {
     "object": "card",
-    "id": "d99a9a7d-d9ca-4c11-80ab-e39d5943a315",
-    "oracle_id": "1f74e26f-5cf3-4b0e-bcc6-f858599474fc",
+    "id": "0f279560-7e9f-4a6d-9fd6-6c8c6bd94a1b",
+    "oracle_id": "9842734c-1eac-4509-a731-4c22017ae586",
     "multiverse_ids": [
-      522262
+      500936
     ],
-    "mtgo_id": 90749,
-    "tcgplayer_id": 239722,
-    "cardmarket_id": 566268,
-    "name": "Asmoranomardicadaistinaculdacar",
+    "mtgo_id": 85730,
+    "tcgplayer_id": 227383,
+    "cardmarket_id": 514789,
+    "name": "Wear // Tear",
     "lang": "en",
-    "released_at": "2021-06-18",
-    "uri": "https://api.scryfall.com/cards/d99a9a7d-d9ca-4c11-80ab-e39d5943a315",
-    "scryfall_uri": "https://scryfall.com/card/mh2/186/asmoranomardicadaistinaculdacar?utm_source=api",
-    "layout": "normal",
+    "released_at": "2020-11-20",
+    "uri": "https://api.scryfall.com/cards/0f279560-7e9f-4a6d-9fd6-6c8c6bd94a1b",
+    "scryfall_uri": "https://scryfall.com/card/cmr/456/wear-tear?utm_source=api",
+    "layout": "split",
     "highres_image": true,
     "image_status": "highres_scan",
     "image_uris": {
-      "small": "https://cards.scryfall.io/small/front/d/9/d99a9a7d-d9ca-4c11-80ab-e39d5943a315.jpg?1632831210",
-      "normal": "https://cards.scryfall.io/normal/front/d/9/d99a9a7d-d9ca-4c11-80ab-e39d5943a315.jpg?1632831210",
-      "large": "https://cards.scryfall.io/large/front/d/9/d99a9a7d-d9ca-4c11-80ab-e39d5943a315.jpg?1632831210",
-      "png": "https://cards.scryfall.io/png/front/d/9/d99a9a7d-d9ca-4c11-80ab-e39d5943a315.png?1632831210",
-      "art_crop": "https://cards.scryfall.io/art_crop/front/d/9/d99a9a7d-d9ca-4c11-80ab-e39d5943a315.jpg?1632831210",
-      "border_crop": "https://cards.scryfall.io/border_crop/front/d/9/d99a9a7d-d9ca-4c11-80ab-e39d5943a315.jpg?1632831210"
+      "small": "https://cards.scryfall.io/small/front/0/f/0f279560-7e9f-4a6d-9fd6-6c8c6bd94a1b.jpg?1608917739",
+      "normal": "https://cards.scryfall.io/normal/front/0/f/0f279560-7e9f-4a6d-9fd6-6c8c6bd94a1b.jpg?1608917739",
+      "large": "https://cards.scryfall.io/large/front/0/f/0f279560-7e9f-4a6d-9fd6-6c8c6bd94a1b.jpg?1608917739",
+      "png": "https://cards.scryfall.io/png/front/0/f/0f279560-7e9f-4a6d-9fd6-6c8c6bd94a1b.png?1608917739",
+      "art_crop": "https://cards.scryfall.io/art_crop/front/0/f/0f279560-7e9f-4a6d-9fd6-6c8c6bd94a1b.jpg?1608917739",
+      "border_crop": "https://cards.scryfall.io/border_crop/front/0/f/0f279560-7e9f-4a6d-9fd6-6c8c6bd94a1b.jpg?1608917739"
     },
-    "mana_cost": "",
-    "cmc": 0,
-    "type_line": "Legendary Creature — Human Wizard",
-    "oracle_text": "As long as you've discarded a card this turn, you may pay {B/R} to cast this spell.\nWhen Asmoranomardicadaistinaculdacar enters the battlefield, you may search your library for a card named The Underworld Cookbook, reveal it, put it into your hand, then shuffle.\nSacrifice two Foods: Target creature deals 6 damage to itself.",
-    "power": "3",
-    "toughness": "3",
+    "mana_cost": "{1}{R} // {W}",
+    "cmc": 3,
+    "type_line": "Instant // Instant",
     "colors": [
-      "B",
-      "R"
-    ],
-    "color_indicator": [
-      "B",
-      "R"
+      "R",
+      "W"
     ],
     "color_identity": [
-      "B",
-      "R"
+      "R",
+      "W"
     ],
-    "keywords": [],
-    "all_parts": [
+    "keywords": [
+      "Fuse"
+    ],
+    "card_faces": [
       {
-        "object": "related_card",
-        "id": "2879f780-e17f-4e68-931e-6e45f9df28e1",
-        "component": "combo_piece",
-        "name": "Asmoranomardicadaistinaculdacar",
-        "type_line": "Legendary Creature — Human Wizard",
-        "uri": "https://api.scryfall.com/cards/2879f780-e17f-4e68-931e-6e45f9df28e1"
+        "object": "card_face",
+        "name": "Wear",
+        "mana_cost": "{1}{R}",
+        "type_line": "Instant",
+        "oracle_text": "Destroy target artifact.\nFuse (You may cast one or both halves of this card from your hand.)",
+        "artist": "Ryan Pancoast",
+        "artist_id": "89cc9475-dda2-4d13-bf88-54b92867a25c",
+        "illustration_id": "35dc8f1e-5c26-4f3f-98eb-62123968a04f"
       },
       {
-        "object": "related_card",
-        "id": "4f24504e-b397-4b98-b8e8-8166457f7a2e",
-        "component": "combo_piece",
-        "name": "The Underworld Cookbook",
-        "type_line": "Artifact",
-        "uri": "https://api.scryfall.com/cards/4f24504e-b397-4b98-b8e8-8166457f7a2e"
+        "object": "card_face",
+        "name": "Tear",
+        "flavor_name": "",
+        "mana_cost": "{W}",
+        "type_line": "Instant",
+        "oracle_text": "Destroy target enchantment.\nFuse (You may cast one or both halves of this card from your hand.)",
+        "artist": "Ryan Pancoast",
+        "artist_id": "89cc9475-dda2-4d13-bf88-54b92867a25c"
       }
     ],
     "legalities": {
@@ -68,7 +67,7 @@
       "historic": "not_legal",
       "timeless": "not_legal",
       "gladiator": "not_legal",
-      "pioneer": "not_legal",
+      "pioneer": "legal",
       "explorer": "not_legal",
       "modern": "legal",
       "legacy": "legal",
@@ -81,7 +80,7 @@
       "brawl": "not_legal",
       "alchemy": "not_legal",
       "paupercommander": "not_legal",
-      "duel": "restricted",
+      "duel": "legal",
       "oldschool": "not_legal",
       "premodern": "not_legal",
       "predh": "not_legal"
@@ -91,68 +90,58 @@
       "mtgo"
     ],
     "reserved": false,
-    "foil": true,
+    "foil": false,
     "nonfoil": true,
     "finishes": [
-      "nonfoil",
-      "foil"
+      "nonfoil"
     ],
     "oversized": false,
     "promo": false,
-    "reprint": false,
+    "reprint": true,
     "variation": false,
-    "set_id": "c1c7eb8c-f205-40ab-a609-767cb296544e",
-    "set": "mh2",
-    "set_name": "Modern Horizons 2",
+    "set_id": "39de6fbf-1f11-48d0-8f04-f0407f6a0732",
+    "set": "cmr",
+    "set_name": "Commander Legends",
     "set_type": "draft_innovation",
-    "set_uri": "https://api.scryfall.com/sets/c1c7eb8c-f205-40ab-a609-767cb296544e",
-    "set_search_uri": "https://api.scryfall.com/cards/search?order=set&q=e%3Amh2&unique=prints",
-    "scryfall_set_uri": "https://scryfall.com/sets/mh2?utm_source=api",
-    "rulings_uri": "https://api.scryfall.com/cards/d99a9a7d-d9ca-4c11-80ab-e39d5943a315/rulings",
-    "prints_search_uri": "https://api.scryfall.com/cards/search?order=released&q=oracleid%3A1f74e26f-5cf3-4b0e-bcc6-f858599474fc&unique=prints",
-    "collector_number": "186",
+    "set_uri": "https://api.scryfall.com/sets/39de6fbf-1f11-48d0-8f04-f0407f6a0732",
+    "set_search_uri": "https://api.scryfall.com/cards/search?order=set&q=e%3Acmr&unique=prints",
+    "scryfall_set_uri": "https://scryfall.com/sets/cmr?utm_source=api",
+    "rulings_uri": "https://api.scryfall.com/cards/0f279560-7e9f-4a6d-9fd6-6c8c6bd94a1b/rulings",
+    "prints_search_uri": "https://api.scryfall.com/cards/search?order=released&q=oracleid%3A9842734c-1eac-4509-a731-4c22017ae586&unique=prints",
+    "collector_number": "456",
     "digital": false,
-    "rarity": "rare",
+    "rarity": "uncommon",
     "card_back_id": "0aeebaf5-8c7d-4636-9e82-8c27447861f7",
     "artist": "Ryan Pancoast",
     "artist_ids": [
       "89cc9475-dda2-4d13-bf88-54b92867a25c"
     ],
-    "illustration_id": "109aa8fc-4587-4092-9a51-da3a81099ae5",
+    "illustration_id": "35dc8f1e-5c26-4f3f-98eb-62123968a04f",
     "border_color": "black",
     "frame": "2015",
-    "frame_effects": [
-      "legendary"
-    ],
-    "security_stamp": "oval",
     "full_art": false,
     "textless": false,
-    "booster": true,
+    "booster": false,
     "story_spotlight": false,
-    "edhrec_rank": 9503,
-    "preview": {
-      "source": "Wizards of the Coast",
-      "source_uri": "https://magic.wizards.com/en/articles/archive/card-preview/challenge-accepted-2021-05-26",
-      "previewed_at": "2021-05-26"
-    },
+    "edhrec_rank": 756,
     "prices": {
-      "usd": "0.17",
-      "usd_foil": "2.11",
+      "usd": "0.66",
+      "usd_foil": null,
       "usd_etched": null,
-      "eur": "0.24",
-      "eur_foil": "0.95",
-      "tix": "0.03"
+      "eur": "1.07",
+      "eur_foil": null,
+      "tix": "2.60"
     },
     "related_uris": {
-      "gatherer": "https://gatherer.wizards.com/Pages/Card/Details.aspx?multiverseid=522262&printed=false",
-      "tcgplayer_infinite_articles": "https://tcgplayer.pxf.io/c/4931599/1830156/21018?subId1=api&trafcat=infinite&u=https%3A%2F%2Finfinite.tcgplayer.com%2Fsearch%3FcontentMode%3Darticle%26game%3Dmagic%26partner%3Dscryfall%26q%3DAsmoranomardicadaistinaculdacar",
-      "tcgplayer_infinite_decks": "https://tcgplayer.pxf.io/c/4931599/1830156/21018?subId1=api&trafcat=infinite&u=https%3A%2F%2Finfinite.tcgplayer.com%2Fsearch%3FcontentMode%3Ddeck%26game%3Dmagic%26partner%3Dscryfall%26q%3DAsmoranomardicadaistinaculdacar",
-      "edhrec": "https://edhrec.com/route/?cc=Asmoranomardicadaistinaculdacar"
+      "gatherer": "https://gatherer.wizards.com/Pages/Card/Details.aspx?multiverseid=500936&printed=false",
+      "tcgplayer_infinite_articles": "https://tcgplayer.pxf.io/c/4931599/1830156/21018?subId1=api&trafcat=infinite&u=https%3A%2F%2Finfinite.tcgplayer.com%2Fsearch%3FcontentMode%3Darticle%26game%3Dmagic%26partner%3Dscryfall%26q%3DWear%2B%252F%252F%2BTear",
+      "tcgplayer_infinite_decks": "https://tcgplayer.pxf.io/c/4931599/1830156/21018?subId1=api&trafcat=infinite&u=https%3A%2F%2Finfinite.tcgplayer.com%2Fsearch%3FcontentMode%3Ddeck%26game%3Dmagic%26partner%3Dscryfall%26q%3DWear%2B%252F%252F%2BTear",
+      "edhrec": "https://edhrec.com/route/?cc=Wear+%2F%2F+Tear"
     },
     "purchase_uris": {
-      "tcgplayer": "https://tcgplayer.pxf.io/c/4931599/1830156/21018?subId1=api&u=https%3A%2F%2Fwww.tcgplayer.com%2Fproduct%2F239722%3Fpage%3D1",
-      "cardmarket": "https://www.cardmarket.com/en/Magic/Products/Singles/Modern-Horizons-2/Asmoranomardicadaistinaculdacar?referrer=scryfall&utm_campaign=card_prices&utm_medium=text&utm_source=scryfall",
-      "cardhoarder": "https://www.cardhoarder.com/cards/90749?affiliate_id=scryfall&ref=card-profile&utm_campaign=affiliate&utm_medium=card&utm_source=scryfall"
+      "tcgplayer": "https://tcgplayer.pxf.io/c/4931599/1830156/21018?subId1=api&u=https%3A%2F%2Fwww.tcgplayer.com%2Fproduct%2F227383%3Fpage%3D1",
+      "cardmarket": "https://www.cardmarket.com/en/Magic/Products/Singles/Commander-Legends-Extras/Wear-Tear?referrer=scryfall&utm_campaign=card_prices&utm_medium=text&utm_source=scryfall",
+      "cardhoarder": "https://www.cardhoarder.com/cards/85730?affiliate_id=scryfall&ref=card-profile&utm_campaign=affiliate&utm_medium=card&utm_source=scryfall"
     }
   }
 ]

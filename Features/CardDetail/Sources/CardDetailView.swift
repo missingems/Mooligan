@@ -21,7 +21,7 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
             ForEach(store.content.descriptions) { description in
               TitleView(
                 name: description.name,
-                manaCost: []
+                manaCost: description.manaCost
               )
               TypelineView(description.typeline)
               DescriptionView(description.text)

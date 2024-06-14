@@ -96,8 +96,9 @@ public protocol MagicCard: Equatable, Hashable, Identifiable, Sendable {
   
   func getDisplayName(faceDirection: MagicCardFaceDirection) -> String
   func getDisplayText(faceDirection: MagicCardFaceDirection) -> String?
-  func getDisplayManaCost(faceDirection: MagicCardFaceDirection) -> String?
+  func getDisplayManaCost(faceDirection: MagicCardFaceDirection) -> [String]
   func getDisplayTypeline(faceDirection: MagicCardFaceDirection) -> String?
+  
   var isFlippable: Bool { get }
   var isRotatable: Bool { get }
   var isSplit: Bool { get }
