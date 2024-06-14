@@ -11,7 +11,7 @@ final actor MockBrowseRequestClient: GameSetRequestClient {
   func getAllSets() -> [MockGameSet] {
     return [gameSet]
   }
-}     
+}
 
 final class BrowseFeatureTests: XCTestCase {
   private var store: TestStore<Feature<MockBrowseRequestClient>.State, Feature<MockBrowseRequestClient>.Action>!
