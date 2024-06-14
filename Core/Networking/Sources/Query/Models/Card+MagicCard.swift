@@ -109,6 +109,6 @@ extension Card: MagicCardFace {
   }
   
   public var manaCost: String {
-    ""
+    
   }
 }
