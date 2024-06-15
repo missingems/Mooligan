@@ -13,8 +13,6 @@ let project = Project(
       resources: ["Resources/**"],
       dependencies: [
         .external(name: "NukeUI"),
-        .external(name: "SDWebImageSwiftUI"),
-        .external(name: "SDWebImageSVGNativeCoder"),
         .external(name: "Shimmer")
       ]
     )

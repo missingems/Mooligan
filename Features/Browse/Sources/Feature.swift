@@ -43,7 +43,7 @@ struct Feature<Client: GameSetRequestClient> {
       case .fetchSets:
         state.isLoading = true
         
-        return .run { send in
+        return .run { [client = self.client] send in
           let objectList = try await client.getAllSets()
           await send(.updateSets(objectList))
         }

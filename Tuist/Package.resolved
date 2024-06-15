@@ -14,8 +14,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/kean/Nuke",
       "state" : {
-        "revision" : "8e431251dea0081b6ab154dab61a6ec74e4b6577",
-        "version" : "12.6.0"
+        "revision" : "084076db4f9b9ee4db51177ef5a4879689c1aa09",
+        "version" : "12.7.2"
       }
     },
     {
@@ -23,44 +23,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/JacobHearst/ScryfallKit",
       "state" : {
-        "revision" : "b73ee4d72b40dc0a65b168efe60bfe2985d2ad79",
-        "version" : "5.9.0"
-      }
-    },
-    {
-      "identity" : "sdwebimage",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/SDWebImage/SDWebImage.git",
-      "state" : {
-        "revision" : "f6afa0132961d593f07970d84e2d8b588c29ea04",
-        "version" : "5.19.1"
-      }
-    },
-    {
-      "identity" : "sdwebimagesvgnativecoder",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/SDWebImage/SDWebImageSVGNativeCoder",
-      "state" : {
-        "revision" : "09a6199bbc0899c90382e734bbe07850eae2aa83",
-        "version" : "0.2.0"
-      }
-    },
-    {
-      "identity" : "sdwebimageswiftui",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/SDWebImage/SDWebImageSwiftUI",
-      "state" : {
-        "revision" : "b7af5e6bd9c2987e41730400d1baad13d74a141a",
-        "version" : "3.0.4"
-      }
-    },
-    {
-      "identity" : "svgnative-xcode",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/SDWebImage/svgnative-Xcode.git",
-      "state" : {
-        "revision" : "de560bb9f69bc89f4624855998148eb6e0bb8e60",
-        "version" : "0.1.0"
+        "revision" : "bbbb3fd987cbdc4910e98959d283dc1f10fde83f",
+        "version" : "5.10.0"
       }
     },
     {
@@ -95,8 +59,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/pointfreeco/swift-composable-architecture",
       "state" : {
-        "revision" : "e6c0959044cbe2c934ac0ce9c3c4ead86350f44f",
-        "version" : "1.10.2"
+        "revision" : "7ac630fe4c49ddbc875c4cc87e611439367de3fb",
+        "version" : "1.11.1"
       }
     },
     {

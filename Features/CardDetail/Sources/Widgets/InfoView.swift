@@ -63,7 +63,7 @@ private enum Widget: Hashable, Identifiable {
   case colorIdentity([String])
   case set(code: String, iconURL: URL?)
   
-  @ViewBuilder
+  @MainActor @ViewBuilder
   var view: some View {
     switch self {
     case let .powerToughness(power, toughness):
@@ -88,7 +88,7 @@ private enum Widget: Hashable, Identifiable {
 }
 
 private extension Widget {
-  @ViewBuilder
+  @MainActor @ViewBuilder
   func powerToughnessView(
     power: String?,
     toughness: String?
@@ -121,7 +121,7 @@ private extension Widget {
     }
   }
   
-  @ViewBuilder
+  @MainActor @ViewBuilder
   private func manaIdentityView(_ identity: [String]) -> some View {
     if identity.isEmpty == false {
       VStack(alignment: .center) {
@@ -138,7 +138,7 @@ private extension Widget {
     }
   }
   
-  @ViewBuilder
+  @MainActor @ViewBuilder
   private func loyaltyWidgetView(_ counters: String?) -> some View {
     if let counters {
       VStack(alignment: .center) {
@@ -165,7 +165,7 @@ private extension Widget {
     }
   }
   
-  @ViewBuilder
+  @MainActor @ViewBuilder
   private func collectionNumberView(_ collectorNumber: String?) -> some View {
     if let collectorNumber {
       VStack(alignment: .center) {
@@ -182,7 +182,7 @@ private extension Widget {
     }
   }
   
-  @ViewBuilder
+  @MainActor @ViewBuilder
   private func setCodeView(_ code: String?, iconURL: URL?) -> some View {
     if let code, let iconURL {
       VStack(alignment: .center) {
@@ -200,7 +200,7 @@ private extension Widget {
     }
   }
   
-  @ViewBuilder
+  @MainActor @ViewBuilder
   private func manaValueView(_ manaValue: String?) -> some View {
     if let manaValue {
       VStack(alignment: .center) {

@@ -53,7 +53,9 @@ struct Feature<Client: MagicCardDetailRequestClient> {
         return .none
         
       case let .fetchSet(card):
-        return .run { try await $0(.updateSetIconURL(client.getSet(of: card).iconURL)) }
+        return .run { [client = self.client] in
+          try await $0(.updateSetIconURL(client.getSet(of: card).iconURL))
+        }
         
       case let .fetchVariants(card):
         return .run { try await $0(.updateVariants(await client.getVariants(of: card, page: 0))) }
