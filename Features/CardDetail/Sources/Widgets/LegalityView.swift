@@ -63,10 +63,10 @@ struct LegalityView: View {
   }
 }
 
-#Preview {
-  LegalityView(
-    title: "Legalities",
-    displayReleaseDate: "12 Dec 2024",
-    legalities: MagicCardFixture.stub[0].getLegalities().value
-  )
-}
+//#Preview {
+//  LegalityView(
+//    title: "Legalities",
+//    displayReleaseDate: "12 Dec 2024",
+//    legalities: MagicCardFixture.stub[0].getLegalities().value
+//  )
+//}

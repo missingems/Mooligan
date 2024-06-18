@@ -13,13 +13,13 @@ struct RunnerApp: App {
   var body: some Scene {
     WindowGroup {
       NavigationView {
-        if let card = MagicCardFixture.stub.last {
-          RootView(
-            card: card,
-            client: ScryfallClient(networkLogLevel: .minimal),
-            entryPoint: .query
-          )
-        }
+//        if let card = MagicCardFixture.stub.last {
+//          RootView(
+//            card: card,
+//            client: ScryfallClient(networkLogLevel: .minimal),
+//            entryPoint: .query
+//          )
+//        }
       }
     }
   }
