@@ -14,8 +14,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/kean/Nuke",
       "state" : {
-        "revision" : "084076db4f9b9ee4db51177ef5a4879689c1aa09",
-        "version" : "12.7.2"
+        "branch" : "main",
+        "revision" : "311016d972aa751ae8ab0cd5897422ebe7db0501"
       }
     },
     {
@@ -23,8 +23,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/JacobHearst/ScryfallKit",
       "state" : {
-        "revision" : "bbbb3fd987cbdc4910e98959d283dc1f10fde83f",
-        "version" : "5.10.0"
+        "branch" : "main",
+        "revision" : "bbbb3fd987cbdc4910e98959d283dc1f10fde83f"
       }
     },
     {
@@ -59,8 +59,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/pointfreeco/swift-composable-architecture",
       "state" : {
-        "revision" : "7ac630fe4c49ddbc875c4cc87e611439367de3fb",
-        "version" : "1.11.1"
+        "branch" : "main",
+        "revision" : "15d2b12c84dd0b1c9c611df3e4be7b9641fb40f2"
       }
     },
     {
@@ -95,8 +95,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/pointfreeco/swift-identified-collections",
       "state" : {
-        "revision" : "2481e39ea43e14556ca9628259fa6b377427730c",
-        "version" : "1.0.1"
+        "revision" : "2f5ab6e091dd032b63dacbda052405756010dc3b",
+        "version" : "1.1.0"
       }
     },
     {
@@ -131,8 +131,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/markiv/SwiftUI-Shimmer",
       "state" : {
-        "revision" : "5659a623567cefe258d1e3e67cb65585fbb6ecb6",
-        "version" : "1.4.2"
+        "branch" : "main",
+        "revision" : "0226e21f9bf355d40e07e5f5e1c33679d50e167f"
       }
     },
     {
