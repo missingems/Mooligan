@@ -31,10 +31,6 @@ struct SetsView<Client: GameSetRequestClient>: View {
   
   init(store: StoreOf<Feature<Client>>) {
     self.store = store
-    
-#if DEBUG
-    DesignComponents.Main().setup()
-#endif
   }
 }
 
