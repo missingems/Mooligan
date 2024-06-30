@@ -42,7 +42,7 @@ struct Feature<Client: MagicCardDetailRequestClient> {
   }
   
   var body: some ReducerOf<Self> {
-    Reduce { state, action in
+    Reduce { [client = self.client] state, action in
       switch action {
       case let .updateVariants(value):
         state.content.variants = value
@@ -58,7 +58,7 @@ struct Feature<Client: MagicCardDetailRequestClient> {
         }
         
       case let .fetchVariants(card):
-        return .run { try await $0(.updateVariants(await client.getVariants(of: card, page: 0))) }
+        return .run { try await $0(.updateVariants(client.getVariants(of: card, page: 0))) }
         
       case let .viewAppeared(action):
         return .run { await $0(action) }

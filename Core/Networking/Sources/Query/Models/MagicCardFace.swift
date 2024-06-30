@@ -1,6 +1,6 @@
 import Foundation
 
-public protocol MagicCardFace {
+public protocol MagicCardFace: Sendable, Equatable, Hashable {
   /// The converted mana cost of a card, now called the "mana value"
   var manaValue: Double? { get }
   

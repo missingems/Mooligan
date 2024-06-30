@@ -86,20 +86,3 @@ extension HeaderView {
     }
   }
 }
-//
-//#Preview {
-//  ScrollView {
-//    VStack(alignment: .leading, spacing: 0) {
-//      MagicCardFixture.stub.first.map { card in
-//        HeaderView(
-//          imageURL: card.getCardFace(for: .front).getImageURL()!,
-//          isFlippable: card.isFlippable,
-//          orientation: card.isSplit ? .landscape : .portrait,
-//          rotation: 0
-//        )
-//      }
-//    }
-//    .padding(.bottom, 13.0)
-//  }
-//  .background { Color(.secondarySystemBackground).ignoresSafeArea() }
-//}

@@ -52,35 +52,6 @@ extension Card: MagicCardFace {
 }
 
 extension Card {
-  public func getDisplayManaCost(faceDirection: MagicCardFaceDirection) -> [String] {
-    let cost = getCardFace(for: faceDirection).getManaCost()
-    
-    if let manaCost = cost?.replacingOccurrences(of: "/", with: ":").replacingOccurrences(of: "∞", with: "INFINITY") {
-      let pattern = try! Regex("\\{[^}]+\\}")
-      
-      return manaCost.matches(of: pattern).compactMap { match in
-        return String(manaCost[match.range])
-      }
-    } else {
-      return []
-    }
-  }
-  
-  public func getDisplayName(faceDirection: MagicCardFaceDirection) -> String {
-    let face = getCardFace(for: faceDirection)
-    return isPhyrexian ? face.name : face.printedName ?? face.name
-  }
-  
-  public func getDisplayText(faceDirection: MagicCardFaceDirection) -> String? {
-    let face = getCardFace(for: faceDirection)
-    return isPhyrexian ? face.oracleText : face.printedText ?? face.oracleText
-  }
-  
-  public func getDisplayTypeline(faceDirection: MagicCardFaceDirection) -> String? {
-    let face = getCardFace(for: faceDirection)
-    return isPhyrexian ? face.typeLine : face.printedTypeLine ?? face.typeLine
-  }
-  
   public func getImageURL() -> URL? {
     guard
       let uri = imageUris?.normal,
@@ -90,28 +61,6 @@ extension Card {
     }
     
     return url
-  }
-  
-  public var isFlippable: Bool {
-    layout == .transform ||
-    layout == .modalDfc ||
-    layout == .reversibleCard ||
-    layout == .doubleSided ||
-    layout == .doubleFacedToken ||
-    layout == .battle ||
-    layout == .flip
-  }
-  
-  public var isRotatable: Bool {
-    layout == .flip
-  }
-  
-  public var isSplit: Bool {
-    layout == .split
-  }
-  
-  public var isPhyrexian: Bool {
-    lang == "ph"
   }
   
   public func getCardFace(for direction: MagicCardFaceDirection) -> any MagicCardFace {

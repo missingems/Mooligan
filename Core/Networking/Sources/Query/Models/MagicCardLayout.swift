@@ -1,4 +1,4 @@
-public enum MagicCardLayoutValue: String, Equatable, Sendable {
+public enum MagicCardLayoutValue: String, Equatable, Sendable, Hashable {
   case normal
   case split
   case flip
@@ -26,6 +26,6 @@ public enum MagicCardLayoutValue: String, Equatable, Sendable {
   case reversibleCard = "reversible_card"
 }
 
-public protocol MagicCardLayout {
+public protocol MagicCardLayout: Sendable, Equatable, Hashable {
   var value: MagicCardLayoutValue { get }
 }
