@@ -1,4 +1,4 @@
-public enum MagicCardLegalitiesValue: Equatable, Sendable {
+public enum MagicCardLegalitiesValue: Equatable, Sendable, Hashable {
   case standard(MagicCardLegality)
   case historic(MagicCardLegality)
   case pioneer(MagicCardLegality)

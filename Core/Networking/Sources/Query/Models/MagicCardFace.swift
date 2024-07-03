@@ -1,6 +1,8 @@
 import Foundation
 
 public protocol MagicCardFace: Sendable, Equatable, Hashable {
+  associatedtype Color: MagicCardColor
+  
   /// The converted mana cost of a card, now called the "mana value"
   var manaValue: Double? { get }
   
@@ -10,10 +12,10 @@ public protocol MagicCardFace: Sendable, Equatable, Hashable {
   /// An array of the colors in this card’s color indicator or nil if it doesn't have one
   ///
   /// Color indicators are used to specify the color of a card that has no mana symbols
-  var magicColorIndicator: [any MagicCardColor]? { get }
+  var magicColorIndicator: [Color]? { get }
   
   /// An array of the colors in this card's mana cost
-  var magicColors: [any MagicCardColor]? { get }
+  var magicColors: [Color]? { get }
   
   /// This card's flavor text if any
   var flavorText: String? { get }
