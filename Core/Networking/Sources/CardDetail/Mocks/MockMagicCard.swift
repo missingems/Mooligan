@@ -236,13 +236,13 @@ public struct MockMagicCardColor: MagicCardColor {
 }
 
 public struct MockMagicCardFace<Color: MagicCardColor>: MagicCardFace {
+  public var magicColorIndicator: [Color]
+  
+  public var magicColors: [Color]
+  
   public var manaValue: Double?
   
   public var artist: String?
-  
-  public var magicColorIndicator: [Color]?
-  
-  public var magicColors: [Color]?
   
   public var flavorText: String?
   
@@ -264,8 +264,7 @@ public struct MockMagicCardFace<Color: MagicCardColor>: MagicCardFace {
   
   public var typeLine: String?
   
-  public func getImageURL() -> URL? { return nil
-  }
+  public func getImageURL() -> URL? { return nil }
   
   public func getManaCost() -> String? {
     return nil

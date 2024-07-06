@@ -2,12 +2,12 @@ import Foundation
 import ScryfallKit
 
 extension Card.Face: MagicCardFace {
-  public var magicColorIndicator: [any MagicCardColor]? {
-    return colorIndicator
+  public var magicColorIndicator: [Card.Color] {
+    return colorIndicator ?? []
   }
   
-  public var magicColors: [any MagicCardColor]? {
-    return colors
+  public var magicColors: [Card.Color] {
+    return colors ?? []
   }
   
   public var manaValue: Double? {

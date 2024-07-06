@@ -38,12 +38,12 @@ extension Card: MagicCardFace {
     return getManaValue()
   }
   
-  public var magicColorIndicator: [any MagicCardColor]? {
-    return getColorIndicator()
+  public var magicColorIndicator: [Card.Color] {
+    return colorIdentity
   }
   
-  public var magicColors: [any MagicCardColor]? {
-    return getColors()
+  public var magicColors: [Card.Color] {
+    return colorIdentity
   }
   
   public func getManaCost() -> String? {
