@@ -123,17 +123,18 @@ public extension MagicCard {
   }
   
   func getDisplayManaCost(faceDirection: MagicCardFaceDirection) -> [String] {
-    let cost = getCardFace(for: faceDirection).getManaCost()
-    
-    if let manaCost = cost?.replacingOccurrences(of: "/", with: ":").replacingOccurrences(of: "∞", with: "INFINITY") {
-      let pattern = try! Regex("\\{[^}]+\\}")
-      
-      return manaCost.matches(of: pattern).compactMap { match in
-        return String(manaCost[match.range])
-      }
-    } else {
+    guard 
+      let pattern = try? Regex("\\{[^}]+\\}"),
+      let manaCost = getCardFace(for: faceDirection).getManaCost()?
+        .replacingOccurrences(of: "/", with: ":")
+        .replacingOccurrences(of: "∞", with: "INFINITY")
+    else {
       return []
     }
+    
+    return manaCost
+      .matches(of: pattern)
+      .compactMap { String(manaCost[$0.range]) }
   }
   
   func getDisplayName(faceDirection: MagicCardFaceDirection) -> String {

@@ -38,11 +38,11 @@ extension Card: MagicCardFace {
     return getManaValue()
   }
   
-  public var magicColorIndicator: [Card.Color] {
+  public var magicColorIndicator: [Card.Color]? {
     return colorIdentity
   }
   
-  public var magicColors: [Card.Color] {
+  public var magicColors: [Card.Color]? {
     return colorIdentity
   }
   

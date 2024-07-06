@@ -41,6 +41,72 @@ public struct MockMagicCard<
   private var set: String
   private var imageURL: URL?
   
+  public init(
+    id: UUID,
+    language: String,
+    cardFace: Face,
+    manaValue: Double? = nil,
+    colorIdentity: [Color],
+    colorIndicator: [Color]? = nil,
+    colors: [Color]? = nil,
+    keywords: [String],
+    layout: Layout,
+    legalities: Legalities,
+    loyalty: String? = nil,
+    name: String,
+    oracleText: String? = nil,
+    power: String? = nil,
+    producedMana: [Color]? = nil,
+    toughness: String? = nil,
+    typeline: String? = nil,
+    artist: String? = nil,
+    collectorNumber: String,
+    flavorText: String? = nil,
+    prices: Prices,
+    printedName: String? = nil,
+    printedText: String? = nil,
+    printedTypeLine: String? = nil,
+    purchaseUris: [String : String]? = nil,
+    rarity: Rarity,
+    relatedUris: [String : String],
+    releastedAt: String,
+    setName: String,
+    set: String,
+    imageURL: URL? = nil
+  ) {
+    self.id = id
+    self.language = language
+    self.cardFace = cardFace
+    self.manaValue = manaValue
+    self.colorIdentity = colorIdentity
+    self.colorIndicator = colorIndicator
+    self.colors = colors
+    self.keywords = keywords
+    self.layout = layout
+    self.legalities = legalities
+    self.loyalty = loyalty
+    self.name = name
+    self.oracleText = oracleText
+    self.power = power
+    self.producedMana = producedMana
+    self.toughness = toughness
+    self.typeline = typeline
+    self.artist = artist
+    self.collectorNumber = collectorNumber
+    self.flavorText = flavorText
+    self.prices = prices
+    self.printedName = printedName
+    self.printedText = printedText
+    self.printedTypeLine = printedTypeLine
+    self.purchaseUris = purchaseUris
+    self.rarity = rarity
+    self.relatedUris = relatedUris
+    self.releastedAt = releastedAt
+    self.setName = setName
+    self.set = set
+    self.imageURL = imageURL
+  }
+  
   public mutating func setLanguage(_ language: String) -> Self {
     self.language = language
     return self
@@ -235,6 +301,10 @@ public struct MockMagicCardColor: MagicCardColor {
   public var value: MagicCardColorValue
 }
 
+public struct MockMagicCardLayout: MagicCardLayout {
+  public var value: MagicCardLayoutValue
+}
+
 public struct MockMagicCardFace<Color: MagicCardColor>: MagicCardFace {
   public var magicColorIndicator: [Color]?
   public var magicColors: [Color]?
@@ -252,4 +322,11 @@ public struct MockMagicCardFace<Color: MagicCardColor>: MagicCardFace {
   public var typeLine: String?
   public func getImageURL() -> URL? { return nil }
   public func getManaCost() -> String? { return nil }
+}
+
+public struct MockMagicCardPrices: MagicCardPrices {
+  public var tix: String?
+  public var usd: String?
+  public var usdFoil: String?
+  public var eur: String?
 }
