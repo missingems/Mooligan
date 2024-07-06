@@ -123,7 +123,7 @@ public extension MagicCard {
   }
   
   func getDisplayManaCost(faceDirection: MagicCardFaceDirection) -> [String] {
-    guard 
+    guard
       let pattern = try? Regex("\\{[^}]+\\}"),
       let manaCost = getCardFace(for: faceDirection).getManaCost()?
         .replacingOccurrences(of: "/", with: ":")
