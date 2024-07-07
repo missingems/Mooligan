@@ -33,6 +33,8 @@ public final class MagicCardBuilder<Color: MagicCardColor> {
   private var set: String = ""
   private var imageURL: URL? = nil
   
+  public init() {}
+  
   public func with(language: String) -> Self {
     self.language = language
     return self
