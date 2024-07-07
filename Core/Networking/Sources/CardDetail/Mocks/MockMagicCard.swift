@@ -18,7 +18,7 @@ public struct MockMagicCard<Color: MagicCardColor>: MagicCard {
   private var power: String?
   private var producedMana: [Color]?
   private var toughness: String?
-  private var typeline: String?
+  private var typeLine: String?
   private var artist: String?
   private var collectorNumber: String
   private var flavorText: String?
@@ -39,12 +39,12 @@ public struct MockMagicCard<Color: MagicCardColor>: MagicCard {
     language: String = "",
     cardFace: MockMagicCardFace<Color> = MockMagicCardFace<Color>(),
     manaValue: Double? = nil,
-    colorIdentity: [Color],
+    colorIdentity: [Color] = [],
     colorIndicator: [Color]? = nil,
     colors: [Color]? = nil,
-    keywords: [String],
-    layout: MockMagicCardLayout = MockMagicCardLayout(value: .adventure),
-    legalities: MockMagicCardLegalities = MockMagicCardLegalities(value: []),
+    keywords: [String] = [],
+    layout: MockMagicCardLayout = MockMagicCardLayout(),
+    legalities: MockMagicCardLegalities = MockMagicCardLegalities(),
     loyalty: String? = nil,
     name: String = "",
     oracleText: String? = nil,
@@ -53,14 +53,14 @@ public struct MockMagicCard<Color: MagicCardColor>: MagicCard {
     toughness: String? = nil,
     typeline: String? = nil,
     artist: String? = nil,
-    collectorNumber: String,
+    collectorNumber: String = "",
     flavorText: String? = nil,
-    prices: MockMagicCardPrices,
+    prices: MockMagicCardPrices = MockMagicCardPrices(),
     printedName: String? = nil,
     printedText: String? = nil,
     printedTypeLine: String? = nil,
     purchaseUris: [String : String]? = nil,
-    rarity: MockMagicCardRarity,
+    rarity: MockMagicCardRarity = MockMagicCardRarity(),
     relatedUris: [String: String] = [:],
     releastedAt: String = "",
     setName: String = "",
@@ -83,7 +83,7 @@ public struct MockMagicCard<Color: MagicCardColor>: MagicCard {
     self.power = power
     self.producedMana = producedMana
     self.toughness = toughness
-    self.typeline = typeline
+    self.typeLine = typeline
     self.artist = artist
     self.collectorNumber = collectorNumber
     self.flavorText = flavorText
@@ -100,156 +100,6 @@ public struct MockMagicCard<Color: MagicCardColor>: MagicCard {
     self.imageURL = imageURL
   }
   
-  public mutating func setLanguage(_ language: String) -> Self {
-    self.language = language
-    return self
-  }
-  
-  public mutating func setCardFace(_ cardFace: MockMagicCardFace<Color>) -> Self {
-    self.cardFace = cardFace
-    return self
-  }
-  
-  public mutating func setManaValue(_ manaValue: Double?) -> Self {
-    self.manaValue = manaValue
-    return self
-  }
-  
-  public mutating func setColorIdentity(_ colorIdentity: [Color]) -> Self {
-    self.colorIdentity = colorIdentity
-    return self
-  }
-  
-  public mutating func setColorIndicator(_ colorIndicator: [Color]?) -> Self {
-    self.colorIndicator = colorIndicator
-    return self
-  }
-  
-  public mutating func setColors(_ colors: [Color]?) -> Self {
-    self.colors = colors
-    return self
-  }
-  
-  public mutating func setKeywords(_ keywords: [String]) -> Self {
-    self.keywords = keywords
-    return self
-  }
-  
-  public mutating func setLayout(_ layout: MockMagicCardLayout) -> Self {
-    self.layout = layout
-    return self
-  }
-  
-  public mutating func setLegalities(_ legalities: MockMagicCardLegalities) -> Self {
-    self.legalities = legalities
-    return self
-  }
-  
-  public mutating func setLoyalty(_ loyalty: String?) -> Self {
-    self.loyalty = loyalty
-    return self
-  }
-  
-  public mutating func setName(_ name: String) -> Self {
-    self.name = name
-    return self
-  }
-  
-  public mutating func setOracleText(_ oracleText: String?) -> Self {
-    self.oracleText = oracleText
-    return self
-  }
-  
-  public mutating func setPower(_ power: String?) -> Self {
-    self.power = power
-    return self
-  }
-  
-  public mutating func setProducedMana(_ producedMana: [Color]?) -> Self {
-    self.producedMana = producedMana
-    return self
-  }
-  
-  public mutating func setToughness(_ toughness: String?) -> Self {
-    self.toughness = toughness
-    return self
-  }
-  
-  public mutating func setTypeline(_ typeline: String?) -> Self {
-    self.typeline = typeline
-    return self
-  }
-  
-  public mutating func setArtist(_ artist: String?) -> Self {
-    self.artist = artist
-    return self
-  }
-  
-  public mutating func setCollectorNumber(_ collectorNumber: String) -> Self {
-    self.collectorNumber = collectorNumber
-    return self
-  }
-  
-  public mutating func setFlavorText(_ flavorText: String?) -> Self {
-    self.flavorText = flavorText
-    return self
-  }
-  
-  public mutating func setPrices(_ prices: MockMagicCardPrices) -> Self {
-    self.prices = prices
-    return self
-  }
-  
-  public mutating func setPrintedName(_ printedName: String?) -> Self {
-    self.printedName = printedName
-    return self
-  }
-  
-  public mutating func setPrintedText(_ printedText: String?) -> Self {
-    self.printedText = printedText
-    return self
-  }
-  
-  public mutating func setPrintedTypeLine(_ printedTypeLine: String?) -> Self {
-    self.printedTypeLine = printedTypeLine
-    return self
-  }
-  
-  public mutating func setPurchaseUris(_ purchaseUris: [String: String]?) -> Self {
-    self.purchaseUris = purchaseUris
-    return self
-  }
-  
-  public mutating func setRarity(_ rarity: MockMagicCardRarity) -> Self {
-    self.rarity = rarity
-    return self
-  }
-  
-  public mutating func setRelatedUris(_ relatedUris: [String: String]) -> Self {
-    self.relatedUris = relatedUris
-    return self
-  }
-  
-  public mutating func setReleasedAt(_ releasedAt: String) -> Self {
-    self.releastedAt = releasedAt
-    return self
-  }
-  
-  public mutating func setSetName(_ setName: String) -> Self {
-    self.setName = setName
-    return self
-  }
-  
-  public mutating func setSet(_ set: String) -> Self {
-    self.set = set
-    return self
-  }
-  
-  public mutating func setImageURL(_ imageURL: URL?) -> Self {
-    self.imageURL = imageURL
-    return self
-  }
-
   public func getLanguage() -> String { language }
   public func getCardFace(for direction: MagicCardFaceDirection) -> any MagicCardFace { cardFace }
   public func getManaValue() -> Double? { manaValue }
@@ -265,7 +115,7 @@ public struct MockMagicCard<Color: MagicCardColor>: MagicCard {
   public func getPower() -> String? { power }
   public func getProducedMana() -> [any MagicCardColor]? { producedMana }
   public func getToughness() -> String? { toughness }
-  public func getTypeLine() -> String? { typeline }
+  public func getTypeLine() -> String? { typeLine }
   public func getArtist() -> String? { artist }
   public func getCollectorNumber() -> String { collectorNumber }
   public func getFlavorText() -> String? { flavorText }
@@ -285,23 +135,31 @@ public struct MockMagicCard<Color: MagicCardColor>: MagicCard {
 public struct MockMagicCardLegalities: MagicCardLegalities, Hashable {
   public var value: [MagicCardLegalitiesValue]
   
-  public init(value: [MagicCardLegalitiesValue]) {
+  public init(value: [MagicCardLegalitiesValue] = []) {
     self.value = value
   }
 }
 
 public struct MockMagicCardRarity: MagicCardRarity {
   public var value: MagicCardRarityValue
+  
+  public init(value: MagicCardRarityValue = .common) {
+    self.value = value
+  }
 }
 
 public struct MockMagicCardColor: MagicCardColor {
   public var value: MagicCardColorValue
+  
+  public init(value: MagicCardColorValue = .none) {
+    self.value = value
+  }
 }
 
 public struct MockMagicCardLayout: MagicCardLayout {
   public var value: MagicCardLayoutValue
   
-  public init(value: MagicCardLayoutValue) {
+  public init(value: MagicCardLayoutValue = .normal) {
     self.value = value
   }
 }
@@ -432,4 +290,16 @@ public struct MockMagicCardPrices: MagicCardPrices {
   public var usd: String?
   public var usdFoil: String?
   public var eur: String?
+  
+  public init(
+    tix: String? = nil,
+    usd: String? = nil,
+    usdFoil: String? = nil,
+    eur: String? = nil
+  ) {
+    self.tix = tix
+    self.usd = usd
+    self.usdFoil = usdFoil
+    self.eur = eur
+  }
 }
