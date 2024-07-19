@@ -7,7 +7,7 @@ struct Feature<Client: MagicCardDetailRequestClient> {
   typealias Card = Client.MagicCardModel
   
   @ObservableState
-  struct State: Equatable {
+  struct State: Equatable, Sendable {
     var content: Content<Card>
     let start: Action
     
@@ -27,7 +27,7 @@ struct Feature<Client: MagicCardDetailRequestClient> {
     }
   }
   
-  indirect enum Action: Equatable {
+  indirect enum Action: Equatable, Sendable {
     case fetchSet(card: Card)
     case fetchVariants(card: Card)
     case updateVariants(_ variants: [Card])
@@ -42,7 +42,7 @@ struct Feature<Client: MagicCardDetailRequestClient> {
   }
   
   var body: some ReducerOf<Self> {
-    Reduce { [client = self.client] state, action in
+    Reduce { state, action in
       switch action {
       case let .updateVariants(value):
         state.content.variants = value
@@ -53,12 +53,14 @@ struct Feature<Client: MagicCardDetailRequestClient> {
         return .none
         
       case let .fetchSet(card):
-        return .run { [client = self.client] in
+        return .run { [client] in
           try await $0(.updateSetIconURL(client.getSet(of: card).iconURL))
         }
         
       case let .fetchVariants(card):
-        return .run { try await $0(.updateVariants(client.getVariants(of: card, page: 0))) }
+        return .run { [client] in
+          try await $0(.updateVariants(client.getVariants(of: card, page: 0)))
+        }
         
       case let .viewAppeared(action):
         return .run { await $0(action) }

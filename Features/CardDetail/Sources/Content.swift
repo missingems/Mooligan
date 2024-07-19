@@ -1,8 +1,8 @@
 import Networking
 import Foundation
 
-struct Content<Card: MagicCard>: Equatable {
-  struct Description: Equatable, Identifiable {
+struct Content<Card: MagicCard>: Equatable, Sendable {
+  struct Description: Equatable, Identifiable, Sendable {
     let id = UUID()
     let name: String?
     let text: String?
