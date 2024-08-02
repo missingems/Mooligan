@@ -3,7 +3,7 @@ import Networking
 
 @Reducer
 struct Feature<Client: MagicCardQueryRequestClient> {
-  let client: Client
+  let client: UnsafeSendable<Client>
   
   enum Cancellables: Hashable {
     case queryCards(page: Int)
@@ -30,9 +30,9 @@ struct Feature<Client: MagicCardQueryRequestClient> {
         return .none
         
       case let .fetchCards(queryType):
-        return .run { send in
+        return .run { [client] send in
           do {
-            let cards = try await client.queryCards(queryType)
+            let cards = try await client.wrappedValue.queryCards(queryType)
             await send(.updateCards(cards, queryType))
           } catch {
             print(error.localizedDescription)
