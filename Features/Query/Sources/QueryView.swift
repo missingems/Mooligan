@@ -26,19 +26,13 @@ struct QueryView<Client: MagicCardQueryRequestClient>: View {
           ForEach(store.dataSource.model.indices, id: \.self) { index in
             Button(
               action: {
-                print("Selected")
+                store.send(.didSelectCardAtIndex(index))
               }, label: {
                 let width = ((proxy.size.width - 24) / 2.0).rounded()
                 let height = width.multiplied(byRatio: .heightToWidth)
                 
-                Group {
-                  let model = store.dataSource.model[index]
-                  
-                  if let url = model.getImageURL() {
-                    AmbientWebImage(url: url)
-                  } else {
-                    Text(model.getName()).multilineTextAlignment(.center)
-                  }
+                store.dataSource.model[index].getImageURL().map {
+                  AmbientWebImage(url: $0)
                 }
                 .frame(
                   width: width,
