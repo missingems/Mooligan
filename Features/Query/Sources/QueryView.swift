@@ -31,14 +31,20 @@ struct QueryView<Client: MagicCardQueryRequestClient>: View {
                 let width = ((proxy.size.width - 24) / 2.0).rounded()
                 let height = width.multiplied(byRatio: .heightToWidth)
                 
-                store.dataSource.model[index].getImageURL().map {
-                  AmbientWebImage(url: $0)
-                    .frame(
-                      width: width,
-                      height: height,
-                      alignment: .center
-                    )
+                Group {
+                  let model = store.dataSource.model[index]
+                  
+                  if let url = model.getImageURL() {
+                    AmbientWebImage(url: url)
+                  } else {
+                    Text(model.getName()).multilineTextAlignment(.center)
+                  }
                 }
+                .frame(
+                  width: width,
+                  height: height,
+                  alignment: .center
+                )
               }
             )
             .buttonStyle(.sinkableButtonStyle)
@@ -47,7 +53,7 @@ struct QueryView<Client: MagicCardQueryRequestClient>: View {
             }
           }
         }
-        .safeAreaPadding(.horizontal, 8.0)
+        .safeAreaPadding(.horizontal, 10.0)
       }
       .navigationBarTitleDisplayMode(.inline)
       .task {

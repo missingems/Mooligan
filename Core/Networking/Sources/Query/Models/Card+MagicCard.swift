@@ -53,23 +53,16 @@ extension Card: MagicCardFace {
 
 extension Card {
   public func getImageURL() -> URL? {
-    guard
-      let uri = imageUris?.normal,
-      let url = URL(string: uri)
-    else {
-      return nil
-    }
-    
-    return url
+    return getImageURL(type: .normal)
   }
   
   public func getCardFace(for direction: MagicCardFaceDirection) -> any MagicCardFace {
-    switch direction {
-    case  .front:
-      return cardFaces?.first ?? self
+    return switch direction {
+    case .front:
+      cardFaces?.first ?? self
       
     case .back:
-      return cardFaces?.last ?? self
+      cardFaces?.last ?? self
     }
   }
 }
