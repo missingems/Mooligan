@@ -64,7 +64,10 @@ public struct AmbientWebImage: View {
             )
           )
         } else if let image = state.image {
-          image.resizable().aspectRatio(contentMode: .fit)
+          image.resizable().aspectRatio(
+            MagicCardImageRatio.widthToHeight.rawValue,
+            contentMode: .fill
+          )
         }
       }
       .clipShape(

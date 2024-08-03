@@ -26,6 +26,7 @@ struct Feature<Client: MagicCardQueryRequestClient> {
   enum Action: Equatable {
     case didSelectCardAtIndex(Int)
     case loadMoreCardsIfNeeded(currentIndex: Int)
+    case showError(title: String, description: String)
     case updateCards(ObjectList<[Client.MagicCardModel]>, QueryType)
     case viewAppeared
   }
@@ -37,14 +38,16 @@ struct Feature<Client: MagicCardQueryRequestClient> {
         return .none
         
       case let .loadMoreCardsIfNeeded(currentIndex):
+        let nextQuery = state.queryType.next()
+        
         return if state.dataSource.shouldFetchNextPage(at: currentIndex) {
-          fetchCardsEffect(queryType: state.queryType).cancellable(
-            id: Cancellables.queryCards(page: state.queryType.next().page),
-            cancelInFlight: false
-          )
+          fetchCardsEffect(queryType: nextQuery)
         } else {
           .none
         }
+        
+      case let .showError(title, description):
+        return .none
       
       case let .updateCards(value, queryType):
         return updateCardsEffect(
@@ -57,7 +60,6 @@ struct Feature<Client: MagicCardQueryRequestClient> {
         return fetchCardsEffect(queryType: state.queryType)
       }
     }
-    ._printChanges(.actionLabels)
   }
 }
 
@@ -67,23 +69,34 @@ extension Feature {
     queryType: QueryType,
     state: inout State
   ) -> Effect<Action> {
-    defer {
-      state.queryType = queryType
-      state.dataSource.model.append(contentsOf: value.model)
-      state.dataSource.hasNextPage = value.hasNextPage
-    }
+    state.queryType = queryType
+    state.dataSource.model.append(contentsOf: value.model)
+    state.dataSource.hasNextPage = value.hasNextPage
     
     return .none
   }
   
   func fetchCardsEffect(queryType: QueryType) -> Effect<Action> {
     .run { [client] send in
-      try await send(
-        .updateCards(
-          client.wrappedValue.queryCards(queryType),
-          queryType
+      do {
+        try await send(
+          .updateCards(
+            client.wrappedValue.queryCards(queryType),
+            queryType
+          )
         )
-      )
+      } catch {
+        await send(
+          .showError(
+            title: String(localized: "Something went wrong"),
+            description: error.localizedDescription
+          )
+        )
+      }
     }
+    .cancellable(
+      id: Cancellables.queryCards(page: queryType.page),
+      cancelInFlight: true
+    )
   }
 }

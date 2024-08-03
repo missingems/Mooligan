@@ -14,39 +14,45 @@ struct QueryView<Client: MagicCardQueryRequestClient>: View {
   }
   
   var body: some View {
-    ScrollView {
-      LazyVGrid(
-        columns: [GridItem](
-          repeating: GridItem(spacing: spacing),
-          count: 2
-        ),
-        spacing: spacing
-      ) {
-        ForEach(store.dataSource.model.indices, id: \.self) { index in
-          Button(
-            action: {
-              store.send(.didSelectCardAtIndex(index))
-            }, label: {
-              store.dataSource.model[index].getImageURL().map {
-                AmbientWebImage(url: $0)
-                  .aspectRatio(
-                    MagicCardImageRatio.widthToHeight.rawValue,
-                    contentMode: .fill
-                  )
+    GeometryReader { proxy in
+      ScrollView {
+        LazyVGrid(
+          columns: [GridItem](
+            repeating: GridItem(spacing: spacing),
+            count: 2
+          ),
+          spacing: spacing
+        ) {
+          ForEach(store.dataSource.model.indices, id: \.self) { index in
+            Button(
+              action: {
+                print("Selected")
+              }, label: {
+                let width = ((proxy.size.width - 24) / 2.0).rounded()
+                let height = width.multiplied(byRatio: .heightToWidth)
+                
+                store.dataSource.model[index].getImageURL().map {
+                  AmbientWebImage(url: $0)
+                    .frame(
+                      width: width,
+                      height: height,
+                      alignment: .center
+                    )
+                }
               }
+            )
+            .buttonStyle(.sinkableButtonStyle)
+            .task {
+              store.send(.loadMoreCardsIfNeeded(currentIndex: index))
             }
-          )
-          .buttonStyle(.sinkableButtonStyle)
-          .task {
-            store.send(.loadMoreCardsIfNeeded(currentIndex: index))
           }
         }
+        .safeAreaPadding(.horizontal, 8.0)
       }
-      .safeAreaPadding(.horizontal, 8.0)
-    }
-    .navigationBarTitleDisplayMode(.inline)
-    .task {
-      store.send(.viewAppeared)
+      .navigationBarTitleDisplayMode(.inline)
+      .task {
+        store.send(.viewAppeared)
+      }
     }
   }
 }
