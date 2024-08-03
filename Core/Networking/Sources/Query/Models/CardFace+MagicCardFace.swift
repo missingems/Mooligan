@@ -2,8 +2,8 @@ import Foundation
 import ScryfallKit
 
 extension Card.Face: MagicCardFace {
-  public var magicColorIndicator: [any MagicCardColor]? { colorIndicator }
-  public var magicColors: [any MagicCardColor]? { colors }
+  public var magicColorIndicator: [Card.Color]? { colorIndicator }
+  public var magicColors: [Card.Color]? { colors }
   public var manaValue: Double? { cmc }
   
   public func getImageURL() -> URL? {
@@ -12,5 +12,10 @@ extension Card.Face: MagicCardFace {
     }
     
     return URL(string: uri)
+
+  }
+  
+  public func getManaCost() -> String? {
+    return manaCost
   }
 }

@@ -8,7 +8,7 @@ public struct RootView: View {
   
   public var body: some View {
     QueryView(store: Store(initialState: Feature.State(queryType: queryType), reducer: {
-      Feature(client: ScryfallClient(networkLogLevel: .minimal))
+      Feature(client: UnsafeSendable(ScryfallClient(networkLogLevel: .minimal)))
     }))
   }
   

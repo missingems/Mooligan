@@ -9,3 +9,18 @@ public struct ObjectList<Model: Equatable>: Equatable {
     self.hasNextPage = hasNextPage
   }
 }
+
+public extension ObjectList where Model: Collection {
+  func shouldFetchNextPage(at index: Int) -> Bool {
+    return index == model.count - 1 && hasNextPage
+  }
+}
+
+public extension ObjectList where Model: RangeReplaceableCollection {
+  func updating(with value: ObjectList<Model>) -> Self {
+    var copy = self
+    copy.model.append(contentsOf: value.model)
+    copy.hasNextPage = value.hasNextPage
+    return copy
+  }
+}

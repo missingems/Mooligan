@@ -17,13 +17,21 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
               orientation: .portrait,
               rotation: 0
             )
-            TitleView(
-              name: store.content.name,
-              manaCosts: store.content.manaCost
-            )
-            TypelineView(store.content.typeline)
-            DescriptionView(store.content.text)
-            FlavorView(store.content.flavorText)
+            
+            HStack(alignment: .top) {
+              ForEach(store.content.descriptions) { description in
+                VStack {
+                  TitleView(
+                    name: description.name,
+                    manaCost: description.manaCost
+                  )
+                  TypelineView(description.typeline)
+                  DescriptionView(description.text)
+                  FlavorView(description.flavorText)
+                }
+              }
+            }
+            
             InfoView(
               power: store.content.power,
               toughness: store.content.toughness,
@@ -34,6 +42,7 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
               setCode: store.content.setCode,
               setIconURL: store.content.setIconURL
             )
+            
             LegalityView(
               title: store.content.legalityLabel,
               displayReleaseDate: store.content.displayReleasedDate,

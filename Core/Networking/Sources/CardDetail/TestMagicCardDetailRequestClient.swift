@@ -3,7 +3,7 @@ import ScryfallKit
 
 struct TestMagicCardDetailRequestClient: MagicCardDetailRequestClient {
   func getVariants(of card: Card, page: Int) async throws -> [Card] {
-    MagicCardFixture.stub
+    []
   }
   
   func getSet(of card: Card) async throws -> MockGameSet {

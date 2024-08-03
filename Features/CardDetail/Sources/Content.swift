@@ -1,7 +1,16 @@
 import Networking
 import Foundation
 
-struct Content<Card: MagicCard>: Equatable {
+struct Content<Card: MagicCard>: Equatable, Sendable {
+  struct Description: Equatable, Identifiable, Sendable {
+    let id = UUID()
+    let name: String?
+    let text: String?
+    let typeline: String?
+    let flavorText: String?
+    let manaCost: [String]
+  }
+  
   enum FaceDirection: Equatable {
     case front
     case back
@@ -9,10 +18,7 @@ struct Content<Card: MagicCard>: Equatable {
   
   let id: String?
   let collectorNumber: String
-  let name: String?
-  let text: String?
-  let typeline: String?
-  let flavorText: String?
+  let descriptions: [Description]
   let manaValue: Double?
   let imageURL: URL?
   let power: String?
@@ -20,7 +26,6 @@ struct Content<Card: MagicCard>: Equatable {
   let loyalty: String?
   let artist: String?
   let colorIdentity: [String]
-  let manaCost: [String]
   let usdPrice: String?
   let usdFoilPrice: String?
   let tixPrice: String?
@@ -42,34 +47,29 @@ struct Content<Card: MagicCard>: Equatable {
   ) {
     self.card = card
     id = card.getOracleText()
-    manaCost = []
     
     // MARK: - Card Configuration
     usdPrice = card.getPrices().usd
     usdFoilPrice = card.getPrices().usdFoil
     tixPrice = card.getPrices().tix
     manaValue = card.getManaValue()
-    isLandscape = card.isLandscape
+    isLandscape = card.isSplit
     let identity = card.getColorIdentity().map { "{\($0.value.rawValue)}" }
     colorIdentity = identity.isEmpty ? ["{C}"] : identity
     
     // MARK: - Selected Face Configuration
     let face = card.getCardFace(for: faceDirection)
-    imageURL = face.getImageURL()
+    imageURL = face.getImageURL() ?? card.getImageURL()
     
-    if card.isPhyrexian {
-      name = face.name
-      text = face.oracleText
-      typeline = face.typeLine
-    } else {
-      name = face.printedName ?? face.name
-      text = face.printedText ?? face.oracleText
-      typeline = face.printedTypeLine ?? face.typeLine
-    }
+    descriptions = card.isSplit ? [
+      Self.makeDescription(faceDirection: .front, card: card),
+      Self.makeDescription(faceDirection: .back, card: card)
+    ] : [
+      Self.makeDescription(faceDirection: faceDirection, card: card)
+    ]
     
     power = face.power
     toughness = face.toughness
-    flavorText = face.flavorText
     loyalty = face.loyalty
     artist = face.artist
     displayReleasedDate = String(localized: "Release Date: \(card.getReleasedAt())")
@@ -82,5 +82,15 @@ struct Content<Card: MagicCard>: Equatable {
     collectorNumber = card.getCollectorNumber()
     legalities = card.getLegalities().value
     self.setIconURL = setIconURL
+  }
+  
+  static func makeDescription(faceDirection: MagicCardFaceDirection, card: Card) -> Description {
+    Description(
+      name: card.getDisplayName(faceDirection: faceDirection),
+      text: card.getDisplayText(faceDirection: faceDirection),
+      typeline: card.getDisplayTypeline(faceDirection: faceDirection),
+      flavorText: card.getFlavorText(),
+      manaCost: card.getDisplayManaCost(faceDirection: faceDirection)
+    )
   }
 }

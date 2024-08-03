@@ -1,8 +1,8 @@
 // swift-tools-version: 5.9
-import PackageDescription
+@preconcurrency import PackageDescription
 
 #if TUIST
-import ProjectDescription
+@preconcurrency import ProjectDescription
 
 let packageSettings = PackageSettings(
   // Customize the product types for specific package product
@@ -19,12 +19,9 @@ let packageSettings = PackageSettings(
 let package = Package(
   name: "Mooligan",
   dependencies: [
-    .package(url: "https://github.com/JacobHearst/ScryfallKit", from: "5.9.0"),
-    .package(url: "https://github.com/pointfreeco/swift-composable-architecture", from: "1.1.0"),
-    .package(url: "https://github.com/SDWebImage/SDWebImageSwiftUI", from: "3.0.4"),
-    .package(url: "https://github.com/SDWebImage/SDWebImageSVGNativeCoder", from: "0.2.0"),
-    .package(url: "https://github.com/kean/Nuke", from: "12.6.0"),
-    .package(url: "https://github.com/markiv/SwiftUI-Shimmer", from: "1.4.2")
+    .package(url: "https://github.com/JacobHearst/ScryfallKit", .branch("main")),
+    .package(url: "https://github.com/pointfreeco/swift-composable-architecture", .branch("main")),
+    .package(url: "https://github.com/kean/Nuke", .branch("main")),
+    .package(url: "https://github.com/markiv/SwiftUI-Shimmer", .branch("main"))
   ]
 )
-

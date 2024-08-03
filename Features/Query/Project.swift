@@ -2,6 +2,11 @@ import ProjectDescription
 
 let project = Project(
   name: "Query",
+  settings: .settings(
+    base: [
+      "SWIFT_VERSION": "6.0.0"
+    ]
+  ),
   targets: [
     .target(
       name: "QueryRunner",

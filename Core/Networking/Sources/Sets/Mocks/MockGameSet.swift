@@ -3,7 +3,7 @@ import Foundation
 public struct MockGameSet: GameSet {
   public var isParent: Bool? = false
   public var id = UUID()
-  public var code = "OTJ"
+  public var code = "MH3"
   public var numberOfCards = 1
   public var name = "Stub"
   public var iconURL = URL(string: "https://mooligan.com")
@@ -11,7 +11,7 @@ public struct MockGameSet: GameSet {
   public init(
     isParent: Bool? = false,
     id: UUID = UUID(),
-    code: String = "OTJ",
+    code: String = "MH3",
     numberOfCards: Int = 1,
     name: String = "Stub",
     iconURL: URL? = URL(string: "https://mooligan.com")

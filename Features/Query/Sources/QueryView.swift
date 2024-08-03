@@ -26,17 +26,19 @@ struct QueryView<Client: MagicCardQueryRequestClient>: View {
           ForEach(store.dataSource.model.indices, id: \.self) { index in
             Button(
               action: {
-                print("Selected")
+                store.send(.didSelectCardAtIndex(index))
               }, label: {
                 let width = ((proxy.size.width - 24) / 2.0).rounded()
                 let height = width.multiplied(byRatio: .heightToWidth)
                 
-                AmbientWebImage(url: store.dataSource.model[index].getImageURL()!)
-                  .frame(
-                    width: width,
-                    height: height,
-                    alignment: .center
-                  )
+                store.dataSource.model[index].getImageURL().map {
+                  AmbientWebImage(url: $0)
+                }
+                .frame(
+                  width: width,
+                  height: height,
+                  alignment: .center
+                )
               }
             )
             .buttonStyle(.sinkableButtonStyle)
@@ -45,7 +47,7 @@ struct QueryView<Client: MagicCardQueryRequestClient>: View {
             }
           }
         }
-        .safeAreaPadding(.horizontal, 8.0)
+        .safeAreaPadding(.horizontal, 10.0)
       }
       .navigationBarTitleDisplayMode(.inline)
       .task {

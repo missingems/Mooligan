@@ -2,6 +2,11 @@ import ProjectDescription
 
 let project = Project(
   name: "DesignComponents",
+  settings: .settings(
+    base: [
+      "SWIFT_VERSION": "6.0.0"
+    ]
+  ),
   targets: [
     .target(
       name: "DesignComponents",
@@ -13,8 +18,6 @@ let project = Project(
       resources: ["Resources/**"],
       dependencies: [
         .external(name: "NukeUI"),
-        .external(name: "SDWebImageSwiftUI"),
-        .external(name: "SDWebImageSVGNativeCoder"),
         .external(name: "Shimmer")
       ]
     )

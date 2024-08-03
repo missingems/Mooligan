@@ -12,7 +12,6 @@ extension Card: MagicCard {
   public func getLayout() -> any MagicCardLayout { layout }
   public func getLegalities() -> any MagicCardLegalities { legalities }
   public func getLoyalty() -> String? { loyalty }
-  public func getManaCost() -> String? { manaCost }
   public func getName() -> String { name }
   public func getOracleText() -> String? { oracleText }
   public func getPower() -> String? { power }
@@ -32,65 +31,38 @@ extension Card: MagicCard {
   public func getReleasedAt() -> String { releasedAt }
   public func getSetName() -> String { setName }
   public func getSet() -> String { self.set }
-  
-  public func getImageURL() -> URL? {
-    guard 
-      let uri = imageUris?.normal,
-      let url = URL(string: uri) 
-    else {
-      return nil
-    }
-    
-    return url
-  }
-  
-  public var isFlippable: Bool {
-    layout == .transform ||
-    layout == .modalDfc ||
-    layout == .reversibleCard ||
-    layout == .doubleSided ||
-    layout == .doubleFacedToken ||
-    layout == .battle ||
-    layout == .flip
-  }
-  
-  public var isRotatable: Bool {
-    layout == .flip
-  }
-  
-  public var isLandscape: Bool {
-    layout == .split
-  }
-  
-  public var isPhyrexian: Bool {
-    lang == "ph"
-  }
-  
-  public func getCardFace(for direction: MagicCardFaceDirection) -> any MagicCardFace {
-    switch direction {
-    case  .front:
-      return self
-      
-    case .back:
-      return cardFaces?.last ?? self
-    }
-  }
 }
 
 extension Card: MagicCardFace {
   public var manaValue: Double? {
-    getManaValue()
+    return getManaValue()
   }
   
-  public var magicColorIndicator: [any MagicCardColor]? {
-    getColorIndicator()
+  public var magicColorIndicator: [Card.Color]? {
+    return colorIdentity
   }
   
-  public var magicColors: [any MagicCardColor]? {
-    getColors()
+  public var magicColors: [Card.Color]? {
+    return colorIdentity
   }
   
-  public var manaCost: String {
-    getManaCost() ?? ""
+  public func getManaCost() -> String? {
+    return manaCost
+  }
+}
+
+extension Card {
+  public func getImageURL() -> URL? {
+    return getImageURL(type: .normal)
+  }
+  
+  public func getCardFace(for direction: MagicCardFaceDirection) -> any MagicCardFace {
+    return switch direction {
+    case .front:
+      cardFaces?.first ?? self
+      
+    case .back:
+      cardFaces?.last ?? self
+    }
   }
 }

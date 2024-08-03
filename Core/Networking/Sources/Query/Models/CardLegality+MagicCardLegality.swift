@@ -18,4 +18,3 @@ extension Card.Legalities: MagicCardLegalities {
     return legalities
   }
 }
-

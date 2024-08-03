@@ -3,7 +3,7 @@ import Networking
 
 @Reducer
 struct Feature<Client: MagicCardQueryRequestClient> {
-  let client: Client
+  let client: UnsafeSendable<Client>
   
   enum Cancellables: Hashable {
     case queryCards(page: Int)
@@ -13,11 +13,20 @@ struct Feature<Client: MagicCardQueryRequestClient> {
   struct State: Equatable {
     var queryType: QueryType
     var dataSource = ObjectList<[Client.MagicCardModel]>(model: [])
+    
+    mutating func update(
+      with queryType: QueryType,
+      dataSource: ObjectList<[Client.MagicCardModel]>
+    ) {
+      self.queryType = queryType
+      self.dataSource = dataSource
+    }
   }
   
   enum Action: Equatable {
-    case fetchCards(QueryType)
+    case didSelectCardAtIndex(Int)
     case loadMoreCardsIfNeeded(currentIndex: Int)
+    case showError(title: String, description: String)
     case updateCards(ObjectList<[Client.MagicCardModel]>, QueryType)
     case viewAppeared
   }
@@ -25,42 +34,71 @@ struct Feature<Client: MagicCardQueryRequestClient> {
   var body: some ReducerOf<Self> {
     Reduce { state, action in
       switch action {
-      case let .fetchCards(queryType):
-        return .run { send in
-          do {
-            let cards = try await client.queryCards(queryType)
-            await send(.updateCards(cards, queryType))
-          } catch {
-            print(error.localizedDescription)
-          }
-        }
-        
-      case let .loadMoreCardsIfNeeded(currentIndex):
-        if currentIndex == state.dataSource.model.count - 1, state.dataSource.hasNextPage {
-          let nextPage = state.queryType.next()
-          
-          return .run { send in
-              await send(.fetchCards(nextPage))
-            }
-            .cancellable(id: Cancellables.queryCards(page: nextPage.page), cancelInFlight: false)
-        } else {
-          return .none
-        }
-      
-      case let .updateCards(value, queryType):
-        state.queryType = queryType
-        state.dataSource.model.append(contentsOf: value.model)
-        state.dataSource.hasNextPage = value.hasNextPage
+      case let .didSelectCardAtIndex(value):
+        print(value)
         return .none
         
-      case .viewAppeared:
-        let queryType = state.queryType
+      case let .loadMoreCardsIfNeeded(currentIndex):
+        let nextQuery = state.queryType.next()
         
-        return .run { send in
-          await send(.fetchCards(queryType))
+        return if state.dataSource.shouldFetchNextPage(at: currentIndex) {
+          fetchCardsEffect(queryType: nextQuery)
+        } else {
+          .none
         }
+        
+      case let .showError(title, description):
+        print(title, description)
+        return .none
+      
+      case let .updateCards(value, queryType):
+        return updateCardsEffect(
+          value: value,
+          queryType: queryType,
+          state: &state
+        )
+        
+      case .viewAppeared:
+        return fetchCardsEffect(queryType: state.queryType)
       }
     }
-    ._printChanges(.actionLabels)
+  }
+}
+
+extension Feature {
+  func updateCardsEffect(
+    value: ObjectList<[Client.MagicCardModel]>,
+    queryType: QueryType,
+    state: inout State
+  ) -> Effect<Action> {
+    state.queryType = queryType
+    state.dataSource.model.append(contentsOf: value.model)
+    state.dataSource.hasNextPage = value.hasNextPage
+    
+    return .none
+  }
+  
+  func fetchCardsEffect(queryType: QueryType) -> Effect<Action> {
+    .run { [client] send in
+      do {
+        try await send(
+          .updateCards(
+            client.wrappedValue.queryCards(queryType),
+            queryType
+          )
+        )
+      } catch {
+        await send(
+          .showError(
+            title: String(localized: "Something went wrong"),
+            description: error.localizedDescription
+          )
+        )
+      }
+    }
+    .cancellable(
+      id: Cancellables.queryCards(page: queryType.page),
+      cancelInFlight: true
+    )
   }
 }

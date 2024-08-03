@@ -1,4 +1,4 @@
-public enum MagicCardColorValue: String, Equatable, Sendable {
+public enum MagicCardColorValue: String, Equatable, Sendable, Hashable {
   case white = "W"
   case blue = "U"
   case black = "B"
@@ -8,6 +8,6 @@ public enum MagicCardColorValue: String, Equatable, Sendable {
   case none = ""
 }
 
-public protocol MagicCardColor {
+public protocol MagicCardColor: Sendable, Equatable, Hashable {
   var value: MagicCardColorValue { get }
 }

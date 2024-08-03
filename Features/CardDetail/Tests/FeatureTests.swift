@@ -5,8 +5,7 @@ import XCTest
 
 final class FeatureTests: XCTestCase {
   typealias Client = Networking.TestMagicCardDetailRequestClient
-  let cards = MagicCardFixture.stub
-  let card = MagicCardFixture.stub[0]
+  let card = CardBuilder.splitCard
   
   func test_whenStateEntryPointIsQuery_startShouldFetchSet() {
     let state = Feature<Client>.State(card: card, entryPoint: .query)
@@ -43,9 +42,9 @@ final class FeatureTests: XCTestCase {
     
     await store.send(.viewAppeared(initialAction: store.state.start))
     await store.receive(.fetchVariants(card: card))
-    await store.receive(.updateVariants(cards)) { [weak self] state in
-      guard let cards = self?.cards else { return }
-      state.content.variants = cards
+    await store.receive(.updateVariants([card])) { [weak self] state in
+      guard let card = self?.card else { return }
+      state.content.variants = [card]
     }
   }
 }

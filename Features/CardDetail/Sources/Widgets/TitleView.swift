@@ -3,7 +3,7 @@ import SwiftUI
 
 struct TitleView: View {
   let name: String
-  let manaCosts: [String]
+  let manaCost: [String]
   
   var body: some View {
     HStack(alignment: .top) {
@@ -12,7 +12,7 @@ struct TitleView: View {
       Spacer(minLength: 10.0)
       
       ManaView(
-        identity: manaCosts,
+        identity: manaCost,
         size: CGSize(width: 17.0, height: 17.0),
         spacing: 2.0
       )
@@ -24,12 +24,12 @@ struct TitleView: View {
   
   init?(
     name: String?,
-    manaCosts: [String]
+    manaCost: [String]
   ) {
     guard let name else { return nil }
     
     self.name = name
-    self.manaCosts = manaCosts
+    self.manaCost = manaCost
   }
 }
 
@@ -37,7 +37,7 @@ struct TitleView: View {
   VStack(alignment: .leading) {
     TitleView(
       name: "Lightning Bolt",
-      manaCosts: ["{R}"]
+      manaCost: ["{R}"]
     )
   }
 }

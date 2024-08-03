@@ -1,6 +1,8 @@
 import Foundation
 
-public protocol MagicCardFace {
+public protocol MagicCardFace: Sendable, Equatable, Hashable {
+  associatedtype Color: MagicCardColor
+  
   /// The converted mana cost of a card, now called the "mana value"
   var manaValue: Double? { get }
   
@@ -10,21 +12,16 @@ public protocol MagicCardFace {
   /// An array of the colors in this card’s color indicator or nil if it doesn't have one
   ///
   /// Color indicators are used to specify the color of a card that has no mana symbols
-  var magicColorIndicator: [any MagicCardColor]? { get }
+  var magicColorIndicator: [Color]? { get }
   
   /// An array of the colors in this card's mana cost
-  var magicColors: [any MagicCardColor]? { get }
+  var magicColors: [Color]? { get }
   
   /// This card's flavor text if any
   var flavorText: String? { get }
   
   /// This card's starting loyalty counters if it's a planeswalker
   var loyalty: String? { get }
-  
-  /// The mana cost for this card.
-  ///
-  /// This value will be any empty string "" if the cost is absent. Remember that per the game rules, a missing mana cost and a mana cost of {0} are different values.
-  var manaCost: String { get }
   
   /// The name of this card
   ///
@@ -55,4 +52,7 @@ public protocol MagicCardFace {
   
   /// Get card art in normal quality
   func getImageURL() -> URL?
+  
+  /// The mana cost for this card.
+  func getManaCost() -> String?
 }

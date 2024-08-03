@@ -1,4 +1,4 @@
-public enum MagicCardLegalitiesValue: Equatable, Sendable {
+public enum MagicCardLegalitiesValue: Equatable, Sendable, Hashable {
   case standard(MagicCardLegality)
   case historic(MagicCardLegality)
   case pioneer(MagicCardLegality)
@@ -87,6 +87,6 @@ public enum MagicCardLegality: String, Equatable, Sendable {
   }
 }
 
-public protocol MagicCardLegalities: Equatable {
+public protocol MagicCardLegalities: Equatable, Sendable, Hashable {
   var value: [MagicCardLegalitiesValue] { get }
 }

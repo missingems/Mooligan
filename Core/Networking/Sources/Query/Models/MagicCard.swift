@@ -7,7 +7,7 @@ public protocol MagicCard: Equatable, Hashable, Identifiable, Sendable {
   /// The language that this specific printing was printed in
   func getLanguage() -> String
   
-  /// An array of all the faces that a card has or nil if it's a single-faced card
+  /// Return the face of a card base on the direction
   func getCardFace(for direction: MagicCardFaceDirection) -> any MagicCardFace
   
   /// The converted mana cost of a card, now called the "mana value"
@@ -33,9 +33,6 @@ public protocol MagicCard: Equatable, Hashable, Identifiable, Sendable {
   
   /// This card's starting loyalty counters if it's a planeswalker
   func getLoyalty() -> String?
-  
-  /// The mana cost for this card
-  func getManaCost() -> String?
   
   /// The name of this card
   func getName() -> String
@@ -96,14 +93,62 @@ public protocol MagicCard: Equatable, Hashable, Identifiable, Sendable {
   
   /// Get card art in normal quality
   func getImageURL() -> URL?
-  
-  var isFlippable: Bool { get }
-  var isRotatable: Bool { get }
-  var isLandscape: Bool { get }
-  var isPhyrexian: Bool { get }
 }
 
-public enum MagicCardFaceDirection {
-  case front
-  case back
+public extension MagicCard {
+  var isFlippable: Bool {
+    let layout = getLayout().value
+    
+    return (
+      layout == .transform ||
+      layout == .modalDfc ||
+      layout == .reversibleCard ||
+      layout == .doubleSided ||
+      layout == .doubleFacedToken ||
+      layout == .battle ||
+      layout == .flip
+    )
+  }
+  
+  var isRotatable: Bool {
+    getLayout().value == .flip
+  }
+  
+  var isSplit: Bool {
+    getLayout().value == .split
+  }
+  
+  var isPhyrexian: Bool {
+    getLanguage() == "ph"
+  }
+  
+  func getDisplayManaCost(faceDirection: MagicCardFaceDirection) -> [String] {
+    guard
+      let pattern = try? Regex("\\{[^}]+\\}"),
+      let manaCost = getCardFace(for: faceDirection).getManaCost()?
+        .replacingOccurrences(of: "/", with: ":")
+        .replacingOccurrences(of: "∞", with: "INFINITY")
+    else {
+      return []
+    }
+    
+    return manaCost
+      .matches(of: pattern)
+      .compactMap { String(manaCost[$0.range]) }
+  }
+  
+  func getDisplayName(faceDirection: MagicCardFaceDirection) -> String {
+    let face = getCardFace(for: faceDirection)
+    return isPhyrexian ? face.name : face.printedName ?? face.name
+  }
+  
+  func getDisplayText(faceDirection: MagicCardFaceDirection) -> String? {
+    let face = getCardFace(for: faceDirection)
+    return isPhyrexian ? face.oracleText : face.printedText ?? face.oracleText
+  }
+  
+  func getDisplayTypeline(faceDirection: MagicCardFaceDirection) -> String? {
+    let face = getCardFace(for: faceDirection)
+    return isPhyrexian ? face.typeLine : face.printedTypeLine ?? face.typeLine
+  }
 }
