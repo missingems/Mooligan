@@ -13,11 +13,18 @@ struct Feature<Client: MagicCardQueryRequestClient> {
   struct State: Equatable {
     var queryType: QueryType
     var dataSource = ObjectList<[Client.MagicCardModel]>(model: [])
+    
+    mutating func update(
+      with queryType: QueryType,
+      dataSource: ObjectList<[Client.MagicCardModel]>
+    ) {
+      self.queryType = queryType
+      self.dataSource = dataSource
+    }
   }
   
   enum Action: Equatable {
     case didSelectCardAtIndex(Int)
-    case fetchCards(QueryType)
     case loadMoreCardsIfNeeded(currentIndex: Int)
     case updateCards(ObjectList<[Client.MagicCardModel]>, QueryType)
     case viewAppeared
@@ -29,42 +36,54 @@ struct Feature<Client: MagicCardQueryRequestClient> {
       case let .didSelectCardAtIndex(value):
         return .none
         
-      case let .fetchCards(queryType):
-        return .run { [client] send in
-          do {
-            let cards = try await client.wrappedValue.queryCards(queryType)
-            await send(.updateCards(cards, queryType))
-          } catch {
-            print(error.localizedDescription)
-          }
-        }
-        
       case let .loadMoreCardsIfNeeded(currentIndex):
-        if currentIndex == state.dataSource.model.count - 1, state.dataSource.hasNextPage {
-          let nextPage = state.queryType.next()
-          
-          return .run { send in
-              await send(.fetchCards(nextPage))
-            }
-            .cancellable(id: Cancellables.queryCards(page: nextPage.page), cancelInFlight: false)
+        return if state.dataSource.shouldFetchNextPage(at: currentIndex) {
+          fetchCardsEffect(queryType: state.queryType).cancellable(
+            id: Cancellables.queryCards(page: state.queryType.next().page),
+            cancelInFlight: false
+          )
         } else {
-          return .none
+          .none
         }
       
       case let .updateCards(value, queryType):
-        state.queryType = queryType
-        state.dataSource.model.append(contentsOf: value.model)
-        state.dataSource.hasNextPage = value.hasNextPage
-        return .none
+        return updateCardsEffect(
+          value: value,
+          queryType: queryType,
+          state: &state
+        )
         
       case .viewAppeared:
-        let queryType = state.queryType
-        
-        return .run { send in
-          await send(.fetchCards(queryType))
-        }
+        return fetchCardsEffect(queryType: state.queryType)
       }
     }
     ._printChanges(.actionLabels)
+  }
+}
+
+extension Feature {
+  func updateCardsEffect(
+    value: ObjectList<[Client.MagicCardModel]>,
+    queryType: QueryType,
+    state: inout State
+  ) -> Effect<Action> {
+    defer {
+      state.queryType = queryType
+      state.dataSource.model.append(contentsOf: value.model)
+      state.dataSource.hasNextPage = value.hasNextPage
+    }
+    
+    return .none
+  }
+  
+  func fetchCardsEffect(queryType: QueryType) -> Effect<Action> {
+    .run { [client] send in
+      try await send(
+        .updateCards(
+          client.wrappedValue.queryCards(queryType),
+          queryType
+        )
+      )
+    }
   }
 }
