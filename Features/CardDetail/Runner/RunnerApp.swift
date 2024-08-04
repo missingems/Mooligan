@@ -13,11 +13,11 @@ struct RunnerApp: App {
   var body: some Scene {
     WindowGroup {
       NavigationView {
-//        RootView(
-//          card: MagicCardBuilder<MockMagicCardColor>().with(name: "test").build(),
-//          client: ScryfallClient(networkLogLevel: .minimal),
-//          entryPoint: .query
-        Text("")
+        RootView(
+          card: MagicCardBuilder<MockMagicCardColor>().with(name: "Eidolon").with(collectorNumber: "123").build(),
+          client: MockMagicCardDetailRequestClient(),
+          entryPoint: .query
+        )
       }
     }
   }
