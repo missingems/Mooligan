@@ -3,8 +3,9 @@ import Foundation.NSURL
 public final class MagicCardBuilder<Color: MagicCardColor> {
   private var id: UUID = UUID()
   private var language: String = ""
-  private var cardFace: MockMagicCardFace<Color> = MockMagicCardFace<Color>()
+  private var cardFaces: [MockMagicCardFace<Color>] = []
   private var manaValue: Double? = nil
+  private var manaCost: String? = nil
   private var colorIdentity: [Color] = []
   private var colorIndicator: [Color]? = nil
   private var colors: [Color]? = nil
@@ -40,13 +41,18 @@ public final class MagicCardBuilder<Color: MagicCardColor> {
     return self
   }
   
-  public func with(cardFace: MockMagicCardFace<Color>) -> Self {
-    self.cardFace = cardFace
+  public func with(cardFaces: [MockMagicCardFace<Color>]) -> Self {
+    self.cardFaces = cardFaces
     return self
   }
   
   public func with(manaValue: Double?) -> Self {
     self.manaValue = manaValue
+    return self
+  }
+  
+  public func with(manaCost: String?) -> Self {
+    self.manaCost = manaCost
     return self
   }
   
@@ -189,8 +195,9 @@ public final class MagicCardBuilder<Color: MagicCardColor> {
     MockMagicCard(
       id: id,
       language: language,
-      cardFace: cardFace,
+      cardFaces: cardFaces,
       manaValue: manaValue,
+      manaCost: manaCost,
       colorIdentity: colorIdentity,
       colorIndicator: colorIndicator,
       colors: colors,

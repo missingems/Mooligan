@@ -29,6 +29,7 @@ struct Content<Card: MagicCard>: Equatable, Sendable {
   let usdPrice: String?
   let usdFoilPrice: String?
   let tixPrice: String?
+  let name: String
   let isLandscape: Bool
   let illstrautedLabel: String
   let viewRulingsLabel: String
@@ -47,6 +48,7 @@ struct Content<Card: MagicCard>: Equatable, Sendable {
   ) {
     self.card = card
     id = card.getOracleText()
+    name = card.getDisplayName(faceDirection: faceDirection)
     
     // MARK: - Card Configuration
     usdPrice = card.getPrices().usd

@@ -14,7 +14,12 @@ struct RunnerApp: App {
     WindowGroup {
       NavigationView {
         RootView(
-          card: MagicCardBuilder<MockMagicCardColor>().with(name: "Eidolon").with(collectorNumber: "123").build(),
+          card: MagicCardBuilder<MockMagicCardColor>()
+            .with(name: "Eidolon")
+            .with(manaCost: "{R}")
+            .with(collectorNumber: "123")
+            .with(typeline: "Creature - Enchanment")
+            .build(),
           client: MockMagicCardDetailRequestClient(),
           entryPoint: .query
         )

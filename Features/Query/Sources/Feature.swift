@@ -35,7 +35,7 @@ struct Feature<Client: MagicCardQueryRequestClient> {
     Reduce { state, action in
       switch action {
       case let .didSelectCardAtIndex(value):
-        print(value)
+        print(state.dataSource.model[value])
         return .none
         
       case let .loadMoreCardsIfNeeded(currentIndex):

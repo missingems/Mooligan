@@ -1,31 +1,31 @@
 import Foundation
 import ScryfallKit
 
-public struct MockMagicCard<Color: MagicCardColor>: MagicCard {
+public struct MockMagicCard<Color: MagicCardColor>: MagicCard , MagicCardFace{
   public var id: UUID
   private var language: String
-  private var cardFace: MockMagicCardFace<Color>
-  private var manaValue: Double?
+  private var cardFaces: [MockMagicCardFace<Color>]
+  public var manaValue: Double?
   private var colorIdentity: [Color]
   private var colorIndicator: [Color]?
   private var colors: [Color]?
   private var keywords: [String]
   private var layout: MockMagicCardLayout
   private var legalities: MockMagicCardLegalities
-  private var loyalty: String?
-  private var name: String
-  private var oracleText: String?
-  private var power: String?
+  public var loyalty: String?
+  public var name: String
+  public var oracleText: String?
+  public var power: String?
   private var producedMana: [Color]?
-  private var toughness: String?
-  private var typeLine: String?
-  private var artist: String?
+  public var toughness: String?
+  public var typeLine: String?
+  public var artist: String?
   private var collectorNumber: String
-  private var flavorText: String?
+  public var flavorText: String?
   private var prices: MockMagicCardPrices
-  private var printedName: String?
-  private var printedText: String?
-  private var printedTypeLine: String?
+  public var printedName: String?
+  public var printedText: String?
+  public var printedTypeLine: String?
   private var purchaseUris: [String: String]?
   private var rarity: MockMagicCardRarity
   private var relatedUris: [String: String]
@@ -33,12 +33,14 @@ public struct MockMagicCard<Color: MagicCardColor>: MagicCard {
   private var setName: String
   private var set: String
   private var imageURL: URL?
+  private var manaCost: String?
   
   public init(
     id: UUID = UUID(),
     language: String = "",
-    cardFace: MockMagicCardFace<Color> = MockMagicCardFace<Color>(),
+    cardFaces: [MockMagicCardFace<Color>] = [MockMagicCardFace<Color>()],
     manaValue: Double? = nil,
+    manaCost: String? = nil,
     colorIdentity: [Color] = [],
     colorIndicator: [Color]? = nil,
     colors: [Color]? = nil,
@@ -69,8 +71,9 @@ public struct MockMagicCard<Color: MagicCardColor>: MagicCard {
   ) {
     self.id = id
     self.language = language
-    self.cardFace = cardFace
+    self.cardFaces = cardFaces
     self.manaValue = manaValue
+    self.manaCost = manaCost
     self.colorIdentity = colorIdentity
     self.colorIndicator = colorIndicator
     self.colors = colors
@@ -101,7 +104,7 @@ public struct MockMagicCard<Color: MagicCardColor>: MagicCard {
   }
   
   public func getLanguage() -> String { language }
-  public func getCardFace(for direction: MagicCardFaceDirection) -> any MagicCardFace { cardFace }
+  public func getCardFace(for direction: MagicCardFaceDirection) -> any MagicCardFace { cardFaces.first ?? self }
   public func getManaValue() -> Double? { manaValue }
   public func getColorIdentity() -> [any MagicCardColor] { colorIdentity }
   public func getColorIndicator() -> [any MagicCardColor]? { colorIndicator }
@@ -130,6 +133,9 @@ public struct MockMagicCard<Color: MagicCardColor>: MagicCard {
   public func getSetName() -> String { setName }
   public func getSet() -> String { set }
   public func getImageURL() -> URL? { imageURL }
+  public var magicColorIndicator: [Color]? { colorIndicator }
+  public var magicColors: [Color]? { colors }
+  public func getManaCost() -> String? { manaCost }
 }
 
 public struct MockMagicCardLegalities: MagicCardLegalities, Hashable {
