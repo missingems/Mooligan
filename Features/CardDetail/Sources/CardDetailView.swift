@@ -20,7 +20,7 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
             
             HStack(alignment: .top) {
               ForEach(store.content.descriptions) { description in
-                VStack {
+                VStack(spacing: 0) {
                   TitleView(
                     name: description.name,
                     manaCost: description.manaCost
