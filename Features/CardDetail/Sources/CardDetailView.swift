@@ -18,19 +18,7 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
               rotation: 0
             )
             
-            HStack(alignment: .top) {
-              ForEach(store.content.descriptions) { description in
-                VStack(spacing: 0) {
-                  TitleView(
-                    name: description.name,
-                    manaCost: description.manaCost
-                  )
-                  TypelineView(description.typeline)
-                  DescriptionView(description.text)
-                  FlavorView(description.flavorText)
-                }
-              }
-            }
+            FaceView(descriptions: store.content.descriptions)
             
             InfoView(
               power: store.content.power,

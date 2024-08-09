@@ -185,8 +185,9 @@ public struct MockMagicCardFace<Color: MagicCardColor>: MagicCardFace {
   public var printedTypeLine: String?
   public var toughness: String?
   public var typeLine: String?
+  public var manaCost: String?
   public func getImageURL() -> URL? { return nil }
-  public func getManaCost() -> String? { return nil }
+  public func getManaCost() -> String? { return manaCost }
   
   public init(
     magicColorIndicator: [Color]? = nil,
@@ -202,7 +203,8 @@ public struct MockMagicCardFace<Color: MagicCardColor>: MagicCardFace {
     printedText: String? = nil,
     printedTypeLine: String? = nil,
     toughness: String? = nil,
-    typeLine: String? = nil
+    typeLine: String? = nil,
+    manaCost: String? = nil
   ) {
     self.magicColorIndicator = magicColorIndicator
     self.magicColors = magicColors
@@ -218,76 +220,7 @@ public struct MockMagicCardFace<Color: MagicCardColor>: MagicCardFace {
     self.printedTypeLine = printedTypeLine
     self.toughness = toughness
     self.typeLine = typeLine
-  }
-  
-  public mutating func setMagicColorIndicator(_ colorIndicators: [Color]) -> Self {
-    self.magicColorIndicator = colorIndicators
-    return self
-  }
-
-  public mutating func setMagicColors(_ colors: [Color]) -> Self {
-    self.magicColors = colors
-    return self
-  }
-  
-  public mutating func setManaValue(_ manaValue: Double) -> Self {
-    self.manaValue = manaValue
-    return self
-  }
-  
-  public mutating func setArtist(_ artistName: String) -> Self {
-    self.artist = artistName
-    return self
-  }
-  
-  public mutating func setFlavorTest(_ flavorText: String) -> Self {
-    self.flavorText = flavorText
-    return self
-  }
-  
-  public mutating func setLoyalty(_ loyalty: String) -> Self {
-    self.loyalty = loyalty
-    return self
-  }
-  
-  public mutating func setName(_ name: String) -> Self {
-    self.name = name
-    return self
-  }
-  
-  public mutating func setOracleText(_ text: String) -> Self {
-    self.oracleText = text
-    return self
-  }
-  
-  public mutating func setPower(_ power: String) -> Self {
-    self.power = power
-    return self
-  }
-  
-  public mutating func setPrintedName(_ name: String) -> Self {
-    self.printedName = name
-    return self
-  }
-  
-  public mutating func setPrintedText(_ text: String) -> Self {
-    self.printedText = text
-    return self
-  }
-  
-  public mutating func setPrintedTypeLine(_ typeLine: String) -> Self {
-    self.printedTypeLine = typeLine
-    return self
-  }
-  
-  public mutating func setToughness(_ toughness: String) -> Self {
-    self.toughness = toughness
-    return self
-  }
-  
-  public mutating func setTypeLine(_ typeLine: String) -> Self {
-    self.typeLine = typeLine
-    return self
+    self.manaCost = manaCost
   }
 }
 

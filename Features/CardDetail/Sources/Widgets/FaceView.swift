@@ -2,35 +2,46 @@ import Networking
 import SwiftUI
 
 struct FaceView<Card: MagicCard>: View {
-  enum Error: Swift.Error {
-    case impossibleState(reason: String)
-  }
-  
-//  let mainFace: Content<Card>.Description
-//  let altFace: Content<Card>.Description?
+  let main: Content<Card>.Description
+  let alternate: Content<Card>.Description?
   
   var body: some View {
-    Text("")
+    if let alternate {
+      HStack(alignment: .top) {
+        TitleView(
+          name: main.name,
+          manaCost: main.manaCost
+        )
+        
+        TitleView(
+          name: alternate.name,
+          manaCost: alternate.manaCost
+        )
+      }
+      
+      HStack(alignment: .top) {
+        TypelineView(main.typeline)
+        TypelineView(alternate.typeline)
+      }
+      
+      HStack(alignment: .top) {
+        DescriptionView(main.text)
+        DescriptionView(alternate.text)
+      }
+      
+      HStack(alignment: .top) {
+        FlavorView(main.flavorText)
+        FlavorView(alternate.flavorText)
+      }
+    }
   }
   
-  init(descriptions: [Content<Card>.Description]) {
-    //    let isSplit: Bool
-    //
-    //    if descriptions.count == 0 {
-    //      throw .impossibleState(reason: "Descriptions can't be empty")
-    //    } else if descriptions.count > 2 {
-    //      isSplit = true
-    //      throw .impossibleState(reason: "Descriptions can't be more than 2")
-    //    } else {
-    //      isSplit = false
-    //    }
-    //
-    //    mainFace = descriptions[0]
-    //
-    //    if isSplit {
-    //      altFace = descriptions.last
-    //    } else {
-    //      altFace = nil
-    //    }
+  init?(descriptions: [Content<Card>.Description]) {
+    guard Range(1...2).contains(descriptions.count) else {
+      return nil
+    }
+    
+    main = descriptions[0]
+    alternate = descriptions.last
   }
 }

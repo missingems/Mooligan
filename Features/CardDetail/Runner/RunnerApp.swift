@@ -29,6 +29,38 @@ Whenever a player casts a spell, if no mana was spent to cast that spell, Roilin
             .with(set: "MKM")
             .with(collectorNumber: "123")
             .with(typeline: "Creature - Enchanment")
+            .with(layout: .init(value: .split))
+            .with(cardFaces: [
+              .init(
+                artist: "Jun",
+                flavorText: "Flavor",
+                loyalty: "1",
+                name: "Jun Name",
+                oracleText: "Oracle",
+                power: "123",
+                printedName: "Hahaha",
+                printedText: "Text",
+                printedTypeLine: "Topdecker123",
+                toughness: "33",
+                typeLine: "Go away",
+                manaCost: "{R}{1}{0}"
+              ),
+              .init(
+                manaValue: 1,
+                artist: "Jun",
+                flavorText: "Flavor",
+                loyalty: "1",
+                name: "Jun Name",
+                oracleText: "Oracle",
+                power: "123",
+                printedName: "Hahaha",
+                printedText: "Text",
+                printedTypeLine: "Topdecker123",
+                toughness: "33",
+                typeLine: "Go away",
+                manaCost: "{R}{1}{0}"
+              ),
+            ])
             .with(
               legalities: MockMagicCardLegalities(
                 value: [
