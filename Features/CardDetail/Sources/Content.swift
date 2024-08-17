@@ -87,11 +87,13 @@ struct Content<Card: MagicCard>: Equatable, Sendable {
   }
   
   static func makeDescription(faceDirection: MagicCardFaceDirection, card: Card) -> Description {
-    Description(
+    let face = card.getCardFace(for: faceDirection)
+    
+    return Description(
       name: card.getDisplayName(faceDirection: faceDirection),
       text: card.getDisplayText(faceDirection: faceDirection),
       typeline: card.getDisplayTypeline(faceDirection: faceDirection),
-      flavorText: card.getFlavorText(),
+      flavorText: face.flavorText,
       manaCost: card.getDisplayManaCost(faceDirection: faceDirection)
     )
   }
