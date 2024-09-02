@@ -48,11 +48,15 @@ struct FaceView<Card: MagicCard>: View {
   }
   
   init?(descriptions: [Content<Card>.Description]) {
-    guard Range(1...2).contains(descriptions.count) else {
+    guard
+      descriptions.isEmpty == false,
+      descriptions.count <= 2,
+      let main = descriptions.first
+    else {
       return nil
     }
     
-    main = descriptions[0]
+    self.main = main
     alternate = descriptions.last
   }
 }
