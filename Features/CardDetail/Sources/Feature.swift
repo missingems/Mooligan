@@ -1,18 +1,24 @@
 import ComposableArchitecture
 import Foundation
+import OSLog
 import Networking
 
-@Reducer
-struct Feature<Client: MagicCardDetailRequestClient> {
-  typealias Card = Client.MagicCardModel
+@Reducer struct Feature<Client: MagicCardDetailRequestClient> {
+  enum Error: Swift.Error, Equatable, Sendable {
+    case set(String)
+    case variant(String)
+  }
   
-  @ObservableState
-  struct State: Equatable, Sendable {
-    var content: Content<Card>
+  @ObservableState struct State: Equatable, Sendable {
+    var content: Content<Client.MagicCardModel>
     let start: Action
     
+    /// Initializes the state based on the entry point and card details.
+    /// - Parameters:
+    ///   - card: The magic card model to be used.
+    ///   - entryPoint: The entry point which determines the initial action and content configuration.
     init(
-      card: Card,
+      card: Client.MagicCardModel,
       entryPoint: EntryPoint<Client>
     ) {
       switch entryPoint {
@@ -28,19 +34,22 @@ struct Feature<Client: MagicCardDetailRequestClient> {
   }
   
   indirect enum Action: Equatable, Sendable {
-    case fetchSet(card: Card)
-    case fetchVariants(card: Card)
-    case updateVariants(_ variants: [Card])
+    case fetchSet(card: Client.MagicCardModel)
+    case fetchVariants(card: Client.MagicCardModel)
+    case updateVariants(_ variants: [Client.MagicCardModel])
     case updateSetIconURL(_ setIconURL: URL?)
     case viewAppeared(initialAction: Action)
   }
   
   private let client: Client
   
+  /// Initializes the feature with a network client.
+  /// - Parameter client: The client used for fetching card data.
   init(client: Client) {
     self.client = client
   }
   
+  /// Defines how the state should be updated based on actions.
   var body: some ReducerOf<Self> {
     Reduce { state, action in
       switch action {
@@ -53,17 +62,23 @@ struct Feature<Client: MagicCardDetailRequestClient> {
         return .none
         
       case let .fetchSet(card):
-        return .run { [client] in
-          try await $0(.updateSetIconURL(client.getSet(of: card).iconURL))
+        return .run { send in
+          try await send(.updateSetIconURL(client.getSet(of: card).iconURL))
+        } catch: { error, _ in
+          os_log(.error, log: .default, "\(error.localizedDescription)")
         }
         
       case let .fetchVariants(card):
-        return .run { [client] in
-          try await $0(.updateVariants(client.getVariants(of: card, page: 0)))
+        return .run { send in
+          try await send(.updateVariants(client.getVariants(of: card, page: 0)))
+        } catch: { error, send in
+          os_log(.error, log: .default, "\(error.localizedDescription)")
         }
         
       case let .viewAppeared(action):
-        return .run { await $0(action) }
+        return .run {
+          await $0(action)
+        }
       }
     }
   }
