@@ -20,6 +20,7 @@ struct TitleView: View {
         CGSize(width: 0.0, height: 1.0)
       )
     }
+    .frame(maxWidth: .infinity, alignment: .leading)
   }
   
   init?(

@@ -4,7 +4,7 @@ import ComposableArchitecture
 import XCTest
 
 final class FeatureTests: XCTestCase {
-  typealias Client = Networking.TestMagicCardDetailRequestClient
+  typealias Client = Networking.MockMagicCardDetailRequestClient
   let card = CardBuilder.splitCard
   
   func test_whenStateEntryPointIsQuery_startShouldFetchSet() {

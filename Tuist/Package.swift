@@ -19,9 +19,9 @@ let packageSettings = PackageSettings(
 let package = Package(
   name: "Mooligan",
   dependencies: [
-    .package(url: "https://github.com/JacobHearst/ScryfallKit", .branch("main")),
-    .package(url: "https://github.com/pointfreeco/swift-composable-architecture", .branch("main")),
-    .package(url: "https://github.com/kean/Nuke", .branch("main")),
-    .package(url: "https://github.com/markiv/SwiftUI-Shimmer", .branch("main"))
+    .package(url: "https://github.com/JacobHearst/ScryfallKit", from: "5.11.0"),
+    .package(url: "https://github.com/pointfreeco/swift-composable-architecture", branch: "main"),
+    .package(url: "https://github.com/kean/Nuke", branch: "main"),
+    .package(url: "https://github.com/markiv/SwiftUI-Shimmer", branch: "main"),
   ]
 )

@@ -1,2 +1,3 @@
 [tools]
 tuist = "4.22.0"
+Tuist = "4.26.0"

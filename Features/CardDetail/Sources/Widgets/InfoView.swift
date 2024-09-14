@@ -53,9 +53,7 @@ struct InfoView: View {
   }
 }
 
-private enum Widget: Hashable, Identifiable {
-  var id: Self { return self }
-  
+@MainActor private enum Widget: Hashable, Identifiable {
   case powerToughness(power: String, toughness: String)
   case loyalty(counters: String)
   case manaValue(String)
@@ -63,8 +61,7 @@ private enum Widget: Hashable, Identifiable {
   case colorIdentity([String])
   case set(code: String, iconURL: URL?)
   
-  @MainActor @ViewBuilder
-  var view: some View {
+  @ViewBuilder var view: some View {
     switch self {
     case let .powerToughness(power, toughness):
       powerToughnessView(power: power, toughness: toughness)
@@ -85,11 +82,14 @@ private enum Widget: Hashable, Identifiable {
       manaValueView(value)
     }
   }
+  
+  nonisolated(unsafe) var id: Self {
+    return self
+  }
 }
 
 private extension Widget {
-  @MainActor @ViewBuilder
-  func powerToughnessView(
+  @ViewBuilder func powerToughnessView(
     power: String?,
     toughness: String?
   ) -> some View {
@@ -121,8 +121,7 @@ private extension Widget {
     }
   }
   
-  @MainActor @ViewBuilder
-  private func manaIdentityView(_ identity: [String]) -> some View {
+  @ViewBuilder private func manaIdentityView(_ identity: [String]) -> some View {
     if identity.isEmpty == false {
       VStack(alignment: .center) {
         content {
@@ -138,8 +137,7 @@ private extension Widget {
     }
   }
   
-  @MainActor @ViewBuilder
-  private func loyaltyWidgetView(_ counters: String?) -> some View {
+  @ViewBuilder private func loyaltyWidgetView(_ counters: String?) -> some View {
     if let counters {
       VStack(alignment: .center) {
         content {
@@ -165,8 +163,7 @@ private extension Widget {
     }
   }
   
-  @MainActor @ViewBuilder
-  private func collectionNumberView(_ collectorNumber: String?) -> some View {
+  @ViewBuilder private func collectionNumberView(_ collectorNumber: String?) -> some View {
     if let collectorNumber {
       VStack(alignment: .center) {
         content {
@@ -182,8 +179,7 @@ private extension Widget {
     }
   }
   
-  @MainActor @ViewBuilder
-  private func setCodeView(_ code: String?, iconURL: URL?) -> some View {
+  @ViewBuilder private func setCodeView(_ code: String?, iconURL: URL?) -> some View {
     if let code, let iconURL {
       VStack(alignment: .center) {
         content {
@@ -200,8 +196,7 @@ private extension Widget {
     }
   }
   
-  @MainActor @ViewBuilder
-  private func manaValueView(_ manaValue: String?) -> some View {
+  @ViewBuilder private func manaValueView(_ manaValue: String?) -> some View {
     if let manaValue {
       VStack(alignment: .center) {
         content {
@@ -219,7 +214,7 @@ private extension Widget {
 }
 
 extension Widget {
-  private func content(@ViewBuilder content: () -> some View) -> some View {
+  @ViewBuilder private func content(@ViewBuilder content: () -> some View) -> some View {
     HStack(spacing: 5.0) {
       content()
     }

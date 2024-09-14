@@ -1,6 +1,6 @@
 import ScryfallKit
 
-public protocol MagicCardDetailRequestClient {
+public protocol MagicCardDetailRequestClient: Sendable {
   associatedtype MagicCardModel: MagicCard
   associatedtype MagicCardSet: GameSet
   

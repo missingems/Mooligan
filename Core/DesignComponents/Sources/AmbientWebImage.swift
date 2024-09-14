@@ -42,10 +42,9 @@ public struct AmbientWebImage: View {
           processors: transformers
         )
       ) { state in
-        if let image = state.image {
-          image.resizable().aspectRatio(contentMode: .fit)
-        }
+        state.image.map { $0.resizable() }
       }
+      .aspectRatio(contentMode: .fit)
       .blur(radius: blurRadius, opaque: false)
       .opacity(0.38)
       .scaleEffect(scale)
@@ -55,7 +54,8 @@ public struct AmbientWebImage: View {
         request: ImageRequest(
           url: url,
           processors: transformers
-        )
+        ),
+        transaction: Transaction(animation: .interactiveSpring)
       ) { state in
         if state.isLoading {
           RoundedRectangle(cornerRadius: cornerRadius).fill(Color(.systemFill)).shimmering(
@@ -64,22 +64,11 @@ public struct AmbientWebImage: View {
             )
           )
         } else if let image = state.image {
-          image.resizable().aspectRatio(
-            MagicCardImageRatio.widthToHeight.rawValue,
-            contentMode: .fill
-          )
+          image.resizable()
         }
       }
-      .clipShape(
-        .rect(
-          cornerRadii: RectangleCornerRadii(
-            topLeading: cornerRadius,
-            bottomLeading: cornerRadius,
-            bottomTrailing: cornerRadius,
-            topTrailing: cornerRadius
-          )
-        )
-      )
+      .aspectRatio(contentMode: .fit)
+      .clipShape(.rect(cornerSize: CGSize(width: cornerRadius, height: cornerRadius)))
       .overlay(
         RoundedRectangle(cornerRadius: cornerRadius).stroke(.separator)
       )

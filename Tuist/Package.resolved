@@ -23,8 +23,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/JacobHearst/ScryfallKit",
       "state" : {
-        "branch" : "main",
-        "revision" : "bbbb3fd987cbdc4910e98959d283dc1f10fde83f"
+        "revision" : "bc33bfde2ecdcc1381da549caf3bd68bd98a1d1f",
+        "version" : "5.11.0"
       }
     },
     {
