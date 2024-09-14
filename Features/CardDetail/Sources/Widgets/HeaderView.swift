@@ -48,8 +48,17 @@ struct HeaderView: View {
             height: layoutConfiguration.transformButtonSize.height
           )
           .background(.thinMaterial)
-          .clipShape(Circle())
-          .overlay(Circle().stroke(Color(.separator), lineWidth: 1 / UIScreen.main.nativeScale).opacity(0.618))
+          .clipShape(
+            Circle()
+          )
+          .overlay(
+            Circle()
+              .stroke(
+                Color(.separator),
+                lineWidth: 1 / UIScreen.main.nativeScale
+              )
+              .opacity(0.618)
+          )
         }
       }
       .padding(layoutConfiguration.insets)
