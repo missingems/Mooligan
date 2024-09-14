@@ -35,10 +35,10 @@ struct Feature<Client: MagicCardDetailRequestClient> {
     case viewAppeared(initialAction: Action)
   }
   
-  private let client: UnsafeSendable<Client>
+  private let client: Client
   
   init(client: Client) {
-    self.client = UnsafeSendable(client)
+    self.client = client
   }
   
   var body: some ReducerOf<Self> {
@@ -54,12 +54,12 @@ struct Feature<Client: MagicCardDetailRequestClient> {
         
       case let .fetchSet(card):
         return .run { [client] in
-          try await $0(.updateSetIconURL(client.wrappedValue.getSet(of: card).iconURL))
+          try await $0(.updateSetIconURL(client.getSet(of: card).iconURL))
         }
         
       case let .fetchVariants(card):
         return .run { [client] in
-          try await $0(.updateVariants(client.wrappedValue.getVariants(of: card, page: 0)))
+          try await $0(.updateVariants(client.getVariants(of: card, page: 0)))
         }
         
       case let .viewAppeared(action):
