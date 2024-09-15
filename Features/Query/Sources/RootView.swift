@@ -7,9 +7,14 @@ public struct RootView: View {
   public let queryType: QueryType
   
   public var body: some View {
-    QueryView(store: Store(initialState: Feature.State(queryType: queryType), reducer: {
-      Feature(client: UnsafeSendable(ScryfallClient(networkLogLevel: .minimal)))
-    }))
+    QueryView(
+      store: Store(
+        initialState: Feature.State(queryType: queryType),
+        reducer: {
+          Feature(client: ScryfallClient(networkLogLevel: .minimal))
+        }
+      )
+    )
   }
   
   public init(queryType: QueryType) {

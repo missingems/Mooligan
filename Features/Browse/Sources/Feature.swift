@@ -2,12 +2,10 @@ import ComposableArchitecture
 import SwiftUI
 import Networking
 
-@Reducer
-struct Feature<Client: GameSetRequestClient> {
+@Reducer struct Feature<Client: GameSetRequestClient> {
   let client: Client
   
-  @ObservableState
-  struct State: Equatable {
+  @ObservableState struct State: Equatable {
     var isLoading: Bool = false
     var selectedSet: Client.GameSetModel? = nil
     var sets: [Client.GameSetModel] = []
@@ -43,9 +41,8 @@ struct Feature<Client: GameSetRequestClient> {
       case .fetchSets:
         state.isLoading = true
         
-        return .run { [client = self.client] send in
-          let objectList = try await client.getAllSets()
-          await send(.updateSets(objectList))
+        return .run { send in
+          try await send(.updateSets(client.getAllSets()))
         }
         
       case .viewAppeared:
@@ -59,6 +56,5 @@ struct Feature<Client: GameSetRequestClient> {
         return .none
       }
     }
-    ._printChanges(.actionLabels)
   }
 }

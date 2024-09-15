@@ -3,7 +3,7 @@ import Networking
 
 @Reducer
 struct Feature<Client: MagicCardQueryRequestClient> {
-  let client: UnsafeSendable<Client>
+  let client: Client
   
   enum Cancellables: Hashable {
     case queryCards(page: Int)
@@ -83,7 +83,7 @@ extension Feature {
       do {
         try await send(
           .updateCards(
-            client.wrappedValue.queryCards(queryType),
+            client.queryCards(queryType),
             queryType
           )
         )
