@@ -3,7 +3,7 @@ import Foundation
 public enum MagicCardFixtures {
   case split
   
-  public var value: some MagicCard {
+  public var value: MockMagicCard<MockMagicCardColor> {
     MagicCardBuilder<MockMagicCardColor>()
       .with(imageURL: URL(string: "https://cards.scryfall.io/normal/front/0/2/023b5e6f-10de-422d-8431-11f1fdeca246.jpg?1562895407")!)
       .with(set: "MKM")

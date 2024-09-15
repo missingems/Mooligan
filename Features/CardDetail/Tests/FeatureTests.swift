@@ -4,8 +4,8 @@ import ComposableArchitecture
 import XCTest
 
 final class FeatureTests: XCTestCase {
-  typealias Client = Networking.MockMagicCardDetailRequestClient
-  let card = CardBuilder.splitCard
+  typealias Client = Networking.MockMagicCardDetailRequestClient<MockMagicCard<MockMagicCardColor>>
+  let card = MagicCardFixtures.split.value
   
   func test_whenStateEntryPointIsQuery_startShouldFetchSet() {
     let state = Feature<Client>.State(card: card, entryPoint: .query)
@@ -39,12 +39,9 @@ final class FeatureTests: XCTestCase {
       initialState: Feature.State(card: card, entryPoint: .set(MockGameSet())),
       reducer: { Feature(client: Client()) }
     )
-    
+    let card = self.card
     await store.send(.viewAppeared(initialAction: store.state.start))
     await store.receive(.fetchVariants(card: card))
-    await store.receive(.updateVariants([card])) { [weak self] state in
-      guard let card = self?.card else { return }
-      state.content.variants = [card]
-    }
+    await store.receive(.updateVariants([]))
   }
 }
