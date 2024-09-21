@@ -27,7 +27,7 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
             collectorNumber: store.content.collectorNumber,
             colorIdentity: store.content.colorIdentity,
             setCode: store.content.setCode,
-            setIconURL: store.content.setIconURL
+            setIconURL: try? store.content.setIconURL.get()
           )
           
           LegalityView(

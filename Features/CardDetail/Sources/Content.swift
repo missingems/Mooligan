@@ -36,8 +36,8 @@ struct Content<Card: MagicCard>: Equatable, Sendable {
   let legalityLabel: String
   let displayReleasedDate: String
   let setCode: String
-  var setIconURL: URL?
-  var variants: [Card] = []
+  var setIconURL: Result<URL?, FeatureError>
+  var variants: Result<[Card], FeatureError>?
   let card: Card
   let legalities: [MagicCardLegalitiesValue]
   
@@ -83,7 +83,7 @@ struct Content<Card: MagicCard>: Equatable, Sendable {
     setCode = card.getSet()
     collectorNumber = card.getCollectorNumber()
     legalities = card.getLegalities().value
-    self.setIconURL = setIconURL
+    self.setIconURL = .success(setIconURL)
   }
   
   static func makeDescription(faceDirection: MagicCardFaceDirection, card: Card) -> Description {

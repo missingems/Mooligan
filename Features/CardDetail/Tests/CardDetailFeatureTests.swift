@@ -46,14 +46,16 @@ struct CardDetailFeatureTests {
     case .query:
       await store.send(.viewAppeared(initialAction: store.state.start))
       await store.receive(.fetchSet(card: card))
-      await store.receive(.updateSetIconURL(URL(string: "https://mooligan.com")!)) { state in
-        state.content.setIconURL = URL(string: "https://mooligan.com")
+      await store.receive(.updateSetIconURL(.success(URL(string: "https://mooligan.com")))) { state in
+        state.content.setIconURL = .success(URL(string: "https://mooligan.com"))
       }
       
     case .set:
       await store.send(.viewAppeared(initialAction: store.state.start))
       await store.receive(.fetchVariants(card: card))
-      await store.receive(.updateVariants([]))
+      await store.receive(.updateVariants(.success([card]))) { state in
+        state.content.variants = .success([card])
+      }
     }
   }
 }

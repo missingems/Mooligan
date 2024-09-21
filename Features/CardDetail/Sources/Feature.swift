@@ -16,6 +16,30 @@ import Networking
   var body: some ReducerOf<Self> {
     Reduce { state, action in
       switch action {
+      case let .fetchSet(card):
+        return .run { send in
+          try await send(.updateSetIconURL(.success(client.getSet(of: card).iconURL)))
+        } catch: { error, send in
+          await send(
+            .updateSetIconURL(
+              .failure(.failedToFetchSetIconURL(errorMessage: error.localizedDescription))
+            )
+          )
+        }
+        
+      case let .fetchVariants(card):
+        return .run { send in
+          try await send(
+            .updateVariants(.success(client.getVariants(of: card, page: 0)))
+          )
+        } catch: { error, send in
+          await send(
+            .updateVariants(
+              .failure(.failedToFetchVariants(errorMessage: error.localizedDescription))
+            )
+          )
+        }
+        
       case let .updateVariants(value):
         state.content.variants = value
         return .none
@@ -24,23 +48,9 @@ import Networking
         state.content.setIconURL = value
         return .none
         
-      case let .fetchSet(card):
-        return .run { send in
-          try await send(.updateSetIconURL(client.getSet(of: card).iconURL))
-        } catch: { error, _ in
-          os_log(.error, log: .default, "\(error.localizedDescription)")
-        }
-        
-      case let .fetchVariants(card):
-        return .run { send in
-          try await send(.updateVariants(client.getVariants(of: card, page: 0)))
-        } catch: { error, send in
-          os_log(.error, log: .default, "\(error.localizedDescription)")
-        }
-        
       case let .viewAppeared(action):
-        return .run {
-          await $0(action)
+        return .run { send in
+          await send(action)
         }
       }
     }
@@ -75,8 +85,20 @@ extension Feature {
   indirect enum Action: Equatable, Sendable {
     case fetchSet(card: Client.MagicCardModel)
     case fetchVariants(card: Client.MagicCardModel)
-    case updateVariants(_ variants: [Client.MagicCardModel])
-    case updateSetIconURL(_ setIconURL: URL?)
+    case updateVariants(_ variants: Result<[Client.MagicCardModel], FeatureError>)
+    case updateSetIconURL(_ setIconURL: Result<URL?, FeatureError>)
     case viewAppeared(initialAction: Action)
+  }
+}
+
+enum FeatureError: Error, Sendable, Equatable {
+  case failedToFetchVariants(errorMessage: String)
+  case failedToFetchSetIconURL(errorMessage: String)
+  
+  var localizedDescription: String {
+    return switch self {
+    case let .failedToFetchVariants(value): value
+    case let .failedToFetchSetIconURL(value): value
+    }
   }
 }

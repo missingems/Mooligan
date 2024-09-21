@@ -2,11 +2,11 @@ import Foundation
 import ScryfallKit
 
 public struct MockMagicCardDetailRequestClient<Card: MagicCard>: MagicCardDetailRequestClient {
-  public func getVariants(of card: Card, page: Int) async throws -> [Card] {
-    []
+  public func getVariants(of card: MockMagicCard<MockMagicCardColor>, page: Int) async throws -> [MockMagicCard<MockMagicCardColor>] {
+    [card]
   }
   
-  public func getSet(of card: Card) async throws -> MockGameSet {
+  public func getSet(of card: MockMagicCard<MockMagicCardColor>) async throws -> MockGameSet {
     MockGameSet(
       isParent: true,
       id: UUID(),
