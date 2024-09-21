@@ -4,43 +4,6 @@ import OSLog
 import Networking
 
 @Reducer struct Feature<Client: MagicCardDetailRequestClient> {
-  enum Error: Swift.Error, Equatable, Sendable {
-    case set(String)
-    case variant(String)
-  }
-  
-  @ObservableState struct State: Equatable, Sendable {
-    var content: Content<Client.MagicCardModel>
-    let start: Action
-    
-    /// Initializes the state based on the entry point and card details.
-    /// - Parameters:
-    ///   - card: The magic card model to be used.
-    ///   - entryPoint: The entry point which determines the initial action and content configuration.
-    init(
-      card: Client.MagicCardModel,
-      entryPoint: EntryPoint<Client>
-    ) {
-      switch entryPoint {
-      case .query:
-        content = Content(card: card, setIconURL: nil)
-        start = .fetchSet(card: card)
-        
-      case let .set(value):
-        content = Content(card: card, setIconURL: value.iconURL)
-        start = .fetchVariants(card: card)
-      }
-    }
-  }
-  
-  indirect enum Action: Equatable, Sendable {
-    case fetchSet(card: Client.MagicCardModel)
-    case fetchVariants(card: Client.MagicCardModel)
-    case updateVariants(_ variants: [Client.MagicCardModel])
-    case updateSetIconURL(_ setIconURL: URL?)
-    case viewAppeared(initialAction: Action)
-  }
-  
   private let client: Client
   
   /// Initializes the feature with a network client.
@@ -81,5 +44,39 @@ import Networking
         }
       }
     }
+  }
+}
+
+extension Feature {
+  @ObservableState struct State: Equatable, Sendable {
+    var content: Content<Client.MagicCardModel>
+    let start: Action
+    
+    /// Initializes the state based on the entry point and card details.
+    /// - Parameters:
+    ///   - card: The magic card model to be used.
+    ///   - entryPoint: The entry point which determines the initial action and content configuration.
+    init(
+      card: Client.MagicCardModel,
+      entryPoint: EntryPoint<Client>
+    ) {
+      switch entryPoint {
+      case .query:
+        content = Content(card: card, setIconURL: nil)
+        start = .fetchSet(card: card)
+        
+      case let .set(value):
+        content = Content(card: card, setIconURL: value.iconURL)
+        start = .fetchVariants(card: card)
+      }
+    }
+  }
+  
+  indirect enum Action: Equatable, Sendable {
+    case fetchSet(card: Client.MagicCardModel)
+    case fetchVariants(card: Client.MagicCardModel)
+    case updateVariants(_ variants: [Client.MagicCardModel])
+    case updateSetIconURL(_ setIconURL: URL?)
+    case viewAppeared(initialAction: Action)
   }
 }
