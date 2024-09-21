@@ -2,10 +2,16 @@ import ProjectDescription
 
 let project = Project(
   name: "Browse",
+  options: .options(
+    automaticSchemesOptions: .enabled(
+      targetSchemesGrouping: .notGrouped,
+      codeCoverageEnabled: true,
+      testingOptions: .parallelizable
+    )
+  ),
   settings: .settings(
     base: [
       "SWIFT_VERSION": "6.0.0",
-      "CLANG_ENABLE_CODE_COVERAGE": "YES"
     ]
   ),
   targets: [
