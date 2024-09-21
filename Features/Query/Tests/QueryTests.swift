@@ -21,7 +21,7 @@ final class QueryTests: XCTestCase {
     store = TestStore(
       initialState: Feature<MockQueryRequestClient>.State(queryType: .set(gameSet, page: 1))
     ) {
-      Feature<MockQueryRequestClient>(client: UnsafeSendable(MockQueryRequestClient()))
+      Feature<MockQueryRequestClient>(client: MockQueryRequestClient())
     }
   }
   
@@ -46,7 +46,7 @@ final class QueryTests: XCTestCase {
         dataSource: ObjectList(model: [magicCard], hasNextPage: true)
       )
     ) {
-      Feature(client: UnsafeSendable(MockQueryRequestClient()))
+      Feature(client: MockQueryRequestClient())
     }
     
     await store.send(.loadMoreCardsIfNeeded(currentIndex: 0))
@@ -65,7 +65,7 @@ final class QueryTests: XCTestCase {
         dataSource: ObjectList(model: [magicCard], hasNextPage: false)
       )
     ) {
-      Feature(client: UnsafeSendable(MockQueryRequestClient()))
+      Feature(client: MockQueryRequestClient())
     }
     
     await store.send(.loadMoreCardsIfNeeded(currentIndex: 0))

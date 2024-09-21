@@ -2,9 +2,16 @@ import ProjectDescription
 
 let project = Project(
   name: "Query",
+  options: .options(
+    automaticSchemesOptions: .enabled(
+      targetSchemesGrouping: .notGrouped,
+      codeCoverageEnabled: true,
+      testingOptions: .parallelizable
+    )
+  ),
   settings: .settings(
     base: [
-      "SWIFT_VERSION": "6.0.0"
+      "SWIFT_VERSION": "6.0.0",
     ]
   ),
   targets: [

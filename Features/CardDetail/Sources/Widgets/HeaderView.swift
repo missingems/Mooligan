@@ -17,7 +17,9 @@ struct HeaderView: View {
     rotation: CGFloat,
     onTransformTapped: (() -> Void)? = nil
   ) {
-    guard let imageURL else { return nil }
+    guard let imageURL else {
+      return nil
+    }
     
     self.imageURL = imageURL
     self.isFlippable = isFlippable
@@ -41,15 +43,25 @@ struct HeaderView: View {
           Button {
             onTransformTapped?()
           } label: {
-            Image(systemName: layoutConfiguration.transformButtonSystemImageName).fontWeight(.semibold)
+            Image(systemName: "rectangle.portrait.rotate")
+              .fontWeight(.semibold)
           }
           .frame(
-            width: layoutConfiguration.transformButtonSize.width,
-            height: layoutConfiguration.transformButtonSize.height
+            width: 44.0,
+            height: 44.0
           )
           .background(.thinMaterial)
-          .clipShape(Circle())
-          .overlay(Circle().stroke(Color(.separator), lineWidth: 1 / UIScreen.main.nativeScale).opacity(0.618))
+          .clipShape(
+            Circle()
+          )
+          .overlay(
+            Circle()
+              .stroke(
+                Color(.separator),
+                lineWidth: 1 / UIScreen.main.nativeScale
+              )
+              .opacity(0.618)
+          )
         }
       }
       .padding(layoutConfiguration.insets)
@@ -67,8 +79,6 @@ extension HeaderView {
     }
     
     let rotation: CGFloat
-    let transformButtonSystemImageName = "rectangle.portrait.rotate"
-    let transformButtonSize = CGSize(width: 44.0, height: 44.0)
     let insets: EdgeInsets
     
     init(

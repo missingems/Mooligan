@@ -2,7 +2,7 @@ import ComposableArchitecture
 import Networking
 import SwiftUI
 
-public enum EntryPoint<Client: MagicCardDetailRequestClient>: Equatable {
+public enum EntryPoint<Client: MagicCardDetailRequestClient>: Equatable, Sendable {
   case query
   case set(Client.MagicCardSet)
 }
