@@ -32,30 +32,67 @@ struct CardDetailFeatureTests {
     arguments: [
       EntryPoint<Client>.query,
       EntryPoint<Client>.set(MockGameSet())
+    ],
+    [
+      Client.TestConfiguration.successFlow,
+      Client.TestConfiguration.failureFlow
     ]
   )
-  func viewAppeared(_ entryPoint: EntryPoint<Client>) async {
+  func viewAppeared(
+    _ entryPoint: EntryPoint<Client>,
+    configuration: Client.TestConfiguration
+  ) async {
     let store = await TestStore(
       initialState: Feature.State(card: card, entryPoint: entryPoint),
       reducer: {
-        Feature(client: Client())
+        Feature(client: Client(testConfiguration: configuration))
       }
     )
     
     switch entryPoint {
     case .query:
-      await store.send(.viewAppeared(initialAction: store.state.start))
-      await store.receive(.fetchSet(card: card))
-      await store.receive(.updateSetIconURL(.success(URL(string: "https://mooligan.com")))) { state in
-        state.content.setIconURL = .success(URL(string: "https://mooligan.com"))
+      if configuration == .successFlow {
+        await store.send(.viewAppeared(initialAction: store.state.start))
+        await store.receive(.fetchSet(card: card))
+        await store.receive(.updateSetIconURL(.success(URL(string: "https://mooligan.com")))) { state in
+          state.content.setIconURL = .success(URL(string: "https://mooligan.com"))
+        }
+      } else {
+        let expectedErrorMessage = """
+        The operation couldn’t be completed. (Networking.MockMagicCardDetailRequestClient\
+        <Networking.MockMagicCard<Networking.MockMagicCardColor>>.MockError error 1.)
+        """
+        await store.send(.viewAppeared(initialAction: store.state.start))
+        await store.receive(.fetchSet(card: card))
+        await store.receive(
+          .updateSetIconURL(.failure(.failedToFetchSetIconURL(errorMessage: expectedErrorMessage))
+          )
+        ) { state in
+          state.content.setIconURL = .failure(FeatureError.failedToFetchSetIconURL(errorMessage: expectedErrorMessage))
+        }
       }
       
     case .set:
-      await store.send(.viewAppeared(initialAction: store.state.start))
-      await store.receive(.fetchVariants(card: card))
-      await store.receive(.updateVariants(.success([card]))) { state in
-        state.content.variants = .success([card])
+      if configuration == .successFlow {
+        await store.send(.viewAppeared(initialAction: store.state.start))
+        await store.receive(.fetchVariants(card: card))
+        await store.receive(.updateVariants(.success([card]))) { state in
+          state.content.variants = .success([card])
+        }
+      } else {
+        let expectedErrorMessage = """
+        The operation couldn’t be completed. (Networking.MockMagicCardDetailRequestClient\
+        <Networking.MockMagicCard<Networking.MockMagicCardColor>>.MockError error 0.)
+        """
+        await store.send(.viewAppeared(initialAction: store.state.start))
+        await store.receive(.fetchVariants(card: card))
+        await store.receive(
+          .updateVariants(.failure(.failedToFetchVariants(errorMessage: expectedErrorMessage)))
+        ) { state in
+          state.content.variants = .failure(.failedToFetchVariants(errorMessage: expectedErrorMessage))
+        }
       }
     }
   }
 }
+
