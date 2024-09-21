@@ -4,7 +4,8 @@ let project = Project(
     name: "Networking",
     settings: .settings(
       base: [
-        "SWIFT_VERSION": "6.0.0"
+        "SWIFT_VERSION": "6.0.0",
+        "CLANG_ENABLE_CODE_COVERAGE": "YES"
       ]
     ),
     targets: [
