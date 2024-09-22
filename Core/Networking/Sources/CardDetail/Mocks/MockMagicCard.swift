@@ -104,7 +104,15 @@ public struct MockMagicCard<Color: MagicCardColor>: MagicCard , MagicCardFace{
   }
   
   public func getLanguage() -> String { language }
-  public func getCardFace(for direction: MagicCardFaceDirection) -> any MagicCardFace { cardFaces.first ?? self }
+  public func getCardFace(for direction: MagicCardFaceDirection) -> any MagicCardFace {
+    return switch direction {
+    case .front:
+      cardFaces.first ?? self
+      
+    case .back:
+      cardFaces.last ?? self
+    }
+  }
   public func getManaValue() -> Double? { manaValue }
   public func getColorIdentity() -> [any MagicCardColor] { colorIdentity }
   public func getColorIndicator() -> [any MagicCardColor]? { colorIndicator }
