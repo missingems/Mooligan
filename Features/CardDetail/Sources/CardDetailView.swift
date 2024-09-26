@@ -17,7 +17,7 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
             rotation: 0
           )
           
-          FaceView(descriptions: store.content.descriptions)
+          CardDetailTableView(descriptions: store.content.descriptions)
           
           InfoView(
             power: store.content.power,
