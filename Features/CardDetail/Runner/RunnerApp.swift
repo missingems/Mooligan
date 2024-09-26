@@ -13,7 +13,7 @@ struct RunnerApp: App {
     WindowGroup {
       NavigationView {
         RootView(
-          card: MagicCardFixtures.split.value,
+          card: MagicCardFixtures.regular.value,
           client: MockMagicCardDetailRequestClient<MockMagicCard<MockMagicCardColor>>(testConfiguration: .successFlow),
           entryPoint: .query
         )
