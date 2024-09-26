@@ -4,11 +4,60 @@ import OSLog
 import Networking
 
 @Reducer struct Feature<Client: MagicCardDetailRequestClient> {
-  enum Error: Swift.Error, Equatable, Sendable {
-    case set(String)
-    case variant(String)
+  private let client: Client
+  
+  /// Initializes the feature with a network client.
+  /// - Parameter client: The client used for fetching card data.
+  init(client: Client) {
+    self.client = client
   }
   
+  /// Defines how the state should be updated based on actions.
+  var body: some ReducerOf<Self> {
+    Reduce { state, action in
+      switch action {
+      case let .fetchSet(card):
+        return .run { send in
+          try await send(.updateSetIconURL(.success(client.getSet(of: card).iconURL)))
+        } catch: { error, send in
+          await send(
+            .updateSetIconURL(
+              .failure(.failedToFetchSetIconURL(errorMessage: error.localizedDescription))
+            )
+          )
+        }
+        
+      case let .fetchVariants(card):
+        return .run { send in
+          try await send(
+            .updateVariants(.success(client.getVariants(of: card, page: 0)))
+          )
+        } catch: { error, send in
+          await send(
+            .updateVariants(
+              .failure(.failedToFetchVariants(errorMessage: error.localizedDescription))
+            )
+          )
+        }
+        
+      case let .updateVariants(value):
+        state.content.variants = value
+        return .none
+        
+      case let .updateSetIconURL(value):
+        state.content.setIconURL = value
+        return .none
+        
+      case let .viewAppeared(action):
+        return .run { send in
+          await send(action)
+        }
+      }
+    }
+  }
+}
+
+extension Feature {
   @ObservableState struct State: Equatable, Sendable {
     var content: Content<Client.MagicCardModel>
     let start: Action
@@ -36,50 +85,20 @@ import Networking
   indirect enum Action: Equatable, Sendable {
     case fetchSet(card: Client.MagicCardModel)
     case fetchVariants(card: Client.MagicCardModel)
-    case updateVariants(_ variants: [Client.MagicCardModel])
-    case updateSetIconURL(_ setIconURL: URL?)
+    case updateVariants(_ variants: Result<[Client.MagicCardModel], FeatureError>)
+    case updateSetIconURL(_ setIconURL: Result<URL?, FeatureError>)
     case viewAppeared(initialAction: Action)
   }
+}
+
+enum FeatureError: Error, Sendable, Equatable {
+  case failedToFetchVariants(errorMessage: String)
+  case failedToFetchSetIconURL(errorMessage: String)
   
-  private let client: Client
-  
-  /// Initializes the feature with a network client.
-  /// - Parameter client: The client used for fetching card data.
-  init(client: Client) {
-    self.client = client
-  }
-  
-  /// Defines how the state should be updated based on actions.
-  var body: some ReducerOf<Self> {
-    Reduce { state, action in
-      switch action {
-      case let .updateVariants(value):
-        state.content.variants = value
-        return .none
-        
-      case let .updateSetIconURL(value):
-        state.content.setIconURL = value
-        return .none
-        
-      case let .fetchSet(card):
-        return .run { send in
-          try await send(.updateSetIconURL(client.getSet(of: card).iconURL))
-        } catch: { error, _ in
-          os_log(.error, log: .default, "\(error.localizedDescription)")
-        }
-        
-      case let .fetchVariants(card):
-        return .run { send in
-          try await send(.updateVariants(client.getVariants(of: card, page: 0)))
-        } catch: { error, send in
-          os_log(.error, log: .default, "\(error.localizedDescription)")
-        }
-        
-      case let .viewAppeared(action):
-        return .run {
-          await $0(action)
-        }
-      }
+  var localizedDescription: String {
+    return switch self {
+    case let .failedToFetchVariants(value): value
+    case let .failedToFetchSetIconURL(value): value
     }
   }
 }

@@ -5,11 +5,13 @@ public struct ManaView: View {
   let size: CGSize
   let spacing: CGFloat
   
-  public init(
-    identity: [String],
+  public init?(
+    identity: [String]?,
     size: CGSize,
     spacing: CGFloat = 3
   ) {
+    guard let identity else { return nil }
+    
     self.identity = identity
     self.size = size
     self.spacing = spacing

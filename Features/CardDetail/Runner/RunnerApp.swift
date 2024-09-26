@@ -14,7 +14,7 @@ struct RunnerApp: App {
       NavigationView {
         RootView(
           card: MagicCardFixtures.split.value,
-          client: MockMagicCardDetailRequestClient(),
+          client: MockMagicCardDetailRequestClient<MockMagicCard<MockMagicCardColor>>(testConfiguration: .successFlow),
           entryPoint: .query
         )
       }

@@ -36,8 +36,8 @@ struct Content<Card: MagicCard>: Equatable, Sendable {
   let legalityLabel: String
   let displayReleasedDate: String
   let setCode: String
-  var setIconURL: URL?
-  var variants: [Card] = []
+  var setIconURL: Result<URL?, FeatureError>
+  var variants: Result<[Card], FeatureError>?
   let card: Card
   let legalities: [MagicCardLegalitiesValue]
   
@@ -50,7 +50,6 @@ struct Content<Card: MagicCard>: Equatable, Sendable {
     id = card.getOracleText()
     name = card.getDisplayName(faceDirection: faceDirection)
     
-    // MARK: - Card Configuration
     usdPrice = card.getPrices().usd
     usdFoilPrice = card.getPrices().usdFoil
     tixPrice = card.getPrices().tix
@@ -59,7 +58,6 @@ struct Content<Card: MagicCard>: Equatable, Sendable {
     let identity = card.getColorIdentity().map { "{\($0.value.rawValue)}" }
     colorIdentity = identity.isEmpty ? ["{C}"] : identity
     
-    // MARK: - Selected Face Configuration
     let face = card.getCardFace(for: faceDirection)
     imageURL = face.getImageURL() ?? card.getImageURL()
     
@@ -76,24 +74,21 @@ struct Content<Card: MagicCard>: Equatable, Sendable {
     artist = face.artist
     displayReleasedDate = String(localized: "Release Date: \(card.getReleasedAt())")
     
-    // MARK: - Static Labels
     illstrautedLabel = String(localized: "Artist")
     viewRulingsLabel = String(localized: "Rulings")
     legalityLabel = String(localized: "Legality")
     setCode = card.getSet()
     collectorNumber = card.getCollectorNumber()
     legalities = card.getLegalities().value
-    self.setIconURL = setIconURL
+    self.setIconURL = .success(setIconURL)
   }
   
   static func makeDescription(faceDirection: MagicCardFaceDirection, card: Card) -> Description {
-    let face = card.getCardFace(for: faceDirection)
-    
-    return Description(
+    Description(
       name: card.getDisplayName(faceDirection: faceDirection),
       text: card.getDisplayText(faceDirection: faceDirection),
       typeline: card.getDisplayTypeline(faceDirection: faceDirection),
-      flavorText: face.flavorText,
+      flavorText: card.getCardFace(for: faceDirection).flavorText,
       manaCost: card.getDisplayManaCost(faceDirection: faceDirection)
     )
   }
