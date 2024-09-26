@@ -1,7 +1,7 @@
 import Networking
 import SwiftUI
 
-struct FaceView<Card: MagicCard>: View {
+struct CardDetailTableView<Card: MagicCard>: View {
   let main: Content<Card>.Description
   let alternate: Content<Card>.Description?
   
