@@ -9,9 +9,12 @@ public enum MagicCardFixtures {
     case .regular:
       MagicCardBuilder<MockMagicCardColor>()
         .with(imageURL: URL(string: "https://cards.scryfall.io/normal/front/0/2/023b5e6f-10de-422d-8431-11f1fdeca246.jpg?1562895407")!)
+        .with(name: "Eidolon")
+        .with(printedText: "This is a printed test")
         .with(set: "MKM")
         .with(collectorNumber: "123")
         .with(typeline: "Creature - Enchanment")
+        .with(manaCost: "{W}")
         .build()
       
     case .split:
