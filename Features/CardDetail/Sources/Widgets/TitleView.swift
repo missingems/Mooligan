@@ -3,7 +3,7 @@ import SwiftUI
 
 struct TitleView: View {
   let name: String
-  let manaCost: [String]
+  let manaCost: [String]?
   
   var body: some View {
     HStack(alignment: .top) {
@@ -25,7 +25,7 @@ struct TitleView: View {
   
   init?(
     name: String?,
-    manaCost: [String]
+    manaCost: [String]?
   ) {
     guard let name else { return nil }
     
