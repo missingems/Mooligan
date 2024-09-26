@@ -46,7 +46,7 @@ Whenever a player casts a spell, if no mana was spent to cast that spell, Roilin
           .init(
             manaValue: 1,
             artist: "Jun",
-            flavorText: "Flavor",
+            flavorText: "Flavor 2",
             loyalty: "1",
             name: "Jun Name",
             oracleText: "Oracle",
