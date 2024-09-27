@@ -35,11 +35,15 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
           )
           .padding(.vertical, 13.0)
           
+          Divider()
+            .safeAreaPadding(.leading, nil)
+          
           LegalityView(
             title: store.content.legalityLabel,
             displayReleaseDate: store.content.displayReleasedDate,
             legalities: store.content.legalities
           )
+          .padding(.vertical, 13.0)
         }
       }
       .background {
