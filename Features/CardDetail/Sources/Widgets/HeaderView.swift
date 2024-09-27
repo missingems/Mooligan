@@ -1,8 +1,5 @@
 import DesignComponents
 import SwiftUI
-#if DEBUG
-import Networking
-#endif
 
 struct HeaderView: View {
   let onTransformTapped: (() -> Void)?
@@ -32,42 +29,38 @@ struct HeaderView: View {
   }
   
   var body: some View {
-    ZStack(alignment: .bottom) {
-      ZStack {
-        AmbientWebImage(
-          url: imageURL,
-          rotation: layoutConfiguration.rotation
-        )
-        
-        if isFlippable {
-          Button {
-            onTransformTapped?()
-          } label: {
-            Image(systemName: "rectangle.portrait.rotate")
-              .fontWeight(.semibold)
-          }
-          .frame(
-            width: 44.0,
-            height: 44.0
-          )
-          .background(.thinMaterial)
-          .clipShape(
-            Circle()
-          )
-          .overlay(
-            Circle()
-              .stroke(
-                Color(.separator),
-                lineWidth: 1 / UIScreen.main.nativeScale
-              )
-              .opacity(0.618)
-          )
-        }
-      }
-      .padding(layoutConfiguration.insets)
+    ZStack {
+      AmbientWebImage(
+        url: imageURL,
+        rotation: layoutConfiguration.rotation
+      )
       
-      Divider()
+      if isFlippable {
+        Button {
+          onTransformTapped?()
+        } label: {
+          Image(systemName: "rectangle.portrait.rotate")
+            .fontWeight(.semibold)
+        }
+        .frame(
+          width: 44.0,
+          height: 44.0
+        )
+        .background(.thinMaterial)
+        .clipShape(
+          Circle()
+        )
+        .overlay(
+          Circle()
+            .stroke(
+              Color(.separator),
+              lineWidth: 1 / UIScreen.main.nativeScale
+            )
+            .opacity(0.618)
+        )
+      }
     }
+    .padding(layoutConfiguration.insets)
   }
 }
 
