@@ -8,13 +8,14 @@ struct VariantView: View {
   }
   
   let title: String
+  let subtitle: String
   let cards: [any MagicCard]
   let send: (Action) -> Void
   
   var body: some View {
     VStack(alignment: .leading, spacing: 0) {
-      Text(title)
-        .font(.headline)
+      Text(title).font(.headline)
+      Text(subtitle).font(.caption).foregroundStyle(.secondary)
       
       ScrollView(
         .horizontal,
@@ -32,7 +33,7 @@ struct VariantView: View {
               }
             )
             .buttonStyle(.sinkableButtonStyle)
-            .frame(width: 150, height: 150 * 1.3928 + 26, alignment: .center)
+            .frame(width: 150.0, height: 234.92, alignment: .center)
           }
         }
       }
@@ -40,12 +41,16 @@ struct VariantView: View {
     .safeAreaPadding(.horizontal, nil)
   }
   
-  init(
+  init?(
     title: String,
-    cards: [any MagicCard],
+    subtitle: String,
+    cards: [any MagicCard]?,
     send: @escaping (Action) -> Void
   ) {
+    guard let cards else { return nil }
+    
     self.title = title
+    self.subtitle = subtitle
     self.cards = cards
     self.send = send
   }
@@ -53,14 +58,13 @@ struct VariantView: View {
 
 #Preview {
   VariantView(
-    title: "Relevant Cards",
+    title: "Prints",
+    subtitle: "4 cards",
     cards: [
       MagicCardFixtures.split.value,
       MagicCardFixtures.split.value,
       MagicCardFixtures.split.value,
       MagicCardFixtures.split.value
     ]
-  ) { action in
-    print(action)
-  }
+  ) { _ in }
 }

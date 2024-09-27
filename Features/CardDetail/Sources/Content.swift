@@ -36,6 +36,12 @@ struct Content<Card: MagicCard>: Equatable, Sendable {
   let viewRulingsLabel: String
   let legalityLabel: String
   let displayReleasedDate: String
+  let variantLabel: String
+  
+  var numberOfVariantsLabel: String {
+    String(localized: "\((try? variants?.get().count) ?? 0) results")
+  }
+  
   let setCode: String
   var setIconURL: Result<URL?, FeatureError>
   var variants: Result<[Card], FeatureError>?
@@ -79,6 +85,8 @@ struct Content<Card: MagicCard>: Equatable, Sendable {
     viewRulingsLabel = String(localized: "Rulings")
     legalityLabel = String(localized: "Legality")
     infoLabel = String(localized: "Information")
+    variantLabel = String(localized: "Prints")
+    
     setCode = card.getSet()
     collectorNumber = card.getCollectorNumber()
     legalities = card.getLegalities().value
