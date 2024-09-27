@@ -62,7 +62,9 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
       initialState: Feature.State(card: MagicCardFixtures.split.value, entryPoint: .query)
     ) {
       Feature(
-        client: MockMagicCardDetailRequestClient<MockMagicCard<MockMagicCardColor>>(testConfiguration: .successFlow)
+        client: MockMagicCardDetailRequestClient<MockMagicCard<MockMagicCardColor>>(
+          testConfiguration: .successFlow
+        )
       )
     }
   )
