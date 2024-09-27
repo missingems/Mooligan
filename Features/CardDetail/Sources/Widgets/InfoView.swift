@@ -9,13 +9,11 @@ struct InfoView: View {
     VStack(alignment: .leading) {
       Text(title).font(.headline)
       
-      ScrollView(.horizontal) {
-        
+      ScrollView(.horizontal, showsIndicators: false) {
         HStack {
           ForEach(widgets) { $0 }
         }
       }
-      .scrollIndicators(.hidden)
     }
     .safeAreaPadding(.horizontal, nil)
   }

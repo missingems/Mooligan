@@ -44,6 +44,17 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
             legalities: store.content.legalities
           )
           .padding(.vertical, 13.0)
+          
+          Divider()
+            .safeAreaPadding(.leading, nil)
+          
+          VariantView(
+            title: store.content.variantLabel,
+            subtitle: store.content.numberOfVariantsLabel,
+            cards: try? store.content.variants?.get()) { action in
+              print(action)
+            }
+            .padding(.vertical, 13.0)
         }
       }
       .background {
@@ -62,7 +73,9 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
       initialState: Feature.State(card: MagicCardFixtures.split.value, entryPoint: .query)
     ) {
       Feature(
-        client: MockMagicCardDetailRequestClient<MockMagicCard<MockMagicCardColor>>(testConfiguration: .successFlow)
+        client: MockMagicCardDetailRequestClient<MockMagicCard<MockMagicCardColor>>(
+          testConfiguration: .successFlow
+        )
       )
     }
   )
