@@ -54,8 +54,7 @@ public struct AmbientWebImage: View {
         request: ImageRequest(
           url: url,
           processors: transformers
-        ),
-        transaction: Transaction(animation: .interactiveSpring)
+        )
       ) { state in
         if state.isLoading {
           RoundedRectangle(cornerRadius: cornerRadius).fill(Color(.systemFill)).shimmering(
