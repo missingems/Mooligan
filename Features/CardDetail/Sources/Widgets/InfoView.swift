@@ -7,7 +7,7 @@ struct InfoView: View {
   var body: some View {
     ScrollView(.horizontal) {
       HStack {
-        ForEach(widgets) { $0.view }
+        ForEach(widgets) { $0 }
       }
     }
     .scrollIndicators(.hidden)
@@ -53,7 +53,7 @@ struct InfoView: View {
   }
 }
 
-@MainActor private enum Widget: Hashable, Identifiable {
+private enum Widget: Hashable, Identifiable, View {
   case powerToughness(power: String, toughness: String)
   case loyalty(counters: String)
   case manaValue(String)
@@ -61,7 +61,7 @@ struct InfoView: View {
   case colorIdentity([String])
   case set(code: String, iconURL: URL?)
   
-  @ViewBuilder var view: some View {
+  var body: some View {
     switch self {
     case let .powerToughness(power, toughness):
       powerToughnessView(power: power, toughness: toughness)
@@ -89,13 +89,13 @@ struct InfoView: View {
 }
 
 private extension Widget {
-  @ViewBuilder func powerToughnessView(
+  @ViewBuilder private func powerToughnessView(
     power: String?,
     toughness: String?
   ) -> some View {
     if let power, let toughness {
-      VStack(alignment: .center) {
-        content {
+      VStack(alignment: .center, spacing: 3) {
+        wrappedContent {
           Image("power", bundle: DesignComponentsResources.bundle)
             .renderingMode(.template)
             .aspectRatio(contentMode: .fit)
@@ -115,6 +115,7 @@ private extension Widget {
           .font(.caption2)
           .foregroundStyle(.secondary)
           .multilineTextAlignment(.center)
+          .frame(maxHeight: .infinity, alignment: .center)
         
         Spacer(minLength: 0)
       }
@@ -123,8 +124,8 @@ private extension Widget {
   
   @ViewBuilder private func manaIdentityView(_ identity: [String]) -> some View {
     if identity.isEmpty == false {
-      VStack(alignment: .center) {
-        content {
+      VStack(alignment: .center, spacing: 3.0) {
+        wrappedContent {
           ManaView(identity: identity, size: CGSize(width: 21, height: 21))
         }
         
@@ -139,8 +140,8 @@ private extension Widget {
   
   @ViewBuilder private func loyaltyWidgetView(_ counters: String?) -> some View {
     if let counters {
-      VStack(alignment: .center) {
-        content {
+      VStack(alignment: .center, spacing: 3.0) {
+        wrappedContent {
           ZStack(alignment: .center) {
             Image("loyalty", bundle: DesignComponentsResources.bundle)
               .renderingMode(.template)
@@ -165,8 +166,8 @@ private extension Widget {
   
   @ViewBuilder private func collectionNumberView(_ collectorNumber: String?) -> some View {
     if let collectorNumber {
-      VStack(alignment: .center) {
-        content {
+      VStack(alignment: .center, spacing: 3.0) {
+        wrappedContent {
           Text("#\(collectorNumber)".uppercased()).font(.body).fontDesign(.serif)
         }
         
@@ -181,8 +182,8 @@ private extension Widget {
   
   @ViewBuilder private func setCodeView(_ code: String?, iconURL: URL?) -> some View {
     if let code, let iconURL {
-      VStack(alignment: .center) {
-        content {
+      VStack(alignment: .center, spacing: 3.0) {
+        wrappedContent {
           IconLazyImage(iconURL, tintColor: .primary).frame(width: 25, height: 25)
           Text(code.uppercased()).font(.body).fontDesign(.serif)
         }
@@ -198,8 +199,8 @@ private extension Widget {
   
   @ViewBuilder private func manaValueView(_ manaValue: String?) -> some View {
     if let manaValue {
-      VStack(alignment: .center) {
-        content {
+      VStack(alignment: .center, spacing: 3.0) {
+        wrappedContent {
           Text(manaValue).font(.body).fontDesign(.monospaced)
         }
         
@@ -214,7 +215,7 @@ private extension Widget {
 }
 
 extension Widget {
-  @ViewBuilder private func content(@ViewBuilder content: () -> some View) -> some View {
+  @ViewBuilder private func wrappedContent(@ViewBuilder content: () -> some View) -> some View {
     HStack(spacing: 5.0) {
       content()
     }
