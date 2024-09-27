@@ -19,7 +19,11 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
           
           CardDetailTableView(descriptions: store.content.descriptions)
           
+          Divider()
+            .safeAreaPadding(.leading, nil)
+          
           InfoView(
+            title: store.content.infoLabel,
             power: store.content.power,
             toughness: store.content.toughness,
             loyaltyCounters: store.content.loyalty,
@@ -29,12 +33,17 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
             setCode: store.content.setCode,
             setIconURL: try? store.content.setIconURL.get()
           )
+          .padding(.vertical, 13.0)
+          
+          Divider()
+            .safeAreaPadding(.leading, nil)
           
           LegalityView(
             title: store.content.legalityLabel,
             displayReleaseDate: store.content.displayReleasedDate,
             legalities: store.content.legalities
           )
+          .padding(.vertical, 13.0)
         }
       }
       .background {
@@ -45,4 +54,16 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
       store.send(.viewAppeared(initialAction: store.start))
     }
   }
+}
+
+#Preview {
+  CardDetailView(
+    store: Store(
+      initialState: Feature.State(card: MagicCardFixtures.split.value, entryPoint: .query)
+    ) {
+      Feature(
+        client: MockMagicCardDetailRequestClient<MockMagicCard<MockMagicCardColor>>(testConfiguration: .successFlow)
+      )
+    }
+  )
 }

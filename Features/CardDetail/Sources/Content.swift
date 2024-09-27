@@ -32,6 +32,7 @@ struct Content<Card: MagicCard>: Equatable, Sendable {
   let name: String
   let isLandscape: Bool
   let illstrautedLabel: String
+  let infoLabel: String
   let viewRulingsLabel: String
   let legalityLabel: String
   let displayReleasedDate: String
@@ -77,6 +78,7 @@ struct Content<Card: MagicCard>: Equatable, Sendable {
     illstrautedLabel = String(localized: "Artist")
     viewRulingsLabel = String(localized: "Rulings")
     legalityLabel = String(localized: "Legality")
+    infoLabel = String(localized: "Information")
     setCode = card.getSet()
     collectorNumber = card.getCollectorNumber()
     legalities = card.getLegalities().value

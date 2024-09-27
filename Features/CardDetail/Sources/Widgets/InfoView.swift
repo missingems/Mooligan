@@ -2,18 +2,26 @@ import DesignComponents
 import SwiftUI
 
 struct InfoView: View {
+  private let title: String
   private let widgets: [Widget]
   
   var body: some View {
-    ScrollView(.horizontal) {
-      HStack {
-        ForEach(widgets) { $0 }
+    VStack(alignment: .leading) {
+      Text(title).font(.headline)
+      
+      ScrollView(.horizontal) {
+        
+        HStack {
+          ForEach(widgets) { $0 }
+        }
       }
+      .scrollIndicators(.hidden)
     }
-    .scrollIndicators(.hidden)
+    .safeAreaPadding(.horizontal, nil)
   }
   
   init(
+    title: String,
     power: String?,
     toughness: String?,
     loyaltyCounters: String?,
@@ -23,6 +31,8 @@ struct InfoView: View {
     setCode: String?,
     setIconURL: URL?
   ) {
+    self.title = title
+    
     var widgets: [Widget] = []
     
     if let power, let toughness {
@@ -95,7 +105,7 @@ private extension Widget {
   ) -> some View {
     if let power, let toughness {
       VStack(alignment: .center, spacing: 3) {
-        wrappedContent {
+        Self.wrappedContent {
           Image("power", bundle: DesignComponentsResources.bundle)
             .renderingMode(.template)
             .aspectRatio(contentMode: .fit)
@@ -125,7 +135,7 @@ private extension Widget {
   @ViewBuilder private func manaIdentityView(_ identity: [String]) -> some View {
     if identity.isEmpty == false {
       VStack(alignment: .center, spacing: 3.0) {
-        wrappedContent {
+        Self.wrappedContent {
           ManaView(identity: identity, size: CGSize(width: 21, height: 21))
         }
         
@@ -133,6 +143,8 @@ private extension Widget {
           .font(.caption2)
           .foregroundStyle(.secondary)
           .multilineTextAlignment(.center)
+          .frame(maxHeight: .infinity, alignment: .center)
+        
         Spacer(minLength: 0)
       }
     }
@@ -141,7 +153,7 @@ private extension Widget {
   @ViewBuilder private func loyaltyWidgetView(_ counters: String?) -> some View {
     if let counters {
       VStack(alignment: .center, spacing: 3.0) {
-        wrappedContent {
+        Self.wrappedContent {
           ZStack(alignment: .center) {
             Image("loyalty", bundle: DesignComponentsResources.bundle)
               .renderingMode(.template)
@@ -159,6 +171,8 @@ private extension Widget {
           .font(.caption2)
           .foregroundStyle(.secondary)
           .multilineTextAlignment(.center)
+          .frame(maxHeight: .infinity, alignment: .center)
+        
         Spacer(minLength: 0)
       }
     }
@@ -167,7 +181,7 @@ private extension Widget {
   @ViewBuilder private func collectionNumberView(_ collectorNumber: String?) -> some View {
     if let collectorNumber {
       VStack(alignment: .center, spacing: 3.0) {
-        wrappedContent {
+        Self.wrappedContent {
           Text("#\(collectorNumber)".uppercased()).font(.body).fontDesign(.serif)
         }
         
@@ -175,6 +189,8 @@ private extension Widget {
           .font(.caption2)
           .foregroundStyle(.secondary)
           .multilineTextAlignment(.center)
+          .frame(maxHeight: .infinity, alignment: .center)
+        
         Spacer(minLength: 0)
       }
     }
@@ -183,7 +199,7 @@ private extension Widget {
   @ViewBuilder private func setCodeView(_ code: String?, iconURL: URL?) -> some View {
     if let code, let iconURL {
       VStack(alignment: .center, spacing: 3.0) {
-        wrappedContent {
+        Self.wrappedContent {
           IconLazyImage(iconURL, tintColor: .primary).frame(width: 25, height: 25)
           Text(code.uppercased()).font(.body).fontDesign(.serif)
         }
@@ -192,6 +208,8 @@ private extension Widget {
           .font(.caption2)
           .foregroundStyle(.secondary)
           .multilineTextAlignment(.center)
+          .frame(maxHeight: .infinity, alignment: .center)
+        
         Spacer(minLength: 0)
       }
     }
@@ -200,7 +218,7 @@ private extension Widget {
   @ViewBuilder private func manaValueView(_ manaValue: String?) -> some View {
     if let manaValue {
       VStack(alignment: .center, spacing: 3.0) {
-        wrappedContent {
+        Self.wrappedContent {
           Text(manaValue).font(.body).fontDesign(.monospaced)
         }
         
@@ -208,6 +226,7 @@ private extension Widget {
           .font(.caption2)
           .foregroundStyle(.secondary)
           .multilineTextAlignment(.center)
+          .frame(maxHeight: .infinity, alignment: .center)
         Spacer(minLength: 0)
       }
     }
@@ -215,7 +234,7 @@ private extension Widget {
 }
 
 extension Widget {
-  @ViewBuilder private func wrappedContent(@ViewBuilder content: () -> some View) -> some View {
+  @ViewBuilder private static func wrappedContent(@ViewBuilder content: () -> some View) -> some View {
     HStack(spacing: 5.0) {
       content()
     }
@@ -227,14 +246,17 @@ extension Widget {
 }
 
 #Preview {
-  InfoView(
-    power: "1",
-    toughness: "2",
-    loyaltyCounters: "1",
-    manaValue: 2,
-    collectorNumber: "123",
-    colorIdentity: ["{R}"],
-    setCode: "123",
-    setIconURL: URL(string: "https://1000logos.net/wp-content/uploads/2016/10/Apple-Logo.png")
-  )
+  VStack {
+    InfoView(
+      title: "Information",
+      power: "1",
+      toughness: "2",
+      loyaltyCounters: "1",
+      manaValue: 2,
+      collectorNumber: "123",
+      colorIdentity: ["{R}"],
+      setCode: "123",
+      setIconURL: URL(string: "https://1000logos.net/wp-content/uploads/2016/10/Apple-Logo.png")
+    )
+  }
 }

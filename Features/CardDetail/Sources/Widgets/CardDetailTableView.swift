@@ -4,13 +4,16 @@ import SwiftUI
 struct CardDetailTableView<Card: MagicCard>: View {
   let main: Content<Card>.Description
   let alternate: Content<Card>.Description?
+  private let verticalPadding: CGFloat = 8.0
   
   var body: some View {
-    HStack(alignment: .top) {
+    HStack(alignment: .top, spacing: 13) {
       TitleView(
         name: main.name,
         manaCost: main.manaCost
       )
+      .padding(.vertical, verticalPadding)
+      .safeAreaPadding(.leading, nil)
       
       Divider()
       
@@ -18,30 +21,53 @@ struct CardDetailTableView<Card: MagicCard>: View {
         name: alternate?.name,
         manaCost: alternate?.manaCost
       )
+      .padding(.vertical, verticalPadding)
+      .safeAreaPadding(.trailing, nil)
     }
     
     Divider()
+      .safeAreaPadding(.leading, nil)
     
-    HStack(alignment: .top) {
+    HStack(alignment: .top, spacing: 8.0) {
       TypelineView(main.typeline)
+        .padding(.vertical, verticalPadding)
+        .safeAreaPadding(.leading, nil)
+      
       Divider()
+      
       TypelineView(alternate?.typeline)
+        .padding(.vertical, verticalPadding)
+        .safeAreaPadding(.trailing, nil)
     }
     
     Divider()
+      .safeAreaPadding(.leading, nil)
     
-    HStack(alignment: .top) {
+    HStack(alignment: .top, spacing: 8.0) {
       DescriptionView(main.text)
+        .padding(.vertical, verticalPadding)
+        .safeAreaPadding(.leading, nil)
+      
       Divider()
+      
       DescriptionView(alternate?.text)
+        .padding(.vertical, verticalPadding)
+        .safeAreaPadding(.trailing, nil)
     }
     
     Divider()
+      .safeAreaPadding(.leading, nil)
     
-    HStack(alignment: .top) {
+    HStack(alignment: .top, spacing: 8.0) {
       FlavorView(main.flavorText)
+        .padding(.vertical, verticalPadding)
+        .safeAreaPadding(.leading, nil)
+      
       Divider()
+      
       FlavorView(alternate?.flavorText)
+        .padding(.vertical, verticalPadding)
+        .safeAreaPadding(.trailing, nil)
     }
   }
   
@@ -55,5 +81,21 @@ struct CardDetailTableView<Card: MagicCard>: View {
     } else {
       return nil
     }
+  }
+}
+
+#Preview {
+  ScrollView {
+    VStack(alignment: .leading, spacing: 0) {
+      CardDetailTableView(
+        descriptions: Content(
+          card: MagicCardFixtures.split.value,
+          setIconURL: nil,
+          faceDirection: .front
+        )
+        .descriptions
+      )
+    }
+//    .safeAreaPadding(.horizontal, nil)
   }
 }
