@@ -51,10 +51,9 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
           VariantView(
             title: store.content.variantLabel,
             subtitle: store.content.numberOfVariantsLabel,
-            cards: try? store.content.variants?.get()) { action in
-              print(action)
-            }
-            .padding(.vertical, 13.0)
+            cards: try? store.content.variants?.get()
+          ) { action in }
+          .padding(.vertical, 13.0)
           
           Divider()
             .safeAreaPadding(.leading, nil)
@@ -66,9 +65,7 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
             usdLabel: store.content.usdLabel,
             usdFoilLabel: store.content.usdFoilLabel,
             tixLabel: store.content.tixLabel
-          ) { action in
-              
-          }
+          ) { action in }
           .padding(.vertical, 13.0)
         }
       }
