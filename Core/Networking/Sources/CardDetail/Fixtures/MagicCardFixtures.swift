@@ -59,6 +59,7 @@ Whenever a player casts a spell, if no mana was spent to cast that spell, Roilin
             manaCost: "{B}{1}{0}"
           ),
         ])
+        .with(prices: .init(tix: "100", usd: "100", usdFoil: "100", eur: "100"))
         .with(
           legalities: MockMagicCardLegalities(
             value: [
