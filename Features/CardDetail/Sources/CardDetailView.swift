@@ -55,6 +55,21 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
               print(action)
             }
             .padding(.vertical, 13.0)
+          
+          Divider()
+            .safeAreaPadding(.leading, nil)
+          
+          PriceView(
+            title: store.content.priceLabel,
+            subtitle: store.content.priceSubtitleLabel,
+            prices: store.content.card.getPrices(),
+            usdLabel: store.content.usdLabel,
+            usdFoilLabel: store.content.usdFoilLabel,
+            tixLabel: store.content.tixLabel
+          ) { action in
+              
+          }
+          .padding(.vertical, 13.0)
         }
       }
       .background {
