@@ -2,10 +2,10 @@ import SwiftUI
 
 struct SelectionView: View {
   var body: some View {
-    Text("")
+    Text("test")
   }
 }
 
 #Preview {
-  Text("")
+  SelectionView()
 }
