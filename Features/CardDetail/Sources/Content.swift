@@ -1,5 +1,7 @@
+import DesignComponents
 import Networking
 import Foundation
+import SwiftUI
 
 struct Content<Card: MagicCard>: Equatable, Sendable {
   struct Description: Equatable, Identifiable, Sendable {
@@ -42,6 +44,12 @@ struct Content<Card: MagicCard>: Equatable, Sendable {
   let usdLabel: String
   let usdFoilLabel: String
   let tixLabel: String
+  let artistSelectionLabel: String
+  let artistSelectionIcon: Image
+  let rulingSelectionLabel: String
+  let rulingSelectionIcon: Image
+  let relatedSelectionLabel: String
+  let relatedSelectionIcon: Image
   
   var numberOfVariantsLabel: String {
     String(localized: "\((try? variants?.get().count) ?? 0) results")
@@ -96,6 +104,12 @@ struct Content<Card: MagicCard>: Equatable, Sendable {
     usdLabel = String(localized: "USD")
     usdFoilLabel = String(localized: "USD - Foil")
     tixLabel = String(localized: "Tix")
+    artistSelectionLabel = String(localized: "Artist")
+    artistSelectionIcon = Image(asset: DesignComponentsAsset.artist)
+    rulingSelectionLabel = String(localized: "Rulings")
+    rulingSelectionIcon = Image(systemName: "text.book.closed.fill")
+    relatedSelectionLabel = String(localized: "Related")
+    relatedSelectionIcon = Image(systemName: "ellipsis.circle")
     
     setCode = card.getSet()
     collectorNumber = card.getCollectorNumber()
