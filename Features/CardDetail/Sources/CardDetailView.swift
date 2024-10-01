@@ -48,17 +48,6 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
           Divider()
             .safeAreaPadding(.leading, nil)
           
-          VariantView(
-            title: store.content.variantLabel,
-            subtitle: store.content.numberOfVariantsLabel,
-            cards: try? store.content.variants?.get()) { action in
-              print(action)
-            }
-            .padding(.vertical, 13.0)
-          
-          Divider()
-            .safeAreaPadding(.leading, nil)
-          
           PriceView(
             title: store.content.priceLabel,
             subtitle: store.content.priceSubtitleLabel,
@@ -66,9 +55,39 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
             usdLabel: store.content.usdLabel,
             usdFoilLabel: store.content.usdFoilLabel,
             tixLabel: store.content.tixLabel
-          ) { action in
-              
-          }
+          ) { action in }
+            .padding(.vertical, 13.0)
+          
+          VariantView(
+            title: store.content.variantLabel,
+            subtitle: store.content.numberOfVariantsLabel,
+            cards: try? store.content.variants?.get()
+          ) { action in }
+          .padding(.vertical, 13.0)
+          
+          SelectionView(
+            items: [
+              SelectionView.Item(
+                icon: store.content.artistSelectionIcon,
+                title: store.content.artistSelectionLabel,
+                detail: store.content.artist
+              ) {
+                
+              },
+              SelectionView.Item(
+                icon: store.content.rulingSelectionIcon,
+                title: store.content.rulingSelectionLabel
+              ) {
+                
+              },
+              SelectionView.Item(
+                icon: store.content.relatedSelectionIcon,
+                title: store.content.relatedSelectionLabel
+              ) {
+                
+              },
+            ]
+          )
           .padding(.vertical, 13.0)
         }
       }
