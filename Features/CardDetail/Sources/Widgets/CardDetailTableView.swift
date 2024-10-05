@@ -111,6 +111,5 @@ struct CardDetailTableView<Card: MagicCard>: View {
         .descriptions
       )
     }
-//    .safeAreaPadding(.horizontal, nil)
   }
 }
