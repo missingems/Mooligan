@@ -59,6 +59,9 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
           }
           .padding(.vertical, 13.0)
           
+          Divider()
+            .safeAreaPadding(.leading, nil)
+          
           VariantView(
             title: store.content.variantLabel,
             subtitle: store.content.numberOfVariantsLabel,

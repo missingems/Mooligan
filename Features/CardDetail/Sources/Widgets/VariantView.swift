@@ -38,6 +38,7 @@ struct VariantView: View {
         }
       }
     }
+    .scrollClipDisabled()
     .safeAreaPadding(.horizontal, nil)
   }
   

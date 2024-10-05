@@ -53,12 +53,12 @@ extension SelectionView {
       Button {
         didSelect()
       } label: {
-        HStack(spacing: 13.0) {
+        HStack(spacing: 8.0) {
           icon
             .renderingMode(.template)
             .resizable()
             .aspectRatio(contentMode: .fit)
-            .frame(width: 16.0, height: 16.0)
+            .frame(width: 21.0, height: 21.0)
             .tint(.primary)
           
           Text(title)
@@ -82,7 +82,7 @@ extension SelectionView {
         }
       }
       .safeAreaPadding(.horizontal, nil)
-      .padding(.vertical, 8.0)
+      .padding(.vertical, 13.0)
       
       if shouldShowSeparator {
         Divider().safeAreaPadding(.leading, nil)
