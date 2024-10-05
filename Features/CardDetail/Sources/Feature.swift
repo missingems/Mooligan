@@ -16,6 +16,9 @@ import Networking
   var body: some ReducerOf<Self> {
     Reduce { state, action in
       switch action {
+      case let .didSelectPrice(action):
+        return .none
+        
       case let .fetchSet(card):
         return .run { send in
           try await send(.updateSetIconURL(.success(client.getSet(of: card).iconURL)))
@@ -83,6 +86,7 @@ extension Feature {
   }
   
   indirect enum Action: Equatable, Sendable {
+    case didSelectPrice(_ price: PriceView.Action)
     case fetchSet(card: Client.MagicCardModel)
     case fetchVariants(card: Client.MagicCardModel)
     case updateVariants(_ variants: Result<[Client.MagicCardModel], FeatureError>)
