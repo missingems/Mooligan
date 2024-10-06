@@ -121,17 +121,23 @@ extension PriceView {
       } label: {
         VStack(spacing: 0) {
           Text("\(currencySymbol)\(price)")
-            .font(isDisabled ? .body : .headline)
+            .font(.body)
+            .fontWeight(isDisabled ? .regular : .semibold)
+            .foregroundStyle(Color.accentColor)
             .monospaced()
           
           Text(label)
             .font(.caption)
-            .tint(.secondary)
+            .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
+        .padding(.vertical, 8.0)
+        .background(Color(.systemFill))
       }
-      .buttonStyle(.bordered)
+      .clipShape(.buttonBorder)
+      .buttonStyle(.sinkableButtonStyle)
       .disabled(isDisabled)
+      .opacity(isDisabled ? 0.31 : 1.0)
     }
   }
 }

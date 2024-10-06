@@ -53,7 +53,7 @@ extension SelectionView {
       Button {
         didSelect()
       } label: {
-        HStack(spacing: 8.0) {
+        HStack(alignment: .center, spacing: 8.0) {
           icon
             .renderingMode(.template)
             .resizable()
@@ -62,8 +62,7 @@ extension SelectionView {
             .tint(.primary)
           
           Text(title)
-            .font(.body)
-            .fontWeight(.medium)
+            .font(.headline)
             .tint(.primary)
           
           Spacer()
@@ -71,7 +70,6 @@ extension SelectionView {
           if let detail {
             Text(detail)
               .font(.body)
-              .fontWeight(.medium)
               .tint(.secondary)
           }
           
