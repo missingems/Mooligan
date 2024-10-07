@@ -57,6 +57,10 @@ struct CardDetailFeatureTests {
         await store.receive(.updateSetIconURL(.success(URL(string: "https://mooligan.com")))) { state in
           state.content.setIconURL = .success(URL(string: "https://mooligan.com"))
         }
+        await store.receive(.fetchVariants(card: card))
+        await store.receive(.updateVariants(.success([card]))) { state in
+          state.content.variants = .success([card])
+        }
       } else {
         let expectedErrorMessage = """
         The operation couldn’t be completed. (Networking.MockMagicCardDetailRequestClient\

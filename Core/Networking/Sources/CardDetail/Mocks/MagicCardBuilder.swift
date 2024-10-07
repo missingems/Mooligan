@@ -193,7 +193,6 @@ public final class MagicCardBuilder<Color: MagicCardColor> {
   
   public func build() -> MockMagicCard<Color> {
     MockMagicCard(
-      id: id,
       language: language,
       cardFaces: cardFaces,
       manaValue: manaValue,

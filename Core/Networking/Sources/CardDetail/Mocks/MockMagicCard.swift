@@ -1,7 +1,7 @@
 import Foundation
 import ScryfallKit
 
-public struct MockMagicCard<Color: MagicCardColor>: MagicCard , MagicCardFace{
+public struct MockMagicCard<Color: MagicCardColor>: MagicCard , MagicCardFace {
   public var id: UUID
   private var language: String
   private var cardFaces: [MockMagicCardFace<Color>]
@@ -36,7 +36,6 @@ public struct MockMagicCard<Color: MagicCardColor>: MagicCard , MagicCardFace{
   private var manaCost: String?
   
   public init(
-    id: UUID = UUID(),
     language: String = "",
     cardFaces: [MockMagicCardFace<Color>] = [MockMagicCardFace<Color>()],
     manaValue: Double? = nil,
@@ -69,7 +68,7 @@ public struct MockMagicCard<Color: MagicCardColor>: MagicCard , MagicCardFace{
     set: String = "",
     imageURL: URL? = nil
   ) {
-    self.id = id
+    self.id = UUID()
     self.language = language
     self.cardFaces = cardFaces
     self.manaValue = manaValue
@@ -134,7 +133,9 @@ public struct MockMagicCard<Color: MagicCardColor>: MagicCard , MagicCardFace{
   public func getPrintedName() -> String? { printedName }
   public func getPrintedText() -> String? { printedText }
   public func getPrintedTypeLine() -> String? { printedTypeLine }
-  public func getPurchaseUris() -> [String: String]? { purchaseUris }
+  public func getPurchaseUris() -> PurchaseVendor {
+    PurchaseVendor(purchaseURIs: purchaseUris)
+  }
   public func getRarity() -> any MagicCardRarity { rarity }
   public func getRelatedUris() -> [String: String] { relatedUris }
   public func getReleasedAt() -> String { releastedAt }

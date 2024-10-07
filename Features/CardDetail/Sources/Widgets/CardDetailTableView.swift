@@ -25,49 +25,52 @@ struct CardDetailTableView<Card: MagicCard>: View {
       .safeAreaPadding(.trailing, nil)
     }
     
-    Divider()
-      .safeAreaPadding(.leading, nil)
-    
-    HStack(alignment: .top, spacing: 8.0) {
-      TypelineView(main.typeline)
-        .padding(.vertical, verticalPadding)
-        .safeAreaPadding(.leading, nil)
-      
-      Divider()
-      
-      TypelineView(alternate?.typeline)
-        .padding(.vertical, verticalPadding)
-        .safeAreaPadding(.trailing, nil)
+    section(
+      isVisible: main.typeline != nil || alternate?.typeline != nil
+    ) {
+      HStack(alignment: .top, spacing: 8.0) {
+        TypelineView(main.typeline)
+          .padding(.vertical, verticalPadding)
+          .safeAreaPadding(.leading, nil)
+        
+        Divider()
+        
+        TypelineView(alternate?.typeline)
+          .padding(.vertical, verticalPadding)
+          .safeAreaPadding(.trailing, nil)
+      }
     }
     
-    Divider()
-      .safeAreaPadding(.leading, nil)
-    
-    HStack(alignment: .top, spacing: 8.0) {
-      DescriptionView(main.text)
-        .padding(.vertical, verticalPadding)
-        .safeAreaPadding(.leading, nil)
-      
-      Divider()
-      
-      DescriptionView(alternate?.text)
-        .padding(.vertical, verticalPadding)
-        .safeAreaPadding(.trailing, nil)
+    section(
+      isVisible: main.text != nil || alternate?.text != nil
+    ) {
+      HStack(alignment: .top, spacing: 8.0) {
+        DescriptionView(main.text)
+          .padding(.vertical, verticalPadding)
+          .safeAreaPadding(.leading, nil)
+        
+        Divider()
+        
+        DescriptionView(alternate?.text)
+          .padding(.vertical, verticalPadding)
+          .safeAreaPadding(.trailing, nil)
+      }
     }
     
-    Divider()
-      .safeAreaPadding(.leading, nil)
-    
-    HStack(alignment: .top, spacing: 8.0) {
-      FlavorView(main.flavorText)
-        .padding(.vertical, verticalPadding)
-        .safeAreaPadding(.leading, nil)
-      
-      Divider()
-      
-      FlavorView(alternate?.flavorText)
-        .padding(.vertical, verticalPadding)
-        .safeAreaPadding(.trailing, nil)
+    section(
+      isVisible: main.flavorText != nil || alternate?.flavorText != nil
+    ) {
+      HStack(alignment: .top, spacing: 8.0) {
+        FlavorView(main.flavorText)
+          .padding(.vertical, verticalPadding)
+          .safeAreaPadding(.leading, nil)
+        
+        Divider()
+        
+        FlavorView(alternate?.flavorText)
+          .padding(.vertical, verticalPadding)
+          .safeAreaPadding(.trailing, nil)
+      }
     }
   }
   
@@ -80,6 +83,18 @@ struct CardDetailTableView<Card: MagicCard>: View {
       self.alternate = alternate
     } else {
       return nil
+    }
+  }
+  
+  @ViewBuilder func section(
+    isVisible: Bool,
+    content: () -> some View
+  ) -> some View {
+    if isVisible {
+      Divider()
+        .safeAreaPadding(.leading, nil)
+      
+      content()
     }
   }
 }
@@ -96,6 +111,5 @@ struct CardDetailTableView<Card: MagicCard>: View {
         .descriptions
       )
     }
-//    .safeAreaPadding(.horizontal, nil)
   }
 }

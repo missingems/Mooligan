@@ -25,7 +25,9 @@ extension Card: MagicCard {
   public func getPrintedName() -> String? { printedName }
   public func getPrintedText() -> String? { printedText }
   public func getPrintedTypeLine() -> String? { printedTypeLine }
-  public func getPurchaseUris() -> [String: String]? { purchaseUris }
+  public func getPurchaseUris() -> PurchaseVendor {
+    PurchaseVendor(purchaseURIs: purchaseUris)
+  }
   public func getRarity() -> any MagicCardRarity { rarity }
   public func getRelatedUris() -> [String: String] { relatedUris }
   public func getReleasedAt() -> String { releasedAt }

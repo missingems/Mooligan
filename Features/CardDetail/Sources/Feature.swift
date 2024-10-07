@@ -19,6 +19,7 @@ import Networking
       case let .fetchSet(card):
         return .run { send in
           try await send(.updateSetIconURL(.success(client.getSet(of: card).iconURL)))
+          await send(.fetchVariants(card: card))
         } catch: { error, send in
           await send(
             .updateSetIconURL(
