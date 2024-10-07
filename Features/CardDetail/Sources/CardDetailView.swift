@@ -54,9 +54,9 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
             prices: store.content.card.getPrices(),
             usdLabel: store.content.usdLabel,
             usdFoilLabel: store.content.usdFoilLabel,
-            tixLabel: store.content.tixLabel
-          ) { action in
-          }
+            tixLabel: store.content.tixLabel,
+            purchaseVendor: store.content.card.getPurchaseUris()
+          )
           .padding(.vertical, 13.0)
           
           Divider()

@@ -74,7 +74,7 @@ public protocol MagicCard: Equatable, Hashable, Identifiable, Sendable {
   func getPrintedTypeLine() -> String?
   
   /// A dictionary of URIs to this card’s listing on major marketplaces
-  func getPurchaseUris() -> [String: String]?
+  func getPurchaseUris() -> PurchaseVendor
   
   /// This card's rarity
   func getRarity() -> any MagicCardRarity

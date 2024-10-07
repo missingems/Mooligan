@@ -29,7 +29,7 @@ struct PriceView: View {
     usdLabel: String,
     usdFoilLabel: String,
     tixLabel: String,
-    sender: @escaping (Action) -> Void
+    purchaseVendor: PurchaseVendor
   ) {
     self.title = title
     self.subtitle = subtitle
@@ -41,7 +41,7 @@ struct PriceView: View {
         isDisabled: prices.usd == nil,
         label: usdLabel,
         price: prices.usd ?? "0.00",
-        sender: sender
+        purchaseLinks: [purchaseVendor.tcgPlayer, purchaseVendor.cardMarket].compactMap { $0 }
       ),
       Model(
         action: .didSelectUSDPrice,
@@ -49,37 +49,16 @@ struct PriceView: View {
         isDisabled: prices.usdFoil == nil,
         label: usdFoilLabel,
         price: prices.usdFoil ?? "0.00",
-        sender: sender
+        purchaseLinks: [purchaseVendor.tcgPlayer, purchaseVendor.cardMarket].compactMap { $0 }
       ),
       Model(
         action: .didSelectUSDPrice,
         isDisabled: prices.tix == nil,
         label: tixLabel,
         price: prices.tix ?? "0.00",
-        sender: sender
+        purchaseLinks: [purchaseVendor.tcgPlayer, purchaseVendor.cardHoarder].compactMap { $0 }
       ),
     ]
-  }
-  
-  private func priceButton(
-    _ model: PriceView.Model,
-    sender: @escaping (Action) -> Void
-  ) -> some View {
-    Button {
-      sender(model.action)
-    } label: {
-      VStack(spacing: 0) {
-        Text("\(model.currencySymbol)\(model.price)")
-          .font(model.isDisabled ? .body : .headline)
-          .monospaced()
-        
-        Text(model.label)
-          .font(.caption)
-          .tint(.secondary)
-      }
-      .frame(maxWidth: .infinity)
-    }
-    .disabled(model.isDisabled)
   }
 }
 
@@ -97,7 +76,7 @@ extension PriceView {
     let isDisabled: Bool
     let label: String
     let price: String
-    let sender: (Action) -> Void
+    let purchaseLinks: [PurchaseVendor.Link]
     
     init(
       action: Action,
@@ -105,19 +84,24 @@ extension PriceView {
       isDisabled: Bool,
       label: String,
       price: String,
-      sender: @escaping (Action) -> Void
+      purchaseLinks: [PurchaseVendor.Link]
     ) {
       self.action = action
       self.currencySymbol = currencySymbol
       self.isDisabled = isDisabled
       self.label = label
       self.price = price
-      self.sender = sender
+      self.purchaseLinks = purchaseLinks
     }
     
     var body: some View {
-      Button { [sender] in
-        sender(action)
+      Menu {
+        ForEach(purchaseLinks) { destination in
+          Link(destination: destination.url) {
+            Image(systemName: "link").imageScale(.small)
+            Text(destination.label)
+          }
+        }
       } label: {
         VStack(spacing: 0) {
           Text("\(currencySymbol)\(price)")
@@ -149,6 +133,7 @@ extension PriceView {
     prices: MagicCardFixtures.split.value.getPrices(),
     usdLabel: "USD",
     usdFoilLabel: "USD - Foil",
-    tixLabel: "Tix"
-  ) { _ in }
+    tixLabel: "Tix",
+    purchaseVendor: PurchaseVendor(purchaseURIs: [:])
+  )
 }
