@@ -34,6 +34,10 @@ struct HeaderView: View {
         url: imageURL,
         rotation: layoutConfiguration.rotation
       )
+      .aspectRatio(
+        MagicCardImageRatio.widthToHeight.rawValue,
+        contentMode: .fit
+      )
       
       if isFlippable {
         Button {
