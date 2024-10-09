@@ -28,16 +28,12 @@ struct QueryView<Client: MagicCardQueryRequestClient>: View {
               action: {
                 store.send(.didSelectCardAtIndex(index))
               }, label: {
-                let width = ((proxy.size.width - 24) / 2.0).rounded()
-                let height = width.multiplied(byRatio: .heightToWidth)
-                
                 store.dataSource.model[index].getImageURL().map {
                   AmbientWebImage(url: $0)
                 }
-                .frame(
-                  width: width,
-                  height: height,
-                  alignment: .center
+                .aspectRatio(
+                  MagicCardImageRatio.widthToHeight.rawValue,
+                  contentMode: .fit
                 )
               }
             )

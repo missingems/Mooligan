@@ -56,7 +56,7 @@ struct PriceView: View {
         isDisabled: prices.tix == nil,
         label: tixLabel,
         price: prices.tix ?? "0.00",
-        purchaseLinks: [purchaseVendor.tcgPlayer, purchaseVendor.cardHoarder].compactMap { $0 }
+        purchaseLinks: [purchaseVendor.cardHoarder].compactMap { $0 }
       ),
     ]
   }

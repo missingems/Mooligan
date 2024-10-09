@@ -26,7 +26,7 @@ struct CardDetailTableView<Card: MagicCard>: View {
     }
     
     section(
-      isVisible: main.typeline != nil || alternate?.typeline != nil
+      isVisible: main.typeline?.isEmptyOrNil() == false || alternate?.typeline?.isEmptyOrNil() == false
     ) {
       HStack(alignment: .top, spacing: 8.0) {
         TypelineView(main.typeline)
@@ -42,7 +42,7 @@ struct CardDetailTableView<Card: MagicCard>: View {
     }
     
     section(
-      isVisible: main.text != nil || alternate?.text != nil
+      isVisible: main.text?.isEmptyOrNil() == false || alternate?.text?.isEmptyOrNil() == false
     ) {
       HStack(alignment: .top, spacing: 8.0) {
         DescriptionView(main.text)
@@ -58,7 +58,7 @@ struct CardDetailTableView<Card: MagicCard>: View {
     }
     
     section(
-      isVisible: main.flavorText != nil || alternate?.flavorText != nil
+      isVisible: main.flavorText?.isEmptyOrNil() == false || alternate?.flavorText?.isEmptyOrNil() == false
     ) {
       HStack(alignment: .top, spacing: 8.0) {
         FlavorView(main.flavorText)
@@ -96,6 +96,12 @@ struct CardDetailTableView<Card: MagicCard>: View {
       
       content()
     }
+  }
+}
+
+fileprivate extension String {
+  func isEmptyOrNil() -> Bool {
+    isEmpty || trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
   }
 }
 

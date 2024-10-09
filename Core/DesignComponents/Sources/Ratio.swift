@@ -1,7 +1,10 @@
 import Foundation
 
 public enum MagicCardImageRatio: CGFloat {
+  /// 0.7179487179
   case widthToHeight = 0.7179487179
+  
+  /// 1.3928571428
   case heightToWidth = 1.3928571428
 }
 

@@ -13,7 +13,7 @@ struct VariantView: View {
   let send: (Action) -> Void
   
   var body: some View {
-    VStack(alignment: .leading, spacing: 0) {
+    VStack(alignment: .leading) {
       Text(title).font(.headline)
       Text(subtitle).font(.caption).foregroundStyle(.secondary)
       
@@ -29,11 +29,11 @@ struct VariantView: View {
               }, label: {
                 cards[index].getImageURL().map {
                   AmbientWebImage(url: $0)
+                    .frame(width: 150.0, height: 150.0 * MagicCardImageRatio.heightToWidth.rawValue, alignment: .center)
                 }
               }
             )
             .buttonStyle(.sinkableButtonStyle)
-            .frame(width: 150.0, height: 234.92, alignment: .center)
           }
         }
       }
