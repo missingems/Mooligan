@@ -42,7 +42,7 @@ public struct AmbientWebImage: View {
           processors: transformers
         )
       ) { state in
-        state.image.map { $0.resizable() }.aspectRatio(contentMode: .fit)
+        state.image.map { $0.resizable() }
       }
       .blur(radius: blurRadius, opaque: false)
       .opacity(0.19)
@@ -62,7 +62,7 @@ public struct AmbientWebImage: View {
             )
           )
         } else if let image = state.image {
-          image.resizable().aspectRatio(contentMode: .fit)
+          image.resizable()
         }
       }
       .clipShape(.rect(cornerSize: CGSize(width: cornerRadius, height: cornerRadius)))
