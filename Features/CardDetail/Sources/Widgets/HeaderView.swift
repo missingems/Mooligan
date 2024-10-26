@@ -32,6 +32,7 @@ struct HeaderView: View {
     ZStack {
       AmbientWebImage(
         url: imageURL,
+        cornerRadius: 13,
         rotation: layoutConfiguration.rotation
       )
       .aspectRatio(
@@ -57,7 +58,7 @@ struct HeaderView: View {
         .overlay(
           Circle()
             .stroke(
-              Color(.separator),
+              .separator,
               lineWidth: 1 / UIScreen.main.nativeScale
             )
             .opacity(0.618)
