@@ -27,10 +27,10 @@ struct VariantView: View {
               action: {
                 send(.didSelectCardAtIndex(index))
               }, label: {
-                cards[index].getImageURL().map {
-                  AmbientWebImage(url: $0)
-                    .frame(width: 150.0, height: 150.0 * MagicCardImageRatio.heightToWidth.rawValue, alignment: .center)
-                }
+                CardView(
+                  card: cards[index],
+                  layoutConfiguration: .fixedWidth(150.0)
+                )
               }
             )
             .buttonStyle(.sinkableButtonStyle)
