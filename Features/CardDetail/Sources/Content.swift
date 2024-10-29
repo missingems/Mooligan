@@ -52,7 +52,7 @@ struct Content<Card: MagicCard>: Equatable, Sendable {
   let relatedSelectionIcon: Image
   
   var numberOfVariantsLabel: String {
-    String(localized: "\((try? variants?.get().count) ?? 0) results")
+    String(localized: "\((try? variants?.get().count) ?? 0) Results")
   }
   
   let setCode: String

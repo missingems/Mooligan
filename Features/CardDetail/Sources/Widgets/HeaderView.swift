@@ -36,7 +36,7 @@ struct HeaderView: View {
         rotation: layoutConfiguration.rotation
       )
       .aspectRatio(
-        MagicCardImageRatio.widthToHeight.rawValue,
+        MagicCardImageRatio.heightToWidth.rawValue,
         contentMode: .fit
       )
       

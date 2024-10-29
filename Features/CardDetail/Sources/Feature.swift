@@ -14,8 +14,15 @@ import Networking
   
   /// Defines how the state should be updated based on actions.
   var body: some ReducerOf<Self> {
+    BindingReducer()
     Reduce { state, action in
       switch action {
+      case .binding(\.contentOffset):
+        return .none
+        
+      case .binding:
+        return .none
+        
       case let .fetchSet(card):
         return .run { send in
           try await send(.updateSetIconURL(.success(client.getSet(of: card).iconURL)))
@@ -54,7 +61,7 @@ import Networking
           await send(action)
         }
       }
-    }
+    }._printChanges(.actionLabels)
   }
 }
 
@@ -62,6 +69,7 @@ extension Feature {
   @ObservableState struct State: Equatable, Sendable {
     var content: Content<Client.MagicCardModel>
     let start: Action
+    @Shared var contentOffset: CGFloat
     
     /// Initializes the state based on the entry point and card details.
     /// - Parameters:
@@ -69,8 +77,11 @@ extension Feature {
     ///   - entryPoint: The entry point which determines the initial action and content configuration.
     init(
       card: Client.MagicCardModel,
+      contentOffset: Shared<CGFloat>,
       entryPoint: EntryPoint<Client>
     ) {
+      self._contentOffset = contentOffset
+      
       switch entryPoint {
       case .query:
         content = Content(card: card, setIconURL: nil)
@@ -83,7 +94,8 @@ extension Feature {
     }
   }
   
-  indirect enum Action: Equatable, Sendable {
+  indirect enum Action: BindableAction, Equatable, Sendable {
+    case binding(BindingAction<State>)
     case fetchSet(card: Client.MagicCardModel)
     case fetchVariants(card: Client.MagicCardModel)
     case updateVariants(_ variants: Result<[Client.MagicCardModel], FeatureError>)

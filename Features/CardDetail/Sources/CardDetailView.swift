@@ -3,19 +3,57 @@ import DesignComponents
 import Networking
 import SwiftUI
 
+struct ContentOffsetKey: PreferenceKey {
+  typealias Value = CGFloat
+  static let defaultValue = CGFloat.zero
+  static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+    value += nextValue()
+  }
+}
+
+@MainActor struct ObservableScrollView<Content: View>: View {
+  let content: Content
+  @Binding var contentOffset: CGFloat
+  
+  init(contentOffset: Binding<CGFloat>, @ViewBuilder content: () -> Content) {
+    self._contentOffset = contentOffset
+    self.content = content()
+  }
+  
+  var body: some View {
+    ScrollView {
+      content
+        .background {
+          GeometryReader { geometry in
+            Color.clear
+              .preference(key: ContentOffsetKey.self, value: geometry.frame(in: .named("scrollView")).minY)
+          }
+        }
+    }
+    .coordinateSpace(name: "scrollView")
+    .onPreferenceChange(ContentOffsetKey.self) { value in
+      self.contentOffset = value
+    }
+  }
+}
+
 struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
-  let store: StoreOf<Feature<Client>>
+  @Bindable var store: StoreOf<Feature<Client>>
   
   var body: some View {
     GeometryReader { proxy in
-      ScrollView {
+      ObservableScrollView(contentOffset: $store.contentOffset) {
         VStack(alignment: .leading, spacing: 0) {
           HeaderView(
             imageURL: store.content.imageURL,
             isFlippable: store.content.card.isFlippable,
-            orientation: .portrait,
-            rotation: 0
+            orientation: store.content.card.isSplit ? .landscape : .portrait,
+            rotation: 90.0
           )
+          .padding(.bottom, 8.0)
+          
+          Divider()
+            .safeAreaPadding(.leading, nil)
           
           CardDetailTableView(descriptions: store.content.descriptions)
           
@@ -106,16 +144,17 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
   }
 }
 
-#Preview {
-  CardDetailView(
-    store: Store(
-      initialState: Feature.State(card: MagicCardFixtures.split.value, entryPoint: .query)
-    ) {
-      Feature(
-        client: MockMagicCardDetailRequestClient<MockMagicCard<MockMagicCardColor>>(
-          testConfiguration: .successFlow
-        )
-      )
-    }
-  )
-}
+//#Preview {
+//  CardDetailView(
+//    store: Store(
+//      initialState: Feature.State(card: MagicCardFixtures.split.value, entryPoint: .query)
+//    ) {
+//      Feature(
+//        client: MockMagicCardDetailRequestClient<MockMagicCard<MockMagicCardColor>>(
+//          testConfiguration: .successFlow
+//        )
+//      )
+//    },
+//    contentOffset: .constant(0)
+//  )
+//}
