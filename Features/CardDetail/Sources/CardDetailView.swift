@@ -3,57 +3,25 @@ import DesignComponents
 import Networking
 import SwiftUI
 
-struct ContentOffsetKey: PreferenceKey {
-  typealias Value = CGFloat
-  static let defaultValue = CGFloat.zero
-  static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-    value += nextValue()
-  }
-}
-
-@MainActor struct ObservableScrollView<Content: View>: View {
-  let content: Content
-  @Binding var contentOffset: CGFloat
-  
-  init(contentOffset: Binding<CGFloat>, @ViewBuilder content: () -> Content) {
-    self._contentOffset = contentOffset
-    self.content = content()
-  }
-  
-  var body: some View {
-    ScrollView {
-      content
-        .background {
-          GeometryReader { geometry in
-            Color.clear
-              .preference(key: ContentOffsetKey.self, value: geometry.frame(in: .named("scrollView")).minY)
-          }
-        }
-    }
-    .coordinateSpace(name: "scrollView")
-    .onPreferenceChange(ContentOffsetKey.self) { value in
-      self.contentOffset = value
-    }
-  }
-}
-
 struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
-  @Bindable var store: StoreOf<Feature<Client>>
+  @State var store: StoreOf<Feature<Client>>
   
   var body: some View {
     GeometryReader { proxy in
-      ObservableScrollView(contentOffset: $store.contentOffset) {
-        VStack(alignment: .leading, spacing: 0) {
+      ScrollView {
+        LazyVStack(alignment: .leading, spacing: 0) {
           HeaderView(
             imageURL: store.content.imageURL,
             isFlippable: store.content.card.isFlippable,
-            orientation: store.content.card.isSplit ? .landscape : .portrait,
-            rotation: 90.0
+            orientation: .landscape,
+            rotation: 90
           )
-          .padding(.bottom, 8.0)
+          .padding(.vertical, 8.0)
+          .background {
+            LinearGradient(gradient: Gradient(colors: [.clear, Color(.secondarySystemBackground)]), startPoint: .top, endPoint: .bottom)
+          }
           
           Divider()
-            .safeAreaPadding(.leading, nil)
           
           CardDetailTableView(descriptions: store.content.descriptions)
           
@@ -135,7 +103,7 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
         }
       }
       .background {
-        Color(.secondarySystemBackground).ignoresSafeArea()
+        Color(.systemBackground).ignoresSafeArea()
       }
     }
     .task {

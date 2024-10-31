@@ -7,12 +7,13 @@ struct CardDetailTableView<Card: MagicCard>: View {
   private let verticalPadding: CGFloat = 8.0
   
   var body: some View {
-    HStack(alignment: .top, spacing: 13) {
+    HStack(alignment: .top, spacing: 8.0) {
       TitleView(
         name: main.name,
         manaCost: main.manaCost
       )
-      .padding(.vertical, verticalPadding)
+      .padding(.top, 13.0)
+      .padding(.bottom, verticalPadding)
       .safeAreaPadding(.leading, nil)
       
       Divider()
@@ -21,7 +22,8 @@ struct CardDetailTableView<Card: MagicCard>: View {
         name: alternate?.name,
         manaCost: alternate?.manaCost
       )
-      .padding(.vertical, verticalPadding)
+      .padding(.top, 13.0)
+      .padding(.bottom, verticalPadding)
       .safeAreaPadding(.trailing, nil)
     }
     

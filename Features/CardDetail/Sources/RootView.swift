@@ -20,19 +20,25 @@ public struct PageView<Client: MagicCardDetailRequestClient>: View {
   }
   
   public var body: some View {
-    VStack {
-      RootView(
-        card: store.cards.first!,
-        client: client,
-        contentOffset: store.$contentOffset,
-        entryPoint: EntryPoint<Client>.query
-      )
-      
-      Button {
-      } label: {
-        Text("store: \(store.contentOffset)")
+    ScrollView(.horizontal) {
+      LazyHStack(spacing: 8.0) {
+        ForEach(store.cards) { card in
+          RootView(
+            card: card,
+            client: client,
+            entryPoint: EntryPoint<Client>.query
+          )
+          .containerRelativeFrame(.horizontal)
+        }
       }
+      .scrollTargetLayout()
     }
+    .scrollTargetBehavior(.viewAligned)
+    .navigationBarTitleDisplayMode(.inline)
+    .toolbarBackgroundVisibility(.visible)
+    .navigationTitle("test")
+    .background(.black)
+    .scrollIndicators(.hidden)
   }
 }
 
@@ -42,13 +48,11 @@ public struct RootView<Client: MagicCardDetailRequestClient>: View {
   public init(
     card: Client.MagicCardModel,
     client: Client,
-    contentOffset: Shared<CGFloat>,
     entryPoint: EntryPoint<Client>
   ) {
     store = Store(
       initialState: Feature.State(
         card: card,
-        contentOffset: contentOffset,
         entryPoint: entryPoint
       )
     ) {

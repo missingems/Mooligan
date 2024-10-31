@@ -9,8 +9,6 @@ import Networking
   public var body: some ReducerOf<Self> {
     Reduce { state, action in
       switch action {
-      case .binding:
-        return .none
       }
     }
   }
@@ -22,16 +20,14 @@ import Networking
 
 public extension PageFeature {
   @ObservableState struct State: Equatable, Sendable {
-    @Shared var contentOffset: CGFloat
+    var shouldDisplayNavigationBar = false
     var cards: [Client.MagicCardModel] = []
     
     public init(contentOffset: CGFloat, cards: [Client.MagicCardModel]) {
-      self._contentOffset = Shared(contentOffset)
       self.cards = cards
     }
   }
   
-  enum Action: BindableAction, Equatable, Sendable {
-    case binding(BindingAction<State>)
+  enum Action: Equatable, Sendable {
   }
 }

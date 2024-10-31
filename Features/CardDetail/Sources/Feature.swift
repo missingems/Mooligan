@@ -61,7 +61,7 @@ import Networking
           await send(action)
         }
       }
-    }._printChanges(.actionLabels)
+    }
   }
 }
 
@@ -69,7 +69,7 @@ extension Feature {
   @ObservableState struct State: Equatable, Sendable {
     var content: Content<Client.MagicCardModel>
     let start: Action
-    @Shared var contentOffset: CGFloat
+    var contentOffset: CGFloat = 0
     
     /// Initializes the state based on the entry point and card details.
     /// - Parameters:
@@ -77,11 +77,8 @@ extension Feature {
     ///   - entryPoint: The entry point which determines the initial action and content configuration.
     init(
       card: Client.MagicCardModel,
-      contentOffset: Shared<CGFloat>,
       entryPoint: EntryPoint<Client>
     ) {
-      self._contentOffset = contentOffset
-      
       switch entryPoint {
       case .query:
         content = Content(card: card, setIconURL: nil)
