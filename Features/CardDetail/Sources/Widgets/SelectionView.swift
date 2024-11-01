@@ -5,22 +5,61 @@ struct SelectionView: View {
   let items: [Item]
   
   var body: some View {
-    VStack(spacing: 0) {
-      ForEach(items.indices, id: \.self) { index in
-        let item = items[index]
-        
-        makeRow(
-          icon: item.icon,
-          title: item.title,
-          detail: item.detail,
-          shouldShowSeparator: index != items.count - 1,
-          didSelect: item.action
+    Divider().safeAreaPadding(.leading, nil)
+    
+    VStack(alignment: .leading) {
+      Text("Related").font(.headline)
+      
+      VStack(spacing: 0) {
+        ForEach(items.indices, id: \.self) { index in
+          let item = items[index]
+          
+          makeRow(
+            icon: item.icon,
+            title: item.title,
+            detail: item.detail,
+            shouldShowSeparator: index != items.count - 1,
+            didSelect: item.action
+          )
+        }
+      }
+      .background {
+        LinearGradient(
+          gradient: Gradient(
+            colors: [
+              Color(.systemFill),
+              Color(.systemFill).opacity(0.382),
+            ]
+          ),
+          startPoint: .top,
+          endPoint: .bottom
+        )
+        .clipShape(
+          RoundedRectangle(cornerRadius: 13.0)
         )
       }
+      .overlay(
+        RoundedRectangle(
+          cornerRadius: 13.0
+        )
+        .stroke(
+          LinearGradient(
+            gradient: Gradient(
+              colors: [
+                .clear,
+                Color(.systemFill),
+              ]
+            ),
+            startPoint: .top,
+            endPoint: .bottom
+          ),
+          lineWidth: 1 / UIScreen.main.nativeScale
+        )
+      )
+      .clipShape(RoundedRectangle(cornerRadius: 13.0))
     }
-    .background { Color(.systemFill) }
-    .clipShape(.buttonBorder)
     .safeAreaPadding(.horizontal, nil)
+    .padding(.vertical, 13.0)
   }
 }
 
