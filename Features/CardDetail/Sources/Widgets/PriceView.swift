@@ -20,6 +20,7 @@ struct PriceView: View {
       }
     }
     .safeAreaPadding(.horizontal, nil)
+    .padding(.vertical, 13.0)
   }
   
   init(

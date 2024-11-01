@@ -45,7 +45,7 @@ public struct AmbientWebImage: View {
         state.image.map { $0.resizable() }
       }
       .blur(radius: blurRadius, opaque: false)
-      .opacity(0.19)
+      .opacity(0.382)
       .scaleEffect(scale)
       .offset(x: offset.x, y: offset.y)
       

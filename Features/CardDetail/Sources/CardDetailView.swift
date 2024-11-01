@@ -16,13 +16,6 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
             orientation: .landscape,
             rotation: 90
           )
-          .background {
-            LinearGradient(
-              gradient: Gradient(colors: [.clear, Color(.secondarySystemBackground)]),
-              startPoint: .top,
-              endPoint: .bottom
-            )
-          }
           
           CardDetailTableView(descriptions: store.content.descriptions)
           
