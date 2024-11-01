@@ -9,8 +9,7 @@ struct InformationView: View {
     Divider().safeAreaPadding(.leading, nil)
     
     VStack(alignment: .leading, spacing: 5.0) {
-      Text(title)
-        .font(.headline)
+      Text(title).font(.headline)
       
       ScrollView(.horizontal, showsIndicators: false) {
         HStack {
@@ -19,7 +18,7 @@ struct InformationView: View {
       }
     }
     .safeAreaPadding(.horizontal, nil)
-    .padding(.top, 13.0)
+    .padding(.vertical, 13.0)
   }
   
   init(
@@ -240,7 +239,7 @@ extension Widget {
     HStack(spacing: 5.0) {
       content()
     }
-    .frame(minWidth: 66, minHeight: 32)
+    .frame(minWidth: 66, minHeight: 34)
     .padding(EdgeInsets(top: 5, leading: 11, bottom: 5, trailing: 11))
     .background { Color(.systemFill) }
     .clipShape(.buttonBorder)

@@ -18,11 +18,18 @@ struct LegalityView: View {
         spacing: 3.0
       ) {
         ForEach(legalities.indices, id: \.self) { index in
-          GridRow { legalityRow(index: index, numberOfColumns: columns.count, legality: legalities[index]) }
+          GridRow {
+            legalityRow(
+              index: index,
+              numberOfColumns: columns.count,
+              legality: legalities[index]
+            )
+          }
         }
       }
     }
     .safeAreaPadding(.horizontal, nil)
+    .padding(.vertical, 13.0)
   }
   
   init(
@@ -35,19 +42,24 @@ struct LegalityView: View {
     self.legalities = legalities
   }
   
-  @ViewBuilder
-  private func legalityRow(index: Int, numberOfColumns: Int, legality: MagicCardLegalitiesValue) -> some View {
-    let color = Color(legality.backgroundColorName, bundle: DesignComponentsResources.bundle)
-    
+  @ViewBuilder private func legalityRow(
+    index: Int,
+    numberOfColumns: Int,
+    legality: MagicCardLegalitiesValue
+  ) -> some View {
     HStack {
       Text(legality.value)
         .foregroundStyle(.white)
-        .frame(minWidth: 0, maxWidth: .infinity).font(.system(size: 12))
+        .frame(minWidth: 0, maxWidth: .infinity)
+        .font(.system(size: 12))
         .padding(.vertical, 5.0)
-        .font(.caption)
-        .background { color }
+        .background {
+          Color(
+            legality.backgroundColorName,
+            bundle: DesignComponentsResources.bundle
+          )
+        }
         .clipShape(ButtonBorderShape.roundedRectangle)
-        .shadow(color: color.opacity(0.38), radius: 5.0)
       
       Text(legality.title)
         .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
@@ -56,7 +68,7 @@ struct LegalityView: View {
     }
     .background {
       if (index / columns.count).isMultiple(of: 2) {
-        Color(.quaternarySystemFill).clipShape(ButtonBorderShape.roundedRectangle)
+        Color(.systemFill).clipShape(ButtonBorderShape.roundedRectangle)
       } else {
         Color.clear
       }
