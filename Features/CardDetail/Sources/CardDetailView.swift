@@ -16,9 +16,12 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
             orientation: .landscape,
             rotation: 90
           )
-          .padding(.vertical, 8.0)
           .background {
-            LinearGradient(gradient: Gradient(colors: [.clear, Color(.secondarySystemBackground)]), startPoint: .top, endPoint: .bottom)
+            LinearGradient(
+              gradient: Gradient(colors: [.clear, Color(.secondarySystemBackground)]),
+              startPoint: .top,
+              endPoint: .bottom
+            )
           }
           
           Divider()
@@ -39,7 +42,6 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
             setCode: store.content.setCode,
             setIconURL: try? store.content.setIconURL.get()
           )
-          .padding(.vertical, 13.0)
           
           Divider()
             .safeAreaPadding(.leading, nil)
@@ -49,7 +51,6 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
             displayReleaseDate: store.content.displayReleasedDate,
             legalities: store.content.legalities
           )
-          .padding(.vertical, 13.0)
           
           Divider()
             .safeAreaPadding(.leading, nil)
@@ -63,7 +64,6 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
             tixLabel: store.content.tixLabel,
             purchaseVendor: store.content.card.getPurchaseUris()
           )
-          .padding(.vertical, 13.0)
           
           Divider()
             .safeAreaPadding(.leading, nil)
@@ -74,7 +74,6 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
             cards: try? store.content.variants?.get()
           ) { action in
           }
-          .padding(.vertical, 13.0)
           
           SelectionView(
             items: [
@@ -99,7 +98,6 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
               },
             ]
           )
-          .padding(.vertical, 13.0)
         }
       }
       .background {
@@ -111,18 +109,3 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
     }
   }
 }
-
-//#Preview {
-//  CardDetailView(
-//    store: Store(
-//      initialState: Feature.State(card: MagicCardFixtures.split.value, entryPoint: .query)
-//    ) {
-//      Feature(
-//        client: MockMagicCardDetailRequestClient<MockMagicCard<MockMagicCardColor>>(
-//          testConfiguration: .successFlow
-//        )
-//      )
-//    },
-//    contentOffset: .constant(0)
-//  )
-//}

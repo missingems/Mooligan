@@ -35,8 +35,7 @@ public struct PageView<Client: MagicCardDetailRequestClient>: View {
     }
     .scrollTargetBehavior(.viewAligned)
     .navigationBarTitleDisplayMode(.inline)
-    .toolbarBackgroundVisibility(.visible)
-    .navigationTitle("test")
+    .toolbarBackgroundVisibility(.visible, for: .navigationBar)
     .background(.black)
     .scrollIndicators(.hidden)
   }

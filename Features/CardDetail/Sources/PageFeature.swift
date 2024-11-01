@@ -9,6 +9,13 @@ import Networking
   public var body: some ReducerOf<Self> {
     Reduce { state, action in
       switch action {
+      case .fetchCards:
+        return .none
+        
+      case .viewAppeared:
+        return .run { send in
+          await send(.fetchCards)
+        }
       }
     }
   }
@@ -23,11 +30,13 @@ public extension PageFeature {
     var shouldDisplayNavigationBar = false
     var cards: [Client.MagicCardModel] = []
     
-    public init(contentOffset: CGFloat, cards: [Client.MagicCardModel]) {
+    public init(cards: [Client.MagicCardModel]) {
       self.cards = cards
     }
   }
   
   enum Action: Equatable, Sendable {
+    case fetchCards
+    case viewAppeared
   }
 }

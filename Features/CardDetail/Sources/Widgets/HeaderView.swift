@@ -85,10 +85,10 @@ extension HeaderView {
     ) {
       insets = switch orientation {
       case .landscape:
-        EdgeInsets(top: 13, leading: 34, bottom: 21, trailing: 34)
+        EdgeInsets(top: 21, leading: 34, bottom: 29, trailing: 34)
         
       case .portrait:
-        EdgeInsets(top: 13, leading: 72, bottom: 21, trailing: 72)
+        EdgeInsets(top: 21, leading: 89, bottom: 29, trailing: 89)
       }
       
       self.rotation = rotation

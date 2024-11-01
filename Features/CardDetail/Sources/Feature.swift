@@ -6,23 +6,13 @@ import Networking
 @Reducer struct Feature<Client: MagicCardDetailRequestClient> {
   private let client: Client
   
-  /// Initializes the feature with a network client.
-  /// - Parameter client: The client used for fetching card data.
   init(client: Client) {
     self.client = client
   }
   
-  /// Defines how the state should be updated based on actions.
   var body: some ReducerOf<Self> {
-    BindingReducer()
     Reduce { state, action in
       switch action {
-      case .binding(\.contentOffset):
-        return .none
-        
-      case .binding:
-        return .none
-        
       case let .fetchSet(card):
         return .run { send in
           try await send(.updateSetIconURL(.success(client.getSet(of: card).iconURL)))
@@ -48,12 +38,12 @@ import Networking
           )
         }
         
-      case let .updateVariants(value):
-        state.content.variants = value
-        return .none
-        
       case let .updateSetIconURL(value):
         state.content.setIconURL = value
+        return .none
+        
+      case let .updateVariants(value):
+        state.content.variants = value
         return .none
         
       case let .viewAppeared(action):
@@ -69,12 +59,7 @@ extension Feature {
   @ObservableState struct State: Equatable, Sendable {
     var content: Content<Client.MagicCardModel>
     let start: Action
-    var contentOffset: CGFloat = 0
     
-    /// Initializes the state based on the entry point and card details.
-    /// - Parameters:
-    ///   - card: The magic card model to be used.
-    ///   - entryPoint: The entry point which determines the initial action and content configuration.
     init(
       card: Client.MagicCardModel,
       entryPoint: EntryPoint<Client>
@@ -91,12 +76,11 @@ extension Feature {
     }
   }
   
-  indirect enum Action: BindableAction, Equatable, Sendable {
-    case binding(BindingAction<State>)
+  indirect enum Action: Equatable, Sendable {
     case fetchSet(card: Client.MagicCardModel)
     case fetchVariants(card: Client.MagicCardModel)
-    case updateVariants(_ variants: Result<[Client.MagicCardModel], FeatureError>)
     case updateSetIconURL(_ setIconURL: Result<URL?, FeatureError>)
+    case updateVariants(_ variants: Result<[Client.MagicCardModel], FeatureError>)
     case viewAppeared(initialAction: Action)
   }
 }

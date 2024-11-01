@@ -4,7 +4,6 @@ import SwiftUI
 struct CardDetailTableView<Card: MagicCard>: View {
   let main: Content<Card>.Description
   let alternate: Content<Card>.Description?
-  private let verticalPadding: CGFloat = 8.0
   
   var body: some View {
     HStack(alignment: .top, spacing: 8.0) {
@@ -12,8 +11,7 @@ struct CardDetailTableView<Card: MagicCard>: View {
         name: main.name,
         manaCost: main.manaCost
       )
-      .padding(.top, 13.0)
-      .padding(.bottom, verticalPadding)
+      .padding(EdgeInsets(top: 13.0, leading: 0, bottom: 8.0, trailing: 0))
       .safeAreaPadding(.leading, nil)
       
       Divider()
@@ -22,8 +20,7 @@ struct CardDetailTableView<Card: MagicCard>: View {
         name: alternate?.name,
         manaCost: alternate?.manaCost
       )
-      .padding(.top, 13.0)
-      .padding(.bottom, verticalPadding)
+      .padding(EdgeInsets(top: 13.0, leading: 0, bottom: 8.0, trailing: 0))
       .safeAreaPadding(.trailing, nil)
     }
     
@@ -32,13 +29,13 @@ struct CardDetailTableView<Card: MagicCard>: View {
     ) {
       HStack(alignment: .top, spacing: 8.0) {
         TypelineView(main.typeline)
-          .padding(.vertical, verticalPadding)
+          .padding(.vertical, 8.0)
           .safeAreaPadding(.leading, nil)
         
         Divider()
         
         TypelineView(alternate?.typeline)
-          .padding(.vertical, verticalPadding)
+          .padding(.vertical, 8.0)
           .safeAreaPadding(.trailing, nil)
       }
     }
@@ -48,13 +45,13 @@ struct CardDetailTableView<Card: MagicCard>: View {
     ) {
       HStack(alignment: .top, spacing: 8.0) {
         DescriptionView(main.text)
-          .padding(.vertical, verticalPadding)
+          .padding(.vertical, 8.0)
           .safeAreaPadding(.leading, nil)
         
         Divider()
         
         DescriptionView(alternate?.text)
-          .padding(.vertical, verticalPadding)
+          .padding(.vertical, 8.0)
           .safeAreaPadding(.trailing, nil)
       }
     }
@@ -64,13 +61,13 @@ struct CardDetailTableView<Card: MagicCard>: View {
     ) {
       HStack(alignment: .top, spacing: 8.0) {
         FlavorView(main.flavorText)
-          .padding(.vertical, verticalPadding)
+          .padding(.vertical, 8.0)
           .safeAreaPadding(.leading, nil)
         
         Divider()
         
         FlavorView(alternate?.flavorText)
-          .padding(.vertical, verticalPadding)
+          .padding(.vertical, 8.0)
           .safeAreaPadding(.trailing, nil)
       }
     }
