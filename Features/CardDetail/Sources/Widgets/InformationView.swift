@@ -1,13 +1,16 @@
 import DesignComponents
 import SwiftUI
 
-struct InfoView: View {
+struct InformationView: View {
   private let title: String
   private let widgets: [Widget]
   
   var body: some View {
-    VStack(alignment: .leading) {
-      Text(title).font(.headline)
+    Divider().safeAreaPadding(.leading, nil)
+    
+    VStack(alignment: .leading, spacing: 5.0) {
+      Text(title)
+        .font(.headline)
       
       ScrollView(.horizontal, showsIndicators: false) {
         HStack {
@@ -16,6 +19,7 @@ struct InfoView: View {
       }
     }
     .safeAreaPadding(.horizontal, nil)
+    .padding(.top, 13.0)
   }
   
   init(
@@ -107,7 +111,7 @@ private extension Widget {
           Image("power", bundle: DesignComponentsResources.bundle)
             .renderingMode(.template)
             .aspectRatio(contentMode: .fit)
-            .foregroundStyle(Color.primary)
+            .foregroundStyle(.primary)
           
           Text("\(power)/\(toughness)")
             .font(.body)
@@ -116,7 +120,7 @@ private extension Widget {
           Image("toughness", bundle: DesignComponentsResources.bundle)
             .renderingMode(.template)
             .aspectRatio(contentMode: .fit)
-            .foregroundStyle(Color.primary)
+            .foregroundStyle(.primary)
         }
         
         Text(String(localized: "Power\nToughness"))
@@ -159,7 +163,7 @@ private extension Widget {
               .tint(.accentColor)
             
             Text(counters)
-              .foregroundStyle(Color.white)
+              .foregroundStyle(.white)
               .font(.headline)
               .fontDesign(.serif)
           }
@@ -245,7 +249,7 @@ extension Widget {
 
 #Preview {
   VStack {
-    InfoView(
+    InformationView(
       title: "Information",
       power: "1",
       toughness: "2",

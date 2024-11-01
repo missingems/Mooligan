@@ -24,14 +24,9 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
             )
           }
           
-          Divider()
-          
           CardDetailTableView(descriptions: store.content.descriptions)
           
-          Divider()
-            .safeAreaPadding(.leading, nil)
-          
-          InfoView(
+          InformationView(
             title: store.content.infoLabel,
             power: store.content.power,
             toughness: store.content.toughness,
