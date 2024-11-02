@@ -33,10 +33,12 @@ struct HeaderView: View {
       AmbientWebImage(
         url: imageURL,
         cornerRadius: 13,
+        offset: CGPoint(x: 0, y: 34),
+        scale: CGSize(width: 2, height: 2),
         rotation: layoutConfiguration.rotation
       )
       .aspectRatio(
-        MagicCardImageRatio.widthToHeight.rawValue,
+        layoutConfiguration.ratio,
         contentMode: .fit
       )
       
@@ -66,18 +68,18 @@ struct HeaderView: View {
       }
     }
     .padding(layoutConfiguration.insets)
-    .background {
-      LinearGradient(
-        gradient: Gradient(
-          colors: [
-            .clear,
-            Color(.systemFill)
-          ]
-        ),
-        startPoint: .top,
-        endPoint: .bottom
-      )
-    }
+//    .background {
+//      LinearGradient(
+//        gradient: Gradient(
+//          colors: [
+//            .clear,
+//            Color(.systemFill)
+//          ]
+//        ),
+//        startPoint: .top,
+//        endPoint: .bottom
+//      )
+//    }
   }
 }
 
@@ -90,6 +92,7 @@ extension HeaderView {
     
     let rotation: CGFloat
     let insets: EdgeInsets
+    let ratio: CGFloat
     
     init(
       rotation: CGFloat,
@@ -104,6 +107,13 @@ extension HeaderView {
       }
       
       self.rotation = rotation
+      self.ratio = switch orientation {
+      case .landscape:
+        MagicCardImageRatio.heightToWidth.rawValue
+        
+      case .portrait:
+        MagicCardImageRatio.widthToHeight.rawValue
+      }
     }
   }
 }

@@ -12,11 +12,12 @@ public struct IconLazyImage: View {
   
   public var body: some View {
     WebImage(url: url) { image in
-      image.resizable().renderingMode(.template)
-        .transition(.fade(duration: 0.25))
+      image.transition(.fade(duration: 0.25))
     } placeholder: {
       Circle().foregroundColor(Color.black.opacity(0.15)).shimmering()
     }
+    .resizable()
+    .renderingMode(.template)
     .aspectRatio(contentMode: .fit)
     .foregroundColor(tintColor)
   }

@@ -13,7 +13,9 @@ struct VariantView: View {
   let send: (Action) -> Void
   
   var body: some View {
-    VStack(alignment: .leading) {
+    Divider().safeAreaPadding(.leading, nil)
+    
+    VStack(alignment: .leading, spacing: 5.0) {
       Text(title).font(.headline)
       Text(subtitle).font(.caption).foregroundStyle(.secondary)
       
@@ -37,6 +39,7 @@ struct VariantView: View {
           }
         }
       }
+      .padding(.top, 3.0)
       .scrollClipDisabled(true)
     }
     .safeAreaPadding(.horizontal, nil)

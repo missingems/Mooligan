@@ -9,13 +9,13 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
   var body: some View {
     GeometryReader { proxy in
       ScrollView {
-        LazyVStack(alignment: .leading, spacing: 0) {
+        VStack(alignment: .leading, spacing: 0) {
           HeaderView(
             imageURL: store.content.imageURL,
             isFlippable: store.content.card.isFlippable,
-            orientation: .portrait,
-            rotation: 0
-          )
+            orientation: store.content.card.isSplit ? .landscape : .portrait,
+            rotation: store.content.card.isSplit ? 90 : 0
+          )?.clipped()
           
           CardDetailTableView(descriptions: store.content.descriptions)
           
@@ -32,17 +32,11 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
             setIconURL: try? store.content.setIconURL.get()
           )
           
-          Divider()
-            .safeAreaPadding(.leading, nil)
-          
           LegalityView(
             title: store.content.legalityLabel,
             displayReleaseDate: store.content.displayReleasedDate,
             legalities: store.content.legalities
           )
-          
-          Divider()
-            .safeAreaPadding(.leading, nil)
           
           PriceView(
             title: store.content.priceLabel,
@@ -53,9 +47,6 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
             tixLabel: store.content.tixLabel,
             purchaseVendor: store.content.card.getPurchaseUris()
           )
-          
-          Divider()
-            .safeAreaPadding(.leading, nil)
           
           VariantView(
             title: store.content.variantLabel,

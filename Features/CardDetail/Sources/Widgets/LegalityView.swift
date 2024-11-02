@@ -9,7 +9,9 @@ struct LegalityView: View {
   let columns = [GridItem(spacing: 5.0), GridItem(spacing: 5.0)]
   
   var body: some View {
-    VStack(alignment: .leading) {
+    Divider().safeAreaPadding(.leading, nil)
+    
+    VStack(alignment: .leading, spacing: 5.0) {
       Text(title).font(.headline)
       Text(displayReleaseDate).font(.caption).foregroundStyle(.secondary)
       
@@ -27,6 +29,7 @@ struct LegalityView: View {
           }
         }
       }
+      .padding(.top, 3.0)
     }
     .safeAreaPadding(.horizontal, nil)
     .padding(.vertical, 13.0)

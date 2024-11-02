@@ -7,7 +7,7 @@ struct SelectionView: View {
   var body: some View {
     Divider().safeAreaPadding(.leading, nil)
     
-    VStack(alignment: .leading) {
+    VStack(alignment: .leading, spacing: 8.0) {
       Text("Related").font(.headline)
       
       VStack(spacing: 0) {

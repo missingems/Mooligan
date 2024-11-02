@@ -24,7 +24,7 @@ struct CardDetailTableView<Card: MagicCard>: View {
           name: alternate?.name,
           manaCost: alternate?.manaCost
         )
-        .padding(EdgeInsets(top: 13.0, leading: 0, bottom: 5, trailing: 0))
+        .padding(EdgeInsets(top: 13.0, leading: 0, bottom: 8, trailing: 0))
         .safeAreaPadding(.trailing, nil)
       }
       
@@ -36,9 +36,9 @@ struct CardDetailTableView<Card: MagicCard>: View {
         
         HStack(alignment: .top, spacing: 8.0) {
           let edgeInsets = EdgeInsets(
-            top: 5,
+            top: 8,
             leading: 0,
-            bottom: isLastIndex ? 13 : 5,
+            bottom: isLastIndex ? 13 : 8,
             trailing: 0
           )
           

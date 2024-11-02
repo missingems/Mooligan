@@ -16,7 +16,6 @@ import Networking
       case let .fetchSet(card):
         return .run { send in
           try await send(.updateSetIconURL(.success(client.getSet(of: card).iconURL)))
-          await send(.fetchVariants(card: card))
         } catch: { error, send in
           await send(
             .updateSetIconURL(
@@ -40,7 +39,9 @@ import Networking
         
       case let .updateSetIconURL(value):
         state.content.setIconURL = value
-        return .none
+        return .run { [card = state.content.card] send in
+          await send(.fetchVariants(card: card))
+        }
         
       case let .updateVariants(value):
         state.content.variants = value

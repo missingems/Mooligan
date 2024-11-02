@@ -82,7 +82,7 @@ public struct TokenizedText: View {
   private func getCustomImage(image: String, newSize: CGSize) -> Text {
     if let image = UIImage(named: image, in: DesignComponentsResources.bundle, with: nil),
        let newImage = convertImageToNewFrame(image: image, newFrameSize: newSize) {
-      return Text(Image(uiImage: newImage).resizable()).baselineOffset(-2.0)
+      return Text(Image(uiImage: newImage).resizable()).baselineOffset(-3.0)
     } else {
       return Text("")
     }
