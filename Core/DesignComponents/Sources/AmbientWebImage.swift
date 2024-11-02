@@ -40,7 +40,8 @@ public struct AmbientWebImage: View {
         request: ImageRequest(
           url: url,
           processors: transformers
-        )
+        ),
+        transaction: Transaction(animation: .easeInOut(duration: 0.31))
       ) { state in
         state.image.map { $0.resizable() }
       }
@@ -53,14 +54,11 @@ public struct AmbientWebImage: View {
         request: ImageRequest(
           url: url,
           processors: transformers
-        )
+        ),
+        transaction: Transaction(animation: .easeInOut(duration: 0.31))
       ) { state in
         if state.isLoading {
-          RoundedRectangle(cornerRadius: cornerRadius).fill(Color(.systemFill)).shimmering(
-            gradient: Gradient(
-              colors: [.black.opacity(0.8), .black.opacity(1), .black.opacity(0.8)]
-            )
-          )
+          RoundedRectangle(cornerRadius: cornerRadius).fill(Color(.systemFill)).shimmering()
         } else if let image = state.image {
           image.resizable()
         }
@@ -68,8 +66,9 @@ public struct AmbientWebImage: View {
       .clipShape(.rect(cornerSize: CGSize(width: cornerRadius, height: cornerRadius)))
       .overlay(
         RoundedRectangle(cornerRadius: cornerRadius)
-          .stroke(.separator, lineWidth: 1 / UIScreen.main.nativeScale)
+          .stroke(Color.white.opacity(0.31), lineWidth: 1 / UIScreen.main.nativeScale)
       )
+      
     }
   }
 }

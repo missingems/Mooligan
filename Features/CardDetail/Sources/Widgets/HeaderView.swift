@@ -29,10 +29,11 @@ struct HeaderView: View {
   }
   
   var body: some View {
-    ZStack {
+    ZStack(alignment: .trailing) {
       AmbientWebImage(
         url: imageURL,
         cornerRadius: 13,
+        blurRadius: 34,
         offset: CGPoint(x: 0, y: 34),
         scale: CGSize(width: 2, height: 2),
         rotation: layoutConfiguration.rotation
@@ -41,6 +42,7 @@ struct HeaderView: View {
         layoutConfiguration.ratio,
         contentMode: .fit
       )
+      .shadow(color: Color.black.opacity(0.31), radius: 13, x: 0, y: 13)
       
       if isFlippable {
         Button {
@@ -49,6 +51,7 @@ struct HeaderView: View {
           Image(systemName: "rectangle.portrait.rotate")
             .fontWeight(.semibold)
         }
+        .tint(DesignComponentsAsset.accentColor.swiftUIColor)
         .frame(
           width: 44.0,
           height: 44.0
@@ -61,25 +64,14 @@ struct HeaderView: View {
           Circle()
             .stroke(
               .separator,
-              lineWidth: 1 / UIScreen.main.nativeScale
+              lineWidth: 1
             )
             .opacity(0.618)
         )
+        .offset(x: 16.0, y: -16.0)
       }
     }
     .padding(layoutConfiguration.insets)
-//    .background {
-//      LinearGradient(
-//        gradient: Gradient(
-//          colors: [
-//            .clear,
-//            Color(.systemFill)
-//          ]
-//        ),
-//        startPoint: .top,
-//        endPoint: .bottom
-//      )
-//    }
   }
 }
 
