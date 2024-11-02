@@ -13,8 +13,8 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
           HeaderView(
             imageURL: store.content.imageURL,
             isFlippable: store.content.card.isFlippable,
-            orientation: store.content.card.isSplit ? .landscape : .portrait,
-            rotation: store.content.card.isSplit ? 90 : 0
+            orientation: store.content.card.isLandscape ? .landscape : .portrait,
+            rotation: store.content.card.isLandscape ? 90 : 0
           )?.clipped()
           
           CardDetailTableView(descriptions: store.content.descriptions)

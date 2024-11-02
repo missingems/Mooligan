@@ -44,21 +44,25 @@ struct CardDetailTableView<Card: MagicCard>: View {
           
           switch section.type {
           case .description:
-            VStack(alignment: .leading, spacing: 8) {
-              DescriptionView(section.title1)
-              FlavorView(main.flavorText)
+            if section.title1?.isEmptyOrNil() == false || main.flavorText?.isEmptyOrNil() == false {
+              VStack(alignment: .leading, spacing: 8) {
+                DescriptionView(section.title1)
+                FlavorView(main.flavorText)
+              }
+              .padding(edgeInsets)
+              .safeAreaPadding(.leading, nil)
             }
-            .padding(edgeInsets)
-            .safeAreaPadding(.leading, nil)
             
             Divider()
             
-            VStack(alignment: .leading, spacing: 8) {
-              DescriptionView(section.title2)
-              FlavorView(alternate?.flavorText)
+            if section.title2?.isEmptyOrNil() == false || alternate?.flavorText?.isEmptyOrNil() == false {
+              VStack(alignment: .leading, spacing: 8) {
+                DescriptionView(section.title2)
+                FlavorView(alternate?.flavorText)
+              }
+              .padding(edgeInsets)
+              .safeAreaPadding(.trailing, nil)
             }
-            .padding(edgeInsets)
-            .safeAreaPadding(.trailing, nil)
             
           case .typeline:
             TypelineView(main.typeline)

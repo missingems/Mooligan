@@ -122,6 +122,10 @@ public extension MagicCard {
     getLanguage() == "ph"
   }
   
+  var isLandscape: Bool {
+    getLayout().value == .split || getLayout().value == .battle
+  }
+  
   func getDisplayManaCost(faceDirection: MagicCardFaceDirection) -> [String] {
     guard
       let pattern = try? Regex("\\{[^}]+\\}"),
