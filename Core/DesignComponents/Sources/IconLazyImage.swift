@@ -15,7 +15,7 @@ public struct IconLazyImage: View {
       image.resizable().renderingMode(.template)
         .transition(.fade(duration: 0.25))
     } placeholder: {
-      Circle().foregroundColor(Color(.systemFill)).shimmering()
+      Circle().foregroundColor(Color.black.opacity(0.15)).shimmering()
     }
     .aspectRatio(contentMode: .fit)
     .foregroundColor(tintColor)
