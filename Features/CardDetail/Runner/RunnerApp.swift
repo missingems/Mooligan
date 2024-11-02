@@ -32,7 +32,7 @@ struct RunnerApp: App {
       }
       .task {
         do {
-          cards = try await client.searchCards(query: "layout=adventure").data
+          cards = try await client.searchCards(query: "layout=split").data
             .compactMap { $0 }
         } catch {
           
