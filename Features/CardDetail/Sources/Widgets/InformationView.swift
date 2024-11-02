@@ -110,8 +110,10 @@ private extension Widget {
       VStack(alignment: .center, spacing: 3) {
         Self.wrappedContent {
           Image("power", bundle: DesignComponentsResources.bundle)
+            .resizable()
             .renderingMode(.template)
             .aspectRatio(contentMode: .fit)
+            .frame(width: 15)
             .foregroundStyle(.primary)
           
           Text("\(power)/\(toughness)")
@@ -119,8 +121,10 @@ private extension Widget {
             .fontDesign(.serif)
           
           Image("toughness", bundle: DesignComponentsResources.bundle)
+            .resizable()
             .renderingMode(.template)
             .aspectRatio(contentMode: .fit)
+            .frame(width: 15)
             .foregroundStyle(.primary)
         }
         
@@ -155,8 +159,10 @@ private extension Widget {
         Self.wrappedContent {
           ZStack(alignment: .center) {
             Image("loyalty", bundle: DesignComponentsResources.bundle)
+              .resizable()
               .renderingMode(.template)
               .aspectRatio(contentMode: .fit)
+              .frame(width: 50)
               .tint(.accentColor)
             
             Text(counters)
@@ -164,6 +170,7 @@ private extension Widget {
               .font(.body)
               .fontWeight(.medium)
               .fontDesign(.serif)
+              .offset(y: 1)
           }
         }
         
