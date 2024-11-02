@@ -13,7 +13,7 @@ struct InformationView: View {
       Text(title).font(.headline)
       
       ScrollView(.horizontal, showsIndicators: false) {
-        HStack {
+        HStack(spacing: 5.0) {
           ForEach(widgets) { $0 }
         }
       }
@@ -197,14 +197,33 @@ private extension Widget {
     rarity: MagicCardRarityValue,
     iconURL: URL?
   ) -> some View {
+    let colors = rarity.colorNames?.map({ Color($0, bundle: DesignComponentsResources.bundle)})
+    
     if let code {
       VStack(alignment: .center, spacing: 3.0) {
-        Self.wrappedContent {
+        HStack(spacing: 5.0) {
           IconLazyImage(iconURL, tintColor: .primary).frame(width: 25, height: 25)
-          Text(code.uppercased()).font(.body).fontDesign(.serif)
+          Text(code.uppercased()).font(.body).fontDesign(.serif).fontWeight(.medium)
         }
+        .frame(minWidth: 66, minHeight: 34)
+        .padding(EdgeInsets(top: 5, leading: 11, bottom: 5, trailing: 11))
+        .background {
+          if let colors {
+            LinearGradient(
+              colors: colors,
+              startPoint: .topLeading,
+              endPoint: .bottomTrailing
+            )
+            .overlay(
+              RoundedRectangle(cornerRadius: 13.0).stroke(.black.opacity(0.31), lineWidth: 3.0)
+            )
+          } else {
+            Color(.systemFill)
+          }
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 13.0))
         
-        Text(rarity.rawValue.capitalized)
+        Text("\(rarity.rawValue.capitalized)\n")
           .font(.caption2)
           .foregroundStyle(.secondary)
           .multilineTextAlignment(.center)

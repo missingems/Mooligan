@@ -1,3 +1,4 @@
+import DesignComponents
 import Networking
 import SwiftUI
 
@@ -108,7 +109,7 @@ extension PriceView {
           Text("\(currencySymbol)\(price)")
             .font(.body)
             .fontWeight(isDisabled ? .regular : .semibold)
-            .foregroundStyle(Color.accentColor)
+            .foregroundStyle(DesignComponentsAsset.accentColor.swiftUIColor)
             .monospaced()
           
           Text(label)
@@ -119,7 +120,7 @@ extension PriceView {
         .padding(.vertical, 8.0)
         .background(Color(.systemFill))
       }
-      .clipShape(.buttonBorder)
+      .clipShape(RoundedRectangle(cornerRadius: 13.0))
       .buttonStyle(.sinkableButtonStyle)
       .disabled(isDisabled)
       .opacity(isDisabled ? 0.31 : 1.0)
