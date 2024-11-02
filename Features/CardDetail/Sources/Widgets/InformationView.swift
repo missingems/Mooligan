@@ -192,8 +192,12 @@ private extension Widget {
     }
   }
   
-  @ViewBuilder private func setCodeView(_ code: String?, rarity: MagicCardRarityValue, iconURL: URL?) -> some View {
-    if let code, let iconURL {
+  @ViewBuilder private func setCodeView(
+    _ code: String?,
+    rarity: MagicCardRarityValue,
+    iconURL: URL?
+  ) -> some View {
+    if let code {
       VStack(alignment: .center, spacing: 3.0) {
         Self.wrappedContent {
           IconLazyImage(iconURL, tintColor: .primary).frame(width: 25, height: 25)

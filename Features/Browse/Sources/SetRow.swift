@@ -35,6 +35,7 @@ struct SetRow: View {
         .clipShape(.buttonBorder)
       }
     )
+    .buttonStyle(.sinkableButtonStyle)
   }
   
   init(viewModel: ViewModel, _ onSelect: @escaping () -> Void) {
