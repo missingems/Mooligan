@@ -50,6 +50,7 @@ struct Content<Card: MagicCard>: Equatable, Sendable {
   let rulingSelectionIcon: Image
   let relatedSelectionLabel: String
   let relatedSelectionIcon: Image
+  let rarity: MagicCardRarityValue
   
   var numberOfVariantsLabel: String {
     String(localized: "\((try? variants.get().count) ?? 0) Results")
@@ -122,6 +123,7 @@ struct Content<Card: MagicCard>: Equatable, Sendable {
     legalities = card.getLegalities().value
     self.setIconURL = .success(setIconURL)
     self.variants = .success([card])
+    self.rarity = card.getRarity().value
   }
   
   static func makeDescription(faceDirection: MagicCardFaceDirection, card: Card) -> Description {

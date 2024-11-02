@@ -25,6 +25,7 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
             toughness: store.content.toughness,
             loyaltyCounters: store.content.loyalty,
             manaValue: store.content.manaValue,
+            rarity: store.content.rarity,
             collectorNumber: store.content.collectorNumber,
             colorIdentity: store.content.colorIdentity,
             setCode: store.content.setCode,

@@ -1,4 +1,5 @@
 import DesignComponents
+import Networking
 import SwiftUI
 
 struct InformationView: View {
@@ -27,6 +28,7 @@ struct InformationView: View {
     toughness: String?,
     loyaltyCounters: String?,
     manaValue: Double?,
+    rarity: MagicCardRarityValue,
     collectorNumber: String?,
     colorIdentity: [String]?,
     setCode: String?,
@@ -36,8 +38,12 @@ struct InformationView: View {
     
     var widgets: [Widget] = []
     
-    if let power, let toughness {
-      widgets.append(.powerToughness(power: power, toughness: toughness))
+    if let setCode {
+      widgets.append(.set(code: setCode, rarity: rarity, iconURL: setIconURL))
+    }
+    
+    if let collectorNumber {
+      widgets.append(.collectorNumber(collectorNumber))
     }
     
     if let loyaltyCounters {
@@ -48,16 +54,12 @@ struct InformationView: View {
       widgets.append(.manaValue("\(manaValue)"))
     }
     
-    if let collectorNumber {
-      widgets.append(.collectorNumber(collectorNumber))
-    }
-    
     if let colorIdentity {
       widgets.append(.colorIdentity(colorIdentity))
     }
     
-    if let setCode, let setIconURL {
-      widgets.append(.set(code: setCode, iconURL: setIconURL))
+    if let power, let toughness {
+      widgets.append(.powerToughness(power: power, toughness: toughness))
     }
     
     self.widgets = widgets
@@ -70,15 +72,15 @@ private enum Widget: Hashable, Identifiable, View {
   case manaValue(String)
   case collectorNumber(String)
   case colorIdentity([String])
-  case set(code: String, iconURL: URL?)
+  case set(code: String, rarity: MagicCardRarityValue, iconURL: URL?)
   
   var body: some View {
     switch self {
     case let .powerToughness(power, toughness):
       powerToughnessView(power: power, toughness: toughness)
       
-    case let .set(code, iconURL):
-      setCodeView(code, iconURL: iconURL)
+    case let .set(code, rarity, iconURL):
+      setCodeView(code, rarity: rarity, iconURL: iconURL)
       
     case let .colorIdentity(manaIdentity):
       manaIdentityView(manaIdentity)
@@ -190,7 +192,7 @@ private extension Widget {
     }
   }
   
-  @ViewBuilder private func setCodeView(_ code: String?, iconURL: URL?) -> some View {
+  @ViewBuilder private func setCodeView(_ code: String?, rarity: MagicCardRarityValue, iconURL: URL?) -> some View {
     if let code, let iconURL {
       VStack(alignment: .center, spacing: 3.0) {
         Self.wrappedContent {
@@ -198,7 +200,7 @@ private extension Widget {
           Text(code.uppercased()).font(.body).fontDesign(.serif)
         }
         
-        Text(String(localized: "Set\nCode"))
+        Text(rarity.rawValue.capitalized)
           .font(.caption2)
           .foregroundStyle(.secondary)
           .multilineTextAlignment(.center)
@@ -246,6 +248,7 @@ extension Widget {
       toughness: "2",
       loyaltyCounters: "1",
       manaValue: 2,
+      rarity: .mythic,
       collectorNumber: "123",
       colorIdentity: ["{R}"],
       setCode: "123",
