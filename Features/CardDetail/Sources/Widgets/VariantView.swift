@@ -36,42 +36,8 @@ struct VariantView: View {
             .buttonStyle(.sinkableButtonStyle)
           }
         }
-        .padding(.all, 13.0)
       }
-      .background {
-        LinearGradient(
-          gradient: Gradient(
-            colors: [
-              Color(.systemFill),
-              Color(.systemFill).opacity(0.382),
-            ]
-          ),
-          startPoint: .top,
-          endPoint: .bottom
-        )
-        .clipShape(
-          RoundedRectangle(cornerRadius: 13.0)
-        )
-      }
-      .overlay(
-        RoundedRectangle(
-          cornerRadius: 13.0
-        )
-        .stroke(
-          LinearGradient(
-            gradient: Gradient(
-              colors: [
-                .clear,
-                Color(.systemFill),
-              ]
-            ),
-            startPoint: .top,
-            endPoint: .bottom
-          ),
-          lineWidth: 1 / UIScreen.main.nativeScale
-        )
-      )
-      .clipped()
+      .scrollClipDisabled(true)
     }
     .safeAreaPadding(.horizontal, nil)
     .padding(.vertical, 13.0)

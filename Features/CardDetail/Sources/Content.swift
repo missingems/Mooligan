@@ -52,12 +52,12 @@ struct Content<Card: MagicCard>: Equatable, Sendable {
   let relatedSelectionIcon: Image
   
   var numberOfVariantsLabel: String {
-    String(localized: "\((try? variants?.get().count) ?? 0) Results")
+    String(localized: "\((try? variants.get().count) ?? 0) Results")
   }
   
   let setCode: String
   var setIconURL: Result<URL?, FeatureError>
-  var variants: Result<[Card], FeatureError>?
+  var variants: Result<[Card], FeatureError>
   let card: Card
   let legalities: [MagicCardLegalitiesValue]
   
@@ -81,12 +81,18 @@ struct Content<Card: MagicCard>: Equatable, Sendable {
     let face = card.getCardFace(for: faceDirection)
     imageURL = face.getImageURL() ?? card.getImageURL()
     
-    descriptions = card.isSplit ? [
+    var descriptions = card.isSplit ? [
       Self.makeDescription(faceDirection: .front, card: card),
       Self.makeDescription(faceDirection: .back, card: card)
     ] : [
       Self.makeDescription(faceDirection: faceDirection, card: card)
     ]
+    
+    if card.getLayout().value == .adventure {
+      descriptions = descriptions.reversed()
+    }
+    
+    self.descriptions = descriptions
     
     power = face.power
     toughness = face.toughness
@@ -115,6 +121,7 @@ struct Content<Card: MagicCard>: Equatable, Sendable {
     collectorNumber = card.getCollectorNumber()
     legalities = card.getLegalities().value
     self.setIconURL = .success(setIconURL)
+    self.variants = .success([card])
   }
   
   static func makeDescription(faceDirection: MagicCardFaceDirection, card: Card) -> Description {

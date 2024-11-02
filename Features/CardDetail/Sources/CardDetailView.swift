@@ -13,8 +13,8 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
           HeaderView(
             imageURL: store.content.imageURL,
             isFlippable: store.content.card.isFlippable,
-            orientation: .landscape,
-            rotation: 90
+            orientation: .portrait,
+            rotation: 0
           )
           
           CardDetailTableView(descriptions: store.content.descriptions)
@@ -59,7 +59,7 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
           VariantView(
             title: store.content.variantLabel,
             subtitle: store.content.numberOfVariantsLabel,
-            cards: try? store.content.variants?.get()
+            cards: try? store.content.variants.get()
           ) { action in
           }
           

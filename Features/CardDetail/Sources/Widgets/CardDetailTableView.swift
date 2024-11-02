@@ -43,16 +43,22 @@ struct CardDetailTableView<Card: MagicCard>: View {
           )
           
           switch section.type {
-          case .title:
-            DescriptionView(main.text)
-              .padding(edgeInsets)
-              .safeAreaPadding(.leading, nil)
+          case .description:
+            VStack(alignment: .leading, spacing: 8) {
+              DescriptionView(section.title1)
+              FlavorView(main.flavorText)
+            }
+            .padding(edgeInsets)
+            .safeAreaPadding(.leading, nil)
             
             Divider()
             
-            DescriptionView(alternate?.text)
-              .padding(edgeInsets)
-              .safeAreaPadding(.trailing, nil)
+            VStack(alignment: .leading, spacing: 8) {
+              DescriptionView(section.title2)
+              FlavorView(alternate?.flavorText)
+            }
+            .padding(edgeInsets)
+            .safeAreaPadding(.trailing, nil)
             
           case .typeline:
             TypelineView(main.typeline)
@@ -62,17 +68,6 @@ struct CardDetailTableView<Card: MagicCard>: View {
             Divider()
             
             TypelineView(alternate?.typeline)
-              .padding(edgeInsets)
-              .safeAreaPadding(.trailing, nil)
-            
-          case .flavor:
-            FlavorView(section.title1)
-              .padding(edgeInsets)
-              .safeAreaPadding(.leading, nil)
-            
-            Divider()
-            
-            FlavorView(section.title2)
               .padding(edgeInsets)
               .safeAreaPadding(.trailing, nil)
           }
@@ -99,14 +94,9 @@ struct CardDetailTableView<Card: MagicCard>: View {
         title2: alternate?.typeline
       ),
       Section(
-        type: .title,
+        type: .description,
         title1: main.text,
         title2: alternate?.text
-      ),
-      Section(
-        type: .flavor,
-        title1: main.flavorText,
-        title2: alternate?.flavorText
       )
     ].compactMap { $0}
   }
@@ -115,8 +105,7 @@ struct CardDetailTableView<Card: MagicCard>: View {
 extension CardDetailTableView {
   struct Section: Identifiable {
     enum SectionType {
-      case flavor
-      case title
+      case description
       case typeline
     }
     

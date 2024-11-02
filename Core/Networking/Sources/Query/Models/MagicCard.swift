@@ -115,7 +115,7 @@ public extension MagicCard {
   }
   
   var isSplit: Bool {
-    getLayout().value == .split
+    getLayout().value == .split || getLayout().value == .adventure
   }
   
   var isPhyrexian: Bool {
