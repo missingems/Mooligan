@@ -8,7 +8,7 @@ struct InformationView: View {
   var body: some View {
     Divider().safeAreaPadding(.leading, nil)
     
-    VStack(alignment: .leading, spacing: 5.0) {
+    VStack(alignment: .leading, spacing: 8.0) {
       Text(title).font(.headline)
       
       ScrollView(.horizontal, showsIndicators: false) {
@@ -127,8 +127,6 @@ private extension Widget {
           .foregroundStyle(.secondary)
           .multilineTextAlignment(.center)
           .frame(maxHeight: .infinity, alignment: .center)
-        
-        Spacer(minLength: 0)
       }
     }
   }
@@ -137,7 +135,7 @@ private extension Widget {
     if identity.isEmpty == false {
       VStack(alignment: .center, spacing: 3.0) {
         Self.wrappedContent {
-          ManaView(identity: identity, size: CGSize(width: 21, height: 21))
+          ManaView(identity: identity, size: CGSize(width: 21, height: 21))?.offset(y: -1)
         }
         
         Text(String(localized: "Color\nIdentity"))
@@ -145,8 +143,6 @@ private extension Widget {
           .foregroundStyle(.secondary)
           .multilineTextAlignment(.center)
           .frame(maxHeight: .infinity, alignment: .center)
-        
-        Spacer(minLength: 0)
       }
     }
   }
@@ -163,7 +159,8 @@ private extension Widget {
             
             Text(counters)
               .foregroundStyle(.white)
-              .font(.headline)
+              .font(.body)
+              .fontWeight(.medium)
               .fontDesign(.serif)
           }
         }
@@ -173,8 +170,6 @@ private extension Widget {
           .foregroundStyle(.secondary)
           .multilineTextAlignment(.center)
           .frame(maxHeight: .infinity, alignment: .center)
-        
-        Spacer(minLength: 0)
       }
     }
   }
@@ -191,8 +186,6 @@ private extension Widget {
           .foregroundStyle(.secondary)
           .multilineTextAlignment(.center)
           .frame(maxHeight: .infinity, alignment: .center)
-        
-        Spacer(minLength: 0)
       }
     }
   }
@@ -210,8 +203,6 @@ private extension Widget {
           .foregroundStyle(.secondary)
           .multilineTextAlignment(.center)
           .frame(maxHeight: .infinity, alignment: .center)
-        
-        Spacer(minLength: 0)
       }
     }
   }
@@ -220,7 +211,9 @@ private extension Widget {
     if let manaValue {
       VStack(alignment: .center, spacing: 3.0) {
         Self.wrappedContent {
-          Text(manaValue).font(.body).fontDesign(.monospaced)
+          Text(manaValue)
+            .font(.body)
+            .fontDesign(.monospaced)
         }
         
         Text(String(localized: "Mana\nValue"))
@@ -228,7 +221,6 @@ private extension Widget {
           .foregroundStyle(.secondary)
           .multilineTextAlignment(.center)
           .frame(maxHeight: .infinity, alignment: .center)
-        Spacer(minLength: 0)
       }
     }
   }
@@ -242,7 +234,7 @@ extension Widget {
     .frame(minWidth: 66, minHeight: 34)
     .padding(EdgeInsets(top: 5, leading: 11, bottom: 5, trailing: 11))
     .background { Color(.systemFill) }
-    .clipShape(.buttonBorder)
+    .clipShape(RoundedRectangle(cornerRadius: 13.0))
   }
 }
 
