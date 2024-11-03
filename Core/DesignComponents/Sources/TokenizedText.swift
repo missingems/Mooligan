@@ -11,9 +11,8 @@ public struct TokenizedText: View {
     self.paragraphSpacing = paragraphSpacing
   }
   
-  @ViewBuilder
-  func build() -> some View {
-    LazyVStack(alignment: .leading, spacing: paragraphSpacing) {
+  @ViewBuilder func build() -> some View {
+    VStack(alignment: .leading, spacing: paragraphSpacing) {
       ForEach(text.split(separator: "\n"), id: \.self) { element in
         build(elements: parseText(String(element)))
       }

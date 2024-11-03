@@ -51,12 +51,12 @@ struct InformationView: View {
       widgets.append(.loyalty(counters: loyaltyCounters))
     }
     
-    if let manaValue {
-      widgets.append(.manaValue("\(manaValue)"))
-    }
-    
     if let colorIdentity {
       widgets.append(.colorIdentity(colorIdentity))
+    }
+    
+    if let manaValue {
+      widgets.append(.manaValue("\(manaValue)"))
     }
     
     if let power, let toughness {

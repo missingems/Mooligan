@@ -30,7 +30,6 @@ struct CardDetailTableView<Card: MagicCard>: View {
             )
             .padding(EdgeInsets(top: 13.0, leading: 0, bottom: 8.0, trailing: 0))
             
-            
             if let name = alternate?.name, let manaCost = alternate?.manaCost {
               Divider()
               

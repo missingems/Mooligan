@@ -37,6 +37,15 @@ import Networking
           )
         }
         
+      case .transformTapped:
+        state.content = Content(
+          card: state.content.card,
+          setIconURL: try? state.content.setIconURL.get(),
+          faceDirection: state.content.faceDirection.toggled()
+        )
+        
+        return .none
+        
       case let .updateSetIconURL(value):
         state.content.setIconURL = value
         
@@ -81,6 +90,7 @@ extension Feature {
   indirect enum Action: Equatable, Sendable {
     case fetchSet(card: Client.MagicCardModel)
     case fetchVariants(card: Client.MagicCardModel)
+    case transformTapped
     case updateSetIconURL(_ setIconURL: Result<URL?, FeatureError>)
     case updateVariants(_ variants: Result<[Client.MagicCardModel], FeatureError>)
     case viewAppeared(initialAction: Action)

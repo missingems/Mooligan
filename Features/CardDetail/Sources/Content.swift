@@ -51,6 +51,7 @@ struct Content<Card: MagicCard>: Equatable, Sendable {
   let relatedSelectionLabel: String
   let relatedSelectionIcon: Image
   let rarity: MagicCardRarityValue
+  let faceDirection: MagicCardFaceDirection
   
   var numberOfVariantsLabel: String {
     String(localized: "\((try? variants.get().count) ?? 0) Results")
@@ -67,6 +68,7 @@ struct Content<Card: MagicCard>: Equatable, Sendable {
     setIconURL: URL?,
     faceDirection: MagicCardFaceDirection = .front
   ) {
+    self.faceDirection = faceDirection
     self.card = card
     id = card.getOracleText()
     name = card.getDisplayName(faceDirection: faceDirection)

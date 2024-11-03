@@ -26,6 +26,7 @@ public struct PageView<Client: MagicCardDetailRequestClient>: View {
           .containerRelativeFrame(.horizontal)
         }
       }
+      .scrollTargetLayout()
     }
     .scrollTargetBehavior(.paging)
     .navigationBarTitleDisplayMode(.inline)
