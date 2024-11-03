@@ -12,6 +12,7 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
         HeaderView(
           imageURL: store.content.imageURL,
           isFlippable: store.content.card.isFlippable,
+          isRotatable: store.content.card.isRotatable,
           orientation: store.content.card.isLandscape ? .landscape : .portrait,
           rotation: store.content.card.isLandscape ? 90 : 0
         ) {

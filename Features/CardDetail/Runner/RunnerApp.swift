@@ -28,7 +28,6 @@ struct RunnerApp: App {
             }
           ), client: client
         )
-        .containerRelativeFrame(.horizontal)
       }
       .task {
         do {

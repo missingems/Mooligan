@@ -139,18 +139,3 @@ fileprivate extension String {
     isEmpty || trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
   }
 }
-
-#Preview {
-  ScrollView {
-    VStack(alignment: .leading, spacing: 0) {
-      CardDetailTableView(
-        descriptions: Content(
-          card: MagicCardFixtures.split.value,
-          setIconURL: nil,
-          faceDirection: .front
-        )
-        .descriptions
-      )
-    }
-  }
-}
