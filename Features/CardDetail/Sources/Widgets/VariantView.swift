@@ -13,15 +13,14 @@ struct VariantView: View {
   let send: (Action) -> Void
   
   var body: some View {
-    VStack(alignment: .leading) {
+    Divider().safeAreaPadding(.leading, nil)
+    
+    VStack(alignment: .leading, spacing: 5.0) {
       Text(title).font(.headline)
       Text(subtitle).font(.caption).foregroundStyle(.secondary)
       
-      ScrollView(
-        .horizontal,
-        showsIndicators: false
-      ) {
-        HStack(spacing: 13.0) {
+      ScrollView(.horizontal, showsIndicators: false) {
+        LazyHStack(spacing: 13.0) {
           ForEach(cards.indices, id: \.self) { index in
             Button(
               action: {
@@ -37,9 +36,12 @@ struct VariantView: View {
           }
         }
       }
+      .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
+      .padding(.top, 3.0)
+      .scrollClipDisabled(true)
     }
-    .scrollClipDisabled()
     .safeAreaPadding(.horizontal, nil)
+    .padding(.vertical, 13.0)
   }
   
   init?(

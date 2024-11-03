@@ -1,15 +1,17 @@
 import CardDetail
+import ComposableArchitecture
 import DesignComponents
+import ScryfallKit
 import SwiftUI
 import Networking
-import ScryfallKit
 
 @main
 struct RunnerApp: App {
+  @State var cards: [ScryfallClient.MagicCardModel] = []
   @State var card: ScryfallClient.MagicCardModel?
-  let client = ScryfallClient(
-    
-  )
+  
+  let client = ScryfallClient()
+  
   init() {
     DesignComponents.Main().setup()
   }
@@ -17,28 +19,24 @@ struct RunnerApp: App {
   var body: some Scene {
     WindowGroup {
       NavigationView {
-        if let card {
-          RandomCardView(card: card)
-        } else {
-          ProgressView()
-        }
+        PageView<ScryfallClient>(
+          store: Store(
+            initialState: PageFeature<ScryfallClient>.State(
+              cards: cards
+            ), reducer: {
+              PageFeature<ScryfallClient>(client: client)
+            }
+          ), client: client
+        )
       }
       .task {
-        card = try? await client.getRandomCard()
+        do {
+          cards = try await client.searchCards(query: "layout=transform").data
+            .compactMap { $0 }
+        } catch {
+          
+        }
       }
     }
-  }
-}
-
-struct RandomCardView: View {
-  let card: ScryfallClient.MagicCardModel
-  let client = ScryfallClient()
-  
-  var body: some View {
-    RootView(
-      card: card,
-      client: client,
-      entryPoint: .query
-    )
   }
 }

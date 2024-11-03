@@ -1,3 +1,4 @@
+import SDWebImageSwiftUI
 import SwiftUI
 
 public struct IconLazyImage: View {
@@ -10,6 +11,14 @@ public struct IconLazyImage: View {
   }
   
   public var body: some View {
-    Text("")
+    WebImage(url: url) { image in
+      image.transition(.fade(duration: 0.25))
+    } placeholder: {
+      Circle().foregroundColor(Color.black.opacity(0.15)).shimmering()
+    }
+    .resizable()
+    .renderingMode(.template)
+    .aspectRatio(contentMode: .fit)
+    .foregroundColor(tintColor)
   }
 }

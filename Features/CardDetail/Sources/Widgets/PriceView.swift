@@ -1,3 +1,4 @@
+import DesignComponents
 import Networking
 import SwiftUI
 
@@ -7,7 +8,10 @@ struct PriceView: View {
   private let models: [Model]
   
   var body: some View {
-    VStack(alignment: .leading) {
+    Divider()
+      .safeAreaPadding(.leading, nil)
+    
+    VStack(alignment: .leading, spacing: 5.0) {
       Text(title)
         .font(.headline)
       
@@ -18,8 +22,10 @@ struct PriceView: View {
       HStack(alignment: .center, spacing: 5.0) {
         ForEach(models) { $0 }
       }
+      .padding(.top, 3.0)
     }
     .safeAreaPadding(.horizontal, nil)
+    .padding(.vertical, 13.0)
   }
   
   init(
@@ -107,7 +113,7 @@ extension PriceView {
           Text("\(currencySymbol)\(price)")
             .font(.body)
             .fontWeight(isDisabled ? .regular : .semibold)
-            .foregroundStyle(Color.accentColor)
+            .foregroundStyle(DesignComponentsAsset.accentColor.swiftUIColor)
             .monospaced()
           
           Text(label)
@@ -118,7 +124,7 @@ extension PriceView {
         .padding(.vertical, 8.0)
         .background(Color(.systemFill))
       }
-      .clipShape(.buttonBorder)
+      .clipShape(RoundedRectangle(cornerRadius: 13.0))
       .buttonStyle(.sinkableButtonStyle)
       .disabled(isDisabled)
       .opacity(isDisabled ? 0.31 : 1.0)

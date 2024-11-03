@@ -11,10 +11,11 @@ public struct TokenizedText: View {
     self.paragraphSpacing = paragraphSpacing
   }
   
-  @ViewBuilder
-  func build() -> some View {
-    VStack(alignment: .leading, spacing: paragraphSpacing) {
-      ForEach(text.split(separator: "\n"), id: \.self) { element in
+  @ViewBuilder func build() -> some View {
+    LazyVStack(alignment: .leading, spacing: paragraphSpacing) {
+      let substrings = text.split(separator: "\n")
+      ForEach(substrings.indices, id: \.self) { index in
+        let element = substrings[index]
         build(elements: parseText(String(element)))
       }
     }
@@ -82,7 +83,7 @@ public struct TokenizedText: View {
   private func getCustomImage(image: String, newSize: CGSize) -> Text {
     if let image = UIImage(named: image, in: DesignComponentsResources.bundle, with: nil),
        let newImage = convertImageToNewFrame(image: image, newFrameSize: newSize) {
-      return Text(Image(uiImage: newImage).resizable())
+      return Text(Image(uiImage: newImage).resizable()).baselineOffset(-3.0)
     } else {
       return Text("")
     }

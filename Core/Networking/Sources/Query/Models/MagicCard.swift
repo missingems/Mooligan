@@ -115,11 +115,15 @@ public extension MagicCard {
   }
   
   var isSplit: Bool {
-    getLayout().value == .split
+    getLayout().value == .split || getLayout().value == .adventure
   }
   
   var isPhyrexian: Bool {
     getLanguage() == "ph"
+  }
+  
+  var isLandscape: Bool {
+    getLayout().value == .split || getLayout().value == .battle
   }
   
   func getDisplayManaCost(faceDirection: MagicCardFaceDirection) -> [String] {

@@ -1,21 +1,26 @@
 import DesignComponents
+import Networking
 import SwiftUI
 
-struct InfoView: View {
+struct InformationView: View {
   private let title: String
   private let widgets: [Widget]
   
   var body: some View {
-    VStack(alignment: .leading) {
+    Divider().safeAreaPadding(.leading, nil)
+    
+    VStack(alignment: .leading, spacing: 8.0) {
       Text(title).font(.headline)
       
       ScrollView(.horizontal, showsIndicators: false) {
-        HStack {
+        LazyHStack(spacing: 5.0) {
           ForEach(widgets) { $0 }
         }
       }
+      .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
     }
     .safeAreaPadding(.horizontal, nil)
+    .padding(.vertical, 13.0)
   }
   
   init(
@@ -24,6 +29,7 @@ struct InfoView: View {
     toughness: String?,
     loyaltyCounters: String?,
     manaValue: Double?,
+    rarity: MagicCardRarityValue,
     collectorNumber: String?,
     colorIdentity: [String]?,
     setCode: String?,
@@ -33,28 +39,28 @@ struct InfoView: View {
     
     var widgets: [Widget] = []
     
-    if let power, let toughness {
-      widgets.append(.powerToughness(power: power, toughness: toughness))
-    }
-    
-    if let loyaltyCounters {
-      widgets.append(.loyalty(counters: loyaltyCounters))
-    }
-    
-    if let manaValue {
-      widgets.append(.manaValue("\(manaValue)"))
+    if let setCode {
+      widgets.append(.set(code: setCode, rarity: rarity, iconURL: setIconURL))
     }
     
     if let collectorNumber {
       widgets.append(.collectorNumber(collectorNumber))
     }
     
+    if let loyaltyCounters {
+      widgets.append(.loyalty(counters: loyaltyCounters))
+    }
+    
     if let colorIdentity {
       widgets.append(.colorIdentity(colorIdentity))
     }
     
-    if let setCode, let setIconURL {
-      widgets.append(.set(code: setCode, iconURL: setIconURL))
+    if let manaValue {
+      widgets.append(.manaValue("\(manaValue)"))
+    }
+    
+    if let power, let toughness {
+      widgets.append(.powerToughness(power: power, toughness: toughness))
     }
     
     self.widgets = widgets
@@ -67,15 +73,15 @@ private enum Widget: Hashable, Identifiable, View {
   case manaValue(String)
   case collectorNumber(String)
   case colorIdentity([String])
-  case set(code: String, iconURL: URL?)
+  case set(code: String, rarity: MagicCardRarityValue, iconURL: URL?)
   
   var body: some View {
     switch self {
     case let .powerToughness(power, toughness):
       powerToughnessView(power: power, toughness: toughness)
       
-    case let .set(code, iconURL):
-      setCodeView(code, iconURL: iconURL)
+    case let .set(code, rarity, iconURL):
+      setCodeView(code, rarity: rarity, iconURL: iconURL)
       
     case let .colorIdentity(manaIdentity):
       manaIdentityView(manaIdentity)
@@ -105,18 +111,22 @@ private extension Widget {
       VStack(alignment: .center, spacing: 3) {
         Self.wrappedContent {
           Image("power", bundle: DesignComponentsResources.bundle)
+            .resizable()
             .renderingMode(.template)
             .aspectRatio(contentMode: .fit)
-            .foregroundStyle(Color.primary)
+            .frame(width: 15)
+            .foregroundStyle(.primary)
           
           Text("\(power)/\(toughness)")
             .font(.body)
             .fontDesign(.serif)
           
           Image("toughness", bundle: DesignComponentsResources.bundle)
+            .resizable()
             .renderingMode(.template)
             .aspectRatio(contentMode: .fit)
-            .foregroundStyle(Color.primary)
+            .frame(width: 15)
+            .foregroundStyle(.primary)
         }
         
         Text(String(localized: "Power\nToughness"))
@@ -124,8 +134,6 @@ private extension Widget {
           .foregroundStyle(.secondary)
           .multilineTextAlignment(.center)
           .frame(maxHeight: .infinity, alignment: .center)
-        
-        Spacer(minLength: 0)
       }
     }
   }
@@ -134,7 +142,7 @@ private extension Widget {
     if identity.isEmpty == false {
       VStack(alignment: .center, spacing: 3.0) {
         Self.wrappedContent {
-          ManaView(identity: identity, size: CGSize(width: 21, height: 21))
+          ManaView(identity: identity, size: CGSize(width: 21, height: 21))?.offset(y: -1)
         }
         
         Text(String(localized: "Color\nIdentity"))
@@ -142,8 +150,6 @@ private extension Widget {
           .foregroundStyle(.secondary)
           .multilineTextAlignment(.center)
           .frame(maxHeight: .infinity, alignment: .center)
-        
-        Spacer(minLength: 0)
       }
     }
   }
@@ -154,14 +160,18 @@ private extension Widget {
         Self.wrappedContent {
           ZStack(alignment: .center) {
             Image("loyalty", bundle: DesignComponentsResources.bundle)
+              .resizable()
               .renderingMode(.template)
               .aspectRatio(contentMode: .fit)
+              .frame(width: 50)
               .tint(.accentColor)
             
             Text(counters)
-              .foregroundStyle(Color.white)
-              .font(.headline)
+              .foregroundStyle(.white)
+              .font(.body)
+              .fontWeight(.medium)
               .fontDesign(.serif)
+              .offset(y: 1)
           }
         }
         
@@ -170,8 +180,6 @@ private extension Widget {
           .foregroundStyle(.secondary)
           .multilineTextAlignment(.center)
           .frame(maxHeight: .infinity, alignment: .center)
-        
-        Spacer(minLength: 0)
       }
     }
   }
@@ -188,27 +196,46 @@ private extension Widget {
           .foregroundStyle(.secondary)
           .multilineTextAlignment(.center)
           .frame(maxHeight: .infinity, alignment: .center)
-        
-        Spacer(minLength: 0)
       }
     }
   }
   
-  @ViewBuilder private func setCodeView(_ code: String?, iconURL: URL?) -> some View {
-    if let code, let iconURL {
+  @ViewBuilder private func setCodeView(
+    _ code: String?,
+    rarity: MagicCardRarityValue,
+    iconURL: URL?
+  ) -> some View {
+    let colors = rarity.colorNames?.map({ Color($0, bundle: DesignComponentsResources.bundle)})
+    
+    if let code {
       VStack(alignment: .center, spacing: 3.0) {
-        Self.wrappedContent {
+        HStack(spacing: 5.0) {
           IconLazyImage(iconURL, tintColor: .primary).frame(width: 25, height: 25)
-          Text(code.uppercased()).font(.body).fontDesign(.serif)
+          Text(code.uppercased()).font(.body).fontDesign(.serif).fontWeight(.medium)
         }
+        .frame(minWidth: 66, minHeight: 34)
+        .padding(EdgeInsets(top: 5, leading: 11, bottom: 5, trailing: 11))
+        .background {
+          if let colors {
+            LinearGradient(
+              colors: colors,
+              startPoint: .topLeading,
+              endPoint: .bottomTrailing
+            )
+            .overlay(
+              RoundedRectangle(cornerRadius: 13.0).stroke(.black.opacity(0.31), lineWidth: 3.0)
+            )
+          } else {
+            Color(.systemFill)
+          }
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 13.0))
         
-        Text(String(localized: "Set\nCode"))
+        Text("\(rarity.rawValue.capitalized)\n")
           .font(.caption2)
           .foregroundStyle(.secondary)
           .multilineTextAlignment(.center)
           .frame(maxHeight: .infinity, alignment: .center)
-        
-        Spacer(minLength: 0)
       }
     }
   }
@@ -217,7 +244,9 @@ private extension Widget {
     if let manaValue {
       VStack(alignment: .center, spacing: 3.0) {
         Self.wrappedContent {
-          Text(manaValue).font(.body).fontDesign(.monospaced)
+          Text(manaValue)
+            .font(.body)
+            .fontDesign(.monospaced)
         }
         
         Text(String(localized: "Mana\nValue"))
@@ -225,7 +254,6 @@ private extension Widget {
           .foregroundStyle(.secondary)
           .multilineTextAlignment(.center)
           .frame(maxHeight: .infinity, alignment: .center)
-        Spacer(minLength: 0)
       }
     }
   }
@@ -236,21 +264,22 @@ extension Widget {
     HStack(spacing: 5.0) {
       content()
     }
-    .frame(minWidth: 66, minHeight: 32)
+    .frame(minWidth: 66, minHeight: 34)
     .padding(EdgeInsets(top: 5, leading: 11, bottom: 5, trailing: 11))
     .background { Color(.systemFill) }
-    .clipShape(.buttonBorder)
+    .clipShape(RoundedRectangle(cornerRadius: 13.0))
   }
 }
 
 #Preview {
   VStack {
-    InfoView(
+    InformationView(
       title: "Information",
       power: "1",
       toughness: "2",
       loyaltyCounters: "1",
       manaValue: 2,
+      rarity: .mythic,
       collectorNumber: "123",
       colorIdentity: ["{R}"],
       setCode: "123",

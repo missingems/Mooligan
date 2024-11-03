@@ -10,17 +10,22 @@ public enum EntryPoint<Client: MagicCardDetailRequestClient>: Equatable, Sendabl
 public struct RootView<Client: MagicCardDetailRequestClient>: View {
   private let store: StoreOf<Feature<Client>>
   
+  public var body: some View {
+    CardDetailView(store: store)
+  }
+  
   public init(
     card: Client.MagicCardModel,
     client: Client,
     entryPoint: EntryPoint<Client>
   ) {
-    store = Store(initialState: Feature.State(card: card, entryPoint: entryPoint)) {
+    store = Store(
+      initialState: Feature.State(
+        card: card,
+        entryPoint: entryPoint
+      )
+    ) {
       Feature(client: client)
     }
-  }
-  
-  public var body: some View {
-    CardDetailView(store: store)
   }
 }

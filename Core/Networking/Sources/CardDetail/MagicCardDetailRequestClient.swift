@@ -10,9 +10,11 @@ public protocol MagicCardDetailRequestClient: Sendable {
 
 extension ScryfallClient: MagicCardDetailRequestClient {
   public func getVariants(of card: MagicCardModel, page: Int) async throws -> [MagicCardModel] {
-    guard let oracleID = card.getOracleID() else { return [] }
+    guard let oracleID = card.getOracleID() else {
+      throw MagicCardDetailRequestClientError.cardOracleIDIsNil
+    }
     
-    return try await searchCards(
+    let cards = try await searchCards(
       filters: [.oracleId(oracleID), .game(.paper)],
       unique: .prints,
       order: nil,
@@ -21,11 +23,20 @@ extension ScryfallClient: MagicCardDetailRequestClient {
       includeMultilingual: false,
       includeVariations: true,
       page: page
-    )
-    .data
+    ).data
+    
+    if cards.isEmpty {
+      return [card]
+    } else {
+      return cards
+    }
   }
   
   public func getSet(of card: Card) async throws -> some GameSet {
     try await getSet(identifier: .code(code: card.set))
   }
+}
+
+public enum MagicCardDetailRequestClientError: Error {
+  case cardOracleIDIsNil
 }

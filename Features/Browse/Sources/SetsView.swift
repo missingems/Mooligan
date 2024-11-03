@@ -18,13 +18,12 @@ struct SetsView<Client: GameSetRequestClient>: View {
       ) {
         store.send(.didSelectSet(index: index))
       }
-      .buttonStyle(.sinkableButtonStyle)
       .listRowSeparator(.hidden)
       .listRowInsets(EdgeInsets(top: 1, leading: 0, bottom: 0, trailing: 0))
       .safeAreaPadding(.horizontal, nil)
     }
     .listStyle(.plain)
-    .onAppear {
+    .task {
       store.send(.viewAppeared)
     }
   }

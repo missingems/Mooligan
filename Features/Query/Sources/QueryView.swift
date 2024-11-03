@@ -31,9 +31,10 @@ struct QueryView<Client: MagicCardQueryRequestClient>: View {
                 store.dataSource.model[index].getImageURL().map {
                   AmbientWebImage(url: $0)
                 }
-                .aspectRatio(
-                  MagicCardImageRatio.widthToHeight.rawValue,
-                  contentMode: .fit
+                .frame(
+                  width: (proxy.size.width - horizontalSpacing - spacing) / 2,
+                  height: (proxy.size.width - horizontalSpacing - spacing) / 2 * MagicCardImageRatio.heightToWidth.rawValue,
+                  alignment: .center
                 )
               }
             )

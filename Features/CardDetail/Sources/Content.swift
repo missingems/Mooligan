@@ -50,14 +50,16 @@ struct Content<Card: MagicCard>: Equatable, Sendable {
   let rulingSelectionIcon: Image
   let relatedSelectionLabel: String
   let relatedSelectionIcon: Image
+  let rarity: MagicCardRarityValue
+  let faceDirection: MagicCardFaceDirection
   
   var numberOfVariantsLabel: String {
-    String(localized: "\((try? variants?.get().count) ?? 0) results")
+    String(localized: "\((try? variants.get().count) ?? 0) Results")
   }
   
   let setCode: String
   var setIconURL: Result<URL?, FeatureError>
-  var variants: Result<[Card], FeatureError>?
+  var variants: Result<[Card], FeatureError>
   let card: Card
   let legalities: [MagicCardLegalitiesValue]
   
@@ -66,6 +68,7 @@ struct Content<Card: MagicCard>: Equatable, Sendable {
     setIconURL: URL?,
     faceDirection: MagicCardFaceDirection = .front
   ) {
+    self.faceDirection = faceDirection
     self.card = card
     id = card.getOracleText()
     name = card.getDisplayName(faceDirection: faceDirection)
@@ -81,12 +84,18 @@ struct Content<Card: MagicCard>: Equatable, Sendable {
     let face = card.getCardFace(for: faceDirection)
     imageURL = face.getImageURL() ?? card.getImageURL()
     
-    descriptions = card.isSplit ? [
+    var descriptions = card.isSplit ? [
       Self.makeDescription(faceDirection: .front, card: card),
       Self.makeDescription(faceDirection: .back, card: card)
     ] : [
       Self.makeDescription(faceDirection: faceDirection, card: card)
     ]
+    
+    if card.getLayout().value == .adventure {
+      descriptions = descriptions.reversed()
+    }
+    
+    self.descriptions = descriptions
     
     power = face.power
     toughness = face.toughness
@@ -115,6 +124,8 @@ struct Content<Card: MagicCard>: Equatable, Sendable {
     collectorNumber = card.getCollectorNumber()
     legalities = card.getLegalities().value
     self.setIconURL = .success(setIconURL)
+    self.variants = .success([card])
+    self.rarity = card.getRarity().value
   }
   
   static func makeDescription(faceDirection: MagicCardFaceDirection, card: Card) -> Description {
