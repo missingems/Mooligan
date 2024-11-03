@@ -16,9 +16,7 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
           orientation: store.content.card.isLandscape ? .landscape : .portrait,
           rotation: store.content.card.isLandscape ? 90 : 0
         ) {
-          _ = withAnimation {
-            store.send(.transformTapped)
-          }
+          store.send(.transformTapped)
         }
         .clipped()
         
