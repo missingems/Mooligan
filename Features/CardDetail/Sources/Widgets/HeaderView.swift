@@ -69,18 +69,6 @@ struct HeaderView: View {
       }
     }
     .padding(layoutConfiguration.insets)
-    .background {
-      LinearGradient(
-        gradient: Gradient(
-          colors: [
-            Color.clear,
-            Color(.systemFill).opacity(0.382),
-          ]
-        ),
-        startPoint: .top,
-        endPoint: .bottom
-      )
-    }
   }
 }
 

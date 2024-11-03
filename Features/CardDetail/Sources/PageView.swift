@@ -29,5 +29,6 @@ public struct PageView<Client: MagicCardDetailRequestClient>: View {
     }
     .scrollTargetBehavior(.paging)
     .navigationBarTitleDisplayMode(.inline)
+    .toolbarBackgroundVisibility(.visible, for: .navigationBar)
   }
 }
