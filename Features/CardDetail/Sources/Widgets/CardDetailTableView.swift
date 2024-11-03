@@ -7,27 +7,7 @@ struct CardDetailTableView<Card: MagicCard>: View {
   let sections: [Section]
   
   var body: some View {
-    Divider().safeAreaPadding(.leading, nil)
-    
-    VStack(alignment: .leading, spacing: 0) {
-      HStack(alignment: .top, spacing: 8.0) {
-        TitleView(
-          name: main.name,
-          manaCost: main.manaCost
-        )
-        .padding(EdgeInsets(top: 13.0, leading: 0, bottom: 8.0, trailing: 0))
-        .safeAreaPadding(.leading, nil)
-        
-        Divider()
-        
-        TitleView(
-          name: alternate?.name,
-          manaCost: alternate?.manaCost
-        )
-        .padding(EdgeInsets(top: 13.0, leading: 0, bottom: 8, trailing: 0))
-        .safeAreaPadding(.trailing, nil)
-      }
-      
+    LazyVStack(alignment: .leading, spacing: 0) {
       ForEach(sections.indices, id: \.self) { index in
         let isLastIndex = index == sections.count - 1
         let section = sections[index]
@@ -43,6 +23,24 @@ struct CardDetailTableView<Card: MagicCard>: View {
           )
           
           switch section.type {
+          case .title:
+            TitleView(
+              name: main.name,
+              manaCost: main.manaCost
+            )
+            .padding(EdgeInsets(top: 13.0, leading: 0, bottom: 8.0, trailing: 0))
+            
+            
+            if let name = alternate?.name, let manaCost = alternate?.manaCost {
+              Divider()
+              
+              TitleView(
+                name: name,
+                manaCost: manaCost
+              )
+              .padding(EdgeInsets(top: 13.0, leading: 0, bottom: 8, trailing: 0))
+            }
+            
           case .description:
             if section.title1?.isEmptyOrNil() == false || main.flavorText?.isEmptyOrNil() == false {
               VStack(alignment: .leading, spacing: 8) {
@@ -50,32 +48,29 @@ struct CardDetailTableView<Card: MagicCard>: View {
                 FlavorView(main.flavorText)
               }
               .padding(edgeInsets)
-              .safeAreaPadding(.leading, nil)
             }
             
-            Divider()
-            
             if section.title2?.isEmptyOrNil() == false || alternate?.flavorText?.isEmptyOrNil() == false {
+              Divider()
+              
               VStack(alignment: .leading, spacing: 8) {
                 DescriptionView(section.title2)
                 FlavorView(alternate?.flavorText)
               }
               .padding(edgeInsets)
-              .safeAreaPadding(.trailing, nil)
             }
             
           case .typeline:
-            TypelineView(section.title1)
-              .padding(edgeInsets)
-              .safeAreaPadding(.leading, nil)
+            TypelineView(section.title1).padding(edgeInsets)
             
-            Divider()
-            
-            TypelineView(section.title2)
-              .padding(edgeInsets)
-              .safeAreaPadding(.trailing, nil)
+            if let title = section.title2 {
+              Divider()
+              
+              TypelineView(title).padding(edgeInsets)
+            }
           }
         }
+        .safeAreaPadding(.horizontal, nil)
       }
     }
   }
@@ -93,6 +88,11 @@ struct CardDetailTableView<Card: MagicCard>: View {
     
     sections = [
       Section(
+        type: .title,
+        title1: main.text,
+        title2: alternate?.text
+      ),
+      Section(
         type: .typeline,
         title1: main.typeline,
         title2: alternate?.typeline
@@ -109,6 +109,7 @@ struct CardDetailTableView<Card: MagicCard>: View {
 extension CardDetailTableView {
   struct Section: Identifiable {
     enum SectionType {
+      case title
       case description
       case typeline
     }
