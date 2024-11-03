@@ -33,9 +33,6 @@ struct HeaderView: View {
       AmbientWebImage(
         url: imageURL,
         cornerRadius: 13,
-        blurRadius: 34,
-        offset: CGPoint(x: 0, y: 34),
-        scale: CGSize(width: 2, height: 2),
         rotation: layoutConfiguration.rotation
       )
       .aspectRatio(

@@ -13,10 +13,11 @@ struct InformationView: View {
       Text(title).font(.headline)
       
       ScrollView(.horizontal, showsIndicators: false) {
-        HStack(spacing: 5.0) {
+        LazyHStack(spacing: 5.0) {
           ForEach(widgets) { $0 }
         }
       }
+      .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
     }
     .safeAreaPadding(.horizontal, nil)
     .padding(.vertical, 13.0)

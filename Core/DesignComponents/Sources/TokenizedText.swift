@@ -13,7 +13,7 @@ public struct TokenizedText: View {
   
   @ViewBuilder
   func build() -> some View {
-    VStack(alignment: .leading, spacing: paragraphSpacing) {
+    LazyVStack(alignment: .leading, spacing: paragraphSpacing) {
       ForEach(text.split(separator: "\n"), id: \.self) { element in
         build(elements: parseText(String(element)))
       }

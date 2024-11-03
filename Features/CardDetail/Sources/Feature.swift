@@ -39,6 +39,7 @@ import Networking
         
       case let .updateSetIconURL(value):
         state.content.setIconURL = value
+        
         return .run { [card = state.content.card] send in
           await send(.fetchVariants(card: card))
         }

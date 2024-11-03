@@ -50,7 +50,7 @@ struct LegalityView: View {
     numberOfColumns: Int,
     legality: MagicCardLegalitiesValue
   ) -> some View {
-    HStack {
+    HStack(spacing: 8.0) {
       Text(legality.value)
         .foregroundStyle(.white)
         .frame(minWidth: 0, maxWidth: .infinity)
@@ -62,7 +62,7 @@ struct LegalityView: View {
             bundle: DesignComponentsResources.bundle
           )
         }
-        .clipShape(ButtonBorderShape.roundedRectangle)
+        .clipShape(RoundedRectangle(cornerRadius: 8.0))
       
       Text(legality.title)
         .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
@@ -71,7 +71,8 @@ struct LegalityView: View {
     }
     .background {
       if (index / columns.count).isMultiple(of: 2) {
-        Color(.systemFill).clipShape(ButtonBorderShape.roundedRectangle)
+        Color(.systemFill)
+          .clipShape(RoundedRectangle(cornerRadius: 8.0))
       } else {
         Color.clear
       }

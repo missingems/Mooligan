@@ -65,13 +65,13 @@ struct CardDetailTableView<Card: MagicCard>: View {
             }
             
           case .typeline:
-            TypelineView(main.typeline)
+            TypelineView(section.title1)
               .padding(edgeInsets)
               .safeAreaPadding(.leading, nil)
             
             Divider()
             
-            TypelineView(alternate?.typeline)
+            TypelineView(section.title2)
               .padding(edgeInsets)
               .safeAreaPadding(.trailing, nil)
           }
