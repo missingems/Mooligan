@@ -24,19 +24,7 @@ struct SelectionView: View {
         }
       }
       .background {
-        LinearGradient(
-          gradient: Gradient(
-            colors: [
-              Color(.systemFill),
-              Color(.systemFill).opacity(0.382),
-            ]
-          ),
-          startPoint: .top,
-          endPoint: .bottom
-        )
-        .clipShape(
-          RoundedRectangle(cornerRadius: 13.0)
-        )
+        Color(.systemFill)
       }
       .overlay(
         RoundedRectangle(
