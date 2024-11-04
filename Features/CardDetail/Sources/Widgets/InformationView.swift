@@ -167,7 +167,7 @@ private extension Widget {
               .tint(.accentColor)
             
             Text(counters)
-              .foregroundStyle(.white)
+              .foregroundStyle(DesignComponentsAsset.invertedPrimary.swiftUIColor)
               .font(.body)
               .fontWeight(.medium)
               .fontDesign(.serif)
