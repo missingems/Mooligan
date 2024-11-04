@@ -12,7 +12,7 @@ public struct TokenizedText: View {
   }
   
   @ViewBuilder func build() -> some View {
-    LazyVStack(alignment: .leading, spacing: paragraphSpacing) {
+    VStack(alignment: .leading, spacing: paragraphSpacing) {
       let substrings = text.split(separator: "\n")
       ForEach(substrings.indices, id: \.self) { index in
         let element = substrings[index]
