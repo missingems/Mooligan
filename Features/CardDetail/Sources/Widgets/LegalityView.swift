@@ -6,7 +6,7 @@ struct LegalityView: View {
   let title: String
   let displayReleaseDate: String
   let legalities: [MagicCardLegalitiesValue]
-  let columns = [GridItem(spacing: 5.0), GridItem(spacing: 5.0)]
+  let numberOfColumns = 2
   
   var body: some View {
     Divider().safeAreaPadding(.leading, nil)
@@ -15,17 +15,92 @@ struct LegalityView: View {
       Text(title).font(.headline)
       Text(displayReleaseDate).font(.caption).foregroundStyle(.secondary)
       
-      LazyVGrid(
-        columns: columns,
-        spacing: 3.0
-      ) {
-        ForEach(legalities.indices, id: \.self) { index in
-          GridRow {
-            legalityRow(
-              index: index,
-              numberOfColumns: columns.count,
-              legality: legalities[index]
-            )
+      Grid(horizontalSpacing: 5.0, verticalSpacing: 3.0) {
+        GridRow {
+          legalityRow(
+            index: 0,
+            numberOfColumns: numberOfColumns,
+            legality: legalities[0]
+          )
+          .background {
+            Color(.systemFill).clipShape(RoundedRectangle(cornerRadius: 8.0))
+          }
+          
+          legalityRow(
+            index: 1,
+            numberOfColumns: numberOfColumns,
+            legality: legalities[1]
+          )
+          .background {
+            Color(.systemFill).clipShape(RoundedRectangle(cornerRadius: 8.0))
+          }
+        }
+        
+        GridRow {
+          legalityRow(
+            index: 2,
+            numberOfColumns: numberOfColumns,
+            legality: legalities[2]
+          )
+          
+          legalityRow(
+            index: 3,
+            numberOfColumns: numberOfColumns,
+            legality: legalities[3]
+          )
+        }
+        
+        GridRow {
+          legalityRow(
+            index: 4,
+            numberOfColumns: numberOfColumns,
+            legality: legalities[4]
+          )
+          .background {
+            Color(.systemFill).clipShape(RoundedRectangle(cornerRadius: 8.0))
+          }
+          
+          legalityRow(
+            index: 5,
+            numberOfColumns: numberOfColumns,
+            legality: legalities[5]
+          )
+          .background {
+            Color(.systemFill).clipShape(RoundedRectangle(cornerRadius: 8.0))
+          }
+        }
+        
+        GridRow {
+          legalityRow(
+            index: 6,
+            numberOfColumns: numberOfColumns,
+            legality: legalities[6]
+          )
+          
+          legalityRow(
+            index: 7,
+            numberOfColumns: numberOfColumns,
+            legality: legalities[7]
+          )
+        }
+        
+        GridRow {
+          legalityRow(
+            index: 8,
+            numberOfColumns: numberOfColumns,
+            legality: legalities[8]
+          )
+          .background {
+            Color(.systemFill).clipShape(RoundedRectangle(cornerRadius: 8.0))
+          }
+          
+          legalityRow(
+            index: 9,
+            numberOfColumns: numberOfColumns,
+            legality: legalities[9]
+          )
+          .background {
+            Color(.systemFill).clipShape(RoundedRectangle(cornerRadius: 8.0))
           }
         }
       }
@@ -68,14 +143,6 @@ struct LegalityView: View {
         .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
         .font(.caption)
         .multilineTextAlignment(.leading)
-    }
-    .background {
-      if (index / columns.count).isMultiple(of: 2) {
-        Color(.systemFill)
-          .clipShape(RoundedRectangle(cornerRadius: 8.0))
-      } else {
-        Color.clear
-      }
     }
   }
 }

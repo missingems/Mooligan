@@ -8,7 +8,7 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
   
   var body: some View {
     ScrollView(.vertical) {
-      LazyVStack(alignment: .leading, spacing: 0) {
+      VStack(alignment: .leading, spacing: 0) {
         HeaderView(
           imageURL: store.content.imageURL,
           isFlippable: store.content.card.isFlippable,
@@ -82,6 +82,9 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
           ]
         )
       }
+    }
+    .background {
+      Color(.secondarySystemGroupedBackground).ignoresSafeArea()
     }
     .task {
       store.send(.viewAppeared(initialAction: store.start))

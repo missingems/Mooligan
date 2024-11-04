@@ -11,6 +11,7 @@ public struct CardView: View {
   let card: any MagicCard
   let displayingImageURL: URL
   let layoutConfiguration: LayoutConfiguration
+  let shouldShowPrice: Bool
   
   public var body: some View {
     VStack(spacing: 5) {
@@ -18,45 +19,53 @@ public struct CardView: View {
       case let .fixedSize(size):
         AmbientWebImage(
           url: displayingImageURL,
-          cornerRadius: 5 / 100 * size.width
+          cornerRadius: 5 / 100 * size.width,
+          size: CGSize(
+            width: size.width,
+            height: size.height
+          )
         )
         .frame(
           width: size.width,
           height: size.height,
           alignment: .center
         )
-        .shadow(color: .black.opacity(0.16), radius: 13, x: 0, y: 8.0)
         
       case let .fixedWidth(width):
         AmbientWebImage(
           url: displayingImageURL,
-          cornerRadius: 5 / 100 * width
+          cornerRadius: 5 / 100 * width,
+          size: CGSize(
+            width: width,
+            height: width * MagicCardImageRatio.heightToWidth.rawValue
+          )
         )
         .frame(
           width: width,
           height: width * MagicCardImageRatio.heightToWidth.rawValue,
           alignment: .center
         )
-        .shadow(color: .black.opacity(0.16), radius: 13, x: 0, y: 8.0)
         
       case .flexible:
         AmbientWebImage(url: displayingImageURL)
-          .shadow(color: .black.opacity(0.16), radius: 13, x: 0, y: 8.0)
       }
       
-      PillText(
-        "$\(card.getPrices().usd ?? card.getPrices().usdFoil ?? "0.00")"
-      )
-      .foregroundStyle(DesignComponentsAsset.accentColor.swiftUIColor)
-      .font(.caption)
-      .fontWeight(.medium)
-      .monospaced()
+      if shouldShowPrice {
+        PillText(
+          "$\(card.getPrices().usd ?? card.getPrices().usdFoil ?? "0.00")"
+        )
+        .foregroundStyle(DesignComponentsAsset.accentColor.swiftUIColor)
+        .font(.caption)
+        .fontWeight(.medium)
+        .monospaced()
+      }
     }
   }
   
   public init?(
     card: any MagicCard,
-    layoutConfiguration: LayoutConfiguration
+    layoutConfiguration: LayoutConfiguration,
+    shouldShowPrice: Bool = true
   ) {
     guard let image = card.getImageURL() else {
       return nil
@@ -65,5 +74,6 @@ public struct CardView: View {
     self.card = card
     self.layoutConfiguration = layoutConfiguration
     displayingImageURL = image
+    self.shouldShowPrice = shouldShowPrice
   }
 }

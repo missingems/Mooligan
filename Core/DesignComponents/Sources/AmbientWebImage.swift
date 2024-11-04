@@ -12,7 +12,8 @@ public struct AmbientWebImage: View {
     url: URL,
     cornerRadius: CGFloat = 9,
     rotation: CGFloat = 0,
-    isFlipped: Bool = false
+    isFlipped: Bool = false,
+    size: CGSize? = nil
   ) {
     self.url = url
     self.cornerRadius = cornerRadius
@@ -25,6 +26,18 @@ public struct AmbientWebImage: View {
     
     if isFlipped {
       transformers.append(FlipImageProcessor())
+    }
+    
+    if let size {
+      transformers.append(
+        ImageProcessors.Resize(
+          size: size,
+          unit: .points,
+          contentMode: .aspectFill,
+          crop: false,
+          upscale: true
+        )
+      )
     }
     
     self.transformers = transformers

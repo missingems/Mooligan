@@ -20,7 +20,7 @@ struct VariantView: View {
       Text(subtitle).font(.caption).foregroundStyle(.secondary)
       
       ScrollView(.horizontal, showsIndicators: false) {
-        LazyHStack(spacing: 5.0) {
+        LazyHStack(spacing: 8.0) {
           ForEach(cards.indices, id: \.self) { index in
             Button(
               action: {
