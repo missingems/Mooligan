@@ -38,12 +38,7 @@ import Networking
         }
         
       case .transformTapped:
-        state.content = Content(
-          card: state.content.card,
-          setIconURL: try? state.content.setIconURL.get(),
-          faceDirection: state.content.faceDirection.toggled()
-        )
-        
+        state.content.faceDirection = state.content.faceDirection.toggled()
         return .none
         
       case let .updateSetIconURL(value):
