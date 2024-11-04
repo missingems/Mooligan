@@ -7,7 +7,7 @@ struct CardDetailTableView<Card: MagicCard>: View {
   let sections: [Section]
   
   var body: some View {
-    LazyVStack(alignment: .leading, spacing: 0) {
+    VStack(alignment: .leading, spacing: 0) {
       ForEach(sections.indices, id: \.self) { index in
         let isLastIndex = index == sections.count - 1
         let section = sections[index]

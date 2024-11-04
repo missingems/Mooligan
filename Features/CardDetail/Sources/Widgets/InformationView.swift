@@ -13,7 +13,7 @@ struct InformationView: View {
       Text(title).font(.headline)
       
       ScrollView(.horizontal, showsIndicators: false) {
-        LazyHStack(spacing: 5.0) {
+        HStack(spacing: 5.0) {
           ForEach(widgets) { $0 }
         }
       }
