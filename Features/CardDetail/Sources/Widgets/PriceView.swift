@@ -101,31 +101,35 @@ extension PriceView {
     }
     
     var body: some View {
-      Menu {
-        ForEach(purchaseLinks) { destination in
-          Link(destination: destination.url) {
-            Image(systemName: "link").imageScale(.small)
-            Text(destination.label)
+      VStack(spacing: 3.0) {
+        Menu {
+          ForEach(purchaseLinks) { destination in
+            Link(destination: destination.url) {
+              Image(systemName: "link").imageScale(.small)
+              Text(destination.label)
+            }
           }
+        } label: {
+          VStack(spacing: 0) {
+            Text("\(currencySymbol)\(price)")
+              .font(.body)
+              .fontWeight(isDisabled ? .regular : .semibold)
+              .foregroundStyle(DesignComponentsAsset.accentColor.swiftUIColor)
+              .monospaced()
+          }
+          .frame(maxWidth: .infinity, minHeight: 34)
+          .padding(.vertical, 5.0)
+          .background(Color(.systemFill))
         }
-      } label: {
-        VStack(spacing: 0) {
-          Text("\(currencySymbol)\(price)")
-            .font(.body)
-            .fontWeight(isDisabled ? .regular : .semibold)
-            .foregroundStyle(DesignComponentsAsset.accentColor.swiftUIColor)
-            .monospaced()
-          
-          Text(label)
-            .font(.caption)
-            .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 8.0)
-        .background(Color(.systemFill))
+        .clipShape(RoundedRectangle(cornerRadius: 13.0))
+        .buttonStyle(.sinkableButtonStyle)
+        
+        Text(label)
+          .font(.caption)
+          .foregroundStyle(.secondary)
+          .multilineTextAlignment(.center)
+          .frame(maxHeight: .infinity, alignment: .center)
       }
-      .clipShape(RoundedRectangle(cornerRadius: 13.0))
-      .buttonStyle(.sinkableButtonStyle)
       .disabled(isDisabled)
       .opacity(isDisabled ? 0.31 : 1.0)
     }

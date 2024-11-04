@@ -130,7 +130,7 @@ private extension Widget {
         }
         
         Text(String(localized: "Power\nToughness"))
-          .font(.caption2)
+          .font(.caption)
           .foregroundStyle(.secondary)
           .multilineTextAlignment(.center)
           .frame(maxHeight: .infinity, alignment: .center)
@@ -146,7 +146,7 @@ private extension Widget {
         }
         
         Text(String(localized: "Color\nIdentity"))
-          .font(.caption2)
+          .font(.caption)
           .foregroundStyle(.secondary)
           .multilineTextAlignment(.center)
           .frame(maxHeight: .infinity, alignment: .center)
@@ -176,7 +176,7 @@ private extension Widget {
         }
         
         Text(String(localized: "Loyalty\nCounters"))
-          .font(.caption2)
+          .font(.caption)
           .foregroundStyle(.secondary)
           .multilineTextAlignment(.center)
           .frame(maxHeight: .infinity, alignment: .center)
@@ -192,7 +192,7 @@ private extension Widget {
         }
         
         Text(String(localized: "Collector\nNumber"))
-          .font(.caption2)
+          .font(.caption)
           .foregroundStyle(.secondary)
           .multilineTextAlignment(.center)
           .frame(maxHeight: .infinity, alignment: .center)
@@ -232,7 +232,7 @@ private extension Widget {
         .clipShape(RoundedRectangle(cornerRadius: 13.0))
         
         Text("\(rarity.rawValue.capitalized)\n")
-          .font(.caption2)
+          .font(.caption)
           .foregroundStyle(.secondary)
           .multilineTextAlignment(.center)
           .frame(maxHeight: .infinity, alignment: .center)
@@ -250,7 +250,7 @@ private extension Widget {
         }
         
         Text(String(localized: "Mana\nValue"))
-          .font(.caption2)
+          .font(.caption)
           .foregroundStyle(.secondary)
           .multilineTextAlignment(.center)
           .frame(maxHeight: .infinity, alignment: .center)
