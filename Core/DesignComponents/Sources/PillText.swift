@@ -7,7 +7,7 @@ public struct PillText: View {
   
   public init(
     _ label: String,
-    insets: EdgeInsets = EdgeInsets(top: 1, leading: 3, bottom: 1, trailing: 3),
+    insets: EdgeInsets = EdgeInsets(top: 3, leading: 5, bottom: 3, trailing: 5),
     background: Color = Color(.systemFill)
   ) {
     self.label = label
@@ -20,7 +20,7 @@ public struct PillText: View {
       .multilineTextAlignment(.center)
       .padding(insets)
       .background { background }
-      .clipShape(.buttonBorder)
+      .clipShape(RoundedRectangle(cornerRadius: 8.0))
   }
 }
 

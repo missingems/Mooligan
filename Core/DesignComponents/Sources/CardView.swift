@@ -13,38 +13,45 @@ public struct CardView: View {
   let layoutConfiguration: LayoutConfiguration
   
   public var body: some View {
-    switch layoutConfiguration {
-    case let .fixedSize(size):
-      AmbientWebImage(
-        url: displayingImageURL,
-        cornerRadius: 5/100 * size.width
-      )
-      .frame(
-        width: size.width,
-        height: size.height,
-        alignment: .center
-      )
+    VStack(spacing: 5) {
+      switch layoutConfiguration {
+      case let .fixedSize(size):
+        AmbientWebImage(
+          url: displayingImageURL,
+          cornerRadius: 5 / 100 * size.width
+        )
+        .frame(
+          width: size.width,
+          height: size.height,
+          alignment: .center
+        )
+        .shadow(color: .black.opacity(0.16), radius: 13, x: 0, y: 8.0)
+        
+      case let .fixedWidth(width):
+        AmbientWebImage(
+          url: displayingImageURL,
+          cornerRadius: 5 / 100 * width
+        )
+        .frame(
+          width: width,
+          height: width * MagicCardImageRatio.heightToWidth.rawValue,
+          alignment: .center
+        )
+        .shadow(color: .black.opacity(0.16), radius: 13, x: 0, y: 8.0)
+        
+      case .flexible:
+        AmbientWebImage(url: displayingImageURL)
+          .shadow(color: .black.opacity(0.16), radius: 13, x: 0, y: 8.0)
+      }
       
-    case let .fixedWidth(width):
-      AmbientWebImage(
-        url: displayingImageURL,
-        cornerRadius: 5/100 * width
+      PillText(
+        "$\(card.getPrices().usd ?? card.getPrices().usdFoil ?? "0.00")"
       )
-      .frame(
-        width: width,
-        height: width * MagicCardImageRatio.heightToWidth.rawValue,
-        alignment: .center
-      )
-      
-    case .flexible:
-      AmbientWebImage(url: displayingImageURL)
+      .foregroundStyle(DesignComponentsAsset.accentColor.swiftUIColor)
+      .font(.caption)
+      .fontWeight(.medium)
+      .monospaced()
     }
-    
-    PillText(
-      "$\(card.getPrices().usdFoil ?? card.getPrices().usd ?? "0.00")"
-    )
-    .font(.caption)
-    .monospaced()
   }
   
   public init?(

@@ -54,7 +54,7 @@ struct LegalityView: View {
       Text(legality.value)
         .foregroundStyle(.white)
         .frame(minWidth: 0, maxWidth: .infinity)
-        .font(.system(size: 12))
+        .font(.caption)
         .padding(.vertical, 5.0)
         .background {
           Color(
