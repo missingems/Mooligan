@@ -51,12 +51,12 @@ public struct AmbientWebImage: View {
       ),
       transaction: Transaction(animation: .easeInOut(duration: 0.31))
     ) { state in
-      if state.isLoading {
-        RoundedRectangle(cornerRadius: cornerRadius)
+      if let image = state.image {
+        image.resizable()
+      } else {
+        Rectangle()
           .fill(Color(.systemFill))
           .shimmering(gradient: Gradient(colors: [.clear, .white.opacity(0.32), .clear]), mode: .overlay())
-      } else if let image = state.image {
-        image.resizable()
       }
     }
     .clipShape(.rect(cornerSize: CGSize(width: cornerRadius, height: cornerRadius)))

@@ -19,7 +19,6 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
           _ = withAnimation(.spring()) {
             store.send(.transformTapped)
           }
-          
         }
         .clipped()
         
