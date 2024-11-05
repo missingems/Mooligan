@@ -32,6 +32,7 @@ struct VariantView: View {
                 )
               }
             )
+            .id(cards[index].id)
             .buttonStyle(.sinkableButtonStyle)
           }
         }

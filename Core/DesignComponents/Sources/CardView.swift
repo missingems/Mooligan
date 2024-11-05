@@ -9,14 +9,7 @@ public struct CardView: View {
   }
   
   let card: any MagicCard
-  @State var displayingImageURL: URL
-  @State var displayingFace: any MagicCardFace {
-    didSet {
-      if let url = displayingFace.getImageURL() {
-        displayingImageURL = url
-      }
-    }
-  }
+  @State var displayingFace: any MagicCardFace
   let layoutConfiguration: LayoutConfiguration
   let shouldShowPrice: Bool
   
@@ -36,41 +29,43 @@ public struct CardView: View {
     VStack(spacing: 5) {
       ZStack(alignment: .trailing) {
         Group {
-          switch layoutConfiguration {
-          case let .fixedSize(size):
-            AmbientWebImage(
-              url: displayingImageURL,
-              cornerRadius: 5 / 100 * size.width,
-              isFlipped: isFlipped,
-              size: CGSize(
+          if let imageURL = displayingFace.getImageURL() {
+            switch layoutConfiguration {
+            case let .fixedSize(size):
+              AmbientWebImage(
+                url: imageURL,
+                cornerRadius: 5 / 100 * size.width,
+                isFlipped: isFlipped,
+                size: CGSize(
+                  width: size.width,
+                  height: size.height
+                )
+              )
+              .frame(
                 width: size.width,
-                height: size.height
+                height: size.height,
+                alignment: .center
               )
-            )
-            .frame(
-              width: size.width,
-              height: size.height,
-              alignment: .center
-            )
-            
-          case let .fixedWidth(width):
-            AmbientWebImage(
-              url: displayingImageURL,
-              cornerRadius: 5 / 100 * width,
-              isFlipped: isFlipped,
-              size: CGSize(
+              
+            case let .fixedWidth(width):
+              AmbientWebImage(
+                url: imageURL,
+                cornerRadius: 5 / 100 * width,
+                isFlipped: isFlipped,
+                size: CGSize(
+                  width: width,
+                  height: width * MagicCardImageRatio.heightToWidth.rawValue
+                )
+              )
+              .frame(
                 width: width,
-                height: width * MagicCardImageRatio.heightToWidth.rawValue
+                height: width * MagicCardImageRatio.heightToWidth.rawValue,
+                alignment: .center
               )
-            )
-            .frame(
-              width: width,
-              height: width * MagicCardImageRatio.heightToWidth.rawValue,
-              alignment: .center
-            )
-            
-          case .flexible:
-            AmbientWebImage(url: displayingImageURL)
+              
+            case .flexible:
+              AmbientWebImage(url: imageURL)
+            }
           }
         }
         .rotationEffect(.degrees(isRotated ? 180 : 0))
@@ -124,19 +119,14 @@ public struct CardView: View {
     }
   }
   
-  public init?(
+  public init(
     card: any MagicCard,
     layoutConfiguration: LayoutConfiguration,
     shouldShowPrice: Bool = true
   ) {
-    guard let image = card.getImageURL() else {
-      return nil
-    }
-    
     self.displayingFace = card.getCardFace(for: .front)
     self.card = card
     self.layoutConfiguration = layoutConfiguration
-    displayingImageURL = image
     self.shouldShowPrice = shouldShowPrice
   }
 }

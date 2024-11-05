@@ -38,6 +38,7 @@ struct QueryView<Client: MagicCardQueryRequestClient>: View {
               }
             )
             .buttonStyle(.sinkableButtonStyle)
+            .id(card.id)
             .task {
               store.send(.loadMoreCardsIfNeeded(currentIndex: index))
             }

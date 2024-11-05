@@ -69,6 +69,7 @@ struct CardDetailTableView<Card: MagicCard>: View {
             }
           }
         }
+        .id(section.id)
         .safeAreaPadding(.horizontal, nil)
       }
     }
