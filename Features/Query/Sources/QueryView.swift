@@ -23,24 +23,21 @@ struct QueryView<Client: MagicCardQueryRequestClient>: View {
           ),
           spacing: spacing
         ) {
-          ForEach(store.dataSource.model.indices, id: \.self) { index in
-            let card = store.dataSource.model[index]
-            
+          ForEach(Array(store.dataSource.model.enumerated()), id: \.element) { (offset, element) in
             Button(
               action: {
-                store.send(.didSelectCardAtIndex(index))
+                store.send(.didSelectCardAtIndex(offset))
               }, label: {
                 CardView(
-                  card: card,
+                  card: element,
                   layoutConfiguration: .fixedWidth((proxy.size.width - horizontalSpacing - spacing) / 2),
                   shouldShowPrice: false
                 )
               }
             )
             .buttonStyle(.sinkableButtonStyle)
-            .id(card.id)
             .task {
-              store.send(.loadMoreCardsIfNeeded(currentIndex: index))
+              store.send(.loadMoreCardsIfNeeded(currentIndex: offset))
             }
           }
         }

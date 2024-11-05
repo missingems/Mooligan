@@ -2,14 +2,14 @@ import DesignComponents
 import Networking
 import SwiftUI
 
-struct VariantView: View {
+struct VariantView<Card: MagicCard>: View {
   enum Action: Sendable, Equatable {
     case didSelectCardAtIndex(Int)
   }
   
   let title: String
   let subtitle: String
-  let cards: [any MagicCard]
+  let cards: [Card]
   let send: (Action) -> Void
   
   var body: some View {
@@ -21,18 +21,17 @@ struct VariantView: View {
       
       ScrollView(.horizontal, showsIndicators: false) {
         LazyHStack(spacing: 8.0) {
-          ForEach(cards.indices, id: \.self) { index in
+          ForEach(Array(cards.enumerated()), id: \.element) { (offset, _) in
             Button(
               action: {
-                send(.didSelectCardAtIndex(index))
+                send(.didSelectCardAtIndex(offset))
               }, label: {
                 CardView(
-                  card: cards[index],
+                  card: cards[offset],
                   layoutConfiguration: .fixedWidth(150.0)
                 )
               }
             )
-            .id(cards[index].id)
             .buttonStyle(.sinkableButtonStyle)
           }
         }
@@ -48,7 +47,7 @@ struct VariantView: View {
   init?(
     title: String,
     subtitle: String,
-    cards: [any MagicCard]?,
+    cards: [Card]?,
     send: @escaping (Action) -> Void
   ) {
     guard let cards else { return nil }

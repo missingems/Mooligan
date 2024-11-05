@@ -8,9 +8,8 @@ struct CardDetailTableView<Card: MagicCard>: View {
   
   var body: some View {
     VStack(alignment: .leading, spacing: 0) {
-      ForEach(sections.indices, id: \.self) { index in
+      ForEach(Array(sections.enumerated()), id: \.element) { (index, section) in
         let isLastIndex = index == sections.count - 1
-        let section = sections[index]
         
         Divider().safeAreaPadding(.leading, nil)
         
@@ -107,7 +106,7 @@ struct CardDetailTableView<Card: MagicCard>: View {
 }
 
 extension CardDetailTableView {
-  struct Section: Identifiable {
+  struct Section: Identifiable, Hashable {
     enum SectionType {
       case title
       case description

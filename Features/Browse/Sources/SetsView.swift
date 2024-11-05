@@ -9,15 +9,16 @@ struct SetsView<Client: GameSetRequestClient>: View {
   private var store: StoreOf<Feature<Client>>
   
   var body: some View {
-    List(store.sets.indices, id: \.self) { index in
+    List(Array(store.sets.enumerated()), id: \.element) { (offset, element) in
       SetRow(
         viewModel: store.state.getSetRowViewModel(
-          at: index,
+          at: offset,
           colorScheme: colorScheme
         )
       ) {
-        store.send(.didSelectSet(index: index))
+        store.send(.didSelectSet(index: offset))
       }
+      .id(element.id)
       .listRowSeparator(.hidden)
       .listRowInsets(EdgeInsets(top: 1, leading: 0, bottom: 0, trailing: 0))
       .safeAreaPadding(.horizontal, nil)

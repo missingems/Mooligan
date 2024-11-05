@@ -54,7 +54,7 @@ public struct AmbientWebImage: View {
       if state.isLoading {
         RoundedRectangle(cornerRadius: cornerRadius)
           .fill(Color(.systemFill))
-          .shimmering(gradient: Gradient(colors: [.clear, .white.opacity(0.68), .clear]), mode: .overlay())
+          .shimmering(gradient: Gradient(colors: [.clear, .white.opacity(0.32), .clear]), mode: .overlay())
       } else if let image = state.image {
         image.resizable()
       }
