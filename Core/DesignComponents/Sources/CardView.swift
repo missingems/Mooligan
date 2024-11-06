@@ -9,16 +9,16 @@ public struct CardView: View {
   }
   
   let card: any MagicCard
-  @State var displayingFace: any MagicCardFace
+  @State var imageURL: URL?
   let layoutConfiguration: LayoutConfiguration
   let shouldShowPrice: Bool
   
   @State private var isFlipped = false {
     didSet {
       if isFlipped {
-        displayingFace = card.getCardFace(for: .back)
+        imageURL = card.getCardFace(for: .back).getImageURL()
       } else {
-        displayingFace = card.getCardFace(for: .front)
+        imageURL = card.getCardFace(for: .front).getImageURL()
       }
     }
   }
@@ -29,7 +29,7 @@ public struct CardView: View {
     VStack(spacing: 5) {
       ZStack(alignment: .trailing) {
         Group {
-          if let imageURL = displayingFace.getImageURL() {
+          if let imageURL {
             switch layoutConfiguration {
             case let .fixedSize(size):
               AmbientWebImage(
@@ -124,8 +124,8 @@ public struct CardView: View {
     layoutConfiguration: LayoutConfiguration,
     shouldShowPrice: Bool = true
   ) {
-    self.displayingFace = card.getCardFace(for: .front)
     self.card = card
+    self.imageURL = card.getImageURL()
     self.layoutConfiguration = layoutConfiguration
     self.shouldShowPrice = shouldShowPrice
   }

@@ -1,6 +1,5 @@
 import ComposableArchitecture
 import DesignComponents
-import ScryfallKit
 import SwiftUI
 import Networking
 
@@ -9,14 +8,16 @@ struct SetsView<Client: GameSetRequestClient>: View {
   private var store: StoreOf<Feature<Client>>
   
   var body: some View {
-    List(Array(store.sets.enumerated()), id: \.element) { (offset, element) in
+    List(store.sets.indices, id: \.self) { index in
+      let element = store.sets[index]
+      
       SetRow(
         viewModel: store.state.getSetRowViewModel(
-          at: offset,
+          at: index,
           colorScheme: colorScheme
         )
       ) {
-        store.send(.didSelectSet(index: offset))
+        store.send(.didSelectSet(index: index))
       }
       .id(element.id)
       .listRowSeparator(.hidden)
@@ -32,15 +33,4 @@ struct SetsView<Client: GameSetRequestClient>: View {
   init(store: StoreOf<Feature<Client>>) {
     self.store = store
   }
-}
-
-#Preview("Live Data") {
-  SetsView(
-    store: Store(
-      initialState: Feature.State(),
-      reducer: {
-        Feature(client: ScryfallClient())
-      }
-    )
-  )
 }

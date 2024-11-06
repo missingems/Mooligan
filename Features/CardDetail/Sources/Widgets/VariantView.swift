@@ -4,7 +4,7 @@ import SwiftUI
 
 struct VariantView<Card: MagicCard>: View {
   enum Action: Sendable, Equatable {
-    case didSelectCardAtIndex(Int)
+    case didSelectCard(Card)
   }
   
   let title: String
@@ -21,13 +21,13 @@ struct VariantView<Card: MagicCard>: View {
       
       ScrollView(.horizontal, showsIndicators: false) {
         LazyHStack(spacing: 8.0) {
-          ForEach(Array(cards.enumerated()), id: \.element) { (offset, _) in
+          ForEach(cards) { card in
             Button(
               action: {
-                send(.didSelectCardAtIndex(offset))
+                send(.didSelectCard(card))
               }, label: {
                 CardView(
-                  card: cards[offset],
+                  card: card,
                   layoutConfiguration: .fixedWidth(150.0)
                 )
               }

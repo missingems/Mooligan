@@ -8,7 +8,8 @@ struct CardDetailTableView<Card: MagicCard>: View {
   
   var body: some View {
     VStack(alignment: .leading, spacing: 0) {
-      ForEach(Array(sections.enumerated()), id: \.element) { (index, section) in
+      ForEach(sections.indices, id: \.self) { index in
+        let section = sections[index]
         let isLastIndex = index == sections.count - 1
         
         Divider().safeAreaPadding(.leading, nil)

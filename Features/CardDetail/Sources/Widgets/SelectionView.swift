@@ -21,6 +21,7 @@ struct SelectionView: View {
             shouldShowSeparator: index != items.count - 1,
             didSelect: item.action
           )
+          .id(item.id)
         }
       }
       .background {
@@ -53,7 +54,7 @@ struct SelectionView: View {
 
 extension SelectionView {
   struct Item: Sendable, Identifiable {
-    let id = UUID().uuidString
+    let id = UUID()
     let icon: Image
     let title: String
     let detail: String?
