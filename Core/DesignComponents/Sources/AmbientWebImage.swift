@@ -59,10 +59,6 @@ public struct AmbientWebImage: View {
           .shimmering(gradient: Gradient(colors: [.clear, .white.opacity(0.32), .clear]), mode: .overlay())
       }
     }
-    .clipShape(.rect(cornerSize: CGSize(width: cornerRadius, height: cornerRadius)))
-    .overlay(
-      RoundedRectangle(cornerRadius: cornerRadius)
-        .stroke(Color.white.opacity(0.31), lineWidth: 1 / UIScreen.main.nativeScale)
-    )
+    .clipShape(.rect(cornerRadius: cornerRadius))
   }
 }
