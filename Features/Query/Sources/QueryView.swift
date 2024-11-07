@@ -15,29 +15,33 @@ struct QueryView<Client: MagicCardQueryRequestClient>: View {
   
   var body: some View {
     GeometryReader { proxy in
+      let width = (proxy.size.width - horizontalSpacing - spacing) / 2
+      
       ScrollView {
         LazyVGrid(
           columns: [GridItem](
-            repeating: GridItem(spacing: spacing),
+            repeating: GridItem(.fixed(width), spacing: spacing),
             count: 2
           ),
           spacing: spacing
         ) {
-          ForEach(store.dataSource.model) { card in
+          ForEach(store.dataSource.model.indices, id: \.self) { index in
+            let card = store.dataSource.model[index]
+            
             Button(
               action: {
                 store.send(.didSelectCard(card))
               }, label: {
                 CardView(
                   card: card,
-                  layoutConfiguration: .fixedWidth((proxy.size.width - horizontalSpacing - spacing) / 2),
+                  layoutConfiguration: .fixedWidth(width),
                   shouldShowPrice: true
                 )
               }
             )
             .buttonStyle(.sinkableButtonStyle)
             .task {
-//              store.send(.loadMoreCardsIfNeeded(currentIndex: index))
+              store.send(.loadMoreCardsIfNeeded(currentIndex: index))
             }
           }
         }

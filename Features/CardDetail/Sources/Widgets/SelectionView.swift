@@ -21,7 +21,6 @@ struct SelectionView: View {
             shouldShowSeparator: index != items.count - 1,
             didSelect: item.action
           )
-          .id(item.id)
         }
       }
       .background {
