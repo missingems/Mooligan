@@ -108,13 +108,28 @@ public struct CardView: View {
       }
       
       if shouldShowPrice {
-        PillText(
-          "$\(card.getPrices().usd ?? card.getPrices().usdFoil ?? "0.00")"
-        )
+        HStack(spacing: 3) {
+          if let usd = card.getPrices().usd {
+            PillText("$\(usd)")
+          }
+          
+          if let foil = card.getPrices().usdFoil {
+            PillText(
+              "$\(foil)",
+              isFoil: true
+            )
+            .foregroundStyle(DesignComponentsAsset.accentColorDark.swiftUIColor)
+          }
+          
+          if card.getPrices().usd == nil && card.getPrices().usdFoil == nil {
+            PillText("$0.00")
+          }
+        }
         .foregroundStyle(DesignComponentsAsset.accentColor.swiftUIColor)
         .font(.caption)
         .fontWeight(.medium)
         .monospaced()
+        .padding(.bottom, 5.0)
       }
     }
   }

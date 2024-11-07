@@ -8,17 +8,14 @@ struct CardDetailTableView<Card: MagicCard>: View {
   
   var body: some View {
     VStack(alignment: .leading, spacing: 0) {
-      ForEach(sections.indices, id: \.self) { index in
-        let section = sections[index]
-        let isLastIndex = index == sections.count - 1
-        
+      ForEach(sections) { section in
         Divider().safeAreaPadding(.leading, nil)
         
         HStack(alignment: .top, spacing: 8.0) {
           let edgeInsets = EdgeInsets(
             top: 8,
             leading: 0,
-            bottom: isLastIndex ? 13 : 8,
+            bottom: section.isLast ? 13 : 8,
             trailing: 0
           )
           
@@ -69,7 +66,6 @@ struct CardDetailTableView<Card: MagicCard>: View {
             }
           }
         }
-        .id(section.id)
         .safeAreaPadding(.horizontal, nil)
       }
     }
@@ -100,7 +96,8 @@ struct CardDetailTableView<Card: MagicCard>: View {
       Section(
         type: .description,
         title1: main.text,
-        title2: alternate?.text
+        title2: alternate?.text,
+        isLast: true
       )
     ].compactMap { $0}
   }
@@ -118,16 +115,19 @@ extension CardDetailTableView {
     let type: SectionType
     let title1: String?
     let title2: String?
+    let isLast: Bool
     
     init?(
       type: SectionType,
       title1: String?,
-      title2: String?
+      title2: String?,
+      isLast: Bool = false
     ) {
       if title1?.isEmptyOrNil() == false || title2?.isEmptyOrNil() == false {
         self.title1 = title1
         self.title2 = title2
         self.type = type
+        self.isLast = isLast
       } else {
         return nil
       }

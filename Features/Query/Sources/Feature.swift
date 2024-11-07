@@ -24,7 +24,7 @@ struct Feature<Client: MagicCardQueryRequestClient> {
   }
   
   enum Action: Equatable {
-    case didSelectCardAtIndex(Int)
+    case didSelectCard(Client.MagicCardModel)
     case loadMoreCardsIfNeeded(currentIndex: Int)
     case showError(title: String, description: String)
     case updateCards(ObjectList<[Client.MagicCardModel]>, QueryType)
@@ -34,8 +34,7 @@ struct Feature<Client: MagicCardQueryRequestClient> {
   var body: some ReducerOf<Self> {
     Reduce { state, action in
       switch action {
-      case let .didSelectCardAtIndex(value):
-        print(state.dataSource.model[value])
+      case let .didSelectCard(value):
         return .none
         
       case let .loadMoreCardsIfNeeded(currentIndex):
