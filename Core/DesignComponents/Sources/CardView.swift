@@ -108,7 +108,7 @@ public struct CardView: View {
       }
       
       if shouldShowPrice {
-        HStack(spacing: 3) {
+        HStack(spacing: 5) {
           if let usd = card.getPrices().usd {
             PillText("$\(usd)")
           }
