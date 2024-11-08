@@ -282,20 +282,3 @@ extension Widget {
     .clipShape(RoundedRectangle(cornerRadius: 13.0))
   }
 }
-
-#Preview {
-  VStack {
-    InformationView(
-      title: "Information",
-      power: "1",
-      toughness: "2",
-      loyaltyCounters: "1",
-      manaValue: 2,
-      rarity: .mythic,
-      collectorNumber: "123",
-      colorIdentity: ["{R}"],
-      setCode: "123",
-      setIconURL: URL(string: "https://1000logos.net/wp-content/uploads/2016/10/Apple-Logo.png")
-    )
-  }
-}

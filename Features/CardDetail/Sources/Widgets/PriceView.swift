@@ -119,33 +119,39 @@ extension PriceView {
           Text("\(currencySymbol)\(price)")
             .font(.body)
             .fontWeight(isDisabled ? .regular : .semibold)
-            .foregroundStyle((isFoil && isDisabled == false ) ? DesignComponentsAsset.accentColorDark.swiftUIColor : DesignComponentsAsset.accentColor.swiftUIColor)
+            .foregroundStyle(DesignComponentsAsset.accentColor.swiftUIColor)
             .monospaced()
             .frame(maxWidth: .infinity, minHeight: 34)
             .padding(.vertical, 5.0)
             .background {
-              if isFoil, isDisabled == false {
-                LinearGradient(
-                  colors: [Color(#colorLiteral(red: 0.9725449681, green: 0.8013705611, blue: 0.4944624901, alpha: 1)), Color(#colorLiteral(red: 0.9137322307, green: 0.9137201905, blue: 0.5514469147, alpha: 1)), Color(#colorLiteral(red: 0.5428386331, green: 0.8030003309, blue: 0.5898079276, alpha: 1)), Color(#colorLiteral(red: 0.5428386331, green: 0.8030003309, blue: 0.5898079276, alpha: 1)), Color(#colorLiteral(red: 0.6374309659, green: 0.8531000018, blue: 0.875569284, alpha: 1)), Color(#colorLiteral(red: 0.5439324379, green: 0.6502383351, blue: 0.7930879593, alpha: 1)), Color(#colorLiteral(red: 0.4611749649, green: 0.5113767385, blue: 0.7011086941, alpha: 1))],
-                  startPoint: .topLeading,
-                  endPoint: .bottomTrailing
-                )
-              } else {
-                Color(.systemFill)
-              }
+              Color(.systemFill)
             }
             .clipShape(RoundedRectangle(cornerRadius: 13.0))
         }
         .buttonStyle(.sinkableButtonStyle)
         
-        Text(label)
-          .font(.caption)
-          .foregroundStyle(.secondary)
-          .multilineTextAlignment(.center)
-          .frame(maxHeight: .infinity, alignment: .center)
+        HStack(spacing: 5.0) {
+          Text(label)
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .multilineTextAlignment(.center)
+            .frame(maxHeight: .infinity, alignment: .center)
+          
+          if isFoil {
+            PillText("FOIL", isFoil: true)
+              .font(.caption)
+              .foregroundStyle(DesignComponentsAsset.accentColorDark.swiftUIColor)
+              .monospaced()
+              .fontWeight(.medium)
+              .overlay(
+                RoundedRectangle(cornerRadius: 8.0).stroke(.black.opacity(0.11), lineWidth: 1)
+              )
+          }
+        }
       }
       .disabled(isDisabled)
       .opacity(isDisabled ? 0.31 : 1.0)
     }
   }
 }
+
