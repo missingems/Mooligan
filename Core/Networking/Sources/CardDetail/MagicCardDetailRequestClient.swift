@@ -4,11 +4,18 @@ public protocol MagicCardDetailRequestClient: Sendable {
   associatedtype MagicCardModel: MagicCard
   associatedtype MagicCardSet: GameSet
   
+  func getRulings(of card: MagicCardModel) async throws -> [MagicCardRuling]
   func getVariants(of card: MagicCardModel, page: Int) async throws -> [MagicCardModel]
   func getSet(of card: MagicCardModel) async throws -> MagicCardSet
 }
 
 extension ScryfallClient: MagicCardDetailRequestClient {
+  public func getRulings(of card: MagicCardModel) async throws -> [MagicCardRuling] {
+    try await getRulings(.scryfallID(id: card.id.uuidString)).data.map { value in
+      MagicCardRuling(displayDate: value.publishedAt, description: value.comment)
+    }
+  }
+  
   public func getVariants(of card: MagicCardModel, page: Int) async throws -> [MagicCardModel] {
     guard let oracleID = card.getOracleID() else {
       throw MagicCardDetailRequestClientError.cardOracleIDIsNil

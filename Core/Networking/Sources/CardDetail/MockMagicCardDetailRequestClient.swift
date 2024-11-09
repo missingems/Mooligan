@@ -18,6 +18,10 @@ public struct MockMagicCardDetailRequestClient<Card: MagicCard>: MagicCardDetail
     self.testConfiguration = testConfiguration
   }
   
+  public func getRulings(of card: MockMagicCard<MockMagicCardColor>) async throws -> [MagicCardRuling] {
+    return []
+  }
+  
   public func getVariants(
     of card: MockMagicCard<MockMagicCardColor>,
     page: Int

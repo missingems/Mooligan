@@ -41,6 +41,9 @@ import Networking
         state.content.faceDirection = state.content.faceDirection.toggled()
         return .none
         
+      case let .updateRulings(rulings):
+        return .none
+        
       case let .updateSetIconURL(value):
         state.content.setIconURL = value
         
@@ -86,6 +89,7 @@ extension Feature {
     case fetchSet(card: Client.MagicCardModel)
     case fetchVariants(card: Client.MagicCardModel)
     case transformTapped
+    case updateRulings(_ rulings: [MagicCardRuling])
     case updateSetIconURL(_ setIconURL: Result<URL?, FeatureError>)
     case updateVariants(_ variants: Result<[Client.MagicCardModel], FeatureError>)
     case viewAppeared(initialAction: Action)
