@@ -35,7 +35,6 @@ import Networking
     Reduce { state, action in
       switch action {
       case let .didSelectSet(index):
-        state.selectedSet = state.sets[index]
         return .none
         
       case .fetchSets:
@@ -46,8 +45,12 @@ import Networking
         }
         
       case .viewAppeared:
-        return .run { send in
-          await send(.fetchSets)
+        return if state.sets.isEmpty {
+          .run { send in
+            await send(.fetchSets)
+          }
+        } else {
+          .none
         }
         
       case let .updateSets(value):
