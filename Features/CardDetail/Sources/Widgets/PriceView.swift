@@ -131,15 +131,9 @@ extension PriceView {
         .buttonStyle(.sinkableButtonStyle)
         
         HStack(spacing: 5.0) {
-          Text(label)
-            .font(.caption)
-            .foregroundStyle(.secondary)
-            .multilineTextAlignment(.center)
-            .frame(maxHeight: .infinity, alignment: .center)
-          
           if isFoil {
             PillText("FOIL", isFoil: true)
-              .font(.caption)
+              .font(.caption2)
               .foregroundStyle(DesignComponentsAsset.accentColorDark.swiftUIColor)
               .monospaced()
               .fontWeight(.medium)
@@ -147,6 +141,12 @@ extension PriceView {
                 RoundedRectangle(cornerRadius: 8.0).stroke(.black.opacity(0.11), lineWidth: 1)
               )
           }
+          
+          Text(label)
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .multilineTextAlignment(.center)
+            .frame(maxHeight: .infinity, alignment: .center)
         }
       }
       .disabled(isDisabled)
