@@ -19,7 +19,6 @@ struct SetsView<Client: GameSetRequestClient>: View {
       ) {
         store.send(.didSelectSet(index: index))
       }
-      .id(element.id)
       .listRowSeparator(.hidden)
       .listRowInsets(EdgeInsets(top: 1, leading: 0, bottom: 0, trailing: 0))
       .safeAreaPadding(.horizontal, nil)
