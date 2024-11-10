@@ -17,7 +17,7 @@ import Networking
         return .merge(
           .run { send in
             try await send(
-              .updateSetIconURL(.success(client.getSet(of: card).iconURL))
+              .updateSetIconURL(.success(client.getSet(of: card).iconURL), card: card)
             )
           },
           .run { send in
@@ -54,9 +54,9 @@ import Networking
         state.content.rulings = rulings
         return .none
         
-      case let .updateSetIconURL(value):
+      case let .updateSetIconURL(value, card):
         state.content.setIconURL = value
-        return .run { [card = state.content.card] send in
+        return .run { send in
           await send(.fetchVariants(card: card))
         }
         
@@ -100,7 +100,7 @@ extension Feature {
     case fetchVariants(card: Client.MagicCardModel)
     case transformTapped
     case updateRulings(_ rulings: [MagicCardRuling])
-    case updateSetIconURL(_ setIconURL: Result<URL?, FeatureError>)
+    case updateSetIconURL(_ setIconURL: Result<URL?, FeatureError>, card: Client.MagicCardModel)
     case updateVariants(_ variants: Result<[Client.MagicCardModel], FeatureError>)
     case viewAppeared(initialAction: Action)
   }
