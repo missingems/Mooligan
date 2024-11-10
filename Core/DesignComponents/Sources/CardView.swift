@@ -34,7 +34,7 @@ public struct CardView: View {
             case let .fixedSize(size):
               AmbientWebImage(
                 url: imageURL,
-                cornerRadius: 5 / 100 * size.width,
+                cornerRadius: (5 / 100 * size.width).rounded(),
                 isFlipped: isFlipped,
                 size: CGSize(
                   width: size.width,
@@ -50,16 +50,16 @@ public struct CardView: View {
             case let .fixedWidth(width):
               AmbientWebImage(
                 url: imageURL,
-                cornerRadius: 5 / 100 * width,
+                cornerRadius: (5 / 100 * width).rounded(),
                 isFlipped: isFlipped,
                 size: CGSize(
-                  width: width,
-                  height: width * MagicCardImageRatio.heightToWidth.rawValue
+                  width: width.rounded(),
+                  height: width * MagicCardImageRatio.heightToWidth.rawValue.rounded()
                 )
               )
               .frame(
-                width: width,
-                height: width * MagicCardImageRatio.heightToWidth.rawValue,
+                width: width.rounded(),
+                height: (width * MagicCardImageRatio.heightToWidth.rawValue).rounded(),
                 alignment: .center
               )
               
@@ -119,7 +119,7 @@ public struct CardView: View {
               "$\(foil)",
               isFoil: true
             )
-            .foregroundStyle(DesignComponentsAsset.accentColorDark.swiftUIColor)
+            .foregroundStyle(.black.opacity(0.8))
           }
           
           if card.getPrices().usd == nil && card.getPrices().usdFoil == nil {

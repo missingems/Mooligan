@@ -22,18 +22,16 @@ struct LegalityView: View {
             numberOfColumns: numberOfColumns,
             legality: legalities[0]
           )
-          .background {
-            Color(.systemFill).clipShape(RoundedRectangle(cornerRadius: 8.0))
-          }
+          .background(Color.primary.opacity(0.02).background(.ultraThinMaterial))
+          .clipShape(RoundedRectangle(cornerRadius: 8.0))
           
           legalityRow(
             index: 1,
             numberOfColumns: numberOfColumns,
             legality: legalities[1]
           )
-          .background {
-            Color(.systemFill).clipShape(RoundedRectangle(cornerRadius: 8.0))
-          }
+          .background(Color.primary.opacity(0.02).background(.ultraThinMaterial))
+          .clipShape(RoundedRectangle(cornerRadius: 8.0))
         }
         
         GridRow {
@@ -56,18 +54,16 @@ struct LegalityView: View {
             numberOfColumns: numberOfColumns,
             legality: legalities[4]
           )
-          .background {
-            Color(.systemFill).clipShape(RoundedRectangle(cornerRadius: 8.0))
-          }
+          .background(Color.primary.opacity(0.02).background(.ultraThinMaterial))
+          .clipShape(RoundedRectangle(cornerRadius: 8.0))
           
           legalityRow(
             index: 5,
             numberOfColumns: numberOfColumns,
             legality: legalities[5]
           )
-          .background {
-            Color(.systemFill).clipShape(RoundedRectangle(cornerRadius: 8.0))
-          }
+          .background(Color.primary.opacity(0.02).background(.ultraThinMaterial))
+          .clipShape(RoundedRectangle(cornerRadius: 8.0))
         }
         
         GridRow {
@@ -90,18 +86,16 @@ struct LegalityView: View {
             numberOfColumns: numberOfColumns,
             legality: legalities[8]
           )
-          .background {
-            Color(.systemFill).clipShape(RoundedRectangle(cornerRadius: 8.0))
-          }
+          .background(Color.primary.opacity(0.02).background(.ultraThinMaterial))
+          .clipShape(RoundedRectangle(cornerRadius: 8.0))
           
           legalityRow(
             index: 9,
             numberOfColumns: numberOfColumns,
             legality: legalities[9]
           )
-          .background {
-            Color(.systemFill).clipShape(RoundedRectangle(cornerRadius: 8.0))
-          }
+          .background(Color.primary.opacity(0.02).background(.ultraThinMaterial))
+          .clipShape(RoundedRectangle(cornerRadius: 8.0))
         }
       }
       .padding(.top, 3.0)
@@ -145,12 +139,4 @@ struct LegalityView: View {
         .multilineTextAlignment(.leading)
     }
   }
-}
-
-#Preview {
-  LegalityView(
-    title: "Legalities",
-    displayReleaseDate: "12 Dec 2024",
-    legalities: MagicCardFixtures.split.value.getLegalities().value
-  )
 }

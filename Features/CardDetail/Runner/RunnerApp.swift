@@ -26,7 +26,8 @@ struct RunnerApp: App {
             ), reducer: {
               PageFeature<ScryfallClient>(client: client)
             }
-          ), client: client
+          ),
+          client: client
         )
       }
       .task {

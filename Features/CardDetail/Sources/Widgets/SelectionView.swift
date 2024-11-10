@@ -23,27 +23,7 @@ struct SelectionView: View {
           )
         }
       }
-      .background {
-        Color(.systemFill)
-      }
-      .overlay(
-        RoundedRectangle(
-          cornerRadius: 13.0
-        )
-        .stroke(
-          LinearGradient(
-            gradient: Gradient(
-              colors: [
-                .clear,
-                Color(.systemFill),
-              ]
-            ),
-            startPoint: .top,
-            endPoint: .bottom
-          ),
-          lineWidth: 1 / UIScreen.main.nativeScale
-        )
-      )
+      .background(Color.primary.opacity(0.02).background(.ultraThinMaterial))
       .clipShape(RoundedRectangle(cornerRadius: 13.0))
     }
     .safeAreaPadding(.horizontal, nil)

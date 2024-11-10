@@ -8,7 +8,7 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
   
   var body: some View {
     ScrollView(.vertical) {
-      VStack(alignment: .leading, spacing: 0) {
+      LazyVStack(alignment: .leading, spacing: 0) {
         HeaderView(
           imageURL: store.content.imageURL,
           isFlippable: store.content.card.isFlippable,
@@ -16,11 +16,8 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
           orientation: store.content.card.isLandscape ? .landscape : .portrait,
           rotation: store.content.card.isLandscape ? 90 : 0
         ) {
-          _ = withAnimation(.spring()) {
-            store.send(.transformTapped)
-          }
+          store.send(.transformTapped, animation: .bouncy)
         }
-        .clipped()
         
         CardDetailTableView(descriptions: store.content.descriptions)
         
@@ -36,6 +33,9 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
           setCode: store.content.setCode,
           setIconURL: try? store.content.setIconURL.get()
         )
+        .task {
+          store.send(.fetchSet(card: store.state.content.card))
+        }
         
         LegalityView(
           title: store.content.legalityLabel,
@@ -58,6 +58,9 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
           subtitle: store.content.numberOfVariantsLabel,
           cards: try? store.content.variants.get()
         ) { action in
+        }
+        .task {
+          store.send(.fetchVariants(card: store.state.content.card))
         }
         
         SelectionView(
@@ -84,12 +87,6 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
           ]
         )
       }
-    }
-    .background {
-      Color(.secondarySystemGroupedBackground).ignoresSafeArea()
-    }
-    .task {
-      store.send(.viewAppeared(initialAction: store.start))
     }
   }
 }

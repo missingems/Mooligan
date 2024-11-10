@@ -132,7 +132,7 @@ struct Content<Card: MagicCard>: Equatable, Sendable {
     collectorNumber = card.getCollectorNumber()
     legalities = card.getLegalities().value
     self.setIconURL = .success(setIconURL)
-    self.variants = .success([card])
+    self.variants = .success([])
     self.rarity = card.getRarity().value
     
     populate(with: card, faceDirection: faceDirection)

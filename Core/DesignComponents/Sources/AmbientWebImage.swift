@@ -33,7 +33,7 @@ public struct AmbientWebImage: View {
         ImageProcessors.Resize(
           size: size,
           unit: .points,
-          contentMode: .aspectFill,
+          contentMode: .aspectFit,
           crop: false,
           upscale: true
         )
@@ -54,9 +54,20 @@ public struct AmbientWebImage: View {
       if let image = state.image {
         image.resizable()
       } else {
-        Rectangle()
-          .fill(Color(.systemFill))
-          .shimmering(gradient: Gradient(colors: [.clear, .white.opacity(0.32), .clear]), mode: .overlay())
+        Color
+          .primary
+          .opacity(0.02)
+          .background(.ultraThinMaterial)
+          .shimmering(
+            gradient: Gradient(
+              colors: [
+                .clear,
+                .white.opacity(0.32),
+                .clear
+              ]
+            ),
+            mode: .overlay()
+          )
       }
     }
     .clipShape(.rect(cornerRadius: cornerRadius))

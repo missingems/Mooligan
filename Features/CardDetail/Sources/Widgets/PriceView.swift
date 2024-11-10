@@ -123,10 +123,8 @@ extension PriceView {
             .monospaced()
             .frame(maxWidth: .infinity, minHeight: 34)
             .padding(.vertical, 5.0)
-            .background {
-              Color(.systemFill)
-            }
-            .clipShape(RoundedRectangle(cornerRadius: 13.0))
+            .background(Color.primary.opacity(0.02).background(.ultraThinMaterial))
+            .clipShape(RoundedRectangle(cornerRadius: 13))
         }
         .buttonStyle(.sinkableButtonStyle)
         
@@ -134,7 +132,7 @@ extension PriceView {
           if isFoil {
             PillText("FOIL", isFoil: true)
               .font(.caption2)
-              .foregroundStyle(DesignComponentsAsset.accentColorDark.swiftUIColor)
+              .foregroundStyle(.black.opacity(0.8))
               .monospaced()
               .fontWeight(.medium)
           }

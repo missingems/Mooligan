@@ -48,7 +48,6 @@ struct HeaderView: View {
       .rotationEffect(.degrees(isRotated ? 180 : 0))
       .rotation3DEffect(.degrees(isFlipped ? 180 : 0), axis: (x: 0, y: 1, z: 0))
       .animation(.bouncy, value: isFlipped || isRotated)
-      .shadow(color: .black.opacity(0.31), radius: 13, x: 0, y: 13)
       
       if isFlippable {
         Button {

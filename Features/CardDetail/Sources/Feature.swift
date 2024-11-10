@@ -14,37 +14,34 @@ import Networking
     Reduce { state, action in
       switch action {
       case let .fetchSet(card):
-        return .merge(
-          .run { send in
-            try await send(
-              .updateSetIconURL(.success(client.getSet(of: card).iconURL), card: card)
-            )
-          },
-          .run { send in
-            try await send(
-              .updateVariants(.success(client.getVariants(of: card, page: 0)))
-            )
-          },
-          .run { send in
-            try await send(
-              .updateRulings(client.getRulings(of: card))
+        if state.content.setIconURL == .success(nil) {
+          return .run(priority: .background) { send in
+            let iconURL = try await client.getSet(of: card).iconURL
+            
+            await send(
+              .updateSetIconURL(.success(iconURL), card: card)
             )
           }
-        )
+          .cancellable(id: "fetchSet:\(card.id)", cancelInFlight: true)
+        } else {
+          return .none
+        }
         
       case let .fetchVariants(card):
-        return .merge(
-          .run { send in
-            try await send(
-              .updateVariants(.success(client.getVariants(of: card, page: 0)))
-            )
-          },
-          .run { send in
-            try await send(
-              .updateRulings(client.getRulings(of: card))
+        let variants = try? state.content.variants.get()
+        
+        if variants?.isEmpty == true {
+          return .run(priority: .background) { send in
+            let cards = try await client.getVariants(of: card, page: 0)
+            
+            await send(
+              .updateVariants(.success(cards))
             )
           }
-        )
+          .cancellable(id: "fetchVariants:\(card.id)", cancelInFlight: true)
+        } else {
+          return .none
+        }
         
       case .transformTapped:
         state.content.faceDirection = state.content.faceDirection.toggled()
@@ -70,7 +67,6 @@ import Networking
         }
       }
     }
-    ._printChanges()
   }
 }
 

@@ -5,9 +5,7 @@ import SwiftUI
 import NukeUI
 
 struct QueryView<Client: MagicCardQueryRequestClient>: View {
-  @Environment(\.horizontalSizeClass) private var sizeClass
   private var store: StoreOf<Feature<Client>>
-  private var horizontalSpacing: CGFloat { spacing * 2 }
   
   init(store: StoreOf<Feature<Client>>) {
     self.store = store
@@ -15,19 +13,17 @@ struct QueryView<Client: MagicCardQueryRequestClient>: View {
   
   var body: some View {
     GeometryReader { proxy in
-      let width = (proxy.size.width - horizontalSpacing - spacing) / 2
+      let width = (proxy.size.width - 24) / 2
       
       ScrollView {
         LazyVGrid(
           columns: [GridItem](
-            repeating: GridItem(.fixed(width), spacing: spacing),
+            repeating: GridItem(),
             count: 2
           ),
-          spacing: spacing
+          spacing: 8
         ) {
-          ForEach(store.dataSource.model.indices, id: \.self) { index in
-            let card = store.dataSource.model[index]
-            
+          ForEach(store.dataSource.model) { card in
             Button(
               action: {
                 store.send(.didSelectCard(card))
@@ -35,35 +31,26 @@ struct QueryView<Client: MagicCardQueryRequestClient>: View {
                 CardView(
                   card: card,
                   layoutConfiguration: .fixedWidth(width),
-                  shouldShowPrice: true
+                  shouldShowPrice: false
                 )
               }
             )
             .buttonStyle(.sinkableButtonStyle)
-            .task {
-              store.send(.loadMoreCardsIfNeeded(currentIndex: index))
-            }
           }
         }
-        .safeAreaPadding(.horizontal, spacing)
+        .padding(.horizontal, 8)
       }
       .background {
-        Color(.secondarySystemGroupedBackground).ignoresSafeArea()
+        Color
+          .primary
+          .colorInvert()
+          .opacity(0.02)
+          .ignoresSafeArea()
       }
       .navigationBarTitleDisplayMode(.inline)
       .task {
         store.send(.viewAppeared)
       }
-    }
-  }
-}
-
-extension QueryView {
-  private var spacing: CGFloat {
-    if sizeClass == .regular {
-      return 16.0
-    } else {
-      return 8.0
     }
   }
 }
