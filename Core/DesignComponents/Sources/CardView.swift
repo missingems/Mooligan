@@ -106,6 +106,7 @@ public struct CardView: View {
           .offset(x: 5, y: -16.0)
         }
       }
+      .zIndex(1)
       
       if shouldShowPrice {
         HStack(spacing: 5) {
