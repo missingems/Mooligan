@@ -14,39 +14,48 @@ import Networking
     Reduce { state, action in
       switch action {
       case let .fetchSet(card):
-        return .run { send in
-          try await send(.updateSetIconURL(.success(client.getSet(of: card).iconURL)))
-        } catch: { error, send in
-          await send(
-            .updateSetIconURL(
-              .failure(.failedToFetchSetIconURL(errorMessage: error.localizedDescription))
+        return .merge(
+          .run { send in
+            try await send(
+              .updateSetIconURL(.success(client.getSet(of: card).iconURL))
             )
-          )
-        }
+          },
+          .run { send in
+            try await send(
+              .updateVariants(.success(client.getVariants(of: card, page: 0)))
+            )
+          },
+          .run { send in
+            try await send(
+              .updateRulings(client.getRulings(of: card))
+            )
+          }
+        )
         
       case let .fetchVariants(card):
-        return .run { send in
-          try await send(
-            .updateVariants(.success(client.getVariants(of: card, page: 0)))
-          )
-        } catch: { error, send in
-          await send(
-            .updateVariants(
-              .failure(.failedToFetchVariants(errorMessage: error.localizedDescription))
+        return .merge(
+          .run { send in
+            try await send(
+              .updateVariants(.success(client.getVariants(of: card, page: 0)))
             )
-          )
-        }
+          },
+          .run { send in
+            try await send(
+              .updateRulings(client.getRulings(of: card))
+            )
+          }
+        )
         
       case .transformTapped:
         state.content.faceDirection = state.content.faceDirection.toggled()
         return .none
         
       case let .updateRulings(rulings):
+        state.content.rulings = rulings
         return .none
         
       case let .updateSetIconURL(value):
         state.content.setIconURL = value
-        
         return .run { [card = state.content.card] send in
           await send(.fetchVariants(card: card))
         }
@@ -61,6 +70,7 @@ import Networking
         }
       }
     }
+    ._printChanges()
   }
 }
 

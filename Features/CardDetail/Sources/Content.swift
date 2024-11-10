@@ -44,6 +44,7 @@ struct Content<Card: MagicCard>: Equatable, Sendable {
   var colorIdentity: [String] = []
   let rarity: MagicCardRarityValue
   let legalities: [MagicCardLegalitiesValue]
+  var rulings: [MagicCardRuling] = []
   
   // MARK: - Prices
   
