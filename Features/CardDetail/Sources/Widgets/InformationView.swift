@@ -13,25 +13,24 @@ struct InformationView: View {
       Text(title).font(.headline)
       
       ScrollView(.horizontal, showsIndicators: false) {
-        LazyHStack(spacing: 5.0) {
+        HStack(spacing: 5.0) {
           ForEach(widgets) { $0 }
-            .scrollTransition { view, phase in
-              switch phase {
-              case .topLeading:
-                view.opacity(0).offset(x: 66, y: 0).scaleEffect(0.9).blur(radius: 3)
-                
-              case .identity:
-                view.opacity(1).offset(x: 0, y: 0).scaleEffect(1).blur(radius: 0)
-                
-              case .bottomTrailing:
-                view.opacity(1).offset(x: 0, y: 0).scaleEffect(1).blur(radius: 0)
-              }
-            }
+//            .scrollTransition { view, phase in
+//              switch phase {
+//              case .topLeading:
+//                view.opacity(0).offset(x: 66, y: 0).scaleEffect(0.9).blur(radius: 3)
+//                
+//              case .identity:
+//                view.opacity(1).offset(x: 0, y: 0).scaleEffect(1).blur(radius: 0)
+//                
+//              case .bottomTrailing:
+//                view.opacity(1).offset(x: 0, y: 0).scaleEffect(1).blur(radius: 0)
+//              }
+//            }
         }
       }
-      .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
+//      .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
     }
-    .safeAreaPadding(.horizontal, nil)
     .padding(.vertical, 13.0)
   }
   

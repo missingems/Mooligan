@@ -7,7 +7,7 @@ struct CardDetailTableView<Card: MagicCard>: View {
   let sections: [Section]
   
   var body: some View {
-    VStack(alignment: .leading, spacing: 0) {
+    VStack(spacing: 0) {
       ForEach(sections) { section in
         Divider().safeAreaPadding(.leading, nil)
         

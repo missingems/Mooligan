@@ -13,7 +13,7 @@ struct VariantView<Card: MagicCard>: View {
   let send: (Action) -> Void
   
   var body: some View {
-    Divider().safeAreaPadding(.leading, nil)
+//    Divider().safeAreaPadding(.leading, nil)
     
     VStack(alignment: .leading, spacing: 5.0) {
       Text(title).font(.headline)
@@ -52,7 +52,7 @@ struct VariantView<Card: MagicCard>: View {
       .padding(.top, 3.0)
       .scrollClipDisabled(true)
     }
-    .safeAreaPadding(.horizontal, nil)
+//    .safeAreaPadding(.horizontal, nil)
     .padding(.vertical, 13.0)
   }
   

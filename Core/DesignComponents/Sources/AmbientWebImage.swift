@@ -6,7 +6,7 @@ import Shimmer
 public struct AmbientWebImage: View {
   public let url: URL
   private let cornerRadius: CGFloat
-  private let transformers: [ImageProcessing]
+//  private let transformers: [ImageProcessing]
   
   public init(
     url: URL,
@@ -17,39 +17,39 @@ public struct AmbientWebImage: View {
   ) {
     self.url = url
     self.cornerRadius = cornerRadius
+//    
+//    var transformers: [ImageProcessing] = []
+//    
+//    if rotation != 0 {
+//      transformers.append(RotationImageProcessor(degrees: rotation))
+//    }
+//    
+//    if isFlipped {
+//      transformers.append(FlipImageProcessor())
+//    }
+//    
+//    if let size {
+//      transformers.append(
+//        ImageProcessors.Resize(
+//          size: size,
+//          unit: .points,
+//          contentMode: .aspectFit,
+//          crop: false,
+//          upscale: true
+//        )
+//      )
+//    }
     
-    var transformers: [ImageProcessing] = []
-    
-    if rotation != 0 {
-      transformers.append(RotationImageProcessor(degrees: rotation))
-    }
-    
-    if isFlipped {
-      transformers.append(FlipImageProcessor())
-    }
-    
-    if let size {
-      transformers.append(
-        ImageProcessors.Resize(
-          size: size,
-          unit: .points,
-          contentMode: .aspectFit,
-          crop: false,
-          upscale: true
-        )
-      )
-    }
-    
-    self.transformers = transformers
+//    self.transformers = transformers
   }
   
   public var body: some View {
     LazyImage(
       request: ImageRequest(
-        url: url,
-        processors: transformers
-      ),
-      transaction: Transaction(animation: .easeInOut(duration: 0.31))
+        url: url
+//        processors: transformers
+      )
+//      transaction: Transaction(animation: .easeInOut(duration: 0.31))
     ) { state in
       if let image = state.image {
         image.resizable()
@@ -58,16 +58,16 @@ public struct AmbientWebImage: View {
           .primary
           .opacity(0.02)
           .background(.ultraThinMaterial)
-          .shimmering(
-            gradient: Gradient(
-              colors: [
-                .clear,
-                .white.opacity(0.32),
-                .clear
-              ]
-            ),
-            mode: .overlay()
-          )
+//          .shimmering(
+//            gradient: Gradient(
+//              colors: [
+//                .clear,
+//                .white.opacity(0.32),
+//                .clear
+//              ]
+//            ),
+//            mode: .overlay()
+//          )
       }
     }
     .clipShape(.rect(cornerRadius: cornerRadius))
