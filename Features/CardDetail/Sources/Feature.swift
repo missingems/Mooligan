@@ -69,7 +69,11 @@ import Networking
 }
 
 extension Feature {
-  @ObservableState struct State: Equatable, Sendable {
+  @ObservableState struct State: Equatable, Identifiable {
+    var id: UUID {
+      return content.card.id
+    }
+    
     var content: Content<Client.MagicCardModel>
     let start: Action
     
