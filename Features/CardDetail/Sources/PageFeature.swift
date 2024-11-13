@@ -24,8 +24,10 @@ extension PageFeature {
   @ObservableState struct State: Equatable {
     var cards: IdentifiedArrayOf<Feature<Client>.State> = []
     
-    public init(cards: [Feature<Client>.State]) {
-//      self.cards = .init(arrayLiteral: cards)
+    public init(cards: [Client.MagicCardModel]) {
+      self.cards = IdentifiedArrayOf(uniqueElements: cards.map({ card in
+        return Feature<Client>.State(card: card, entryPoint: .query)
+      }))
     }
   }
   

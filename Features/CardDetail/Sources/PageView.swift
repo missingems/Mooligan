@@ -7,7 +7,7 @@ public struct PageView<Client: MagicCardDetailRequestClient>: View {
   
   public init(client: Client, cards: [Client.MagicCardModel]) {
     self.store = Store(
-      initialState: PageFeature<Client>.State(), reducer: {
+      initialState: PageFeature<Client>.State(cards: cards), reducer: {
         PageFeature<Client>(client: client)
       }
     )

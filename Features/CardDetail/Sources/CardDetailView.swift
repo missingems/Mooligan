@@ -6,6 +6,10 @@ import SwiftUI
 struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
   let store: StoreOf<Feature<Client>>
   
+  init(store: StoreOf<Feature<Client>>) {
+    print(store)
+    self.store = store
+  }
   var body: some View {
     ScrollView {
       LazyVStack(spacing: 0) {
