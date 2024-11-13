@@ -19,7 +19,7 @@ public struct PageView<Client: MagicCardDetailRequestClient>: View {
         ForEachStore(
           store.scope(state: \.cards, action: \.cards)
         ) { store in
-          CardDetailView(store: store)
+          CardDetailView(store: store).containerRelativeFrame(.horizontal)
         }
       }
       .scrollTargetLayout()

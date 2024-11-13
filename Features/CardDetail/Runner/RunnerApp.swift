@@ -19,9 +19,7 @@ struct RunnerApp: App {
   var body: some Scene {
     WindowGroup {
       NavigationView {
-        if cards.isEmpty == false {
-          PageView(client: client, cards: cards)
-        }
+        PageView(client: client, cards: cards)
       }
       .task {
         do {
