@@ -9,7 +9,6 @@ import Networking
     Reduce { state, action in
       switch action {
       case let .cards(value):
-        print(value)
         return .none
       }
     }
