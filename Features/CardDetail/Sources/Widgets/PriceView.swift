@@ -109,7 +109,9 @@ extension PriceView {
     var body: some View {
       VStack(spacing: 3.0) {
         Menu {
-          ForEach(purchaseLinks) { destination in
+          ForEach(purchaseLinks.indices, id: \.self) { destination in
+            let destination = purchaseLinks[destination]
+            
             Link(destination: destination.url) {
               Image(systemName: "link").imageScale(.small)
               Text(destination.label)

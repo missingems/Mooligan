@@ -32,8 +32,7 @@ struct SelectionView: View {
 }
 
 extension SelectionView {
-  struct Item: Sendable, Identifiable {
-    let id = UUID()
+  struct Item: Sendable {
     let icon: Image
     let title: String
     let detail: String?

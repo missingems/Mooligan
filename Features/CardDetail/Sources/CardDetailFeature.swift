@@ -13,6 +13,9 @@ import Networking
   var body: some ReducerOf<Self> {
     Reduce { state, action in
       switch action {
+      case let .fetchAdditionalInformation(card):
+        return .none
+        
       case let .fetchSet(card):
         if state.content.setIconURL == .success(nil) {
           return .run(priority: .background) { send in
@@ -65,7 +68,6 @@ import Networking
         }
       }
     }
-//    ._printChanges()
   }
 }
 
@@ -95,6 +97,7 @@ extension CardDetailFeature {
   indirect enum Action: Equatable, Sendable {
     case fetchSet(card: Client.MagicCardModel)
     case fetchVariants(card: Client.MagicCardModel)
+    case fetchAdditionalInformation(card: Client.MagicCardModel)
     case transformTapped
     case updateRulings(_ rulings: [MagicCardRuling])
     case updateSetIconURL(_ setIconURL: Result<URL?, FeatureError>)
