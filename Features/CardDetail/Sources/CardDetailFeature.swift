@@ -3,7 +3,7 @@ import Foundation
 import OSLog
 import Networking
 
-@Reducer struct Feature<Client: MagicCardDetailRequestClient> {
+@Reducer struct CardDetailFeature<Client: MagicCardDetailRequestClient> {
   private let client: Client
   
   init(client: Client) {
@@ -65,15 +65,13 @@ import Networking
         }
       }
     }
+//    ._printChanges()
   }
 }
 
-extension Feature {
+extension CardDetailFeature {
   @ObservableState struct State: Equatable, Identifiable {
-    var id: UUID {
-      return content.card.id
-    }
-    
+    let id: UUID
     var content: Content<Client.MagicCardModel>
     let start: Action
     
@@ -81,6 +79,7 @@ extension Feature {
       card: Client.MagicCardModel,
       entryPoint: EntryPoint<Client>
     ) {
+      self.id = card.id
       switch entryPoint {
       case .query:
         content = Content(card: card, setIconURL: nil)

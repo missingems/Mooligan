@@ -16,7 +16,7 @@ public struct PageView<Client: MagicCardDetailRequestClient>: View {
   public var body: some View {
     ScrollView(.horizontal, showsIndicators: false) {
       LazyHStack(spacing: 0) {
-        ForEachStore(
+        ForEach(
           store.scope(state: \.cards, action: \.cards)
         ) { store in
           CardDetailView(store: store).containerRelativeFrame(.horizontal)

@@ -12,6 +12,9 @@ import Networking
         return .none
       }
     }
+    .forEach(\.cards, action: \.cards) {
+      CardDetailFeature(client: client)
+    }
   }
   
   init(client: Client) {
@@ -21,16 +24,16 @@ import Networking
 
 extension PageFeature {
   @ObservableState struct State: Equatable {
-    var cards: IdentifiedArrayOf<Feature<Client>.State> = []
+    var cards: IdentifiedArrayOf<CardDetailFeature<Client>.State> = []
     
     public init(cards: [Client.MagicCardModel]) {
       self.cards = IdentifiedArrayOf(uniqueElements: cards.map({ card in
-        return Feature<Client>.State(card: card, entryPoint: .query)
+        return CardDetailFeature<Client>.State(card: card, entryPoint: .query)
       }))
     }
   }
   
   @CasePathable enum Action {
-    case cards(IdentifiedActionOf<Feature<Client>>)
+    case cards(IdentifiedActionOf<CardDetailFeature<Client>>)
   }
 }

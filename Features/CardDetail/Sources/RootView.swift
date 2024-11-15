@@ -8,13 +8,13 @@ enum EntryPoint<Client: MagicCardDetailRequestClient>: Equatable, Sendable {
 }
 
 struct RootView<Client: MagicCardDetailRequestClient>: View {
-  private let store: StoreOf<Feature<Client>>
+  private let store: StoreOf<CardDetailFeature<Client>>
   
   var body: some View {
     CardDetailView(store: store)
   }
   
-  init(store: StoreOf<Feature<Client>>) {
+  init(store: StoreOf<CardDetailFeature<Client>>) {
     self.store = store
   }
 }

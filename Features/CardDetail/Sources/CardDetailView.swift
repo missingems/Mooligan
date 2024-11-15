@@ -4,7 +4,7 @@ import Networking
 import SwiftUI
 
 struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
-  let store: StoreOf<Feature<Client>>
+  let store: StoreOf<CardDetailFeature<Client>>
   
   var body: some View {
     ScrollView {
