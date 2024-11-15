@@ -31,6 +31,7 @@ struct InformationView: View {
       }
       .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
     }
+    .safeAreaPadding(.horizontal, nil)
     .padding(.vertical, 13.0)
   }
   

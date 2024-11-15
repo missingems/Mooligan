@@ -7,8 +7,7 @@ struct Content<Card: MagicCard>: Equatable, Sendable {
   
   // MARK: - Nested Structs and Enums
   
-  struct Description: Equatable, Identifiable, Sendable {
-    let id = UUID()
+  struct Description: Equatable, Sendable {
     let name: String?
     let text: String?
     let typeline: String?
@@ -23,7 +22,6 @@ struct Content<Card: MagicCard>: Equatable, Sendable {
   
   // MARK: - Identifiers
   
-  let id: String?
   let card: Card
   let setCode: String
   let collectorNumber: String
@@ -35,13 +33,13 @@ struct Content<Card: MagicCard>: Equatable, Sendable {
   
   // MARK: - Card Attributes
   
-  var descriptions: [Description] = []
+  var descriptions: [Description]
   var manaValue: Double?
   var power: String?
   var toughness: String?
   var loyalty: String?
   var artist: String?
-  var colorIdentity: [String] = []
+  var colorIdentity: [String]
   let rarity: MagicCardRarityValue
   let legalities: [MagicCardLegalitiesValue]
   var rulings: [MagicCardRuling] = []
@@ -54,7 +52,7 @@ struct Content<Card: MagicCard>: Equatable, Sendable {
   
   // MARK: - Display Attributes
   
-  var name: String = ""
+  var name: String
   let isLandscape: Bool
   let displayReleasedDate: String
   
@@ -100,7 +98,6 @@ struct Content<Card: MagicCard>: Equatable, Sendable {
     self.faceDirection = faceDirection
     self.card = card
     
-    id = card.getOracleText()
     usdPrice = card.getPrices().usd
     usdFoilPrice = card.getPrices().usdFoil
     tixPrice = card.getPrices().tix
@@ -135,7 +132,31 @@ struct Content<Card: MagicCard>: Equatable, Sendable {
     self.variants = .success([])
     self.rarity = card.getRarity().value
     
-    populate(with: card, faceDirection: faceDirection)
+    name = card.getDisplayName(faceDirection: faceDirection)
+    
+    let identity = card.getColorIdentity().map { "{\($0.value.rawValue)}" }
+    colorIdentity = identity.isEmpty ? ["{C}"] : identity
+    
+    let face = card.getCardFace(for: faceDirection)
+    imageURL = face.getImageURL() ?? card.getImageURL()
+    
+    var descriptions = card.isSplit ? [
+      Self.makeDescription(faceDirection: .front, card: card),
+      Self.makeDescription(faceDirection: .back, card: card)
+    ] : [
+      Self.makeDescription(faceDirection: faceDirection, card: card)
+    ]
+    
+    if card.getLayout().value == .adventure {
+      descriptions = descriptions.reversed()
+    }
+    
+    self.descriptions = descriptions
+    
+    power = face.power
+    toughness = face.toughness
+    loyalty = face.loyalty
+    artist = face.artist
   }
   
   // MARK: - Methods

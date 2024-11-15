@@ -35,7 +35,6 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
         )
         .task {
           store.send(.fetchSet(card: store.state.content.card))
-          print("multiple times")
         }
         
         LegalityView(
@@ -62,7 +61,6 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
         }
         .task {
           store.send(.fetchVariants(card: store.state.content.card))
-          print("multiple times")
         }
         
         SelectionView(
