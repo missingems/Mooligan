@@ -19,7 +19,7 @@ import Networking
             let iconURL = try await client.getSet(of: card).iconURL
             
             await send(
-              .updateSetIconURL(.success(iconURL), card: card)
+              .updateSetIconURL(.success(iconURL))
             )
           }
           .cancellable(id: "fetchSet:\(card.id)", cancelInFlight: true)
@@ -51,7 +51,7 @@ import Networking
         state.content.rulings = rulings
         return .none
         
-      case let .updateSetIconURL(value, card):
+      case let .updateSetIconURL(value):
         state.content.setIconURL = value
         return .none
         
@@ -97,7 +97,7 @@ extension CardDetailFeature {
     case fetchVariants(card: Client.MagicCardModel)
     case transformTapped
     case updateRulings(_ rulings: [MagicCardRuling])
-    case updateSetIconURL(_ setIconURL: Result<URL?, FeatureError>, card: Client.MagicCardModel)
+    case updateSetIconURL(_ setIconURL: Result<URL?, FeatureError>)
     case updateVariants(_ variants: Result<[Client.MagicCardModel], FeatureError>)
     case viewAppeared(initialAction: Action)
   }

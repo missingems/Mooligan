@@ -15,6 +15,7 @@ import Networking
     .forEach(\.cards, action: \.cards) {
       CardDetailFeature(client: client)
     }
+    ._printChanges(.actionLabels)
   }
   
   init(client: Client) {

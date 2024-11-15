@@ -8,7 +8,7 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
   
   var body: some View {
     ScrollView {
-      LazyVStack(spacing: 0) {
+      VStack(spacing: 0) {
         HeaderView(
           imageURL: store.content.imageURL,
           isFlippable: store.content.card.isFlippable,
@@ -35,6 +35,7 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
         )
         .task {
           store.send(.fetchSet(card: store.state.content.card))
+          print("multiple times")
         }
         
         LegalityView(
@@ -61,6 +62,7 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
         }
         .task {
           store.send(.fetchVariants(card: store.state.content.card))
+          print("multiple times")
         }
         
         SelectionView(

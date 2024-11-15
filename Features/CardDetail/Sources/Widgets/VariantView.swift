@@ -26,10 +26,10 @@ struct VariantView<Card: MagicCard>: View {
               action: {
                 send(.didSelectCard(card))
               }, label: {
-//                CardView(
-//                  card: card,
-//                  layoutConfiguration: .fixedWidth(150.0)
-//                )
+                CardView(
+                  card: card,
+                  layoutConfiguration: .fixedWidth(150.0)
+                )
               }
             )
             .buttonStyle(.sinkableButtonStyle)
