@@ -7,8 +7,8 @@ struct HeaderView: View {
   private let isFlippable: Bool
   private let isRotatable: Bool
   private let layoutConfiguration: LayoutConfiguration
-//  @State private var isFlipped = false
-//  @State private var isRotated = false
+  @State private var isFlipped = false
+  @State private var isRotated = false
   
   init?(
     imageURL: URL?,
@@ -39,51 +39,51 @@ struct HeaderView: View {
         url: imageURL,
         cornerRadius: 13,
         rotation: layoutConfiguration.rotation,
-        isFlipped: false
+        isFlipped: isFlipped
       )
       .aspectRatio(
         layoutConfiguration.ratio,
         contentMode: .fit
       )
-//      .rotationEffect(.degrees(isRotated ? 180 : 0))
-//      .rotation3DEffect(.degrees(isFlipped ? 180 : 0), axis: (x: 0, y: 1, z: 0))
-//      .animation(.bouncy, value: isFlipped || isRotated)
+      .rotationEffect(.degrees(isRotated ? 180 : 0))
+      .rotation3DEffect(.degrees(isFlipped ? 180 : 0), axis: (x: 0, y: 1, z: 0))
+      .animation(.bouncy, value: isFlipped || isRotated)
       
-//      if isFlippable {
-//        Button {
-//          isFlipped.toggle()
-//          onTransformTapped?()
-//        } label: {
-//          Image(systemName: "arrow.left.arrow.right").fontWeight(.semibold)
-//        }
-//        .tint(DesignComponentsAsset.accentColor.swiftUIColor)
-//        .frame(width: 44.0, height: 44.0)
-//        .background(.thinMaterial)
-//        .clipShape(Circle())
-//        .overlay(Circle().stroke(.separator, lineWidth: 1).opacity(0.618))
-//        .offset(x: 16.0, y: -16.0)
-//      }
-//      
-//      if isRotatable {
-//        Button {
-//          isRotated.toggle()
-//          onTransformTapped?()
-//        } label: {
-//          if isRotated {
-//            Image(systemName: "arrow.trianglehead.counterclockwise.rotate.90")
-//              .fontWeight(.semibold)
-//          } else {
-//            Image(systemName: "arrow.trianglehead.clockwise.rotate.90")
-//              .fontWeight(.semibold)
-//          }
-//        }
-//        .tint(DesignComponentsAsset.accentColor.swiftUIColor)
-//        .frame(width: 44.0, height: 44.0)
-//        .background(.thinMaterial)
-//        .clipShape(Circle())
-//        .overlay(Circle().stroke(.separator, lineWidth: 1).opacity(0.618))
-//        .offset(x: 16.0, y: -16.0)
-//      }
+      if isFlippable {
+        Button {
+          isFlipped.toggle()
+          onTransformTapped?()
+        } label: {
+          Image(systemName: "arrow.left.arrow.right").fontWeight(.semibold)
+        }
+        .tint(DesignComponentsAsset.accentColor.swiftUIColor)
+        .frame(width: 44.0, height: 44.0)
+        .background(.thinMaterial)
+        .clipShape(Circle())
+        .overlay(Circle().stroke(.separator, lineWidth: 1).opacity(0.618))
+        .offset(x: 16.0, y: -16.0)
+      }
+      
+      if isRotatable {
+        Button {
+          isRotated.toggle()
+          onTransformTapped?()
+        } label: {
+          if isRotated {
+            Image(systemName: "arrow.trianglehead.counterclockwise.rotate.90")
+              .fontWeight(.semibold)
+          } else {
+            Image(systemName: "arrow.trianglehead.clockwise.rotate.90")
+              .fontWeight(.semibold)
+          }
+        }
+        .tint(DesignComponentsAsset.accentColor.swiftUIColor)
+        .frame(width: 44.0, height: 44.0)
+        .background(.thinMaterial)
+        .clipShape(Circle())
+        .overlay(Circle().stroke(.separator, lineWidth: 1).opacity(0.618))
+        .offset(x: 16.0, y: -16.0)
+      }
     }
     .padding(layoutConfiguration.insets)
   }

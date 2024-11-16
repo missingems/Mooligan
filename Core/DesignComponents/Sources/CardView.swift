@@ -4,7 +4,6 @@ import SwiftUI
 public struct CardView: View {
   public enum LayoutConfiguration: Sendable, Equatable {
     case fixedWidth(CGFloat)
-    case fixedSize(CGSize)
     case flexible
   }
   
@@ -20,71 +19,51 @@ public struct CardView: View {
   public var body: some View {
     VStack(spacing: 5) {
       ZStack(alignment: .trailing) {
-        Group {
-          if let imageURL {
-            switch layoutConfiguration {
-            case let .fixedSize(size):
+        if let imageURL {
+          switch layoutConfiguration {
+          case let .fixedWidth(width):
+            if let backImageURL {
               AmbientWebImage(
-                url: imageURL,
-                cornerRadius: (5 / 100 * size.width).rounded(),
-                isFlipped: isFlipped,
+                url: backImageURL,
+                cornerRadius: (5 / 100 * width).rounded(),
+                isFlipped: true,
                 size: CGSize(
-                  width: size.width,
-                  height: size.height
+                  width: width.rounded(),
+                  height: width * MagicCardImageRatio.heightToWidth.rawValue.rounded()
                 )
               )
               .frame(
-                width: size.width,
-                height: size.height,
+                width: width.rounded(),
+                height: (width * MagicCardImageRatio.heightToWidth.rawValue).rounded(),
                 alignment: .center
               )
-              
-            case let .fixedWidth(width):
-              ZStack {
-                if let backImageURL {
-                  AmbientWebImage(
-                    url: backImageURL,
-                    cornerRadius: (5 / 100 * width).rounded(),
-                    isFlipped: true,
-                    size: CGSize(
-                      width: width.rounded(),
-                      height: width * MagicCardImageRatio.heightToWidth.rawValue.rounded()
-                    )
-                  )
-                  .frame(
-                    width: width.rounded(),
-                    height: (width * MagicCardImageRatio.heightToWidth.rawValue).rounded(),
-                    alignment: .center
-                  )
-                  .opacity(isFlipped ? 1 : 0)
-                  .rotationEffect(.degrees(isRotated ? 180 : 0))
-                  .rotation3DEffect(.degrees(isFlipped ? 180 : 0), axis: (x: 0, y: 1, z: 0))
-                  .animation(.bouncy, value: isFlipped || isRotated)
-                }
-                
-                AmbientWebImage(
-                  url: imageURL,
-                  cornerRadius: (5 / 100 * width).rounded(),
-                  isFlipped: false,
-                  size: CGSize(
-                    width: width.rounded(),
-                    height: width * MagicCardImageRatio.heightToWidth.rawValue.rounded()
-                  )
-                )
-                .frame(
-                  width: width.rounded(),
-                  height: (width * MagicCardImageRatio.heightToWidth.rawValue).rounded(),
-                  alignment: .center
-                )
-                .opacity(isFlipped ? 0 : 1)
-                .rotationEffect(.degrees(isRotated ? 180 : 0))
-                .rotation3DEffect(.degrees(isFlipped ? 180 : 0), axis: (x: 0, y: 1, z: 0))
-                .animation(.bouncy, value: isFlipped || isRotated)
-              }
-              
-            case .flexible:
-              AmbientWebImage(url: imageURL)
+              .opacity(isFlipped ? 1 : 0)
+              .rotationEffect(.degrees(isRotated ? 180 : 0))
+              .rotation3DEffect(.degrees(isFlipped ? 180 : 0), axis: (x: 0, y: 1, z: 0))
+              .animation(.bouncy, value: isFlipped || isRotated)
             }
+            
+            AmbientWebImage(
+              url: imageURL,
+              cornerRadius: (5 / 100 * width).rounded(),
+              isFlipped: false,
+              size: CGSize(
+                width: width.rounded(),
+                height: width * MagicCardImageRatio.heightToWidth.rawValue.rounded()
+              )
+            )
+            .frame(
+              width: width.rounded(),
+              height: (width * MagicCardImageRatio.heightToWidth.rawValue).rounded(),
+              alignment: .center
+            )
+            .opacity(isFlipped ? 0 : 1)
+            .rotationEffect(.degrees(isRotated ? 180 : 0))
+            .rotation3DEffect(.degrees(isFlipped ? 180 : 0), axis: (x: 0, y: 1, z: 0))
+            .animation(.bouncy, value: isFlipped || isRotated)
+            
+          case .flexible:
+            AmbientWebImage(url: imageURL)
           }
         }
         
@@ -162,7 +141,13 @@ public struct CardView: View {
   ) {
     self.card = card
     self.imageURL = card.getImageURL()
-    self.backImageURL = card.getCardFace(for: .back).getImageURL()
+    
+    if card.isFlippable {
+      self.backImageURL = card.getCardFace(for: .back).getImageURL()
+    } else {
+      self.backImageURL = nil
+    }
+    
     self.layoutConfiguration = layoutConfiguration
     self.shouldShowPrice = shouldShowPrice
   }
