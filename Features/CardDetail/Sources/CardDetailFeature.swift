@@ -14,37 +14,27 @@ import Networking
     Reduce { state, action in
       switch action {
       case let .fetchAdditionalInformation(card):
-        return .none
-        
-      case let .fetchSet(card):
-        if state.content.setIconURL == .success(nil) {
-          return .run(priority: .background) { send in
-            let iconURL = try await client.getSet(of: card).iconURL
-            
-            await send(
-              .updateSetIconURL(.success(iconURL))
-            )
-          }
-          .cancellable(id: "fetchSet:\(card.id)", cancelInFlight: true)
-        } else {
-          return .none
-        }
-        
-      case let .fetchVariants(card):
-        let variants = try? state.content.variants.get()
-        
-        if variants?.isEmpty == true {
-          return .run(priority: .background) { send in
-            let cards = try await client.getVariants(of: card, page: 0)
-            
-            await send(
-              .updateVariants(.success(cards))
-            )
-          }
-          .cancellable(id: "fetchVariants:\(card.id)", cancelInFlight: true)
-        } else {
-          return .none
-        }
+        return .merge(
+          [
+            .run(
+              priority: .background,
+              operation: { send in
+                try await send(.updateSetIconURL(.success(client.getSet(of: card).iconURL)))
+              }, catch: { error, send in
+                print(error)
+              }
+            ),
+            .run(
+              priority: .background,
+              operation: { send in
+                try await send(.updateVariants(.success(client.getVariants(of: card, page: 0))))
+              }, catch: { error, send in
+                await send(.updateVariants(.success([card])))
+              }
+            ),
+          ]
+        )
+        .cancellable(id: "\(action)", cancelInFlight: true)
         
       case .transformTapped:
         state.content.faceDirection = state.content.faceDirection.toggled()
@@ -82,21 +72,20 @@ extension CardDetailFeature {
       entryPoint: EntryPoint<Client>
     ) {
       self.id = card.id
+      
       switch entryPoint {
       case .query:
         content = Content(card: card, setIconURL: nil)
-        start = .fetchSet(card: card)
         
       case let .set(value):
         content = Content(card: card, setIconURL: value.iconURL)
-        start = .fetchVariants(card: card)
       }
+      
+      start = .fetchAdditionalInformation(card: card)
     }
   }
   
   indirect enum Action: Equatable, Sendable {
-    case fetchSet(card: Client.MagicCardModel)
-    case fetchVariants(card: Client.MagicCardModel)
     case fetchAdditionalInformation(card: Client.MagicCardModel)
     case transformTapped
     case updateRulings(_ rulings: [MagicCardRuling])

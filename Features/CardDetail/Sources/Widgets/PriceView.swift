@@ -20,7 +20,7 @@ struct PriceView: View {
         .foregroundStyle(.secondary)
       
       HStack(alignment: .center, spacing: 5.0) {
-        ForEach(models) { $0 }
+        ForEach(models.indices, id: \.self) { models[$0] }
       }
       .padding(.top, 3.0)
     }
@@ -78,8 +78,7 @@ extension PriceView {
     case didSelectTixPrice
   }
   
-  private struct Model: View, Identifiable {
-    let id = UUID()
+  private struct Model: View {
     let action: Action
     let currencySymbol: String
     let isDisabled: Bool

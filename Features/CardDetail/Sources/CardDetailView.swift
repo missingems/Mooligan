@@ -8,7 +8,7 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
   
   var body: some View {
     ScrollView {
-      VStack(spacing: 0) {
+      LazyVStack(spacing: 0) {
         HeaderView(
           imageURL: store.content.imageURL,
           isFlippable: store.content.card.isFlippable,
@@ -33,9 +33,6 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
           setCode: store.content.setCode,
           setIconURL: try? store.content.setIconURL.get()
         )
-        .task {
-          store.send(.fetchSet(card: store.state.content.card))
-        }
         
         LegalityView(
           title: store.content.legalityLabel,
@@ -58,9 +55,7 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
           subtitle: store.content.numberOfVariantsLabel,
           cards: try? store.content.variants.get()
         ) { action in
-        }
-        .task {
-          store.send(.fetchVariants(card: store.state.content.card))
+          
         }
         
         SelectionView(
@@ -87,6 +82,9 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
           ]
         )
       }
+    }
+    .task {
+      store.send(.fetchAdditionalInformation(card: store.content.card))
     }
   }
 }
