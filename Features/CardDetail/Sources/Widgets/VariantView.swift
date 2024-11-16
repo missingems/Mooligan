@@ -30,7 +30,10 @@ struct VariantView<Card: MagicCard>: View {
               }, label: {
                 CardView(
                   card: card,
-                  layoutConfiguration: .fixedWidth(150.0)
+                  configuration: CardView.Configuration(
+                    rotation: .portrait,
+                    layout: .fixedWidth(150.0)
+                  )
                 )
               }
             )

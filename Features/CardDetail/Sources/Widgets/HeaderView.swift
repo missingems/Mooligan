@@ -3,7 +3,8 @@ import SwiftUI
 
 struct HeaderView: View {
   let onTransformTapped: (() -> Void)?
-  private let imageURL: URL
+  let imageURL: URL
+  let backImageURL: URL?
   private let isFlippable: Bool
   private let isRotatable: Bool
   private let layoutConfiguration: LayoutConfiguration
@@ -12,6 +13,7 @@ struct HeaderView: View {
   
   init?(
     imageURL: URL?,
+    backImageURL: URL?,
     isFlippable: Bool,
     isRotatable: Bool,
     orientation: LayoutConfiguration.Orientation,
@@ -23,6 +25,7 @@ struct HeaderView: View {
     }
     
     self.imageURL = imageURL
+    self.backImageURL = backImageURL
     self.isFlippable = isFlippable
     self.isRotatable = isRotatable
     self.onTransformTapped = onTransformTapped
@@ -35,16 +38,34 @@ struct HeaderView: View {
   
   var body: some View {
     ZStack(alignment: .trailing) {
+      if let backImageURL {
+        AmbientWebImage(
+          url: backImageURL,
+          cornerRadius: 13.0,
+          rotation: layoutConfiguration.rotation,
+          isFlipped: true
+        )
+        .aspectRatio(
+          layoutConfiguration.ratio,
+          contentMode: .fit
+        )
+        .opacity(isFlipped ? 1 : 0)
+        .rotationEffect(.degrees(isRotated ? 180 : 0))
+        .rotation3DEffect(.degrees(isFlipped ? 180 : 0), axis: (x: 0, y: 1, z: 0))
+        .animation(.bouncy, value: isFlipped || isRotated)
+      }
+      
       AmbientWebImage(
         url: imageURL,
         cornerRadius: 13,
         rotation: layoutConfiguration.rotation,
-        isFlipped: isFlipped
+        isFlipped: false
       )
       .aspectRatio(
         layoutConfiguration.ratio,
         contentMode: .fit
       )
+      .opacity(isFlipped ? 0 : 1)
       .rotationEffect(.degrees(isRotated ? 180 : 0))
       .rotation3DEffect(.degrees(isFlipped ? 180 : 0), axis: (x: 0, y: 1, z: 0))
       .animation(.bouncy, value: isFlipped || isRotated)

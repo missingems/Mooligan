@@ -11,6 +11,7 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
       LazyVStack(spacing: 0) {
         HeaderView(
           imageURL: store.content.imageURL,
+          backImageURL: store.content.card.getCardFace(for: .back).getImageURL(),
           isFlippable: store.content.card.isFlippable,
           isRotatable: store.content.card.isRotatable,
           orientation: store.content.card.isLandscape ? .landscape : .portrait,
