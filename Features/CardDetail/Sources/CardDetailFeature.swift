@@ -3,7 +3,7 @@ import Foundation
 import OSLog
 import Networking
 
-@Reducer struct Feature<Client: MagicCardDetailRequestClient> {
+@Reducer struct CardDetailFeature<Client: MagicCardDetailRequestClient> {
   private let client: Client
   
   init(client: Client) {
@@ -13,40 +13,40 @@ import Networking
   var body: some ReducerOf<Self> {
     Reduce { state, action in
       switch action {
-      case let .fetchSet(card):
-        return .run { send in
-          try await send(.updateSetIconURL(.success(client.getSet(of: card).iconURL)))
-        } catch: { error, send in
-          await send(
-            .updateSetIconURL(
-              .failure(.failedToFetchSetIconURL(errorMessage: error.localizedDescription))
-            )
-          )
-        }
-        
-      case let .fetchVariants(card):
-        return .run { send in
-          try await send(
-            .updateVariants(.success(client.getVariants(of: card, page: 0)))
-          )
-        } catch: { error, send in
-          await send(
-            .updateVariants(
-              .failure(.failedToFetchVariants(errorMessage: error.localizedDescription))
-            )
-          )
-        }
+      case let .fetchAdditionalInformation(card):
+        return .merge(
+          [
+            .run(
+              priority: .background,
+              operation: { send in
+                try await send(.updateSetIconURL(.success(client.getSet(of: card).iconURL)))
+              }, catch: { error, send in
+                print(error)
+              }
+            ),
+            .run(
+              priority: .background,
+              operation: { send in
+                try await send(.updateVariants(.success(client.getVariants(of: card, page: 0))))
+              }, catch: { error, send in
+                await send(.updateVariants(.success([card])))
+              }
+            ),
+          ]
+        )
+        .cancellable(id: "\(action)", cancelInFlight: true)
         
       case .transformTapped:
         state.content.faceDirection = state.content.faceDirection.toggled()
         return .none
         
+      case let .updateRulings(rulings):
+        state.content.rulings = rulings
+        return .none
+        
       case let .updateSetIconURL(value):
         state.content.setIconURL = value
-        
-        return .run { [card = state.content.card] send in
-          await send(.fetchVariants(card: card))
-        }
+        return .none
         
       case let .updateVariants(value):
         state.content.variants = value
@@ -61,8 +61,9 @@ import Networking
   }
 }
 
-extension Feature {
-  @ObservableState struct State: Equatable, Sendable {
+extension CardDetailFeature {
+  @ObservableState struct State: Equatable, Identifiable {
+    let id: UUID
     var content: Content<Client.MagicCardModel>
     let start: Action
     
@@ -70,22 +71,24 @@ extension Feature {
       card: Client.MagicCardModel,
       entryPoint: EntryPoint<Client>
     ) {
+      self.id = card.id
+      
       switch entryPoint {
       case .query:
         content = Content(card: card, setIconURL: nil)
-        start = .fetchSet(card: card)
         
       case let .set(value):
         content = Content(card: card, setIconURL: value.iconURL)
-        start = .fetchVariants(card: card)
       }
+      
+      start = .fetchAdditionalInformation(card: card)
     }
   }
   
   indirect enum Action: Equatable, Sendable {
-    case fetchSet(card: Client.MagicCardModel)
-    case fetchVariants(card: Client.MagicCardModel)
+    case fetchAdditionalInformation(card: Client.MagicCardModel)
     case transformTapped
+    case updateRulings(_ rulings: [MagicCardRuling])
     case updateSetIconURL(_ setIconURL: Result<URL?, FeatureError>)
     case updateVariants(_ variants: Result<[Client.MagicCardModel], FeatureError>)
     case viewAppeared(initialAction: Action)

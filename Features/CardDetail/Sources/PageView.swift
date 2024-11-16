@@ -3,34 +3,29 @@ import SwiftUI
 import Networking
 
 public struct PageView<Client: MagicCardDetailRequestClient>: View {
-  let client: Client
   let store: StoreOf<PageFeature<Client>>
   
-  public init(
-    store: StoreOf<PageFeature<Client>>,
-    client: Client
-  ) {
-    self.store = store
-    self.client = client
+  public init(client: Client, cards: [Client.MagicCardModel]) {
+    self.store = Store(
+      initialState: PageFeature<Client>.State(cards: cards), reducer: {
+        PageFeature<Client>(client: client)
+      }
+    )
   }
   
   public var body: some View {
-    ScrollView(.horizontal, showsIndicators: false) {
-      LazyHStack(spacing: 0) {
-        ForEach(store.cards) { card in
-          RootView(
-            card: card,
-            client: client,
-            entryPoint: EntryPoint<Client>.query
-          )
-          .containerRelativeFrame(.horizontal)
+    GeometryReader { proxy in
+      ScrollView(.horizontal, showsIndicators: false) {
+        LazyHStack(spacing: 0) {
+          ForEach(
+            Array(store.scope(state: \.cards, action: \.cards))
+          ) { store in
+            CardDetailView(store: store).frame(width: proxy.size.width, height: proxy.size.height, alignment: .center)
+          }
         }
+        .scrollTargetLayout()
       }
-      .scrollTargetLayout()
+      .scrollTargetBehavior(.paging)
     }
-    .scrollTargetBehavior(.paging)
-    .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
-    .navigationBarTitleDisplayMode(.inline)
-    .toolbarBackgroundVisibility(.visible, for: .navigationBar)
   }
 }

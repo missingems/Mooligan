@@ -59,16 +59,16 @@ struct InformationView: View {
       widgets.append(.collectorNumber(collectorNumber))
     }
     
-    if let loyaltyCounters {
-      widgets.append(.loyalty(counters: loyaltyCounters))
-    }
-    
     if let colorIdentity {
       widgets.append(.colorIdentity(colorIdentity))
     }
     
     if let manaValue {
       widgets.append(.manaValue("\(manaValue)"))
+    }
+    
+    if let loyaltyCounters {
+      widgets.append(.loyalty(counters: loyaltyCounters))
     }
     
     if let power, let toughness {
@@ -223,7 +223,7 @@ private extension Widget {
       VStack(alignment: .center, spacing: 3.0) {
         HStack(spacing: 5.0) {
           IconLazyImage(iconURL, tintColor: .primary).frame(width: 25, height: 25)
-          Text(code.uppercased()).font(.body).fontDesign(.serif).fontWeight(.medium)
+          Text(code.uppercased()).font(.body).fontDesign(.serif)
         }
         .frame(minWidth: 66, minHeight: 34)
         .padding(EdgeInsets(top: 5, leading: 11, bottom: 5, trailing: 11))
@@ -243,7 +243,7 @@ private extension Widget {
         }
         .clipShape(RoundedRectangle(cornerRadius: 13.0))
         
-        Text("\(rarity.rawValue.capitalized)\n")
+        Text("\(rarity.rawValue.capitalized)\n ")
           .font(.caption)
           .foregroundStyle(.secondary)
           .multilineTextAlignment(.center)
@@ -278,7 +278,7 @@ extension Widget {
     }
     .frame(minWidth: 66, minHeight: 34)
     .padding(EdgeInsets(top: 5, leading: 11, bottom: 5, trailing: 11))
-    .background { Color(.systemFill) }
+    .background(Color.primary.opacity(0.02).background(.ultraThinMaterial))
     .clipShape(RoundedRectangle(cornerRadius: 13.0))
   }
 }

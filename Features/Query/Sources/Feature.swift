@@ -47,7 +47,6 @@ struct Feature<Client: MagicCardQueryRequestClient> {
         }
         
       case let .showError(title, description):
-        print(title, description)
         return .none
       
       case let .updateCards(value, queryType):

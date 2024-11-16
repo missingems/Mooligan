@@ -7,7 +7,7 @@ struct CardDetailTableView<Card: MagicCard>: View {
   let sections: [Section]
   
   var body: some View {
-    VStack(alignment: .leading, spacing: 0) {
+    VStack(spacing: 0) {
       ForEach(sections) { section in
         Divider().safeAreaPadding(.leading, nil)
         
@@ -111,7 +111,7 @@ extension CardDetailTableView {
       case typeline
     }
     
-    let id = UUID()
+    let id: SectionType
     let type: SectionType
     let title1: String?
     let title2: String?
@@ -128,6 +128,7 @@ extension CardDetailTableView {
         self.title2 = title2
         self.type = type
         self.isLast = isLast
+        self.id = type
       } else {
         return nil
       }

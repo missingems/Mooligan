@@ -1,42 +1,40 @@
 import ComposableArchitecture
 import Foundation
-import OSLog
 import Networking
 
-@Reducer public struct PageFeature<Client: MagicCardDetailRequestClient> {
+@Reducer struct PageFeature<Client: MagicCardDetailRequestClient> {
   let client: Client
   
-  public var body: some ReducerOf<Self> {
+  var body: some ReducerOf<Self> {
     Reduce { state, action in
       switch action {
-      case .fetchCards:
+      case let .cards(value):
         return .none
-        
-      case .viewAppeared:
-        return .run { send in
-          await send(.fetchCards)
-        }
       }
     }
+    .forEach(\.cards, action: \.cards) {
+      CardDetailFeature(client: client)
+    }
+    ._printChanges(.actionLabels)
   }
   
-  public init(client: Client) {
+  init(client: Client) {
     self.client = client
   }
 }
 
-public extension PageFeature {
-  @ObservableState struct State: Equatable, Sendable {
-    var shouldDisplayNavigationBar = false
-    var cards: [Client.MagicCardModel] = []
+extension PageFeature {
+  @ObservableState struct State: Equatable {
+    var cards: IdentifiedArrayOf<CardDetailFeature<Client>.State> = []
     
     public init(cards: [Client.MagicCardModel]) {
-      self.cards = cards
+      self.cards = IdentifiedArrayOf(uniqueElements: cards.map({ card in
+        return CardDetailFeature<Client>.State(card: card, entryPoint: .query)
+      }))
     }
   }
   
-  enum Action: Equatable, Sendable {
-    case fetchCards
-    case viewAppeared
+  @CasePathable enum Action {
+    case cards(IdentifiedActionOf<CardDetailFeature<Client>>)
   }
 }

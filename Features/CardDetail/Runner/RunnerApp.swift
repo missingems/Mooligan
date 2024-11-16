@@ -19,15 +19,9 @@ struct RunnerApp: App {
   var body: some Scene {
     WindowGroup {
       NavigationView {
-        PageView<ScryfallClient>(
-          store: Store(
-            initialState: PageFeature<ScryfallClient>.State(
-              cards: cards
-            ), reducer: {
-              PageFeature<ScryfallClient>(client: client)
-            }
-          ), client: client
-        )
+        if cards.isEmpty == false {
+          PageView(client: client, cards: cards)
+        }
       }
       .task {
         do {

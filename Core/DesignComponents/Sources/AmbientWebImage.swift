@@ -3,10 +3,23 @@ import NukeUI
 import SwiftUI
 import Shimmer
 
+struct ConditionalFrameModifier: ViewModifier {
+  let size: CGSize?
+  
+  func body(content: Content) -> some View {
+    if let size = size {
+      content.frame(width: size.width, height: size.height, alignment: .center)
+    } else {
+      content
+    }
+  }
+}
+
 public struct AmbientWebImage: View {
   public let url: URL
   private let cornerRadius: CGFloat
   private let transformers: [ImageProcessing]
+  private let size: CGSize?
   
   public init(
     url: URL,
@@ -33,7 +46,7 @@ public struct AmbientWebImage: View {
         ImageProcessors.Resize(
           size: size,
           unit: .points,
-          contentMode: .aspectFill,
+          contentMode: .aspectFit,
           crop: false,
           upscale: true
         )
@@ -41,6 +54,7 @@ public struct AmbientWebImage: View {
     }
     
     self.transformers = transformers
+    self.size = size
   }
   
   public var body: some View {
@@ -54,11 +68,23 @@ public struct AmbientWebImage: View {
       if let image = state.image {
         image.resizable()
       } else {
-        Rectangle()
-          .fill(Color(.systemFill))
-          .shimmering(gradient: Gradient(colors: [.clear, .white.opacity(0.32), .clear]), mode: .overlay())
+        Color
+          .primary
+          .opacity(0.02)
+          .background(.ultraThinMaterial)
+          .shimmering(
+            gradient: Gradient(
+              colors: [
+                .clear,
+                .white.opacity(0.32),
+                .clear
+              ]
+            ),
+            mode: .overlay()
+          )
       }
     }
+    .modifier(ConditionalFrameModifier(size: size))
     .clipShape(.rect(cornerRadius: cornerRadius))
   }
 }

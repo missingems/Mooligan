@@ -16,7 +16,7 @@ struct CardDetailFeatureTests {
     ]
   )
   func entryPoint(_ entryPoint: EntryPoint<Client>) async throws {
-    let state = Feature<Client>.State(card: card, entryPoint: entryPoint)
+    let state = CardDetailFeature<Client>.State(card: card, entryPoint: entryPoint)
     
     switch entryPoint {
     case .query:
@@ -43,9 +43,9 @@ struct CardDetailFeatureTests {
     configuration: Client.TestConfiguration
   ) async {
     let store = await TestStore(
-      initialState: Feature.State(card: card, entryPoint: entryPoint),
+      initialState: CardDetailFeature.State(card: card, entryPoint: entryPoint),
       reducer: {
-        Feature(client: Client(testConfiguration: configuration))
+        CardDetailFeature(client: Client(testConfiguration: configuration))
       }
     )
     

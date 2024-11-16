@@ -4,23 +4,21 @@ import Networking
 import SwiftUI
 
 struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
-  @State var store: StoreOf<Feature<Client>>
+  let store: StoreOf<CardDetailFeature<Client>>
   
   var body: some View {
-    ScrollView(.vertical) {
-      VStack(alignment: .leading, spacing: 0) {
+    ScrollView {
+      LazyVStack(spacing: 0) {
         HeaderView(
           imageURL: store.content.imageURL,
+          backImageURL: store.content.card.getCardFace(for: .back).getImageURL(),
           isFlippable: store.content.card.isFlippable,
           isRotatable: store.content.card.isRotatable,
           orientation: store.content.card.isLandscape ? .landscape : .portrait,
           rotation: store.content.card.isLandscape ? 90 : 0
         ) {
-          _ = withAnimation(.spring()) {
-            store.send(.transformTapped)
-          }
+          store.send(.transformTapped, animation: .bouncy)
         }
-        .clipped()
         
         CardDetailTableView(descriptions: store.content.descriptions)
         
@@ -58,6 +56,7 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
           subtitle: store.content.numberOfVariantsLabel,
           cards: try? store.content.variants.get()
         ) { action in
+          
         }
         
         SelectionView(
@@ -85,11 +84,8 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
         )
       }
     }
-    .background {
-      Color(.secondarySystemGroupedBackground).ignoresSafeArea()
-    }
     .task {
-      store.send(.viewAppeared(initialAction: store.start))
+      store.send(.fetchAdditionalInformation(card: store.content.card))
     }
   }
 }

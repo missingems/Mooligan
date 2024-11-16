@@ -1,8 +1,7 @@
 import Foundation
 
 public struct PurchaseVendor: Equatable, Sendable {
-  public struct Link: Equatable, Sendable, Identifiable {
-    public let id = UUID()
+  public struct Link: Equatable, Sendable {
     public let url: URL
     public let label: String
   }
