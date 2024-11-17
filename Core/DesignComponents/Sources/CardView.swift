@@ -2,7 +2,7 @@ import Networking
 import SwiftUI
 
 public struct CardView: View {
-  public struct Configuration {
+  public struct LayoutConfiguration {
     public enum Layout {
       case fixedWidth(CGFloat)
       case flexible
@@ -19,16 +19,16 @@ public struct CardView: View {
         }
       }
       
-      var ratio: CGFloat {
+      public var ratio: CGFloat {
         switch self {
-        case .landscape: return MagicCardImageRatio.widthToHeight.rawValue
-        case .portrait: return MagicCardImageRatio.heightToWidth.rawValue
+        case .landscape: return MagicCardImageRatio.heightToWidth.rawValue
+        case .portrait: return MagicCardImageRatio.widthToHeight.rawValue
         }
       }
     }
     
-    let rotation: Rotation
-    let layout: Layout
+    public let rotation: Rotation
+    public let layout: Layout
     
     public init(rotation: Rotation, layout: Layout) {
       self.rotation = rotation
@@ -36,12 +36,15 @@ public struct CardView: View {
     }
   }
   
-  let card: any MagicCard
-  let imageURL: URL?
-  let backImageURL: URL?
-  let configuration: Configuration
-  let shouldShowPrice: Bool
-  
+  private let isFlippable: Bool
+  private let isRotatable: Bool
+  private let imageURL: URL?
+  private let backImageURL: URL?
+  private let layoutConfiguration: LayoutConfiguration
+  private let shouldShowPrice: Bool
+  private let usdPrice: String?
+  private let usdFoilPrice: String?
+  private let onFlip: (() -> Void)?
   @State private var isFlipped = false
   @State private var isRotated = false
   
@@ -49,16 +52,16 @@ public struct CardView: View {
     VStack(spacing: 5) {
       ZStack(alignment: .trailing) {
         if let imageURL {
-          switch configuration.layout {
+          switch layoutConfiguration.layout {
           case let .fixedWidth(width):
             let width = width.rounded()
-            let height = (width * configuration.rotation.ratio).rounded()
+            let height = (width / layoutConfiguration.rotation.ratio).rounded()
             
             if let backImageURL {
               AmbientWebImage(
                 url: backImageURL,
                 cornerRadius: (5 / 100 * width).rounded(),
-                rotation: configuration.rotation.degrees,
+                rotation: layoutConfiguration.rotation.degrees,
                 isFlipped: true,
                 size: CGSize(
                   width: width,
@@ -74,11 +77,11 @@ public struct CardView: View {
             AmbientWebImage(
               url: imageURL,
               cornerRadius: (5 / 100 * width).rounded(),
-              rotation: configuration.rotation.degrees,
+              rotation: layoutConfiguration.rotation.degrees,
               isFlipped: false,
               size: CGSize(
-                width: width.rounded(),
-                height: (width * configuration.rotation.ratio).rounded()
+                width: width,
+                height: height
               )
             )
             .opacity(isFlipped ? 0 : 1)
@@ -91,7 +94,7 @@ public struct CardView: View {
               AmbientWebImage(
                 url: backImageURL,
                 cornerRadius: 13.0,
-                rotation: configuration.rotation.degrees,
+                rotation: layoutConfiguration.rotation.degrees,
                 isFlipped: true
               )
               .opacity(isFlipped ? 1 : 0)
@@ -103,7 +106,7 @@ public struct CardView: View {
             AmbientWebImage(
               url: imageURL,
               cornerRadius: 13.0,
-              rotation: configuration.rotation.degrees,
+              rotation: layoutConfiguration.rotation.degrees,
               isFlipped: false
             )
             .opacity(isFlipped ? 0 : 1)
@@ -124,11 +127,11 @@ public struct CardView: View {
   @ViewBuilder private var priceView: some View {
     if shouldShowPrice {
       HStack(spacing: 5) {
-        if let usd = card.getPrices().usd {
+        if let usd = usdPrice {
           PillText("$\(usd)")
         }
         
-        if let foil = card.getPrices().usdFoil {
+        if let foil = usdFoilPrice {
           PillText(
             "$\(foil)",
             isFoil: true
@@ -136,7 +139,7 @@ public struct CardView: View {
           .foregroundStyle(.black.opacity(0.8))
         }
         
-        if card.getPrices().usd == nil && card.getPrices().usdFoil == nil {
+        if usdPrice == nil && usdFoilPrice == nil {
           PillText("$0.00")
         }
       }
@@ -149,58 +152,74 @@ public struct CardView: View {
   }
   
   @ViewBuilder private var buttons: some View {
-    if card.isFlippable {
-      Button {
-        withAnimation {
-          isFlipped.toggle()
+    VStack(alignment: .center, spacing: 3.0) {
+      if isFlippable {
+        Button {
+          onFlip?()
+          
+          withAnimation {
+            isFlipped.toggle()
+          }
+        } label: {
+          Image(systemName: "arrow.left.arrow.right").fontWeight(.semibold)
         }
-      } label: {
-        Image(systemName: "arrow.left.arrow.right").fontWeight(.semibold)
+        .tint(DesignComponentsAsset.accentColor.swiftUIColor)
+        .frame(width: 44.0, height: 44.0)
+        .background(.thinMaterial)
+        .clipShape(Circle())
+        .overlay(Circle().stroke(.separator, lineWidth: 1).opacity(0.618))
+        .offset(x: 5, y: -16.0)
       }
-      .tint(DesignComponentsAsset.accentColor.swiftUIColor)
-      .frame(width: 44.0, height: 44.0)
-      .background(.thinMaterial)
-      .clipShape(Circle())
-      .overlay(Circle().stroke(.separator, lineWidth: 1).opacity(0.618))
-      .offset(x: 5, y: -16.0)
-    } else if card.isRotatable {
-      Button {
-        withAnimation {
-          isRotated.toggle()
+      
+      if isRotatable {
+        Button {
+          withAnimation {
+            isRotated.toggle()
+          }
+        } label: {
+          if isRotated {
+            Image(systemName: "arrow.trianglehead.counterclockwise.rotate.90")
+              .fontWeight(.semibold)
+          } else {
+            Image(systemName: "arrow.trianglehead.clockwise.rotate.90")
+              .fontWeight(.semibold)
+          }
         }
-      } label: {
-        if isRotated {
-          Image(systemName: "arrow.trianglehead.counterclockwise.rotate.90")
-            .fontWeight(.semibold)
-        } else {
-          Image(systemName: "arrow.trianglehead.clockwise.rotate.90")
-            .fontWeight(.semibold)
-        }
+        .tint(DesignComponentsAsset.accentColor.swiftUIColor)
+        .frame(width: 44.0, height: 44.0)
+        .background(.thinMaterial)
+        .clipShape(Circle())
+        .overlay(Circle().stroke(.separator, lineWidth: 1).opacity(0.618))
+        .offset(x: 5, y: -16.0)
       }
-      .tint(DesignComponentsAsset.accentColor.swiftUIColor)
-      .frame(width: 44.0, height: 44.0)
-      .background(.thinMaterial)
-      .clipShape(Circle())
-      .overlay(Circle().stroke(.separator, lineWidth: 1).opacity(0.618))
-      .offset(x: 5, y: -16.0)
     }
   }
   
   public init(
-    card: any MagicCard,
-    configuration: Configuration,
-    shouldShowPrice: Bool = true
+    imageURL: URL?,
+    backImageURL: URL?,
+    isFlippable: Bool,
+    isRotatable: Bool,
+    layoutConfiguration: LayoutConfiguration,
+    usdPrice: String?,
+    usdFoilPrice: String?,
+    shouldShowPrice: Bool = true,
+    onFlip: (() -> Void)? = nil
   ) {
-    self.card = card
-    self.imageURL = card.getImageURL()
+    self.imageURL = imageURL
     
-    if card.isFlippable {
-      self.backImageURL = card.getCardFace(for: .back).getImageURL()
+    if isFlippable {
+      self.backImageURL = backImageURL
     } else {
       self.backImageURL = nil
     }
     
-    self.configuration = configuration
+    self.layoutConfiguration = layoutConfiguration
     self.shouldShowPrice = shouldShowPrice
+    self.isFlippable = isFlippable
+    self.isRotatable = isRotatable
+    self.usdPrice = usdPrice
+    self.usdFoilPrice = usdFoilPrice
+    self.onFlip = onFlip
   }
 }
