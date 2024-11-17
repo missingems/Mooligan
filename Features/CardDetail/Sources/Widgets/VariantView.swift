@@ -29,11 +29,16 @@ struct VariantView<Card: MagicCard>: View {
                 send(.didSelectCard(card))
               }, label: {
                 CardView(
-                  card: card,
-                  configuration: CardView.Configuration(
+                  imageURL: card.getImageURL(),
+                  backImageURL: card.getCardFace(for: .back).getImageURL(),
+                  isFlippable: card.isFlippable,
+                  isRotatable: card.isRotatable,
+                  layoutConfiguration: CardView.LayoutConfiguration(
                     rotation: .portrait,
                     layout: .fixedWidth(150.0)
-                  )
+                  ),
+                  usdPrice: card.getPrices().usd,
+                  usdFoilPrice: card.getPrices().usdFoil
                 )
               }
             )

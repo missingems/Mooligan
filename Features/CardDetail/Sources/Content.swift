@@ -168,7 +168,7 @@ struct Content<Card: MagicCard>: Equatable, Sendable {
     colorIdentity = identity.isEmpty ? ["{C}"] : identity
     
     let face = card.getCardFace(for: faceDirection)
-    imageURL = face.getImageURL() ?? card.getImageURL()
+    imageURL = card.getImageURL()
     
     var descriptions = card.isSplit ? [
       Self.makeDescription(faceDirection: .front, card: card),

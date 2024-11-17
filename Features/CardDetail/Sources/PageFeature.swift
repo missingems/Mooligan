@@ -8,14 +8,13 @@ import Networking
   var body: some ReducerOf<Self> {
     Reduce { state, action in
       switch action {
-      case let .cards(value):
+      case .cards:
         return .none
       }
     }
     .forEach(\.cards, action: \.cards) {
       CardDetailFeature(client: client)
     }
-    ._printChanges(.actionLabels)
   }
   
   init(client: Client) {
@@ -28,9 +27,9 @@ extension PageFeature {
     var cards: IdentifiedArrayOf<CardDetailFeature<Client>.State> = []
     
     public init(cards: [Client.MagicCardModel]) {
-      self.cards = IdentifiedArrayOf(uniqueElements: cards.map({ card in
-        return CardDetailFeature<Client>.State(card: card, entryPoint: .query)
-      }))
+      self.cards = IdentifiedArrayOf(uniqueElements: cards.map { card in
+        CardDetailFeature<Client>.State(card: card, entryPoint: .query)
+      })
     }
   }
   

@@ -5,20 +5,36 @@ import SwiftUI
 
 struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
   let store: StoreOf<CardDetailFeature<Client>>
+  let layoutConfiguration: CardView.LayoutConfiguration
+  
+  init(store: StoreOf<CardDetailFeature<Client>>) {
+    self.store = store
+    layoutConfiguration = CardView.LayoutConfiguration(
+      rotation: store.content.card.isLandscape ? .landscape : .portrait,
+      layout: .flexible
+    )
+  }
   
   var body: some View {
     ScrollView {
       LazyVStack(spacing: 0) {
-        HeaderView(
+        CardView(
           imageURL: store.content.imageURL,
           backImageURL: store.content.card.getCardFace(for: .back).getImageURL(),
           isFlippable: store.content.card.isFlippable,
           isRotatable: store.content.card.isRotatable,
-          orientation: store.content.card.isLandscape ? .landscape : .portrait,
-          rotation: store.content.card.isLandscape ? 90 : 0
+          layoutConfiguration: CardView.LayoutConfiguration(
+            rotation: store.content.card.isLandscape ? .landscape : .portrait,
+            layout: .flexible
+          ),
+          usdPrice: nil,
+          usdFoilPrice: nil,
+          shouldShowPrice: false
         ) {
           store.send(.transformTapped, animation: .bouncy)
         }
+        .aspectRatio(layoutConfiguration.rotation.ratio, contentMode: .fit)
+        .padding(layoutConfiguration.insets)
         
         CardDetailTableView(descriptions: store.content.descriptions)
         
@@ -86,6 +102,18 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
     }
     .task {
       store.send(.fetchAdditionalInformation(card: store.content.card))
+    }
+  }
+}
+
+private extension CardView.LayoutConfiguration {
+  var insets: EdgeInsets {
+    switch rotation {
+    case .landscape:
+      EdgeInsets(top: 21, leading: 34, bottom: 29, trailing: 34)
+      
+    case .portrait:
+      EdgeInsets(top: 21, leading: 89, bottom: 29, trailing: 89)
     }
   }
 }
