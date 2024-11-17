@@ -14,16 +14,16 @@ public struct PageView<Client: MagicCardDetailRequestClient>: View {
   }
   
   public var body: some View {
-      ScrollView(.horizontal, showsIndicators: false) {
-        LazyHStack(alignment: .top, spacing: 0) {
-          ForEach(
-            Array(store.scope(state: \.cards, action: \.cards))
-          ) { store in
-            CardDetailView(store: store).containerRelativeFrame(.horizontal)
-          }
+    ScrollView(.horizontal, showsIndicators: false) {
+      LazyHStack(alignment: .top, spacing: 0) {
+        ForEach(
+          Array(store.scope(state: \.cards, action: \.cards))
+        ) { store in
+          CardDetailView(store: store).containerRelativeFrame(.horizontal)
         }
-        .scrollTargetLayout()
       }
-      .scrollTargetBehavior(.paging)
+      .scrollTargetLayout()
+    }
+    .scrollTargetBehavior(.paging)
   }
 }
