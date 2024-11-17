@@ -18,8 +18,12 @@ import Networking
           [
             .run(
               priority: .background,
-              operation: { send in
-                try await send(.updateSetIconURL(.success(client.getSet(of: card).iconURL)))
+              operation: { [state] send in
+                if let url = try state.content.setIconURL.get() {
+                  await send(.updateSetIconURL(.success(url)))
+                } else {
+                  try await send(.updateSetIconURL(.success(client.getSet(of: card).iconURL)))
+                }
               }, catch: { error, send in
                 print(error)
               }
@@ -32,6 +36,14 @@ import Networking
                 await send(.updateVariants(.success([card])))
               }
             ),
+            .run(
+              priority: .background,
+              operation: { send in
+                try await send(.updateRulings(client.getRulings(of: card)))
+              }, catch: { error, send in
+                await send(.updateRulings([]))
+              }
+            )
           ]
         )
         .cancellable(id: "\(action)", cancelInFlight: true)
