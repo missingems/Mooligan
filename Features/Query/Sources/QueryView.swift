@@ -30,7 +30,7 @@ struct QueryView<Client: MagicCardQueryRequestClient>: View {
               }, label: {
                 CardView(
                   card: card,
-                  layoutConfiguration: .fixedWidth(width),
+                  configuration: .init(rotation: .portrait, layout: .fixedWidth(width)),
                   shouldShowPrice: false
                 )
               }

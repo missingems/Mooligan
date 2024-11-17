@@ -14,18 +14,16 @@ public struct PageView<Client: MagicCardDetailRequestClient>: View {
   }
   
   public var body: some View {
-    GeometryReader { proxy in
       ScrollView(.horizontal, showsIndicators: false) {
         LazyHStack(spacing: 0) {
           ForEach(
             Array(store.scope(state: \.cards, action: \.cards))
           ) { store in
-            CardDetailView(store: store).frame(width: proxy.size.width, height: proxy.size.height, alignment: .center)
+            CardDetailView(store: store).containerRelativeFrame(.horizontal)
           }
         }
         .scrollTargetLayout()
       }
       .scrollTargetBehavior(.paging)
-    }
   }
 }
