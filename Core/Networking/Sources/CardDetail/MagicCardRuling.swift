@@ -1,4 +1,6 @@
+import Foundation
+
 public struct MagicCardRuling: Sendable, Equatable {
-  let displayDate: String
-  let description: String
+  public let displayDate: String
+  public let description: String
 }

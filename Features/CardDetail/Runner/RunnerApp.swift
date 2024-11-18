@@ -8,7 +8,6 @@ import Networking
 @main
 struct RunnerApp: App {
   @State var cards: [ScryfallClient.MagicCardModel] = []
-  @State var card: ScryfallClient.MagicCardModel?
   
   let client = ScryfallClient()
   
