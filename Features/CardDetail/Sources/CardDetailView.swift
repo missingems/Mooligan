@@ -75,29 +75,12 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
           
         }
         
-        SelectionView(
-          items: [
-            SelectionView.Item(
-              icon: store.content.artistSelectionIcon,
-              title: store.content.artistSelectionLabel,
-              detail: store.content.artist
-            ) {
-              
-            },
-            SelectionView.Item(
-              icon: store.content.rulingSelectionIcon,
-              title: store.content.rulingSelectionLabel
-            ) {
-              
-            },
-            SelectionView.Item(
-              icon: store.content.relatedSelectionIcon,
-              title: store.content.relatedSelectionLabel
-            ) {
-              
-            },
-          ]
-        )
+        if store.content.rulings.isEmpty == false {
+          RulingView(
+            rulings: store.content.rulings,
+            title: store.content.viewRulingsLabel
+          )
+        }
       }
     }
     .task {
