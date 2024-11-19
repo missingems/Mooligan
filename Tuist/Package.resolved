@@ -55,6 +55,15 @@
       }
     },
     {
+      "identity" : "sticker",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/bpisano/sticker",
+      "state" : {
+        "revision" : "c9dad154c97b69ddecd68ff5695b38f1efeb262a",
+        "version" : "1.2.0"
+      }
+    },
+    {
       "identity" : "svgnative-xcode",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/SDWebImage/svgnative-Xcode.git",

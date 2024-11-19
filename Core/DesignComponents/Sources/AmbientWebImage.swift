@@ -1,7 +1,8 @@
 import Nuke
 import NukeUI
-import SwiftUI
 import Shimmer
+import Sticker
+import SwiftUI
 
 struct ConditionalFrameModifier: ViewModifier {
   let size: CGSize?
@@ -41,6 +42,8 @@ public struct AmbientWebImage: View {
       transformers.append(FlipImageProcessor())
     }
     
+    transformers.append(ImageProcessors.RoundedCorners(radius: cornerRadius, unit: .points, border: nil))
+    
     if let size {
       transformers.append(
         ImageProcessors.Resize(
@@ -66,7 +69,18 @@ public struct AmbientWebImage: View {
       transaction: Transaction(animation: .easeInOut(duration: 0.31))
     ) { state in
       if let image = state.image {
-        image.resizable()
+        image.resizable().animation(.bouncy) { view in
+          view
+            .stickerEffect()
+            .stickerColorIntensity(0.2)
+            .stickerScale(3.0)
+            .stickerNoiseScale(200)
+            .stickerLightIntensity(0.25)
+            .stickerContrast(0.45)
+            .stickerColorIntensity(0.4)
+            .stickerBlend(0.4)
+            .stickerMotionEffect(.dragGesture(intensity: 0.5))
+        }
       } else {
         Color
           .primary
@@ -82,9 +96,9 @@ public struct AmbientWebImage: View {
             ),
             mode: .overlay()
           )
+          .clipShape(.rect(cornerRadius: cornerRadius))
       }
     }
     .modifier(ConditionalFrameModifier(size: size))
-    .clipShape(.rect(cornerRadius: cornerRadius))
   }
 }

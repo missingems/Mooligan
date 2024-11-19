@@ -93,7 +93,7 @@ public struct CardView: View {
             if let backImageURL {
               AmbientWebImage(
                 url: backImageURL,
-                cornerRadius: 13.0,
+                cornerRadius: 8.0,
                 rotation: layoutConfiguration.rotation.degrees,
                 isFlipped: true
               )
@@ -105,7 +105,7 @@ public struct CardView: View {
             
             AmbientWebImage(
               url: imageURL,
-              cornerRadius: 13.0,
+              cornerRadius: 8.0,
               rotation: layoutConfiguration.rotation.degrees,
               isFlipped: false
             )

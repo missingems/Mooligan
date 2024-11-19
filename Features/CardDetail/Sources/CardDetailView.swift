@@ -35,6 +35,7 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
         }
         .aspectRatio(layoutConfiguration.rotation.ratio, contentMode: .fit)
         .padding(layoutConfiguration.insets)
+        .zIndex(1)
         
         CardDetailTableView(descriptions: store.content.descriptions)
         
