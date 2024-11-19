@@ -75,13 +75,6 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
         ) { action in
           
         }
-        
-        if store.content.rulings.isEmpty == false {
-          RulingView(
-            rulings: store.content.rulings,
-            title: store.content.viewRulingsLabel
-          )
-        }
       }
     }
     .task {
