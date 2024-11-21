@@ -1,7 +1,6 @@
 import Nuke
 import NukeUI
 import Shimmer
-import Sticker
 import SwiftUI
 
 struct ConditionalFrameModifier: ViewModifier {
@@ -24,7 +23,7 @@ public struct AmbientWebImage: View {
   
   public init(
     url: URL,
-    cornerRadius: CGFloat = 9,
+    cornerRadius: CGFloat = 0,
     rotation: CGFloat = 0,
     isFlipped: Bool = false,
     size: CGSize? = nil
@@ -41,8 +40,6 @@ public struct AmbientWebImage: View {
     if isFlipped {
       transformers.append(FlipImageProcessor())
     }
-    
-    transformers.append(ImageProcessors.RoundedCorners(radius: cornerRadius, unit: .points, border: nil))
     
     if let size {
       transformers.append(
@@ -66,21 +63,10 @@ public struct AmbientWebImage: View {
         url: url,
         processors: transformers
       ),
-      transaction: Transaction(animation: .easeInOut(duration: 0.31))
+      transaction: Transaction(animation: .interpolatingSpring)
     ) { state in
       if let image = state.image {
-        image.resizable().animation(.bouncy) { view in
-          view
-            .stickerEffect()
-            .stickerColorIntensity(0.2)
-            .stickerScale(3.0)
-            .stickerNoiseScale(200)
-            .stickerLightIntensity(0.25)
-            .stickerContrast(0.45)
-            .stickerColorIntensity(0.4)
-            .stickerBlend(0.4)
-            .stickerMotionEffect(.dragGesture(intensity: 0.5))
-        }
+        image.resizable()
       } else {
         Color
           .primary
@@ -96,9 +82,10 @@ public struct AmbientWebImage: View {
             ),
             mode: .overlay()
           )
-          .clipShape(.rect(cornerRadius: cornerRadius))
       }
     }
     .modifier(ConditionalFrameModifier(size: size))
+    .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
   }
 }
+

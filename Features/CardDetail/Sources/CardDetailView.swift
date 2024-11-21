@@ -34,7 +34,9 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
           store.send(.transformTapped, animation: .bouncy)
         }
         .aspectRatio(layoutConfiguration.rotation.ratio, contentMode: .fit)
+        .shadow(color: Color.black.opacity(0.31), radius: 13, x: 0, y: 13)
         .padding(layoutConfiguration.insets)
+        .safeAreaPadding(.horizontal, nil)
         .zIndex(1)
         
         CardDetailTableView(descriptions: store.content.descriptions)
@@ -87,10 +89,10 @@ private extension CardView.LayoutConfiguration {
   var insets: EdgeInsets {
     switch rotation {
     case .landscape:
-      EdgeInsets(top: 21, leading: 34, bottom: 29, trailing: 34)
+      EdgeInsets(top: 21, leading: 0, bottom: 29, trailing: 0)
       
     case .portrait:
-      EdgeInsets(top: 21, leading: 89, bottom: 29, trailing: 89)
+      EdgeInsets(top: 21, leading: 55, bottom: 29, trailing: 55)
     }
   }
 }
