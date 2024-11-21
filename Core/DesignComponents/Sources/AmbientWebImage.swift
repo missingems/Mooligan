@@ -1,7 +1,7 @@
 import Nuke
 import NukeUI
-import SwiftUI
 import Shimmer
+import SwiftUI
 
 struct ConditionalFrameModifier: ViewModifier {
   let size: CGSize?
@@ -23,7 +23,7 @@ public struct AmbientWebImage: View {
   
   public init(
     url: URL,
-    cornerRadius: CGFloat = 9,
+    cornerRadius: CGFloat = 0,
     rotation: CGFloat = 0,
     isFlipped: Bool = false,
     size: CGSize? = nil
@@ -63,7 +63,7 @@ public struct AmbientWebImage: View {
         url: url,
         processors: transformers
       ),
-      transaction: Transaction(animation: .easeInOut(duration: 0.31))
+      transaction: Transaction(animation: .interpolatingSpring)
     ) { state in
       if let image = state.image {
         image.resizable()
@@ -85,6 +85,7 @@ public struct AmbientWebImage: View {
       }
     }
     .modifier(ConditionalFrameModifier(size: size))
-    .clipShape(.rect(cornerRadius: cornerRadius))
+    .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
   }
 }
+

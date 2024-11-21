@@ -35,7 +35,7 @@ struct VariantView<Card: MagicCard>: View {
                   isRotatable: card.isRotatable,
                   layoutConfiguration: CardView.LayoutConfiguration(
                     rotation: .portrait,
-                    layout: .fixedWidth(150.0)
+                    layout: .fixedWidth(170)
                   ),
                   usdPrice: card.getPrices().usd,
                   usdFoilPrice: card.getPrices().usdFoil

@@ -238,7 +238,7 @@ private extension Widget {
               RoundedRectangle(cornerRadius: 13.0).stroke(.black.opacity(0.31), lineWidth: 3.0)
             )
           } else {
-            Color(.systemFill)
+            Color.primary.opacity(0.02).background(.ultraThinMaterial)
           }
         }
         .clipShape(RoundedRectangle(cornerRadius: 13.0))

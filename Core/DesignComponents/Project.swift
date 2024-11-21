@@ -29,6 +29,7 @@ let project = Project(
         .external(name: "SDWebImage"),
         .external(name: "SDWebImageSwiftUI"),
         .external(name: "SDWebImageSVGNativeCoder"),
+        .external(name: "Sticker")
       ]
     )
   ]
