@@ -44,8 +44,7 @@ public struct CardView: View {
   private let shouldShowPrice: Bool
   private let usdPrice: String?
   private let usdFoilPrice: String?
-  private let onFlip: (() -> Void)?
-  @State private var isFlipped = false
+  @Binding var isFlipped: Bool
   @State private var isRotated = false
   
   public var body: some View {
@@ -155,9 +154,7 @@ public struct CardView: View {
     VStack(alignment: .center, spacing: 3.0) {
       if isFlippable {
         Button {
-          onFlip?()
-          
-          withAnimation {
+          withAnimation(.bouncy) {
             isFlipped.toggle()
           }
         } label: {
@@ -173,7 +170,7 @@ public struct CardView: View {
       
       if isRotatable {
         Button {
-          withAnimation {
+          withAnimation(.bouncy) {
             isRotated.toggle()
           }
         } label: {
@@ -199,12 +196,12 @@ public struct CardView: View {
     imageURL: URL?,
     backImageURL: URL?,
     isFlippable: Bool,
+    isFlipped: Binding<Bool>,
     isRotatable: Bool,
     layoutConfiguration: LayoutConfiguration,
     usdPrice: String?,
     usdFoilPrice: String?,
-    shouldShowPrice: Bool = true,
-    onFlip: (() -> Void)? = nil
+    shouldShowPrice: Bool = true
   ) {
     self.imageURL = imageURL
     
@@ -220,6 +217,6 @@ public struct CardView: View {
     self.isRotatable = isRotatable
     self.usdPrice = usdPrice
     self.usdFoilPrice = usdFoilPrice
-    self.onFlip = onFlip
+    self._isFlipped = isFlipped
   }
 }
