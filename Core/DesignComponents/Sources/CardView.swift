@@ -44,8 +44,9 @@ public struct CardView: View {
   private let shouldShowPrice: Bool
   private let usdPrice: String?
   private let usdFoilPrice: String?
-  private let onFlip: (() -> Void)?
-  @State private var isFlipped = false
+  @Binding private var isFlipped: Bool?
+  @State private var isFlippedInternal = false
+  
   @State private var isRotated = false
   
   public var body: some View {
@@ -68,10 +69,10 @@ public struct CardView: View {
                   height: height
                 )
               )
-              .opacity(isFlipped ? 1 : 0)
+              .opacity(isFlipped ?? isFlippedInternal ? 1 : 0)
               .rotationEffect(.degrees(isRotated ? 180 : 0))
-              .rotation3DEffect(.degrees(isFlipped ? 180 : 0), axis: (x: 0, y: 1, z: 0))
-              .animation(.bouncy, value: isFlipped || isRotated)
+              .rotation3DEffect(.degrees((isFlipped ?? isFlippedInternal) ? 180 : 0), axis: (x: 0, y: 1, z: 0))
+              .animation(.bouncy, value: (isFlipped ?? isFlippedInternal) || isRotated)
             }
             
             AmbientWebImage(
@@ -84,10 +85,10 @@ public struct CardView: View {
                 height: height
               )
             )
-            .opacity(isFlipped ? 0 : 1)
+            .opacity(isFlipped ?? isFlippedInternal ? 0 : 1)
             .rotationEffect(.degrees(isRotated ? 180 : 0))
-            .rotation3DEffect(.degrees(isFlipped ? 180 : 0), axis: (x: 0, y: 1, z: 0))
-            .animation(.bouncy, value: isFlipped || isRotated)
+            .rotation3DEffect(.degrees(isFlipped ?? isFlippedInternal ? 180 : 0), axis: (x: 0, y: 1, z: 0))
+            .animation(.bouncy, value: isFlipped ?? isFlippedInternal || isRotated)
             
           case .flexible:
             if let backImageURL {
@@ -97,10 +98,10 @@ public struct CardView: View {
                 rotation: layoutConfiguration.rotation.degrees,
                 isFlipped: true
               )
-              .opacity(isFlipped ? 1 : 0)
+              .opacity(isFlipped ?? isFlippedInternal ? 1 : 0)
               .rotationEffect(.degrees(isRotated ? 180 : 0))
-              .rotation3DEffect(.degrees(isFlipped ? 180 : 0), axis: (x: 0, y: 1, z: 0))
-              .animation(.bouncy, value: isFlipped || isRotated)
+              .rotation3DEffect(.degrees(isFlipped ?? isFlippedInternal ? 180 : 0), axis: (x: 0, y: 1, z: 0))
+              .animation(.bouncy, value: isFlipped ?? isFlippedInternal || isRotated)
             }
             
             AmbientWebImage(
@@ -109,10 +110,10 @@ public struct CardView: View {
               rotation: layoutConfiguration.rotation.degrees,
               isFlipped: false
             )
-            .opacity(isFlipped ? 0 : 1)
+            .opacity(isFlipped ?? isFlippedInternal ? 0 : 1)
             .rotationEffect(.degrees(isRotated ? 180 : 0))
-            .rotation3DEffect(.degrees(isFlipped ? 180 : 0), axis: (x: 0, y: 1, z: 0))
-            .animation(.bouncy, value: isFlipped || isRotated)
+            .rotation3DEffect(.degrees(isFlipped ?? isFlippedInternal ? 180 : 0), axis: (x: 0, y: 1, z: 0))
+            .animation(.bouncy, value: isFlipped ?? isFlippedInternal || isRotated)
           }
         }
         
@@ -155,10 +156,12 @@ public struct CardView: View {
     VStack(alignment: .center, spacing: 3.0) {
       if isFlippable {
         Button {
-          onFlip?()
-          
-          withAnimation {
-            isFlipped.toggle()
+          withAnimation(.bouncy) {
+            if isFlipped != nil {
+              isFlipped?.toggle()
+            } else {
+              isFlippedInternal.toggle()
+            }
           }
         } label: {
           Image(systemName: "arrow.left.arrow.right").fontWeight(.semibold)
@@ -173,7 +176,7 @@ public struct CardView: View {
       
       if isRotatable {
         Button {
-          withAnimation {
+          withAnimation(.bouncy) {
             isRotated.toggle()
           }
         } label: {
@@ -199,12 +202,12 @@ public struct CardView: View {
     imageURL: URL?,
     backImageURL: URL?,
     isFlippable: Bool,
+    isFlipped: Binding<Bool?>? = nil,
     isRotatable: Bool,
     layoutConfiguration: LayoutConfiguration,
     usdPrice: String?,
     usdFoilPrice: String?,
-    shouldShowPrice: Bool = true,
-    onFlip: (() -> Void)? = nil
+    shouldShowPrice: Bool = true
   ) {
     self.imageURL = imageURL
     
@@ -220,6 +223,7 @@ public struct CardView: View {
     self.isRotatable = isRotatable
     self.usdPrice = usdPrice
     self.usdFoilPrice = usdFoilPrice
-    self.onFlip = onFlip
+    self._isFlipped = isFlipped ?? .constant(nil)
+    self.isFlippedInternal = false
   }
 }

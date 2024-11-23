@@ -43,21 +43,11 @@ struct VariantView<Card: MagicCard>: View {
               }
             )
             .buttonStyle(.sinkableButtonStyle)
-            .scrollTransition { view, phase in
-              switch phase {
-              case .topLeading:
-                view.opacity(0).offset(x: 150, y: 0).scaleEffect(0.9).blur(radius: 3)
-                
-              case .identity:
-                view.opacity(1).offset(x: 0, y: 0).scaleEffect(1).blur(radius: 0)
-                
-              case .bottomTrailing:
-                view.opacity(1).offset(x: 0, y: 0).scaleEffect(1).blur(radius: 0)
-              }
-            }
           }
         }
+        .scrollTargetLayout()
       }
+      .scrollTargetBehavior(.viewAligned)
       .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
       .padding(.top, 3.0)
       .scrollClipDisabled(true)

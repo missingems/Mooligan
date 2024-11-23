@@ -11,8 +11,13 @@ import Networking
   }
   
   var body: some ReducerOf<Self> {
+    BindingReducer()
+    
     Reduce { state, action in
       switch action {
+      case .binding:
+        return .none
+        
       case let .fetchAdditionalInformation(card):
         return .merge(
           [
@@ -49,7 +54,7 @@ import Networking
         .cancellable(id: "\(action)", cancelInFlight: true)
         
       case .transformTapped:
-        state.content.faceDirection = state.content.faceDirection.toggled()
+        state.isFlipped?.toggle()
         return .none
         
       case let .updateRulings(rulings):
@@ -78,6 +83,11 @@ extension CardDetailFeature {
     let id: UUID
     var content: Content<Client.MagicCardModel>
     let start: Action
+    var isFlipped: Bool? = false {
+      didSet {
+        content.faceDirection = content.faceDirection.toggled()
+      }
+    }
     
     init(
       card: Client.MagicCardModel,
@@ -97,7 +107,8 @@ extension CardDetailFeature {
     }
   }
   
-  indirect enum Action: Equatable, Sendable {
+  indirect enum Action: Equatable, Sendable, BindableAction {
+    case binding(BindingAction<State>)
     case fetchAdditionalInformation(card: Client.MagicCardModel)
     case transformTapped
     case updateRulings(_ rulings: [MagicCardRuling])

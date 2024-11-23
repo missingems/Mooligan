@@ -1,14 +1,16 @@
 import ComposableArchitecture
 import DesignComponents
+import VariableBlur
 import Networking
 import SwiftUI
 
 struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
-  let store: StoreOf<CardDetailFeature<Client>>
+  @Bindable var store: StoreOf<CardDetailFeature<Client>>
   let layoutConfiguration: CardView.LayoutConfiguration
   
   init(store: StoreOf<CardDetailFeature<Client>>) {
     self.store = store
+    
     layoutConfiguration = CardView.LayoutConfiguration(
       rotation: store.content.card.isLandscape ? .landscape : .portrait,
       layout: .flexible
@@ -17,11 +19,12 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
   
   var body: some View {
     ScrollView {
-      LazyVStack(spacing: 0) {
+      LazyVStack(spacing: 0, pinnedViews: .sectionFooters) {
         CardView(
           imageURL: store.content.imageURL,
           backImageURL: store.content.card.getCardFace(for: .back).getImageURL(),
           isFlippable: store.content.card.isFlippable,
+          isFlipped: $store.isFlipped,
           isRotatable: store.content.card.isRotatable,
           layoutConfiguration: CardView.LayoutConfiguration(
             rotation: store.content.card.isLandscape ? .landscape : .portrait,
@@ -30,35 +33,72 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
           usdPrice: nil,
           usdFoilPrice: nil,
           shouldShowPrice: false
-        ) {
-          store.send(.transformTapped, animation: .bouncy)
-        }
+        )
         .aspectRatio(layoutConfiguration.rotation.ratio, contentMode: .fit)
-        .shadow(color: Color.black.opacity(0.31), radius: 13, x: 0, y: 13)
+        .shadow(color: .black.opacity(0.31), radius: 13, x: 0, y: 13)
         .padding(layoutConfiguration.insets)
         .safeAreaPadding(.horizontal, nil)
         .zIndex(1)
         
-        CardDetailTableView(descriptions: store.content.descriptions)
+        Section {
+          CardDetailTableView(descriptions: store.content.descriptions)
+          
+          InformationView(
+            title: store.content.infoLabel,
+            power: store.content.power,
+            toughness: store.content.toughness,
+            loyaltyCounters: store.content.loyalty,
+            manaValue: store.content.manaValue,
+            rarity: store.content.rarity,
+            collectorNumber: store.content.collectorNumber,
+            colorIdentity: store.content.colorIdentity,
+            setCode: store.content.setCode,
+            setIconURL: try? store.content.setIconURL.get()
+          )
+        } footer: {
+          if store.content.card.isFlippable {
+            Button {
+              store.send(.transformTapped, animation: .bouncy)
+            } label: {
+                Label {
+                  Text("Transform")
+                    .font(.body)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(DesignComponentsAsset.accentColor.swiftUIColor)
+                } icon: {
+                  Image(systemName: "arrow.left.arrow.right")
+                }
+                .foregroundStyle(DesignComponentsAsset.accentColor.swiftUIColor)
+                .frame(maxWidth: .infinity, minHeight: 34)
+                .padding(.vertical, 5.0)
+                .background(Color.primary.opacity(0.02).background(.ultraThinMaterial))
+                .clipShape(RoundedRectangle(cornerRadius: 13))
+            }
+            .buttonStyle(.sinkableButtonStyle)
+            .safeAreaPadding(.horizontal, nil)
+            .background(
+              alignment: .top,
+              content: {
+                VariableBlurView(
+                  maxBlurRadius: 13.0,
+                  direction: .blurredBottomClearTop,
+                  startOffset: 0
+                )
+                .frame(height: 144.0)
+                .offset(x: 0, y: -15)
+              }
+            )
+          }
+        }
+        .zIndex(0)
         
-        InformationView(
-          title: store.content.infoLabel,
-          power: store.content.power,
-          toughness: store.content.toughness,
-          loyaltyCounters: store.content.loyalty,
-          manaValue: store.content.manaValue,
-          rarity: store.content.rarity,
-          collectorNumber: store.content.collectorNumber,
-          colorIdentity: store.content.colorIdentity,
-          setCode: store.content.setCode,
-          setIconURL: try? store.content.setIconURL.get()
-        )
-        
+        Spacer(minLength: 13.0)
         LegalityView(
           title: store.content.legalityLabel,
           displayReleaseDate: store.content.displayReleasedDate,
           legalities: store.content.legalities
         )
+        .zIndex(1)
         
         PriceView(
           title: store.content.priceLabel,
@@ -69,6 +109,7 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
           tixLabel: store.content.tixLabel,
           purchaseVendor: store.content.card.getPurchaseUris()
         )
+        .zIndex(1)
         
         VariantView(
           title: store.content.variantLabel,
@@ -77,6 +118,7 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
         ) { action in
           
         }
+        .zIndex(1)
       }
     }
     .task {
@@ -96,3 +138,4 @@ private extension CardView.LayoutConfiguration {
     }
   }
 }
+

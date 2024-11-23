@@ -12,7 +12,8 @@ let packageSettings = PackageSettings(
     "NukeUI": .framework,
     "Nuke": .framework,
     "Shimmer": .framework,
-    "SDWebImage": .framework
+    "SDWebImage": .framework,
+    "VariableBlur": .framework
    ]
 )
 #endif
@@ -26,6 +27,7 @@ let package = Package(
     .package(url: "https://github.com/markiv/SwiftUI-Shimmer", from: "1.5.1"),
     .package(url: "https://github.com/SDWebImage/SDWebImageSVGNativeCoder", from: "0.2.0"),
     .package(url: "https://github.com/SDWebImage/SDWebImageSwiftUI", from: "3.1.2"),
-    .package(url: "https://github.com/bpisano/sticker", from: "1.2.0")
+    .package(url: "https://github.com/bpisano/sticker", from: "1.2.0"),
+    .package(url: "https://github.com/nikstar/VariableBlur", from: "1.2.0"),
   ]
 )
