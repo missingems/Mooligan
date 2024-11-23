@@ -28,20 +28,16 @@ struct QueryView<Client: MagicCardQueryRequestClient>: View {
               action: {
                 store.send(.didSelectCard(card))
               }, label: {
-//                CardView(
-//                  card: card,
-//                  configuration: .init(rotation: .portrait, layout: .fixedWidth(width)),
-//                  shouldShowPrice: false
-//                )
                 CardView(
                   imageURL: card.getImageURL(),
                   backImageURL: card.getCardFace(for: .back).getImageURL(),
                   isFlippable: card.isFlippable,
                   isRotatable: card.isRotatable,
                   layoutConfiguration: .init(rotation: .portrait, layout: .fixedWidth(width)),
-                  usdPrice: nil, usdFoilPrice: nil, shouldShowPrice: false) {
-                    print("on flip")
-                  }
+                  usdPrice: nil,
+                  usdFoilPrice: nil,
+                  shouldShowPrice: false
+                )
               }
             )
             .buttonStyle(.sinkableButtonStyle)

@@ -60,9 +60,14 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
             Button {
               store.send(.transformTapped, animation: .bouncy)
             } label: {
-              Text("\(Image(systemName: "arrow.left.arrow.right")) Transform")
-                .font(.body)
-                .fontWeight(.semibold)
+                Label {
+                  Text("Transform")
+                    .font(.body)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(DesignComponentsAsset.accentColor.swiftUIColor)
+                } icon: {
+                  Image(systemName: "arrow.left.arrow.right")
+                }
                 .foregroundStyle(DesignComponentsAsset.accentColor.swiftUIColor)
                 .frame(maxWidth: .infinity, minHeight: 34)
                 .padding(.vertical, 5.0)
@@ -71,22 +76,23 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
             }
             .buttonStyle(.sinkableButtonStyle)
             .safeAreaPadding(.horizontal, nil)
-            .padding(EdgeInsets(top: 5.0, leading: 0, bottom: 13.0, trailing: 0))
             .background(
               alignment: .top,
               content: {
                 VariableBlurView(
+                  maxBlurRadius: 13.0,
                   direction: .blurredBottomClearTop,
                   startOffset: 0
                 )
                 .frame(height: 144.0)
-                .offset(x: 0, y: -8.0)
+                .offset(x: 0, y: -15)
               }
             )
           }
         }
         .zIndex(0)
         
+        Spacer(minLength: 13.0)
         LegalityView(
           title: store.content.legalityLabel,
           displayReleaseDate: store.content.displayReleasedDate,
