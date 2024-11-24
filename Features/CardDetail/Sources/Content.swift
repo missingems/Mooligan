@@ -53,7 +53,6 @@ struct Content<Card: MagicCard>: Equatable, Sendable {
   // MARK: - Display Attributes
   
   var name: String
-  let isLandscape: Bool
   let displayReleasedDate: String
   
   // MARK: - Labels
@@ -102,7 +101,6 @@ struct Content<Card: MagicCard>: Equatable, Sendable {
     usdFoilPrice = card.getPrices().usdFoil
     tixPrice = card.getPrices().tix
     manaValue = card.getManaValue()
-    isLandscape = card.isSplit
     displayReleasedDate = String(localized: "Release Date: \(card.getReleasedAt())")
     
     // Initialize Labels
@@ -140,7 +138,7 @@ struct Content<Card: MagicCard>: Equatable, Sendable {
     let face = card.getCardFace(for: faceDirection)
     imageURL = face.getImageURL() ?? card.getImageURL()
     
-    var descriptions = card.isSplit ? [
+    var descriptions = card.hasMultipleFaces ? [
       Self.makeDescription(faceDirection: .front, card: card),
       Self.makeDescription(faceDirection: .back, card: card)
     ] : [
@@ -170,7 +168,7 @@ struct Content<Card: MagicCard>: Equatable, Sendable {
     let face = card.getCardFace(for: faceDirection)
     imageURL = card.getImageURL()
     
-    var descriptions = card.isSplit ? [
+    var descriptions = card.hasMultipleFaces ? [
       Self.makeDescription(faceDirection: .front, card: card),
       Self.makeDescription(faceDirection: .back, card: card)
     ] : [
