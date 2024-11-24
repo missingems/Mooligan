@@ -20,27 +20,27 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
   var body: some View {
     ScrollView {
       LazyVStack(spacing: 0, pinnedViews: .sectionFooters) {
-        CardView(
-          imageURL: store.content.imageURL,
-          backImageURL: store.content.card.getCardFace(for: .back).getImageURL(),
-          isFlippable: store.content.card.isFlippable,
-          isFlipped: $store.isFlipped,
-          isRotatable: store.content.card.isRotatable,
-          layoutConfiguration: CardView.LayoutConfiguration(
-            rotation: store.content.card.isLandscape ? .landscape : .portrait,
-            layout: .flexible
-          ),
-          usdPrice: nil,
-          usdFoilPrice: nil,
-          shouldShowPrice: false
-        )
-        .aspectRatio(layoutConfiguration.rotation.ratio, contentMode: .fit)
-        .shadow(color: .black.opacity(0.31), radius: 13, x: 0, y: 13)
-        .padding(layoutConfiguration.insets)
-        .safeAreaPadding(.horizontal, nil)
-        .zIndex(1)
-        
         Section {
+          CardView(
+            imageURL: store.content.imageURL,
+            backImageURL: store.content.card.getCardFace(for: .back).getImageURL(),
+            isFlippable: store.content.card.isFlippable,
+            isFlipped: $store.isFlipped,
+            isRotatable: store.content.card.isRotatable,
+            layoutConfiguration: CardView.LayoutConfiguration(
+              rotation: store.content.card.isLandscape ? .landscape : .portrait,
+              layout: .flexible
+            ),
+            usdPrice: nil,
+            usdFoilPrice: nil,
+            shouldShowPrice: false
+          )
+          .aspectRatio(layoutConfiguration.rotation.ratio, contentMode: .fit)
+          .shadow(color: .black.opacity(0.31), radius: 13, x: 0, y: 13)
+          .padding(layoutConfiguration.insets)
+          .safeAreaPadding(.horizontal, nil)
+          .zIndex(1)
+          
           CardDetailTableView(descriptions: store.content.descriptions)
           
           InformationView(
@@ -92,7 +92,10 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
         }
         .zIndex(0)
         
-        Spacer(minLength: 13.0)
+        if store.content.card.isFlippable {
+          Spacer(minLength: 13.0)
+        }
+        
         LegalityView(
           title: store.content.legalityLabel,
           displayReleaseDate: store.content.displayReleasedDate,
