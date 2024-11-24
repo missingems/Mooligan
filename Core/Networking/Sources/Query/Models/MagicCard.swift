@@ -103,10 +103,7 @@ public extension MagicCard {
       layout == .transform ||
       layout == .modalDfc ||
       layout == .reversibleCard ||
-      layout == .doubleSided ||
-      layout == .doubleFacedToken ||
-      layout == .battle ||
-      layout == .flip
+      layout == .doubleFacedToken
     )
   }
   
@@ -114,8 +111,8 @@ public extension MagicCard {
     getLayout().value == .flip
   }
   
-  var isSplit: Bool {
-    getLayout().value == .split || getLayout().value == .adventure
+  var hasMultipleFaces: Bool {
+    getLayout().value == .split || getLayout().value == .adventure || getLayout().value == .flip
   }
   
   var isPhyrexian: Bool {
