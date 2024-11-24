@@ -101,7 +101,7 @@ struct LegalityView: View {
       .padding(.top, 3.0)
     }
     .safeAreaPadding(.horizontal, nil)
-    .padding(.vertical, 13.0)
+    .padding(EdgeInsets(top: 13.0, leading: 0, bottom: 18, trailing: 0))
   }
   
   init(
