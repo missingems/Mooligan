@@ -24,8 +24,7 @@ struct RunnerApp: App {
       }
       .task {
         do {
-          cards = try await client.searchCards(query: "layout=transform").data
-            .compactMap { $0 }
+          cards = try await client.searchCards(query: "layout=flip").data.compactMap { $0 }
         } catch {
           
         }
