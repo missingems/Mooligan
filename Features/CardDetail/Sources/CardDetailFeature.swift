@@ -93,7 +93,7 @@ extension CardDetailFeature {
       card: Client.MagicCardModel,
       entryPoint: EntryPoint<Client>
     ) {
-      self.id = card.id
+      self.id = UUID()
       
       switch entryPoint {
       case .query:

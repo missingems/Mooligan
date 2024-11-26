@@ -2,136 +2,146 @@ import Networking
 import SwiftUI
 
 struct CardDetailTableView<Card: MagicCard>: View {
-  let main: Content<Card>.Description
-  let alternate: Content<Card>.Description?
-  let sections: [Section]
+  let sections: [SectionType]
   
   var body: some View {
     VStack(spacing: 0) {
-      ForEach(sections) { section in
+      ForEach(sections.indices, id: \.self) { index in
         Divider().safeAreaPadding(.leading, nil)
         
-        HStack(alignment: .top, spacing: 8.0) {
-          let edgeInsets = EdgeInsets(
-            top: 8,
-            leading: 0,
-            bottom: section.isLast ? 13 : 8,
-            trailing: 0
+        let section = sections[index]
+        let isLast = index == sections.count - 1
+        
+        let edgeInsets = EdgeInsets(
+          top: 8,
+          leading: 0,
+          bottom: isLast ? 13 : 8,
+          trailing: 0
+        )
+        
+        switch section {
+        case let .title(name1, manaCost1):
+          TitleView(
+            name: name1,
+            manaCost: manaCost1
           )
+          .padding(EdgeInsets(top: 13.0, leading: 0, bottom: 8.0, trailing: 0))
+          .safeAreaPadding(.horizontal, nil)
           
-          switch section.type {
-          case .title:
+        case let .titles(name1, manaCost1, name2, manaCost2):
+          HStack(alignment: .top, spacing: 8.0) {
             TitleView(
-              name: main.name,
-              manaCost: main.manaCost
+              name: name1,
+              manaCost: manaCost1
             )
             .padding(EdgeInsets(top: 13.0, leading: 0, bottom: 8.0, trailing: 0))
             
-            if let name = alternate?.name, let manaCost = alternate?.manaCost {
+            if let name2, let manaCost2 {
               Divider()
               
               TitleView(
-                name: name,
-                manaCost: manaCost
+                name: name2,
+                manaCost: manaCost2
               )
               .padding(EdgeInsets(top: 13.0, leading: 0, bottom: 8, trailing: 0))
             }
+          }
+          .safeAreaPadding(.horizontal, nil)
+          
+        case let .typeline(value):
+          TypelineView(value)
+            .padding(edgeInsets)
+            .safeAreaPadding(.horizontal, nil)
+          
+        case let .typelines(text1, text2):
+          HStack(alignment: .top, spacing: 8.0) {
+            TypelineView(text1).padding(edgeInsets)
             
-          case .description:
-            if section.title1?.isEmptyOrNil() == false || main.flavorText?.isEmptyOrNil() == false {
-              VStack(alignment: .leading, spacing: 8) {
-                DescriptionView(section.title1)
-                FlavorView(main.flavorText)
-              }
-              .padding(edgeInsets)
-            }
-            
-            if section.title2?.isEmptyOrNil() == false || alternate?.flavorText?.isEmptyOrNil() == false {
+            if let text2 {
               Divider()
               
-              VStack(alignment: .leading, spacing: 8) {
-                DescriptionView(section.title2)
-                FlavorView(alternate?.flavorText)
-              }
-              .padding(edgeInsets)
-            }
-            
-          case .typeline:
-            TypelineView(section.title1).padding(edgeInsets)
-            
-            if let title = section.title2 {
-              Divider()
-              
-              TypelineView(title).padding(edgeInsets)
+              TypelineView(text2).padding(edgeInsets)
             }
           }
+          .safeAreaPadding(.horizontal, nil)
+          
+        case let .description(text, flavor):
+          if text?.isEmptyOrNil() == false || flavor?.isEmptyOrNil() == false {
+            VStack(alignment: .leading, spacing: 8) {
+              DescriptionView(text)
+              FlavorView(flavor)
+            }
+            .padding(edgeInsets)
+            .safeAreaPadding(.horizontal, nil)
+          }
+          
+        case let .descriptions(text1, flavor1, text2, flavor2):
+          HStack(alignment: .top, spacing: 8.0) {
+            if text1?.isEmptyOrNil() == false || flavor1?.isEmptyOrNil() == false {
+              VStack(alignment: .leading, spacing: 8) {
+                DescriptionView(text1)
+                FlavorView(flavor1)
+              }
+              .padding(edgeInsets)
+            }
+            
+            if text2?.isEmptyOrNil() == false || flavor2?.isEmptyOrNil() == false {
+              Divider()
+              
+              VStack(alignment: .leading, spacing: 8) {
+                DescriptionView(text2)
+                FlavorView(flavor2)
+              }
+              .padding(edgeInsets)
+            }
+          }
+          .safeAreaPadding(.horizontal, nil)
         }
-        .safeAreaPadding(.horizontal, nil)
       }
     }
   }
   
-  init?(descriptions: [Content<Card>.Description]) {
+  init?(descriptions: [Content<Card>.Description], displayHorizontally: Bool = false) {
     if descriptions.count == 1, let main = descriptions.first {
-      self.main = main
-      self.alternate = nil
+      self.sections = [
+          .title(main.name, main.manaCost),
+          .typeline(main.typeline),
+          .description(main.text, main.flavorText),
+      ]
     } else if descriptions.count == 2, let main = descriptions.first, let alternate = descriptions.last {
-      self.main = main
-      self.alternate = alternate
+      if displayHorizontally {
+        self.sections = [
+          .titles(title1: main.name, manaCost1: main.manaCost, title2: alternate.name, manaCost2: alternate.manaCost),
+          .typelines(typeline1: main.typeline, typeline2: alternate.typeline),
+          .descriptions(description1: main.text, flavorText1: main.flavorText, description2: alternate.text, flavorText2: alternate.flavorText),
+        ]
+      } else {
+        self.sections = [
+          .title(main.name, main.manaCost),
+          .typeline(main.typeline),
+          .description(main.text, main.flavorText),
+          .title(alternate.name, alternate.manaCost),
+          .typeline(alternate.typeline),
+          .description(alternate.text, alternate.flavorText),
+        ]
+      }
     } else {
       return nil
     }
-    
-    sections = [
-      Section(
-        type: .title,
-        title1: main.text,
-        title2: alternate?.text
-      ),
-      Section(
-        type: .typeline,
-        title1: main.typeline,
-        title2: alternate?.typeline
-      ),
-      Section(
-        type: .description,
-        title1: main.text,
-        title2: alternate?.text,
-        isLast: true
-      )
-    ].compactMap { $0}
   }
 }
 
 extension CardDetailTableView {
-  struct Section: Identifiable, Hashable {
-    enum SectionType {
-      case title
-      case description
-      case typeline
-    }
+  enum SectionType: Identifiable, Hashable {
+    case titles(title1: String, manaCost1: [String], title2: String?, manaCost2: [String]?)
+    case title(String, [String])
+    case descriptions(description1: String?, flavorText1: String?, description2: String?, flavorText2: String?)
+    case description(String?, String?)
+    case typelines(typeline1: String?, typeline2: String?)
+    case typeline(String?)
     
-    let id: SectionType
-    let type: SectionType
-    let title1: String?
-    let title2: String?
-    let isLast: Bool
-    
-    init?(
-      type: SectionType,
-      title1: String?,
-      title2: String?,
-      isLast: Bool = false
-    ) {
-      if title1?.isEmptyOrNil() == false || title2?.isEmptyOrNil() == false {
-        self.title1 = title1
-        self.title2 = title2
-        self.type = type
-        self.isLast = isLast
-        self.id = type
-      } else {
-        return nil
-      }
+    nonisolated(unsafe) var id: Self {
+      return self
     }
   }
 }

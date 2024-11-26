@@ -24,8 +24,15 @@ struct RunnerApp: App {
       }
       .task {
         do {
-          cards = try await client.searchCards(query: "layout=transform").data
-            .compactMap { $0 }
+          async let transforms = try await client.searchCards(query: "layout=transform").data.compactMap { $0 }
+          async let flips = try await client.searchCards(query: "layout=flip").data.compactMap { $0 }
+          async let split = try await client.searchCards(query: "layout=split").data.compactMap { $0 }
+          async let normals = try await client.searchCards(query: "layout=transform").data.compactMap { $0 }
+          async let adventures = try await client.searchCards(query: "layout=adventure").data.compactMap { $0 }
+          async let modaldfcs = try await client.searchCards(query: "layout=modal_dfc").data.compactMap { $0 }
+          
+          cards = try await [transforms, flips, split, normals, adventures, modaldfcs].joined().shuffled()
+          
         } catch {
           
         }

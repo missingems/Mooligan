@@ -16,7 +16,9 @@ struct InformationView: View {
         HStack(spacing: 5.0) {
           ForEach(widgets) { $0 }
         }
+        .scrollTargetLayout()
       }
+      .scrollTargetBehavior(.viewAligned)
       .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
     }
     .safeAreaPadding(.horizontal, nil)

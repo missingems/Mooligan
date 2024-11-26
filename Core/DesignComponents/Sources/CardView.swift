@@ -46,7 +46,6 @@ public struct CardView: View {
   private let usdFoilPrice: String?
   @Binding private var isFlipped: Bool?
   @State private var isFlippedInternal = false
-  
   @State private var isRotated = false
   
   public var body: some View {
