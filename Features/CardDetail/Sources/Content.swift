@@ -138,7 +138,7 @@ struct Content<Card: MagicCard>: Equatable, Sendable {
     let face = card.getCardFace(for: faceDirection)
     imageURL = face.getImageURL() ?? card.getImageURL()
     
-    var descriptions = card.hasMultipleFaces ? [
+    var descriptions = card.hasMultipleColumns ? [
       Self.makeDescription(faceDirection: .front, card: card),
       Self.makeDescription(faceDirection: .back, card: card)
     ] : [
@@ -168,7 +168,7 @@ struct Content<Card: MagicCard>: Equatable, Sendable {
     let face = card.getCardFace(for: faceDirection)
     imageURL = card.getImageURL()
     
-    var descriptions = card.hasMultipleFaces ? [
+    var descriptions = card.hasMultipleColumns ? [
       Self.makeDescription(faceDirection: .front, card: card),
       Self.makeDescription(faceDirection: .back, card: card)
     ] : [

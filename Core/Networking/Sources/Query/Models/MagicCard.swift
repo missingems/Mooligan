@@ -111,7 +111,7 @@ public extension MagicCard {
     getLayout().value == .flip
   }
   
-  var hasMultipleFaces: Bool {
+  var hasMultipleColumns: Bool {
     getLayout().value == .split || getLayout().value == .adventure || getLayout().value == .flip
   }
   

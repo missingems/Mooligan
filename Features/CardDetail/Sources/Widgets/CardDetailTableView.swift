@@ -2,101 +2,129 @@ import Networking
 import SwiftUI
 
 struct CardDetailTableView<Card: MagicCard>: View {
-  let arrangement: Arrangement
+  let sections: [SectionType]
   
   var body: some View {
-    switch arrangement {
-    case let .horizontal(mainColumn, alternativeColumn):
-      Text("")
-    case let .vertical(sections):
-      Text("")
+    VStack(spacing: 0) {
+      ForEach(sections.indices, id: \.self) { index in
+        Divider().safeAreaPadding(.leading, nil)
+        
+        let section = sections[index]
+        let isLast = index == sections.count - 1
+        
+        let edgeInsets = EdgeInsets(
+          top: 8,
+          leading: 0,
+          bottom: isLast ? 13 : 8,
+          trailing: 0
+        )
+        
+        switch section {
+        case let .title(name1, manaCost1):
+          TitleView(
+            name: name1,
+            manaCost: manaCost1
+          )
+          .padding(EdgeInsets(top: 13.0, leading: 0, bottom: 8.0, trailing: 0))
+          .safeAreaPadding(.horizontal, nil)
+          
+        case let .titles(name1, manaCost1, name2, manaCost2):
+          HStack(alignment: .top, spacing: 8.0) {
+            TitleView(
+              name: name1,
+              manaCost: manaCost1
+            )
+            .padding(EdgeInsets(top: 13.0, leading: 0, bottom: 8.0, trailing: 0))
+            
+            if let name2, let manaCost2 {
+              Divider()
+              
+              TitleView(
+                name: name2,
+                manaCost: manaCost2
+              )
+              .padding(EdgeInsets(top: 13.0, leading: 0, bottom: 8, trailing: 0))
+            }
+          }
+          .safeAreaPadding(.horizontal, nil)
+          
+        case let .typeline(value):
+          TypelineView(value)
+            .padding(edgeInsets)
+            .safeAreaPadding(.horizontal, nil)
+          
+        case let .typelines(text1, text2):
+          HStack(alignment: .top, spacing: 8.0) {
+            TypelineView(text1).padding(edgeInsets)
+            
+            if let text2 {
+              Divider()
+              
+              TypelineView(text2).padding(edgeInsets)
+            }
+          }
+          .safeAreaPadding(.horizontal, nil)
+          
+        case let .description(text, flavor):
+          if text?.isEmptyOrNil() == false || flavor?.isEmptyOrNil() == false {
+            VStack(alignment: .leading, spacing: 8) {
+              DescriptionView(text)
+              FlavorView(flavor)
+            }
+            .padding(edgeInsets)
+            .safeAreaPadding(.horizontal, nil)
+          }
+          
+        case let .descriptions(text1, flavor1, text2, flavor2):
+          HStack(alignment: .top, spacing: 8.0) {
+            if text1?.isEmptyOrNil() == false || flavor1?.isEmptyOrNil() == false {
+              VStack(alignment: .leading, spacing: 8) {
+                DescriptionView(text1)
+                FlavorView(flavor1)
+              }
+              .padding(edgeInsets)
+            }
+            
+            if text2?.isEmptyOrNil() == false || flavor2?.isEmptyOrNil() == false {
+              Divider()
+              
+              VStack(alignment: .leading, spacing: 8) {
+                DescriptionView(text2)
+                FlavorView(flavor2)
+              }
+              .padding(edgeInsets)
+            }
+          }
+          .safeAreaPadding(.horizontal, nil)
+        }
+      }
     }
-//    VStack(spacing: 0) {
-//      HStack {
-//        ForEach(sections.indices, id: \.self) { index in
-//          let column = sections[index]
-//          
-//          VStack(alignment: .leading, spacing: 0) {
-//            //            ForEach(column.indices, id: \.self) { columnIndex in
-//            //              switch column[columnIndex] {
-//            //              case let .title(name, manaCost):
-//            //                break
-//            //              case let .typeline(value):
-//            //                break
-//            //              case let .description(text, flavor):
-//            //                break
-//            //              }
-//            //            }
-//          }
-//        }
-//      }
-      //        Divider().safeAreaPadding(.leading, nil)
-      //
-      //        HStack(alignment: .top, spacing: 8.0) {
-      //          let edgeInsets = EdgeInsets(
-      //            top: 8,
-      //            leading: 0,
-      //            bottom: section.isLast ? 13 : 8,
-      //            trailing: 0
-      //          )
-      //
-      //          switch section.type {
-      //          case .title:
-      //            TitleView(
-      //              name: main.name,
-      //              manaCost: main.manaCost
-      //            )
-      //            .padding(EdgeInsets(top: 13.0, leading: 0, bottom: 8.0, trailing: 0))
-      //
-      //            if let name = alternate?.name, let manaCost = alternate?.manaCost {
-      //              Divider()
-      //
-      //              TitleView(
-      //                name: name,
-      //                manaCost: manaCost
-      //              )
-      //              .padding(EdgeInsets(top: 13.0, leading: 0, bottom: 8, trailing: 0))
-      //            }
-      //
-      //          case .description:
-      //            if section.title1?.isEmptyOrNil() == false || main.flavorText?.isEmptyOrNil() == false {
-      //              VStack(alignment: .leading, spacing: 8) {
-      //                DescriptionView(section.title1)
-      //                FlavorView(main.flavorText)
-      //              }
-      //              .padding(edgeInsets)
-      //            }
-      //
-      //            if section.title2?.isEmptyOrNil() == false || alternate?.flavorText?.isEmptyOrNil() == false {
-      //              Divider()
-      //
-      //              VStack(alignment: .leading, spacing: 8) {
-      //                DescriptionView(section.title2)
-      //                FlavorView(alternate?.flavorText)
-      //              }
-      //              .padding(edgeInsets)
-      //            }
-      //
-      //          case .typeline:
-      //            TypelineView(section.title1).padding(edgeInsets)
-      //
-      //            if let title = section.title2 {
-      //              Divider()
-      //
-      //              TypelineView(title).padding(edgeInsets)
-      //            }
-      //          }
-      //        }
-      //        .safeAreaPadding(.horizontal, nil)
-      //      }
-//    }
   }
   
-  init?(
-    descriptions: [Content<Card>.Description]
-  ) {
-    if let arrangement = Arrangement(descriptions: descriptions, isHorizontal: true) {
-      self.arrangement = arrangement
+  init?(descriptions: [Content<Card>.Description], displayHorizontally: Bool = false) {
+    if descriptions.count == 1, let main = descriptions.first {
+      self.sections = [
+          .title(main.name, main.manaCost),
+          .typeline(main.typeline),
+          .description(main.text, main.flavorText),
+      ]
+    } else if descriptions.count == 2, let main = descriptions.first, let alternate = descriptions.last {
+      if displayHorizontally {
+        self.sections = [
+          .titles(title1: main.name, manaCost1: main.manaCost, title2: alternate.name, manaCost2: alternate.manaCost),
+          .typelines(typeline1: main.typeline, typeline2: alternate.typeline),
+          .descriptions(description1: main.text, flavorText1: main.flavorText, description2: alternate.text, flavorText2: alternate.flavorText),
+        ]
+      } else {
+        self.sections = [
+          .title(main.name, main.manaCost),
+          .typeline(main.typeline),
+          .description(main.text, main.flavorText),
+          .title(alternate.name, alternate.manaCost),
+          .typeline(alternate.typeline),
+          .description(alternate.text, alternate.flavorText),
+        ]
+      }
     } else {
       return nil
     }
@@ -104,64 +132,12 @@ struct CardDetailTableView<Card: MagicCard>: View {
 }
 
 extension CardDetailTableView {
-  enum Arrangement: Identifiable, Hashable {
-    case horizontal([[SectionType]])
-    case vertical([[SectionType]])
-    
-    nonisolated(unsafe) var id: Self {
-      return self
-    }
-    
-    init?(descriptions: [Content<Card>.Description], isHorizontal: Bool) {
-      if descriptions.count == 1, let main = descriptions.first {
-        self = .vertical([
-          [
-            .title(name: main.name, manaCost: main.manaCost),
-            .description(main.text, flavor: main.flavorText),
-            .typeline(main.flavorText)
-          ]
-        ])
-      } else if descriptions.count == 2, let main = descriptions.first, let alternate = descriptions.last {
-        
-        if isHorizontal {
-          let mainColumn: [SectionType] = [
-            .title(name: main.name, manaCost: main.manaCost),
-            .description(main.text, flavor: main.flavorText),
-            .typeline(main.flavorText),
-          ]
-          
-          let alternativeColumn: [SectionType] = [
-            .title(name: alternate.name, manaCost: alternate.manaCost),
-            .description(alternate.text, flavor: alternate.flavorText),
-            .typeline(alternate.flavorText)
-          ]
-          
-          self = .horizontal([
-            
-          ])
-        } else {
-          let mainColumn: [SectionType] = [
-            .title(name: main.name, manaCost: main.manaCost),
-            .description(main.text, flavor: main.flavorText),
-            .typeline(main.flavorText),
-          ]
-          
-          let alternativeColumn: [SectionType] = [
-            .title(name: alternate.name, manaCost: alternate.manaCost),
-            .description(alternate.text, flavor: alternate.flavorText),
-            .typeline(alternate.flavorText)
-          ]
-          self = .vertical([mainColumn, alternativeColumn])
-        }
-      } else {
-        return nil
-      }
-    }
-  }
-  
   enum SectionType: Identifiable, Hashable {
-    case title(name: String, manaCost: [String])
-    case description(String?, flavor: String?)
+    case titles(title1: String, manaCost1: [String], title2: String?, manaCost2: [String]?)
+    case title(String, [String])
+    case descriptions(description1: String?, flavorText1: String?, description2: String?, flavorText2: String?)
+    case description(String?, String?)
+    case typelines(typeline1: String?, typeline2: String?)
     case typeline(String?)
     
     nonisolated(unsafe) var id: Self {
