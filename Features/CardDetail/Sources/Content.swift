@@ -8,7 +8,7 @@ struct Content<Card: MagicCard>: Equatable, Sendable {
   // MARK: - Nested Structs and Enums
   
   struct Description: Equatable, Sendable {
-    let name: String?
+    let name: String
     let text: String?
     let typeline: String?
     let flavorText: String?
