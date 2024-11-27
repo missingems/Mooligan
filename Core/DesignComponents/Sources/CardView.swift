@@ -69,9 +69,12 @@ public struct CardView: View {
                 )
               )
               .opacity(isFlipped ?? isFlippedInternal ? 1 : 0)
+              .blur(radius: isFlipped ?? isFlippedInternal ? 0 : 5)
+              .scaleEffect(isFlipped ?? isFlippedInternal ? CGSize(width: 1, height: 1) : CGSize(width: 0.78, height: 0.78))
               .rotationEffect(.degrees(isRotated ? 180 : 0))
-              .rotation3DEffect(.degrees((isFlipped ?? isFlippedInternal) ? 180 : 0), axis: (x: 0, y: 1, z: 0))
-              .animation(.bouncy, value: (isFlipped ?? isFlippedInternal) || isRotated)
+              .rotation3DEffect(.degrees(isFlipped ?? isFlippedInternal ? 180 : 0), axis: (x: 0, y: 1, z: 0))
+              .animation(.bouncy, value: isFlipped ?? isFlippedInternal || isRotated)
+              .zIndex(isFlipped ?? isFlippedInternal ? 1 : 0)
             }
             
             AmbientWebImage(
@@ -85,9 +88,12 @@ public struct CardView: View {
               )
             )
             .opacity(isFlipped ?? isFlippedInternal ? 0 : 1)
+            .blur(radius: isFlipped ?? isFlippedInternal ? 5 : 0)
+            .scaleEffect(isFlipped ?? isFlippedInternal ? CGSize(width: 0.78, height: 0.78) : CGSize(width: 1, height: 1))
             .rotationEffect(.degrees(isRotated ? 180 : 0))
             .rotation3DEffect(.degrees(isFlipped ?? isFlippedInternal ? 180 : 0), axis: (x: 0, y: 1, z: 0))
             .animation(.bouncy, value: isFlipped ?? isFlippedInternal || isRotated)
+            .zIndex(isFlipped ?? isFlippedInternal ? 0 : 1)
             
           case .flexible:
             if let backImageURL {
@@ -98,9 +104,12 @@ public struct CardView: View {
                 isFlipped: true
               )
               .opacity(isFlipped ?? isFlippedInternal ? 1 : 0)
+              .blur(radius: isFlipped ?? isFlippedInternal ? 0 : 5)
+              .scaleEffect(isFlipped ?? isFlippedInternal ? CGSize(width: 1, height: 1) : CGSize(width: 0.78, height: 0.78))
               .rotationEffect(.degrees(isRotated ? 180 : 0))
               .rotation3DEffect(.degrees(isFlipped ?? isFlippedInternal ? 180 : 0), axis: (x: 0, y: 1, z: 0))
               .animation(.bouncy, value: isFlipped ?? isFlippedInternal || isRotated)
+              .zIndex(isFlipped ?? isFlippedInternal ? 1 : 0)
             }
             
             AmbientWebImage(
@@ -110,13 +119,16 @@ public struct CardView: View {
               isFlipped: false
             )
             .opacity(isFlipped ?? isFlippedInternal ? 0 : 1)
+            .blur(radius: isFlipped ?? isFlippedInternal ? 5 : 0)
+            .scaleEffect(isFlipped ?? isFlippedInternal ? CGSize(width: 0.78, height: 0.78) : CGSize(width: 1, height: 1))
             .rotationEffect(.degrees(isRotated ? 180 : 0))
             .rotation3DEffect(.degrees(isFlipped ?? isFlippedInternal ? 180 : 0), axis: (x: 0, y: 1, z: 0))
             .animation(.bouncy, value: isFlipped ?? isFlippedInternal || isRotated)
+            .zIndex(isFlipped ?? isFlippedInternal ? 0 : 1)
           }
         }
         
-        buttons
+        buttons.zIndex(2)
       }
       .zIndex(1)
       
@@ -170,7 +182,7 @@ public struct CardView: View {
         .background(.thinMaterial)
         .clipShape(Circle())
         .overlay(Circle().stroke(.separator, lineWidth: 1).opacity(0.618))
-        .offset(x: 5, y: -16.0)
+        .offset(x: 5, y: -13)
       }
       
       if isRotatable {
@@ -192,7 +204,7 @@ public struct CardView: View {
         .background(.thinMaterial)
         .clipShape(Circle())
         .overlay(Circle().stroke(.separator, lineWidth: 1).opacity(0.618))
-        .offset(x: 5, y: -16.0)
+        .offset(x: 5, y: -13)
       }
     }
   }
