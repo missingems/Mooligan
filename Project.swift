@@ -2,18 +2,6 @@ import ProjectDescription
 
 let project = Project(
   name: "Mooligan",
-  options: .options(
-    automaticSchemesOptions: .enabled(
-      targetSchemesGrouping: .notGrouped,
-      codeCoverageEnabled: true,
-      testingOptions: .parallelizable
-    )
-  ),
-  settings: .settings(
-    base: [
-      "SWIFT_VERSION": "6.0.0",
-    ]
-  ),
   targets: [
     .target(
       name: "Mooligan",
