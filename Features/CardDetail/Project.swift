@@ -2,18 +2,6 @@ import ProjectDescription
 
 let project = Project(
   name: "CardDetail",
-  options: .options(
-    automaticSchemesOptions: .enabled(
-      targetSchemesGrouping: .notGrouped,
-      codeCoverageEnabled: true,
-      testingOptions: .parallelizable
-    )
-  ),
-  settings: .settings(
-    base: [
-      "SWIFT_VERSION": "6.0.0",
-    ]
-  ),
   targets: [
     .target(
       name: "CardDetailRunner",
@@ -40,9 +28,7 @@ let project = Project(
       dependencies: [
         .project(target: "Networking", path: "../../Core/Networking"),
         .project(target: "DesignComponents", path: "../../Core/DesignComponents"),
-        .external(name: "ComposableArchitecture"),
-        .external(name: "NukeUI"),
-        .external(name: "Shimmer")
+        .project(target: "Featurist", path: "../../Core/Featurist"),
       ]
     ),
     .target(

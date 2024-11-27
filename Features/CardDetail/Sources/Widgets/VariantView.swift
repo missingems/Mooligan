@@ -31,8 +31,8 @@ struct VariantView<Card: MagicCard>: View {
                 CardView(
                   imageURL: card.getImageURL(),
                   backImageURL: card.getCardFace(for: .back).getImageURL(),
+                  isTransformable: card.isTransformable,
                   isFlippable: card.isFlippable,
-                  isRotatable: card.isRotatable,
                   layoutConfiguration: CardView.LayoutConfiguration(
                     rotation: .portrait,
                     layout: .fixedWidth(170)

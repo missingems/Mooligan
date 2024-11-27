@@ -70,6 +70,8 @@ struct Content<Card: MagicCard>: Equatable, Sendable {
   let artistSelectionLabel: String
   let rulingSelectionLabel: String
   let relatedSelectionLabel: String
+  let descriptionCallToActionLabel: String?
+  let descriptionCallToActionIconName: String?
   
   var numberOfVariantsLabel: String {
     String(localized: "\((try? variants.get().count) ?? 0) Results")
@@ -117,6 +119,17 @@ struct Content<Card: MagicCard>: Equatable, Sendable {
     artistSelectionLabel = String(localized: "Artist")
     rulingSelectionLabel = String(localized: "Rulings")
     relatedSelectionLabel = String(localized: "Related")
+    
+    if card.isFlippable {
+      descriptionCallToActionLabel = "Flip"
+      descriptionCallToActionIconName = "arrow.trianglehead.clockwise.rotate.90"
+    } else if card.isTransformable {
+      descriptionCallToActionLabel = "Transform"
+      descriptionCallToActionIconName = "arrow.left.arrow.right"
+    } else {
+      descriptionCallToActionLabel = nil
+      descriptionCallToActionIconName = nil
+    }
     
     // Initialize Icons
     artistSelectionIcon = Image(asset: DesignComponentsAsset.artist)

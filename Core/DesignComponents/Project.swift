@@ -2,18 +2,6 @@ import ProjectDescription
 
 let project = Project(
   name: "DesignComponents",
-  options: .options(
-    automaticSchemesOptions: .enabled(
-      targetSchemesGrouping: .notGrouped,
-      codeCoverageEnabled: true,
-      testingOptions: .parallelizable
-    )
-  ),
-  settings: .settings(
-    base: [
-      "SWIFT_VERSION": "6.0.0",
-    ]
-  ),
   targets: [
     .target(
       name: "DesignComponents",
@@ -26,13 +14,9 @@ let project = Project(
       dependencies: [
         .external(name: "NukeUI"),
         .external(name: "Shimmer"),
-        .external(name: "SDWebImage"),
-        .external(name: "SDWebImageSwiftUI"),
-        .external(name: "SDWebImageSVGNativeCoder"),
         .external(name: "Sticker"),
         .external(name: "VariableBlur")
       ]
     )
   ]
 )
-

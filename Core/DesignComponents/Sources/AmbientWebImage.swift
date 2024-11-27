@@ -25,7 +25,7 @@ public struct AmbientWebImage: View {
     url: URL,
     cornerRadius: CGFloat = 0,
     rotation: CGFloat = 0,
-    isFlipped: Bool = false,
+    isTransformed: Bool = false,
     size: CGSize? = nil
   ) {
     self.url = url
@@ -37,7 +37,7 @@ public struct AmbientWebImage: View {
       transformers.append(RotationImageProcessor(degrees: rotation))
     }
     
-    if isFlipped {
+    if isTransformed {
       transformers.append(FlipImageProcessor())
     }
     
