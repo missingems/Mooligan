@@ -27,6 +27,7 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
             isTransformable: store.content.card.isTransformable,
             isTransformed: $store.isTransformed,
             isFlippable: store.content.card.isFlippable,
+            isFlipped: $store.isFlipped,
             layoutConfiguration: CardView.LayoutConfiguration(
               rotation: store.content.card.isLandscape ? .landscape : .portrait,
               layout: .flexible

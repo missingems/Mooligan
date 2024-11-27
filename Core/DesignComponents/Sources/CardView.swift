@@ -46,7 +46,8 @@ public struct CardView: View {
   private let usdFoilPrice: String?
   @Binding private var isTransformed: Bool?
   @State private var isTransformedInternal = false
-  @State private var isFlipped = false
+  @Binding private var isFlipped: Bool?
+  @State private var isFlippedInternal = false
   
   public var body: some View {
     VStack(spacing: 5) {
@@ -71,9 +72,9 @@ public struct CardView: View {
               .opacity(isTransformed ?? isTransformedInternal ? 1 : 0)
               .blur(radius: isTransformed ?? isTransformedInternal ? 0 : 5)
               .scaleEffect(isTransformed ?? isTransformedInternal ? CGSize(width: 1, height: 1) : CGSize(width: 0.78, height: 0.78))
-              .rotationEffect(.degrees(isFlipped ? 180 : 0))
+              .rotationEffect(.degrees(isFlipped ?? isFlippedInternal ? 180 : 0))
               .rotation3DEffect(.degrees(isTransformed ?? isTransformedInternal ? 180 : 0), axis: (x: 0, y: 1, z: 0))
-              .animation(.bouncy, value: isTransformed ?? isTransformedInternal || isFlipped)
+              .animation(.bouncy, value: isTransformed ?? isTransformedInternal || isFlipped ?? isFlippedInternal)
               .zIndex(isTransformed ?? isTransformedInternal ? 1 : 0)
             }
             
@@ -90,9 +91,9 @@ public struct CardView: View {
             .opacity(isTransformed ?? isTransformedInternal ? 0 : 1)
             .blur(radius: isTransformed ?? isTransformedInternal ? 5 : 0)
             .scaleEffect(isTransformed ?? isTransformedInternal ? CGSize(width: 0.78, height: 0.78) : CGSize(width: 1, height: 1))
-            .rotationEffect(.degrees(isFlipped ? 180 : 0))
+            .rotationEffect(.degrees(isFlipped ?? isFlippedInternal ? 180 : 0))
             .rotation3DEffect(.degrees(isTransformed ?? isTransformedInternal ? 180 : 0), axis: (x: 0, y: 1, z: 0))
-            .animation(.bouncy, value: isTransformed ?? isTransformedInternal || isFlipped)
+            .animation(.bouncy, value: isTransformed ?? isTransformedInternal || isFlipped ?? isFlippedInternal)
             .zIndex(isTransformed ?? isTransformedInternal ? 0 : 1)
             
           case .flexible:
@@ -106,9 +107,9 @@ public struct CardView: View {
               .opacity(isTransformed ?? isTransformedInternal ? 1 : 0)
               .blur(radius: isTransformed ?? isTransformedInternal ? 0 : 5)
               .scaleEffect(isTransformed ?? isTransformedInternal ? CGSize(width: 1, height: 1) : CGSize(width: 0.78, height: 0.78))
-              .rotationEffect(.degrees(isFlipped ? 180 : 0))
+              .rotationEffect(.degrees(isFlipped ?? isFlippedInternal ? 180 : 0))
               .rotation3DEffect(.degrees(isTransformed ?? isTransformedInternal ? 180 : 0), axis: (x: 0, y: 1, z: 0))
-              .animation(.bouncy, value: isTransformed ?? isTransformedInternal || isFlipped)
+              .animation(.bouncy, value: isTransformed ?? isTransformedInternal || isFlipped ?? isFlippedInternal)
               .zIndex(isTransformed ?? isTransformedInternal ? 1 : 0)
             }
             
@@ -121,9 +122,9 @@ public struct CardView: View {
             .opacity(isTransformed ?? isTransformedInternal ? 0 : 1)
             .blur(radius: isTransformed ?? isTransformedInternal ? 5 : 0)
             .scaleEffect(isTransformed ?? isTransformedInternal ? CGSize(width: 0.78, height: 0.78) : CGSize(width: 1, height: 1))
-            .rotationEffect(.degrees(isFlipped ? 180 : 0))
+            .rotationEffect(.degrees(isFlipped ?? isFlippedInternal ? 180 : 0))
             .rotation3DEffect(.degrees(isTransformed ?? isTransformedInternal ? 180 : 0), axis: (x: 0, y: 1, z: 0))
-            .animation(.bouncy, value: isTransformed ?? isTransformedInternal || isFlipped)
+            .animation(.bouncy, value: isTransformed ?? isTransformedInternal || isFlipped ?? isFlippedInternal)
             .zIndex(isTransformed ?? isTransformedInternal ? 0 : 1)
           }
         }
@@ -164,48 +165,43 @@ public struct CardView: View {
   }
   
   @ViewBuilder private var buttons: some View {
-    VStack(alignment: .center, spacing: 3.0) {
-      if isTransformable {
-        Button {
-          withAnimation(.bouncy) {
-            if isTransformed != nil {
-              isTransformed?.toggle()
-            } else {
-              isTransformedInternal.toggle()
-            }
-          }
-        } label: {
-          Image(systemName: "arrow.left.arrow.right").fontWeight(.semibold)
-        }
-        .tint(DesignComponentsAsset.accentColor.swiftUIColor)
-        .frame(width: 44.0, height: 44.0)
-        .background(.thinMaterial)
-        .clipShape(Circle())
-        .overlay(Circle().stroke(.separator, lineWidth: 1).opacity(0.618))
-        .offset(x: 5, y: -13)
-      }
-      
-      if isFlippable {
-        Button {
-          withAnimation(.bouncy) {
-            isFlipped.toggle()
-          }
-        } label: {
-          if isFlipped {
-            Image(systemName: "arrow.trianglehead.counterclockwise.rotate.90")
-              .fontWeight(.semibold)
+    if isFlippable {
+      Button {
+        withAnimation(.bouncy) {
+          if isFlipped != nil {
+            isFlipped?.toggle()
           } else {
-            Image(systemName: "arrow.trianglehead.clockwise.rotate.90")
-              .fontWeight(.semibold)
+            isFlippedInternal.toggle()
           }
         }
-        .tint(DesignComponentsAsset.accentColor.swiftUIColor)
-        .frame(width: 44.0, height: 44.0)
-        .background(.thinMaterial)
-        .clipShape(Circle())
-        .overlay(Circle().stroke(.separator, lineWidth: 1).opacity(0.618))
-        .offset(x: 5, y: -13)
+      } label: {
+        Image(systemName: "arrow.trianglehead.clockwise.rotate.90")
+          .fontWeight(.semibold)
       }
+      .tint(DesignComponentsAsset.accentColor.swiftUIColor)
+      .frame(width: 44.0, height: 44.0)
+      .background(.thinMaterial)
+      .clipShape(Circle())
+      .overlay(Circle().stroke(.separator, lineWidth: 1).opacity(0.618))
+      .offset(x: 5, y: -13)
+    } else if isTransformable {
+      Button {
+        withAnimation(.bouncy) {
+          if isTransformed != nil {
+            isTransformed?.toggle()
+          } else {
+            isTransformedInternal.toggle()
+          }
+        }
+      } label: {
+        Image(systemName: "arrow.left.arrow.right").fontWeight(.semibold)
+      }
+      .tint(DesignComponentsAsset.accentColor.swiftUIColor)
+      .frame(width: 44.0, height: 44.0)
+      .background(.thinMaterial)
+      .clipShape(Circle())
+      .overlay(Circle().stroke(.separator, lineWidth: 1).opacity(0.618))
+      .offset(x: 5, y: -13)
     }
   }
   
@@ -215,6 +211,7 @@ public struct CardView: View {
     isTransformable: Bool,
     isTransformed: Binding<Bool?>? = nil,
     isFlippable: Bool,
+    isFlipped: Binding<Bool?>? = nil,
     layoutConfiguration: LayoutConfiguration,
     usdPrice: String?,
     usdFoilPrice: String?,
@@ -236,5 +233,7 @@ public struct CardView: View {
     self.usdFoilPrice = usdFoilPrice
     self._isTransformed = isTransformed ?? .constant(nil)
     self.isTransformedInternal = false
+    self._isFlipped = isFlipped ?? .constant(nil)
+    self.isFlippedInternal = false
   }
 }

@@ -103,7 +103,8 @@ public extension MagicCard {
       layout == .transform ||
       layout == .modalDfc ||
       layout == .reversibleCard ||
-      layout == .doubleFacedToken
+      layout == .doubleFacedToken ||
+      layout == .flip
     )
   }
   
@@ -112,7 +113,7 @@ public extension MagicCard {
   }
   
   var hasMultipleColumns: Bool {
-    getLayout().value == .split || getLayout().value == .adventure || getLayout().value == .flip
+    getLayout().value == .split || getLayout().value == .adventure
   }
   
   var isPhyrexian: Bool {

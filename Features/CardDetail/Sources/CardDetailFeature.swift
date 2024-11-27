@@ -83,7 +83,14 @@ extension CardDetailFeature {
     let id: UUID
     var content: Content<Client.MagicCardModel>
     let start: Action
+    
     var isTransformed: Bool? = false {
+      didSet {
+        content.faceDirection = content.faceDirection.toggled()
+      }
+    }
+    
+    var isFlipped: Bool? = false {
       didSet {
         content.faceDirection = content.faceDirection.toggled()
       }
