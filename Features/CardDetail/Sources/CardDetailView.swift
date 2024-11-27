@@ -65,14 +65,13 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
                 Text(label)
                   .font(.body)
                   .fontWeight(.semibold)
-                  .foregroundStyle(DesignComponentsAsset.accentColor.swiftUIColor)
               } icon: {
-                Image(systemName: icon)
+                Image(systemName: icon).fontWeight(.semibold)
               }
-              .foregroundStyle(DesignComponentsAsset.accentColor.swiftUIColor)
+              .foregroundStyle(DesignComponentsAsset.invertedPrimary.swiftUIColor)
               .frame(maxWidth: .infinity, minHeight: 34)
               .padding(.vertical, 5.0)
-              .background(Color.primary.opacity(0.02).background(.ultraThinMaterial))
+              .background(DesignComponentsAsset.accentColor.swiftUIColor.background(.ultraThinMaterial))
               .clipShape(RoundedRectangle(cornerRadius: 13))
             }
             .buttonStyle(.sinkableButtonStyle)
