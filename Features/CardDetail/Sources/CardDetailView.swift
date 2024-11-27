@@ -24,9 +24,9 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
           CardView(
             imageURL: store.content.imageURL,
             backImageURL: store.content.card.getCardFace(for: .back).getImageURL(),
+            isTransformable: store.content.card.isTransformable,
+            isTransformed: $store.isTransformed,
             isFlippable: store.content.card.isFlippable,
-            isFlipped: $store.isFlipped,
-            isRotatable: store.content.card.isRotatable,
             layoutConfiguration: CardView.LayoutConfiguration(
               rotation: store.content.card.isLandscape ? .landscape : .portrait,
               layout: .flexible
@@ -56,7 +56,7 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
             setIconURL: try? store.content.setIconURL.get()
           )
         } footer: {
-          if store.content.card.isFlippable {
+          if store.content.card.isTransformable {
             Button {
               store.send(.transformTapped, animation: .bouncy)
             } label: {
@@ -92,7 +92,7 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
         }
         .zIndex(0)
         
-        if store.content.card.isFlippable {
+        if store.content.card.isTransformable {
           Spacer(minLength: 13.0)
         }
         

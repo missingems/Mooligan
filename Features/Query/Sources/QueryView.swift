@@ -31,7 +31,7 @@ struct QueryView<Client: MagicCardQueryRequestClient>: View {
                 CardView(
                   imageURL: card.getImageURL(),
                   backImageURL: card.getCardFace(for: .back).getImageURL(),
-                  isFlippable: card.isFlippable,
+                  isFlippable: card.isTransformable,
                   isRotatable: card.isRotatable,
                   layoutConfiguration: .init(rotation: .portrait, layout: .fixedWidth(width)),
                   usdPrice: nil,

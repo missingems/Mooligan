@@ -54,7 +54,7 @@ import Networking
         .cancellable(id: "\(action)", cancelInFlight: true)
         
       case .transformTapped:
-        state.isFlipped?.toggle()
+        state.isTransformed?.toggle()
         return .none
         
       case let .updateRulings(rulings):
@@ -83,7 +83,7 @@ extension CardDetailFeature {
     let id: UUID
     var content: Content<Client.MagicCardModel>
     let start: Action
-    var isFlipped: Bool? = false {
+    var isTransformed: Bool? = false {
       didSet {
         content.faceDirection = content.faceDirection.toggled()
       }

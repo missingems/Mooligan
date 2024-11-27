@@ -96,7 +96,7 @@ public protocol MagicCard: Equatable, Hashable, Identifiable, Sendable {
 }
 
 public extension MagicCard {
-  var isFlippable: Bool {
+  var isTransformable: Bool {
     let layout = getLayout().value
     
     return (
@@ -107,7 +107,7 @@ public extension MagicCard {
     )
   }
   
-  var isRotatable: Bool {
+  var isFlippable: Bool {
     getLayout().value == .flip
   }
   
