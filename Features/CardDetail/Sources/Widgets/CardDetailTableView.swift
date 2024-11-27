@@ -101,7 +101,7 @@ struct CardDetailTableView<Card: MagicCard>: View {
     }
   }
   
-  init?(descriptions: [Content<Card>.Description], displayHorizontally: Bool = false) {
+  init?(descriptions: [Content<Card>.Description]) {
     if descriptions.count == 1, let main = descriptions.first {
       self.sections = [
           .title(main.name, main.manaCost),
@@ -109,22 +109,11 @@ struct CardDetailTableView<Card: MagicCard>: View {
           .description(main.text, main.flavorText),
       ]
     } else if descriptions.count == 2, let main = descriptions.first, let alternate = descriptions.last {
-      if displayHorizontally {
-        self.sections = [
-          .titles(title1: main.name, manaCost1: main.manaCost, title2: alternate.name, manaCost2: alternate.manaCost),
-          .typelines(typeline1: main.typeline, typeline2: alternate.typeline),
-          .descriptions(description1: main.text, flavorText1: main.flavorText, description2: alternate.text, flavorText2: alternate.flavorText),
-        ]
-      } else {
-        self.sections = [
-          .title(main.name, main.manaCost),
-          .typeline(main.typeline),
-          .description(main.text, main.flavorText),
-          .title(alternate.name, alternate.manaCost),
-          .typeline(alternate.typeline),
-          .description(alternate.text, alternate.flavorText),
-        ]
-      }
+      self.sections = [
+        .titles(title1: main.name, manaCost1: main.manaCost, title2: alternate.name, manaCost2: alternate.manaCost),
+        .typelines(typeline1: main.typeline, typeline2: alternate.typeline),
+        .descriptions(description1: main.text, flavorText1: main.flavorText, description2: alternate.text, flavorText2: alternate.flavorText),
+      ]
     } else {
       return nil
     }

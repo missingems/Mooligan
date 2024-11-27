@@ -41,9 +41,7 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
           .safeAreaPadding(.horizontal, nil)
           .zIndex(1)
           
-          CardDetailTableView(
-            descriptions: store.content.descriptions,
-            displayHorizontally: store.content.card.hasMultipleColumns && store.content.card.isRotatable == false )
+          CardDetailTableView(descriptions: store.content.descriptions)
           
           InformationView(
             title: store.content.infoLabel,
