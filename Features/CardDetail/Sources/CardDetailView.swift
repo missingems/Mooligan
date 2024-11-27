@@ -57,23 +57,23 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
             setIconURL: try? store.content.setIconURL.get()
           )
         } footer: {
-          if store.content.card.isTransformable {
+          if let label = store.content.descriptionCallToActionLabel, let icon = store.content.descriptionCallToActionIconName {
             Button {
-              store.send(.transformTapped, animation: .bouncy)
+              store.send(.descriptionCallToActionTapped, animation: .bouncy)
             } label: {
-                Label {
-                  Text("Transform")
-                    .font(.body)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(DesignComponentsAsset.accentColor.swiftUIColor)
-                } icon: {
-                  Image(systemName: "arrow.left.arrow.right")
-                }
-                .foregroundStyle(DesignComponentsAsset.accentColor.swiftUIColor)
-                .frame(maxWidth: .infinity, minHeight: 34)
-                .padding(.vertical, 5.0)
-                .background(Color.primary.opacity(0.02).background(.ultraThinMaterial))
-                .clipShape(RoundedRectangle(cornerRadius: 13))
+              Label {
+                Text(label)
+                  .font(.body)
+                  .fontWeight(.semibold)
+                  .foregroundStyle(DesignComponentsAsset.accentColor.swiftUIColor)
+              } icon: {
+                Image(systemName: icon)
+              }
+              .foregroundStyle(DesignComponentsAsset.accentColor.swiftUIColor)
+              .frame(maxWidth: .infinity, minHeight: 34)
+              .padding(.vertical, 5.0)
+              .background(Color.primary.opacity(0.02).background(.ultraThinMaterial))
+              .clipShape(RoundedRectangle(cornerRadius: 13))
             }
             .buttonStyle(.sinkableButtonStyle)
             .safeAreaPadding(.horizontal, nil)
@@ -93,7 +93,7 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
         }
         .zIndex(0)
         
-        if store.content.card.isTransformable {
+        if store.content.card.isTransformable || store.content.card.isFlippable {
           Spacer(minLength: 13.0)
         }
         

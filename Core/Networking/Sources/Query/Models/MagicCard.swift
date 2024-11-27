@@ -103,8 +103,7 @@ public extension MagicCard {
       layout == .transform ||
       layout == .modalDfc ||
       layout == .reversibleCard ||
-      layout == .doubleFacedToken ||
-      layout == .flip
+      layout == .doubleFacedToken
     )
   }
   

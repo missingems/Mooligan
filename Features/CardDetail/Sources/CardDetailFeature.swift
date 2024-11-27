@@ -53,8 +53,13 @@ import Networking
         )
         .cancellable(id: "\(action)", cancelInFlight: true)
         
-      case .transformTapped:
-        state.isTransformed?.toggle()
+      case .descriptionCallToActionTapped:
+        if state.content.card.isFlippable {
+          state.isFlipped?.toggle()
+        } else if state.content.card.isTransformable {
+          state.isTransformed?.toggle()
+        }
+        
         return .none
         
       case let .updateRulings(rulings):
@@ -117,7 +122,7 @@ extension CardDetailFeature {
   indirect enum Action: Equatable, Sendable, BindableAction {
     case binding(BindingAction<State>)
     case fetchAdditionalInformation(card: Client.MagicCardModel)
-    case transformTapped
+    case descriptionCallToActionTapped
     case updateRulings(_ rulings: [MagicCardRuling])
     case updateSetIconURL(_ setIconURL: Result<URL?, FeatureError>)
     case updateVariants(_ variants: Result<[Client.MagicCardModel], FeatureError>)
