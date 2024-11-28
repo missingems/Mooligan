@@ -1,4 +1,14 @@
+import Nuke
 import SwiftUI
+
+public final class SVGDataLoader: Nuke.DataLoading {
+  public func loadData(
+    with request: URLRequest,
+    didReceiveData: @escaping (Data, URLResponse) -> Void,
+    completion: @escaping ((any Error)?) -> Void
+  ) -> any Nuke.Cancellable {
+  }
+}
 
 public struct IconLazyImage: View {
   private let url: URL?
@@ -10,7 +20,7 @@ public struct IconLazyImage: View {
   }
   
   public var body: some View {
-    Text("use nuke")
+    EmptyView()
 //    WebImage(url: url) { image in
 //      image.transition(.fade(duration: 0.25))
 //    } placeholder: {
