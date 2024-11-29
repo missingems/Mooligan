@@ -3,30 +3,72 @@ import SVGView
 import SwiftUI
 
 public struct IconLazyImage: View {
-  private let url: URL
+  private let url: URL?
   @State private var imageData: Data?
-  private let tintColor: Color
+  @State private var shouldAnimate: Bool = false
+  @Environment(\.colorScheme) private var colorScheme
   
-  public init?(_ url: URL?, tintColor: Color = DesignComponentsAsset.accentColor.swiftUIColor) {
-    guard let url else { return nil }
+  public init(_ url: URL?) {
     self.url = url
-    self.tintColor = tintColor
   }
   
   public var body: some View {
-    VStack {
+    ZStack {
       if let imageData {
-        SVGView(data: imageData).frame(width: 20, height: 20, alignment: .center)
-//          .fill(.red)
-//          .blendMode(.multiply)
-//            .renderingMode(.template)
-//            .aspectRatio(contentMode: .fit)
+        let view = SVGView(data: imageData)
+        
+        if let svg = view.svg {
+          view
+            .task(id: colorScheme, priority: .background) {
+              tint(svg, colorScheme: colorScheme)
+          }
+        }
       }
-    }.task {
+    }
+    .opacity(imageData == nil ? 0 : 1)
+    .blur(radius: imageData == nil ? 5 : 0)
+    .animation(.default, value: shouldAnimate)
+    .task(priority: .background) {
+      guard let url else { return }
+      
       ImagePipeline.shared.loadImage(with: url) { result in
-        self.imageData = try? result.get().container.data
+        switch result {
+        case let .success(response):
+          if imageData == nil {
+            imageData = try? result.get().container.data
+          }
+          
+          if response.cacheType == .disk || response.cacheType == .memory {
+            shouldAnimate = false
+          } else {
+            shouldAnimate = true
+          }
+          
+        case .failure:
+          break
+        }
       }
     }
   }
+  
+  private func tint(_ node: SVGNode, colorScheme: ColorScheme) {
+    let color: SVGColor
+    
+    switch colorScheme {
+    case .light:
+      color = SVGColor(hex: "0E1250")
+    case .dark:
+      color = SVGColor(hex: "F8F6D8")
+    @unknown default:
+      color = SVGColor(hex: "0E1250")
+    }
+    
+    if let group = node as? SVGGroup {
+      for content in group.contents {
+        tint(content, colorScheme: colorScheme)
+      }
+    } else if let shape = node as? SVGShape {
+      shape.fill = color
+    }
+  }
 }
-
