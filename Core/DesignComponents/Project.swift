@@ -15,7 +15,8 @@ let project = Project(
         .external(name: "NukeUI"),
         .external(name: "Shimmer"),
         .external(name: "Sticker"),
-        .external(name: "VariableBlur")
+        .external(name: "VariableBlur"),
+        .external(name: "SVGView")
       ]
     )
   ]

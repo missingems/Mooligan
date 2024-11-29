@@ -129,7 +129,7 @@ extension SetRow {
   }
   
   private var iconImage: some View {
-    IconLazyImage(viewModel.iconUrl, tintColor: tintColor)
+    IconLazyImage(viewModel.iconUrl)
   }
   
   private var titleLabel: some View {
