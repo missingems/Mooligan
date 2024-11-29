@@ -28,33 +28,6 @@
       }
     },
     {
-      "identity" : "sdwebimage",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/SDWebImage/SDWebImage.git",
-      "state" : {
-        "revision" : "10d06f6a33bafae8c164fbfd1f03391f6d4692b3",
-        "version" : "5.20.0"
-      }
-    },
-    {
-      "identity" : "sdwebimagesvgnativecoder",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/SDWebImage/SDWebImageSVGNativeCoder",
-      "state" : {
-        "revision" : "09a6199bbc0899c90382e734bbe07850eae2aa83",
-        "version" : "0.2.0"
-      }
-    },
-    {
-      "identity" : "sdwebimageswiftui",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/SDWebImage/SDWebImageSwiftUI",
-      "state" : {
-        "revision" : "451c6dfd5ecec2cf626d1d9ca81c2d4a60355172",
-        "version" : "3.1.3"
-      }
-    },
-    {
       "identity" : "sticker",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/bpisano/sticker",
@@ -64,12 +37,12 @@
       }
     },
     {
-      "identity" : "svgnative-xcode",
+      "identity" : "svgview",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/SDWebImage/svgnative-Xcode.git",
+      "location" : "https://github.com/exyte/SVGView.git",
       "state" : {
-        "revision" : "de560bb9f69bc89f4624855998148eb6e0bb8e60",
-        "version" : "0.1.0"
+        "revision" : "6465962facdd25cb96eaebc35603afa2f15d2c0d",
+        "version" : "1.0.6"
       }
     },
     {

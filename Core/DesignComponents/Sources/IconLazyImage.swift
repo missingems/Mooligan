@@ -1,34 +1,32 @@
 import Nuke
+import SVGView
 import SwiftUI
 
-public final class SVGDataLoader: Nuke.DataLoading {
-  public func loadData(
-    with request: URLRequest,
-    didReceiveData: @escaping (Data, URLResponse) -> Void,
-    completion: @escaping ((any Error)?) -> Void
-  ) -> any Nuke.Cancellable {
-  }
-}
-
 public struct IconLazyImage: View {
-  private let url: URL?
+  private let url: URL
+  @State private var imageData: Data?
   private let tintColor: Color
   
-  public init(_ url: URL?, tintColor: Color = DesignComponentsAsset.accentColor.swiftUIColor) {
+  public init?(_ url: URL?, tintColor: Color = DesignComponentsAsset.accentColor.swiftUIColor) {
+    guard let url else { return nil }
     self.url = url
     self.tintColor = tintColor
   }
   
   public var body: some View {
-    EmptyView()
-//    WebImage(url: url) { image in
-//      image.transition(.fade(duration: 0.25))
-//    } placeholder: {
-//      Circle().foregroundColor(Color.black.opacity(0.15)).shimmering()
-//    }
-//    .resizable()
-//    .renderingMode(.template)
-//    .aspectRatio(contentMode: .fit)
-//    .foregroundColor(tintColor)
+    VStack {
+      if let imageData {
+        SVGView(data: imageData).frame(width: 20, height: 20, alignment: .center)
+//          .fill(.red)
+//          .blendMode(.multiply)
+//            .renderingMode(.template)
+//            .aspectRatio(contentMode: .fit)
+      }
+    }.task {
+      ImagePipeline.shared.loadImage(with: url) { result in
+        self.imageData = try? result.get().container.data
+      }
+    }
   }
 }
+
