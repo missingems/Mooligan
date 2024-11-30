@@ -13,18 +13,30 @@ public struct IconLazyImage: View {
   }
   
   public var body: some View {
-    ZStack {
+    tintColor.mask {
       if let imageData {
-        tintColor.mask {
-          SVGView(data: imageData)
-        }
+        SVGView(data: imageData)
       }
     }
+    .opacity(imageData == nil ? 0 : 1)
+    .blur(radius: imageData == nil ? 5 : 0)
     .task(priority: .background) {
       guard let url else { return }
       
       ImagePipeline.shared.loadImage(with: url) { result in
-        imageData = try? result.get().container.data
+        switch result {
+        case let .success(value):
+          if value.cacheType == .memory || value.cacheType == .disk {
+            imageData = value.container.data
+          } else {
+            withAnimation(.snappy) {
+              imageData = value.container.data
+            }
+          }
+          
+        case .failure:
+          imageData = nil
+        }
       }
     }
   }
