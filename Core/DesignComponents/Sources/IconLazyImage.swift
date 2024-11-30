@@ -13,13 +13,13 @@ public struct IconLazyImage: View {
   }
   
   public var body: some View {
-    ZStack {
+    tintColor.mask {
       if let imageData {
-        tintColor.mask {
-          SVGView(data: imageData)
-        }
+        SVGView(data: imageData)
       }
     }
+    .opacity(imageData == nil ? 0 : 1)
+    .animation(.snappy, value: imageData)
     .task(priority: .background) {
       guard let url else { return }
       
