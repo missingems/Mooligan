@@ -212,7 +212,7 @@ private extension Widget {
     if let code {
       VStack(alignment: .center, spacing: 3.0) {
         HStack(spacing: 5.0) {
-          IconLazyImage(iconURL).frame(width: 25, height: 25)
+          IconLazyImage(iconURL, tintColor: .primary).frame(width: 25, height: 25)
           Text(code.uppercased()).font(.body).fontDesign(.serif)
         }
         .frame(minWidth: 66, minHeight: 34)
