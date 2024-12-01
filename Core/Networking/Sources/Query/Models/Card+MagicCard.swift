@@ -58,6 +58,10 @@ extension Card {
     return getImageURL(type: .normal)
   }
   
+  public func getArtCroppedImageURL() -> URL? {
+    return getImageURL(type: .artCrop)
+  }
+  
   public func getCardFace(for direction: MagicCardFaceDirection) -> any MagicCardFace {
     return switch direction {
     case .front:

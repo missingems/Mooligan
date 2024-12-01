@@ -2,6 +2,7 @@ import ComposableArchitecture
 import DesignComponents
 import VariableBlur
 import Networking
+import NukeUI
 import SwiftUI
 
 struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
@@ -37,7 +38,6 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
             shouldShowPrice: false
           )
           .aspectRatio(layoutConfiguration.rotation.ratio, contentMode: .fit)
-          .shadow(color: .black.opacity(0.31), radius: 13, x: 0, y: 13)
           .padding(layoutConfiguration.insets)
           .safeAreaPadding(.horizontal, nil)
           .zIndex(1)
@@ -123,6 +123,36 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
         }
         .zIndex(1)
       }
+    }
+    .background {
+      ZStack {
+        LazyImage(
+          url: store.content.card.getCardFace(for: .front).getArtCroppedImageURL(),
+          transaction: Transaction(animation: .easeInOut(duration: 2))
+        ) { state in
+          if let image = state.image {
+            image.resizable()
+          } else {
+            Color.clear
+          }
+        }
+        .opacity((store.content.faceDirection == .front) ? 1 : 0)
+        
+        LazyImage(
+          url: store.content.card.getCardFace(for: .back).getArtCroppedImageURL(),
+          transaction: Transaction(animation: .easeInOut(duration: 2))
+        ) { state in
+          if let image = state.image {
+            image.resizable()
+          } else {
+            Color.clear
+          }
+        }
+        .opacity((store.content.faceDirection == .back) ? 1 : 0)
+      }
+      .blur(radius: 89, opaque: true)
+      .overlay(Color.primary.colorInvert().opacity(0.8))
+      .ignoresSafeArea(.all, edges: .all)
     }
     .task {
       store.send(.fetchAdditionalInformation(card: store.content.card))

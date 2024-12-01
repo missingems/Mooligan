@@ -93,6 +93,9 @@ public protocol MagicCard: Equatable, Hashable, Identifiable, Sendable {
   
   /// Get card art in normal quality
   func getImageURL() -> URL?
+  
+  /// Get card cropped art
+  func getArtCroppedImageURL() -> URL?
 }
 
 public extension MagicCard {

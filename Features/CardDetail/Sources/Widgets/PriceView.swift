@@ -124,7 +124,7 @@ extension PriceView {
             .monospaced()
             .frame(maxWidth: .infinity, minHeight: 34)
             .padding(.vertical, 5.0)
-            .background(Color.primary.opacity(0.02).background(.ultraThinMaterial))
+            .background(Color(.systemFill))
             .clipShape(RoundedRectangle(cornerRadius: 13))
         }
         .buttonStyle(.sinkableButtonStyle)

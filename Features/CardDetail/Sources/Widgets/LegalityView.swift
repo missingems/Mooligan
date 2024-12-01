@@ -22,7 +22,7 @@ struct LegalityView: View {
             numberOfColumns: numberOfColumns,
             legality: legalities[0]
           )
-          .background(Color.primary.opacity(0.02).background(.ultraThinMaterial))
+          .background(Color(.systemFill))
           .clipShape(RoundedRectangle(cornerRadius: 5))
           
           legalityRow(
@@ -30,7 +30,7 @@ struct LegalityView: View {
             numberOfColumns: numberOfColumns,
             legality: legalities[1]
           )
-          .background(Color.primary.opacity(0.02).background(.ultraThinMaterial))
+          .background(Color(.systemFill))
           .clipShape(RoundedRectangle(cornerRadius: 5))
         }
         
@@ -54,7 +54,7 @@ struct LegalityView: View {
             numberOfColumns: numberOfColumns,
             legality: legalities[4]
           )
-          .background(Color.primary.opacity(0.02).background(.ultraThinMaterial))
+          .background(Color(.systemFill))
           .clipShape(RoundedRectangle(cornerRadius: 5))
           
           legalityRow(
@@ -62,7 +62,7 @@ struct LegalityView: View {
             numberOfColumns: numberOfColumns,
             legality: legalities[5]
           )
-          .background(Color.primary.opacity(0.02).background(.ultraThinMaterial))
+          .background(Color(.systemFill))
           .clipShape(RoundedRectangle(cornerRadius: 5))
         }
         
@@ -86,7 +86,7 @@ struct LegalityView: View {
             numberOfColumns: numberOfColumns,
             legality: legalities[8]
           )
-          .background(Color.primary.opacity(0.02).background(.ultraThinMaterial))
+          .background(Color(.systemFill))
           .clipShape(RoundedRectangle(cornerRadius: 5))
           
           legalityRow(
@@ -94,7 +94,7 @@ struct LegalityView: View {
             numberOfColumns: numberOfColumns,
             legality: legalities[9]
           )
-          .background(Color.primary.opacity(0.02).background(.ultraThinMaterial))
+          .background(Color(.systemFill))
           .clipShape(RoundedRectangle(cornerRadius: 5))
         }
       }

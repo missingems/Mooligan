@@ -53,6 +53,9 @@ public protocol MagicCardFace: Sendable, Equatable, Hashable {
   /// Get card art in normal quality
   func getImageURL() -> URL?
   
+  /// Get art cropped
+  func getArtCroppedImageURL() -> URL?
+  
   /// The mana cost for this card.
   func getManaCost() -> String?
 }
