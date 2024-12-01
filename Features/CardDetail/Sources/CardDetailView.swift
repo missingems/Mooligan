@@ -125,32 +125,32 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
       }
     }
     .background {
-      LazyImage(
-        url: store.content.card.getArtCroppedImageURL(),
-        transaction: Transaction(animation: .interpolatingSpring)
-      ) { state in
-        Group {
+      ZStack {
+        LazyImage(
+          url: store.content.card.getCardFace(for: .front).getArtCroppedImageURL(),
+          transaction: Transaction(animation: .easeInOut(duration: 2))
+        ) { state in
           if let image = state.image {
             image.resizable()
           } else {
-            Color
-              .primary
-              .opacity(0.02)
-              .background(.ultraThinMaterial)
-              .shimmering(
-                gradient: Gradient(
-                  colors: [
-                    .clear,
-                    .white.opacity(0.32),
-                    .clear
-                  ]
-                ),
-                mode: .overlay()
-              )
+            Color.clear
           }
         }
+        .opacity((store.content.faceDirection == .front) ? 1 : 0)
+        
+        LazyImage(
+          url: store.content.card.getCardFace(for: .back).getArtCroppedImageURL(),
+          transaction: Transaction(animation: .easeInOut(duration: 2))
+        ) { state in
+          if let image = state.image {
+            image.resizable()
+          } else {
+            Color.clear
+          }
+        }
+        .opacity((store.content.faceDirection == .back) ? 1 : 0)
       }
-      .blur(radius: 34, opaque: true)
+      .blur(radius: 89, opaque: true)
       .overlay(Color.primary.colorInvert().opacity(0.8))
       .ignoresSafeArea(.all, edges: .all)
     }
