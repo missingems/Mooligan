@@ -169,11 +169,11 @@ private extension Widget {
               .tint(.accentColor)
             
             Text(counters)
-              .foregroundStyle(DesignComponentsAsset.invertedPrimary.swiftUIColor)
               .font(.body)
               .fontWeight(.medium)
               .fontDesign(.serif)
               .offset(y: 1)
+              .colorInvert()
           }
         }
         
@@ -268,7 +268,7 @@ extension Widget {
     }
     .frame(minWidth: 66, minHeight: 34)
     .padding(EdgeInsets(top: 5, leading: 11, bottom: 5, trailing: 11))
-    .background(Color.primary.opacity(0.02).background(.ultraThinMaterial))
+    .background(Color(.systemFill))
     .clipShape(RoundedRectangle(cornerRadius: 13.0))
   }
 }

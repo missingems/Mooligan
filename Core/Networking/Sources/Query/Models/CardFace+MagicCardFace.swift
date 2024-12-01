@@ -12,7 +12,14 @@ extension Card.Face: MagicCardFace {
     }
     
     return URL(string: uri)
-
+  }
+  
+  public func getArtCroppedImageURL() -> URL? {
+    guard let uri = imageUris?.artCrop else {
+      return nil
+    }
+    
+    return URL(string: uri)
   }
   
   public func getManaCost() -> String? {
