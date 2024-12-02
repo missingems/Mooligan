@@ -15,11 +15,6 @@ struct Content<Card: MagicCard>: Equatable, Sendable {
     let manaCost: [String]
   }
   
-  enum FaceDirection: Equatable {
-    case front
-    case back
-  }
-  
   // MARK: - Identifiers
   
   let card: Card
@@ -82,6 +77,20 @@ struct Content<Card: MagicCard>: Equatable, Sendable {
   var imageURL: URL?
   var setIconURL: Result<URL?, FeatureError>
   var variants: Result<[Card], FeatureError>
+  
+  func artCroppedImageURL(with faceDirection: MagicCardFaceDirection) -> URL? {
+    let url: URL?
+    
+    switch faceDirection {
+    case .front:
+      url = card.getCardFace(for: faceDirection).getArtCroppedImageURL()
+      
+    case .back:
+      url = card.getCardFace(for: faceDirection).getArtCroppedImageURL()
+    }
+    
+    return url ?? card.getArtCroppedImageURL()
+  }
   
   // MARK: - Icons
   

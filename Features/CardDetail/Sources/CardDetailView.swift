@@ -71,7 +71,7 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
               .foregroundStyle(DesignComponentsAsset.invertedPrimary.swiftUIColor)
               .frame(maxWidth: .infinity, minHeight: 34)
               .padding(.vertical, 5.0)
-              .background(DesignComponentsAsset.accentColor.swiftUIColor.background(.ultraThinMaterial))
+              .background(DesignComponentsAsset.accentColor.swiftUIColor)
               .clipShape(RoundedRectangle(cornerRadius: 13))
             }
             .buttonStyle(.sinkableButtonStyle)
@@ -81,8 +81,7 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
               content: {
                 VariableBlurView(
                   maxBlurRadius: 13.0,
-                  direction: .blurredBottomClearTop,
-                  startOffset: 0
+                  direction: .blurredBottomClearTop
                 )
                 .frame(height: 144.0)
                 .offset(x: 0, y: -15)
@@ -127,7 +126,7 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
     .background {
       ZStack {
         LazyImage(
-          url: store.content.card.getCardFace(for: .front).getArtCroppedImageURL(),
+          url: store.content.artCroppedImageURL(with: .front),
           transaction: Transaction(animation: .easeInOut(duration: 2))
         ) { state in
           if let image = state.image {
@@ -139,7 +138,7 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
         .opacity((store.content.faceDirection == .front) ? 1 : 0)
         
         LazyImage(
-          url: store.content.card.getCardFace(for: .back).getArtCroppedImageURL(),
+          url: store.content.artCroppedImageURL(with: .back),
           transaction: Transaction(animation: .easeInOut(duration: 2))
         ) { state in
           if let image = state.image {
