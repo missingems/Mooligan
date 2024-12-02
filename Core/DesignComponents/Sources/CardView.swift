@@ -44,6 +44,7 @@ public struct CardView: View {
   private let shouldShowPrice: Bool
   private let usdPrice: String?
   private let usdFoilPrice: String?
+  private let callToActionIconName: String?
   @Binding private var isTransformed: Bool?
   @State private var isTransformedInternal = false
   @Binding private var isFlipped: Bool?
@@ -167,8 +168,10 @@ public struct CardView: View {
           }
         }
       } label: {
-        Image(systemName: "arrow.trianglehead.clockwise.rotate.90")
-          .fontWeight(.semibold)
+        if let iconName = callToActionIconName {
+          Image(systemName: iconName)
+            .fontWeight(.semibold)
+        }
       }
       .tint(DesignComponentsAsset.accentColor.swiftUIColor)
       .frame(width: 44.0, height: 44.0)
@@ -186,7 +189,10 @@ public struct CardView: View {
           }
         }
       } label: {
-        Image(systemName: "arrow.left.arrow.right").fontWeight(.semibold)
+        if let iconName = callToActionIconName {
+          Image(systemName: iconName)
+            .fontWeight(.semibold)
+        }
       }
       .tint(DesignComponentsAsset.accentColor.swiftUIColor)
       .frame(width: 44.0, height: 44.0)
@@ -207,7 +213,8 @@ public struct CardView: View {
     layoutConfiguration: LayoutConfiguration,
     usdPrice: String?,
     usdFoilPrice: String?,
-    shouldShowPrice: Bool = true
+    shouldShowPrice: Bool = true,
+    callToActionIconName: String?
   ) {
     self.imageURL = imageURL
     
@@ -227,5 +234,6 @@ public struct CardView: View {
     self.isTransformedInternal = false
     self._isFlipped = isFlipped ?? .constant(nil)
     self.isFlippedInternal = false
+    self.callToActionIconName = callToActionIconName
   }
 }

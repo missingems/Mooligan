@@ -128,17 +128,8 @@ struct Content<Card: MagicCard>: Equatable, Sendable {
     artistSelectionLabel = String(localized: "Artist")
     rulingSelectionLabel = String(localized: "Rulings")
     relatedSelectionLabel = String(localized: "Related")
-    
-    if card.isFlippable {
-      descriptionCallToActionLabel = "Flip"
-      descriptionCallToActionIconName = "arrow.trianglehead.clockwise.rotate.90"
-    } else if card.isTransformable {
-      descriptionCallToActionLabel = "Transform"
-      descriptionCallToActionIconName = "arrow.left.arrow.right"
-    } else {
-      descriptionCallToActionLabel = nil
-      descriptionCallToActionIconName = nil
-    }
+    descriptionCallToActionLabel = card.getLayout().value.callToActionLabel
+    descriptionCallToActionIconName = card.getLayout().value.callToActionIconName
     
     // Initialize Icons
     artistSelectionIcon = Image(asset: DesignComponentsAsset.artist)
