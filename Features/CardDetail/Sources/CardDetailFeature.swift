@@ -40,14 +40,6 @@ import Networking
               }, catch: { error, send in
                 await send(.updateVariants(.success([card])))
               }
-            ),
-            .run(
-              priority: .background,
-              operation: { send in
-                try await send(.updateRulings(client.getRulings(of: card)))
-              }, catch: { error, send in
-                await send(.updateRulings([]))
-              }
             )
           ]
         )

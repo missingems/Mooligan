@@ -67,7 +67,7 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
                   .font(.body)
                   .fontWeight(.semibold)
               } icon: {
-                Image(systemName: icon).fontWeight(.semibold)
+                Image(systemName: icon)
               }
               .foregroundStyle(DesignComponentsAsset.invertedPrimary.swiftUIColor)
               .frame(maxWidth: .infinity, minHeight: 34)

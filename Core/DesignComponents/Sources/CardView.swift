@@ -49,6 +49,7 @@ public struct CardView: View {
   @State private var isTransformedInternal = false
   @Binding private var isFlipped: Bool?
   @State private var isFlippedInternal = false
+  @State private var isImageLoaded = false
   
   public var body: some View {
     VStack(spacing: 5) {
@@ -68,7 +69,8 @@ public struct CardView: View {
                 size: CGSize(
                   width: width,
                   height: height
-                )
+                ),
+                isImageLoaded: $isImageLoaded
               )
               .opacity(isTransformed ?? isTransformedInternal ? 1 : 0)
               .rotationEffect(.degrees(isFlipped ?? isFlippedInternal ? 180 : 0))
@@ -85,7 +87,8 @@ public struct CardView: View {
               size: CGSize(
                 width: width,
                 height: height
-              )
+              ),
+              isImageLoaded: $isImageLoaded
             )
             .opacity(isTransformed ?? isTransformedInternal ? 0 : 1)
             .rotationEffect(.degrees(isFlipped ?? isFlippedInternal ? 180 : 0))
@@ -99,7 +102,8 @@ public struct CardView: View {
                 url: backImageURL,
                 cornerRadius: 15.0,
                 rotation: layoutConfiguration.rotation.degrees,
-                isTransformed: true
+                isTransformed: true,
+                isImageLoaded: $isImageLoaded
               )
               .opacity(isTransformed ?? isTransformedInternal ? 1 : 0)
               .rotationEffect(.degrees(isFlipped ?? isFlippedInternal ? 180 : 0))
@@ -112,7 +116,8 @@ public struct CardView: View {
               url: imageURL,
               cornerRadius: 15.0,
               rotation: layoutConfiguration.rotation.degrees,
-              isTransformed: false
+              isTransformed: false,
+              isImageLoaded: $isImageLoaded
             )
             .opacity(isTransformed ?? isTransformedInternal ? 0 : 1)
             .rotationEffect(.degrees(isFlipped ?? isFlippedInternal ? 180 : 0))
@@ -158,49 +163,53 @@ public struct CardView: View {
   }
   
   @ViewBuilder private var buttons: some View {
-    if isFlippable {
-      Button {
-        withAnimation(.bouncy) {
-          if isFlipped != nil {
-            isFlipped?.toggle()
-          } else {
-            isFlippedInternal.toggle()
+    Group {
+      if isFlippable {
+        Button {
+          withAnimation(.bouncy) {
+            if isFlipped != nil {
+              isFlipped?.toggle()
+            } else {
+              isFlippedInternal.toggle()
+            }
+          }
+        } label: {
+          if let iconName = callToActionIconName {
+            Image(systemName: iconName)
+              .fontWeight(.semibold)
           }
         }
-      } label: {
-        if let iconName = callToActionIconName {
-          Image(systemName: iconName)
-            .fontWeight(.semibold)
-        }
-      }
-      .tint(DesignComponentsAsset.accentColor.swiftUIColor)
-      .frame(width: 44.0, height: 44.0)
-      .background(.thinMaterial)
-      .clipShape(Circle())
-      .overlay(Circle().stroke(.separator, lineWidth: 1).opacity(0.618))
-      .offset(x: 5, y: -13)
-    } else if isTransformable {
-      Button {
-        withAnimation(.bouncy) {
-          if isTransformed != nil {
-            isTransformed?.toggle()
-          } else {
-            isTransformedInternal.toggle()
+        .tint(DesignComponentsAsset.accentColor.swiftUIColor)
+        .frame(width: 44.0, height: 44.0)
+        .background(.thinMaterial)
+        .clipShape(Circle())
+        .overlay(Circle().stroke(.separator, lineWidth: 1).opacity(0.618))
+        .offset(x: 5, y: -13)
+      } else if isTransformable {
+        Button {
+          withAnimation(.bouncy) {
+            if isTransformed != nil {
+              isTransformed?.toggle()
+            } else {
+              isTransformedInternal.toggle()
+            }
+          }
+        } label: {
+          if let iconName = callToActionIconName {
+            Image(systemName: iconName)
+              .fontWeight(.semibold)
           }
         }
-      } label: {
-        if let iconName = callToActionIconName {
-          Image(systemName: iconName)
-            .fontWeight(.semibold)
-        }
+        .tint(DesignComponentsAsset.accentColor.swiftUIColor)
+        .frame(width: 44.0, height: 44.0)
+        .background(.thinMaterial)
+        .clipShape(Circle())
+        .overlay(Circle().stroke(.separator, lineWidth: 1).opacity(0.618))
+        .offset(x: 5, y: -13)
       }
-      .tint(DesignComponentsAsset.accentColor.swiftUIColor)
-      .frame(width: 44.0, height: 44.0)
-      .background(.thinMaterial)
-      .clipShape(Circle())
-      .overlay(Circle().stroke(.separator, lineWidth: 1).opacity(0.618))
-      .offset(x: 5, y: -13)
     }
+    .opacity(isImageLoaded ? 1 : 0)
+    .animation(.default, value: isImageLoaded)
   }
   
   public init(
