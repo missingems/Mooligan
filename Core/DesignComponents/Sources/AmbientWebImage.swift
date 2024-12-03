@@ -20,13 +20,15 @@ public struct AmbientWebImage: View {
   private let cornerRadius: CGFloat
   private let transformers: [ImageProcessing]
   private let size: CGSize?
+  private let isImageLoaded: Binding<Bool>
   
   public init(
     url: URL,
     cornerRadius: CGFloat = 0,
     rotation: CGFloat = 0,
     isTransformed: Bool = false,
-    size: CGSize? = nil
+    size: CGSize? = nil,
+    isImageLoaded: Binding<Bool>
   ) {
     self.url = url
     self.cornerRadius = cornerRadius
@@ -55,6 +57,7 @@ public struct AmbientWebImage: View {
     
     self.transformers = transformers
     self.size = size
+    self.isImageLoaded = isImageLoaded
   }
   
   public var body: some View {
@@ -66,7 +69,9 @@ public struct AmbientWebImage: View {
       transaction: Transaction(animation: .interpolatingSpring)
     ) { state in
       if let image = state.image {
-        image.resizable()
+        image.resizable().task {
+          isImageLoaded.wrappedValue = true
+        }
       } else {
         Color
           .primary
