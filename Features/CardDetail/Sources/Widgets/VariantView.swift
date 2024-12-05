@@ -46,9 +46,8 @@ struct VariantView<Card: MagicCard>: View {
             .buttonStyle(.sinkableButtonStyle)
           }
         }
-        .scrollTargetLayout()
       }
-      .scrollTargetBehavior(.viewAligned)
+      .frame(minHeight: (170 / MagicCardImageRatio.widthToHeight.rawValue).rounded())
       .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
       .padding(.top, 3.0)
       .scrollClipDisabled(true)

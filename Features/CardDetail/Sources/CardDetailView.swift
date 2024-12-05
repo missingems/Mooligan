@@ -122,6 +122,30 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
           
         }
         .zIndex(1)
+        
+        SelectionView(
+          items: [
+            SelectionView.Item(
+              icon: store.content.artistSelectionIcon,
+              title: store.content.artistSelectionLabel,
+              detail: store.content.artist
+            ) {
+              
+            },
+            SelectionView.Item(
+              icon: store.content.rulingSelectionIcon,
+              title: store.content.rulingSelectionLabel
+            ) {
+              
+            },
+            SelectionView.Item(
+              icon: store.content.relatedSelectionIcon,
+              title: store.content.relatedSelectionLabel
+            ) {
+              
+            },
+          ]
+        )
       }
     }
     .background {
