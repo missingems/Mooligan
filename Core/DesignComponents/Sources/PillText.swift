@@ -38,6 +38,10 @@ public struct PillText: View {
             endPoint: .bottomTrailing
           )
           .blur(radius: 3)
+          .overlay(
+            RoundedRectangle(cornerRadius: 8)
+              .stroke(Color.black.opacity(0.3), lineWidth: 1)
+          )
         } else {
           background
         }
