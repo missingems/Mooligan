@@ -23,7 +23,7 @@ struct SelectionView: View {
           )
         }
       }
-      .background(Color.primary.opacity(0.02).background(.ultraThinMaterial))
+      .background(Color(.systemFill))
       .clipShape(RoundedRectangle(cornerRadius: 13.0))
     }
     .safeAreaPadding(.horizontal, nil)

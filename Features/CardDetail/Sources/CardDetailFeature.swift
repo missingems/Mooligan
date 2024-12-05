@@ -40,7 +40,7 @@ import Networking
               }, catch: { error, send in
                 await send(.updateVariants(.success([card])))
               }
-            )
+            ),
           ]
         )
         .cancellable(id: "\(action)", cancelInFlight: true)
