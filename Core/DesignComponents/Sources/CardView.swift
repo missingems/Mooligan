@@ -100,7 +100,7 @@ public struct CardView: View {
             if let backImageURL {
               AmbientWebImage(
                 url: backImageURL,
-                cornerRadius: 15.0,
+                cornerRadius: 8,
                 rotation: layoutConfiguration.rotation.degrees,
                 isTransformed: true,
                 isImageLoaded: $isImageLoaded
@@ -114,7 +114,7 @@ public struct CardView: View {
             
             AmbientWebImage(
               url: imageURL,
-              cornerRadius: 15.0,
+              cornerRadius: 8,
               rotation: layoutConfiguration.rotation.degrees,
               isTransformed: false,
               isImageLoaded: $isImageLoaded

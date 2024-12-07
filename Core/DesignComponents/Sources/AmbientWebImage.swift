@@ -55,6 +55,18 @@ public struct AmbientWebImage: View {
       )
     }
     
+    transformers.append(
+      .roundedCorners(
+        radius: cornerRadius,
+        unit: .points,
+        border: .init(
+          color: .white.withAlphaComponent(0.12 ),
+          width: 1,
+          unit: .points
+        )
+      )
+    )
+    
     self.transformers = transformers
     self.size = size
     self.isImageLoaded = isImageLoaded
@@ -73,24 +85,13 @@ public struct AmbientWebImage: View {
           isImageLoaded.wrappedValue = true
         }
       } else {
-        Color
-          .primary
-          .opacity(0.02)
-          .background(.ultraThinMaterial)
-          .shimmering(
-            gradient: Gradient(
-              colors: [
-                .clear,
-                .white.opacity(0.32),
-                .clear
-              ]
-            ),
-            mode: .overlay()
-          )
+        
+        //        .background(.ultraThinMaterial)
+        
+        RoundedRectangle(cornerRadius: 13.0).fill(.primary.opacity(0.3)).shimmering()
       }
     }
     .modifier(ConditionalFrameModifier(size: size))
-    .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
   }
 }
 
