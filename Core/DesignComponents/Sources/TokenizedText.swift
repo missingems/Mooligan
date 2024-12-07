@@ -5,7 +5,11 @@ public struct TokenizedText: View {
   private var font: UIFont
   private let paragraphSpacing: CGFloat
   
-  public init(text: String, font: UIFont, paragraphSpacing: CGFloat) {
+  public init(
+    text: String,
+    font: UIFont,
+    paragraphSpacing: CGFloat
+  ) {
     self.text = text
     self.font = font
     self.paragraphSpacing = paragraphSpacing
@@ -66,9 +70,14 @@ public struct TokenizedText: View {
           text = _text + Text(value).font(Font.system(size: self.font.pointSize))
         }
         
-      case var .token(value):
-        value = value.replacingOccurrences(of: "/", with: ":")
+      case let .italic(value):
+        if text == nil {
+          text = Text(value).font(Font.system(size: self.font.pointSize, design: .serif).italic())
+        } else if let _text = text {
+          text = _text + Text(value).font(Font.system(size: self.font.pointSize, design: .serif).italic())
+        }
         
+      case let .token(value):
         if text == nil {
           text = getCustomImage(image: "{\(value)}", newSize: CGSize(width: font.pointSize, height: font.pointSize)).font(Font.system(size: self.font.pointSize))
         } else if let _text = text {
@@ -103,6 +112,7 @@ public struct TokenizedText: View {
   
   enum TextElement: Hashable {
     case text(String)
+    case italic(String)
     case token(String)
   }
 }
