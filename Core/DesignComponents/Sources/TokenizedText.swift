@@ -10,7 +10,8 @@ public struct TokenizedText: View {
     font: UIFont,
     paragraphSpacing: CGFloat
   ) {
-    self.text = text
+    self.text = text.replacingOccurrences(of: "(", with: "_(").replacingOccurrences(of: ")", with: ")_")
+    
     self.font = font
     self.paragraphSpacing = paragraphSpacing
   }
@@ -65,16 +66,9 @@ public struct TokenizedText: View {
       switch element {
       case let .text(value):
         if text == nil {
-          text = Text(value).font(Font.system(size: self.font.pointSize))
+          text = Text(LocalizedStringKey(value)).font(Font.system(size: self.font.pointSize))
         } else if let _text = text {
-          text = _text + Text(value).font(Font.system(size: self.font.pointSize))
-        }
-        
-      case let .italic(value):
-        if text == nil {
-          text = Text(value).font(Font.system(size: self.font.pointSize, design: .serif).italic())
-        } else if let _text = text {
-          text = _text + Text(value).font(Font.system(size: self.font.pointSize, design: .serif).italic())
+          text = _text + Text(LocalizedStringKey(value)).font(Font.system(size: self.font.pointSize))
         }
         
       case let .token(value):
@@ -112,7 +106,6 @@ public struct TokenizedText: View {
   
   enum TextElement: Hashable {
     case text(String)
-    case italic(String)
     case token(String)
   }
 }
