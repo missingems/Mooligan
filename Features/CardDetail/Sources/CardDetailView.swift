@@ -36,7 +36,8 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
             usdPrice: nil,
             usdFoilPrice: nil,
             shouldShowPrice: false,
-            callToActionIconName: store.content.card.getLayout().value.callToActionIconName
+            callToActionIconName: store.content.card.getLayout().value.callToActionIconName,
+            callToActionHorizontalOffset: 21.0
           )
           .aspectRatio(layoutConfiguration.rotation.ratio, contentMode: .fit)
           .padding(layoutConfiguration.insets)

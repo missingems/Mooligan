@@ -45,6 +45,7 @@ public struct CardView: View {
   private let usdPrice: String?
   private let usdFoilPrice: String?
   private let callToActionIconName: String?
+  private let callToActionHorizontalOffset: CGFloat
   @Binding private var isTransformed: Bool?
   @State private var isTransformedInternal = false
   @Binding private var isFlipped: Bool?
@@ -184,7 +185,7 @@ public struct CardView: View {
         .background(.thinMaterial)
         .clipShape(Circle())
         .overlay(Circle().stroke(.separator, lineWidth: 1).opacity(0.618))
-        .offset(x: 5, y: -13)
+        .offset(x: callToActionHorizontalOffset, y: -13)
       } else if isTransformable {
         Button {
           withAnimation(.bouncy) {
@@ -205,7 +206,7 @@ public struct CardView: View {
         .background(.thinMaterial)
         .clipShape(Circle())
         .overlay(Circle().stroke(.separator, lineWidth: 1).opacity(0.618))
-        .offset(x: 5, y: -13)
+        .offset(x: callToActionHorizontalOffset, y: -13)
       }
     }
     .opacity(isImageLoaded ? 1 : 0)
@@ -223,7 +224,8 @@ public struct CardView: View {
     usdPrice: String?,
     usdFoilPrice: String?,
     shouldShowPrice: Bool = true,
-    callToActionIconName: String?
+    callToActionIconName: String?,
+    callToActionHorizontalOffset: CGFloat = 5.0
   ) {
     self.imageURL = imageURL
     
@@ -244,5 +246,6 @@ public struct CardView: View {
     self._isFlipped = isFlipped ?? .constant(nil)
     self.isFlippedInternal = false
     self.callToActionIconName = callToActionIconName
+    self.callToActionHorizontalOffset = callToActionHorizontalOffset
   }
 }
