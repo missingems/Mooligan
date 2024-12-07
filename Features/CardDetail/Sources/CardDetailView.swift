@@ -197,4 +197,3 @@ private extension CardView.LayoutConfiguration {
     }
   }
 }
-
