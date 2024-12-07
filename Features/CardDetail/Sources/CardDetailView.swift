@@ -190,7 +190,7 @@ private extension CardView.LayoutConfiguration {
   var insets: EdgeInsets {
     switch rotation {
     case .landscape:
-      EdgeInsets(top: 21, leading: 0, bottom: 29, trailing: 0)
+      EdgeInsets(top: 21, leading: 8, bottom: 29, trailing: 8)
       
     case .portrait:
       EdgeInsets(top: 21, leading: 55, bottom: 29, trailing: 55)
