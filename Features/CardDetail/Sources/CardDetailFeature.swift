@@ -22,7 +22,6 @@ import Networking
         return .merge(
           [
             .run(
-              priority: .background,
               operation: { [state] send in
                 if let url = try state.content.setIconURL.get() {
                   await send(.updateSetIconURL(.success(url)))
@@ -34,7 +33,6 @@ import Networking
               }
             ),
             .run(
-              priority: .background,
               operation: { send in
                 try await send(.updateVariants(.success(client.getVariants(of: card, page: 0))))
               }, catch: { error, send in
