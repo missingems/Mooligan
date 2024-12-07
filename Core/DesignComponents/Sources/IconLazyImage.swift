@@ -20,7 +20,7 @@ public struct IconLazyImage: View {
         }
       }
       
-      ProgressView().task {
+      ProgressView().task(priority: .background) {
         guard let url else { return }
         
         ImagePipeline.shared.loadImage(with: url) { result in

@@ -85,7 +85,14 @@ public struct AmbientWebImage: View {
           isImageLoaded.wrappedValue = true
         }
       } else {
-        RoundedRectangle(cornerRadius: 13.0).fill(.primary.opacity(0.3)).shimmering()
+        Color.primary.opacity(0.3).shimmering(
+          animation: .easeInOut(duration: 2)
+            .delay(0.315)
+            .repeatForever(autoreverses: false)
+        )
+        .blur(radius: 34.0)
+        .background(.clear)
+        .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
       }
     }
     .modifier(ConditionalFrameModifier(size: size))

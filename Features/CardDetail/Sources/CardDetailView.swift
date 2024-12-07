@@ -43,7 +43,7 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
           .padding(layoutConfiguration.insets)
           .safeAreaPadding(.horizontal, nil)
           .zIndex(1)
-          .shadow(color: .primary.opacity(0.1), radius: 21, x: 0, y: 13)
+          .shadow(color: DesignComponentsAsset.shadow.swiftUIColor, radius: 13, x: 0, y: 13)
           
           CardDetailTableView(descriptions: store.content.descriptions)
           
