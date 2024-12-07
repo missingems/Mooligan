@@ -193,7 +193,7 @@ private extension CardView.LayoutConfiguration {
       EdgeInsets(top: 21, leading: 8, bottom: 29, trailing: 8)
       
     case .portrait:
-      EdgeInsets(top: 21, leading: 55, bottom: 29, trailing: 55)
+      EdgeInsets(top: 21, leading: 71, bottom: 29, trailing: 71)
     }
   }
 }

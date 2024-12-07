@@ -85,9 +85,6 @@ public struct AmbientWebImage: View {
           isImageLoaded.wrappedValue = true
         }
       } else {
-        
-        //        .background(.ultraThinMaterial)
-        
         RoundedRectangle(cornerRadius: 13.0).fill(.primary.opacity(0.3)).shimmering()
       }
     }
