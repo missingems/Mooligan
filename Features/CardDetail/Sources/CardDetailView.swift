@@ -36,12 +36,14 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
             usdPrice: nil,
             usdFoilPrice: nil,
             shouldShowPrice: false,
-            callToActionIconName: store.content.card.getLayout().value.callToActionIconName
+            callToActionIconName: store.content.card.getLayout().value.callToActionIconName,
+            callToActionHorizontalOffset: 21.0
           )
           .aspectRatio(layoutConfiguration.rotation.ratio, contentMode: .fit)
           .padding(layoutConfiguration.insets)
           .safeAreaPadding(.horizontal, nil)
           .zIndex(1)
+          .shadow(color: .primary.opacity(0.1), radius: 21, x: 0, y: 13)
           
           CardDetailTableView(descriptions: store.content.descriptions)
           
@@ -195,4 +197,3 @@ private extension CardView.LayoutConfiguration {
     }
   }
 }
-
