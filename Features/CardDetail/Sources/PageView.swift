@@ -15,7 +15,7 @@ public struct PageView<Client: MagicCardDetailRequestClient>: View {
   
   public var body: some View {
     ScrollView(.horizontal, showsIndicators: false) {
-      LazyHStack(alignment: .top, spacing: 0) {
+      LazyHStack(alignment: .top, spacing: 8.0) {
         ForEach(
           Array(store.scope(state: \.cards, action: \.cards))
         ) { store in
@@ -24,6 +24,7 @@ public struct PageView<Client: MagicCardDetailRequestClient>: View {
       }
       .scrollTargetLayout()
     }
-    .scrollTargetBehavior(.paging)
+    .scrollTargetBehavior(.viewAligned)
+    .background(.black)
   }
 }

@@ -57,7 +57,6 @@ public struct TokenizedText: View {
       }
     }
     
-    // Add any remaining text after the last token
     if !currentText.isEmpty {
       elements.append(.text(currentText, isItalic: isItalic))
     }
