@@ -10,8 +10,7 @@ public struct TokenizedText: View {
     font: UIFont,
     paragraphSpacing: CGFloat
   ) {
-    self.text = text.replacingOccurrences(of: "(", with: "_(").replacingOccurrences(of: ")", with: ")_")
-    
+    self.text = text
     self.font = font
     self.paragraphSpacing = paragraphSpacing
   }
@@ -29,14 +28,21 @@ public struct TokenizedText: View {
   // Parses the given text and returns an array of either text or token identifiers
   private func parseText(_ text: String) -> [TextElement] {
     var elements: [TextElement] = []
+    var isItalic = false
     var currentText = ""
     var currentToken = ""
     var insideToken = false
     
     for char in text {
-      if char == "{" {
+      if char == "(" {
+        isItalic = true
+        elements.append(.text("(", isItalic: isItalic))
+      } else if char == ")" {
+        elements.append(.text(")", isItalic: isItalic))
+        isItalic = false
+      } else if char == "{" {
         if !currentText.isEmpty {
-          elements.append(.text(currentText))
+          elements.append(.text(currentText, isItalic: isItalic))
           currentText = ""
         }
         insideToken = true
@@ -47,13 +53,13 @@ public struct TokenizedText: View {
       } else if insideToken {
         currentToken.append(char)
       } else {
-        currentText.append(char)
+        elements.append(.text("\(char)", isItalic: isItalic))
       }
     }
     
     // Add any remaining text after the last token
     if !currentText.isEmpty {
-      elements.append(.text(currentText))
+      elements.append(.text(currentText, isItalic: isItalic))
     }
     
     return elements
@@ -64,18 +70,26 @@ public struct TokenizedText: View {
     
     elements.forEach { element in
       switch element {
-      case let .text(value):
-        if text == nil {
-          text = Text(LocalizedStringKey(value)).font(Font.system(size: self.font.pointSize))
-        } else if let _text = text {
-          text = _text + Text(LocalizedStringKey(value)).font(Font.system(size: self.font.pointSize))
+      case let .text(value, isItalic):
+        if isItalic {
+          if text == nil {
+            text = Text(value).font(Font.system(size: self.font.pointSize, design: .serif).italic()).foregroundStyle(.secondary)
+          } else if let _text = text {
+            text = _text + Text(value).font(Font.system(size: self.font.pointSize, design: .serif).italic()).foregroundStyle(.secondary)
+          }
+        } else {
+          if text == nil {
+            text = Text(LocalizedStringKey(value)).font(Font.system(size: self.font.pointSize))
+          } else if let _text = text {
+            text = _text + Text(LocalizedStringKey(value)).font(Font.system(size: self.font.pointSize))
+          }
         }
         
       case let .token(value):
         if text == nil {
-          text = getCustomImage(image: "{\(value)}", newSize: CGSize(width: font.pointSize, height: font.pointSize)).font(Font.system(size: self.font.pointSize))
+          text = getCustomImage(image: "{\(value.replacingOccurrences(of: "/", with: ":"))}", newSize: CGSize(width: font.pointSize, height: font.pointSize)).font(Font.system(size: self.font.pointSize))
         } else if let _text = text {
-          text = _text + getCustomImage(image: "{\(value)}", newSize: CGSize(width: font.pointSize, height: font.pointSize)).font(Font.system(size: self.font.pointSize))
+          text = _text + getCustomImage(image: "{\(value.replacingOccurrences(of: "/", with: ":"))}", newSize: CGSize(width: font.pointSize, height: font.pointSize)).font(Font.system(size: self.font.pointSize))
         }
       }
     }
@@ -104,8 +118,8 @@ public struct TokenizedText: View {
     build()
   }
   
-  enum TextElement: Hashable {
-    case text(String)
+  indirect enum TextElement: Hashable {
+    case text(String, isItalic: Bool)
     case token(String)
   }
 }
