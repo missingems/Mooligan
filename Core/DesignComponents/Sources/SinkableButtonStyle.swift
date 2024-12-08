@@ -7,6 +7,7 @@ public struct SinkableButtonStyle: ButtonStyle {
       .opacity(configuration.isPressed ? 0.31 : 1)
       .blur(radius: configuration.isPressed ? 1 : 0)
       .contentShape(Rectangle())
+      .animation(.easeInOut(duration: configuration.isPressed ? 0.12 : 0.32), value: configuration.isPressed)
   }
 }
 
