@@ -122,3 +122,7 @@ public struct TokenizedText: View {
     case token(String)
   }
 }
+
+#Preview {
+  TokenizedText(text: "test {W}", font: .systemFont(ofSize: 17), paragraphSpacing: 2.0)
+}
