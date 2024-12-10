@@ -47,7 +47,7 @@ struct VariantView<Card: MagicCard>: View {
           }
         }
       }
-      .frame(minHeight: (170 / MagicCardImageRatio.widthToHeight.rawValue).rounded())
+      .frame(idealHeight: (170 / MagicCardImageRatio.widthToHeight.rawValue).rounded() + 21.0 + 18.0)
       .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
       .padding(.top, 3.0)
       .scrollClipDisabled(true)

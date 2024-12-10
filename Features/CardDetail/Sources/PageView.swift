@@ -25,5 +25,6 @@ public struct PageView<Client: MagicCardDetailRequestClient>: View {
       .scrollTargetLayout()
     }
     .scrollTargetBehavior(.paging)
+    .background(.black)
   }
 }

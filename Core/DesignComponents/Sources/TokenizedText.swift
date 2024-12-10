@@ -8,9 +8,20 @@ public struct TokenizedText: View {
   public init(
     text: String,
     font: UIFont,
-    paragraphSpacing: CGFloat
+    paragraphSpacing: CGFloat,
+    keywords: [String]
   ) {
-    self.text = text
+    var _text = text
+    
+    for keyword in keywords {
+      if let regex = try? NSRegularExpression(pattern: "\\b\(NSRegularExpression.escapedPattern(for: keyword))\\b", options: [.caseInsensitive]),
+          let match = regex.firstMatch(in: _text, options: [], range: NSRange(_text.startIndex..<_text.endIndex, in: _text)),
+          let matchRange = Range(match.range, in: _text) {
+          _text.replaceSubrange(matchRange, with: "[\(_text[matchRange])]")
+      }
+    }
+    
+    self.text = _text
     self.font = font
     self.paragraphSpacing = paragraphSpacing
   }
@@ -28,21 +39,26 @@ public struct TokenizedText: View {
   // Parses the given text and returns an array of either text or token identifiers
   private func parseText(_ text: String) -> [TextElement] {
     var elements: [TextElement] = []
+    var isKeyword = false
     var isItalic = false
     var currentText = ""
     var currentToken = ""
     var insideToken = false
     
     for char in text {
-      if char == "(" {
+      if char == "[" {
+        isKeyword = true
+      } else if char == "]" {
+        isKeyword = false
+      } else if char == "(" {
         isItalic = true
-        elements.append(.text("(", isItalic: isItalic))
+        elements.append(.text("(", isItalic: isItalic, isKeyword: isKeyword))
       } else if char == ")" {
-        elements.append(.text(")", isItalic: isItalic))
+        elements.append(.text(")", isItalic: isItalic, isKeyword: isKeyword))
         isItalic = false
       } else if char == "{" {
         if !currentText.isEmpty {
-          elements.append(.text(currentText, isItalic: isItalic))
+          elements.append(.text(currentText, isItalic: isItalic, isKeyword: isKeyword))
           currentText = ""
         }
         insideToken = true
@@ -53,13 +69,12 @@ public struct TokenizedText: View {
       } else if insideToken {
         currentToken.append(char)
       } else {
-        elements.append(.text("\(char)", isItalic: isItalic))
+        elements.append(.text("\(char)", isItalic: isItalic, isKeyword: isKeyword))
       }
     }
     
-    // Add any remaining text after the last token
     if !currentText.isEmpty {
-      elements.append(.text(currentText, isItalic: isItalic))
+      elements.append(.text(currentText, isItalic: isItalic, isKeyword: isKeyword))
     }
     
     return elements
@@ -70,8 +85,14 @@ public struct TokenizedText: View {
     
     elements.forEach { element in
       switch element {
-      case let .text(value, isItalic):
-        if isItalic {
+      case let .text(value, isItalic, isKeyword):
+        if isKeyword {
+          if text == nil {
+            text = Text("[\(value)](https://google.com)").font(Font.system(size: self.font.pointSize)).underline()
+          } else if let _text = text {
+            text = _text + Text("[\(value)](https://google.com)").font(Font.system(size: self.font.pointSize)).underline()
+          }
+        } else if isItalic {
           if text == nil {
             text = Text(value).font(Font.system(size: self.font.pointSize, design: .serif).italic()).foregroundStyle(.secondary)
           } else if let _text = text {
@@ -100,7 +121,7 @@ public struct TokenizedText: View {
   private func getCustomImage(image: String, newSize: CGSize) -> Text {
     if let image = UIImage(named: image, in: DesignComponentsResources.bundle, with: nil),
        let newImage = convertImageToNewFrame(image: image, newFrameSize: newSize) {
-      return Text(Image(uiImage: newImage).resizable()).baselineOffset(-2)
+      return Text(Image(uiImage: newImage).resizable()).baselineOffset(-3)
     } else {
       return Text("")
     }
@@ -119,7 +140,16 @@ public struct TokenizedText: View {
   }
   
   indirect enum TextElement: Hashable {
-    case text(String, isItalic: Bool)
+    case text(String, isItalic: Bool, isKeyword: Bool)
     case token(String)
   }
+}
+
+#Preview {
+  TokenizedText(
+    text: "test q test more ({9}{W/B})({W}{R})",
+    font: .systemFont(ofSize: 30),
+    paragraphSpacing: 2.0,
+    keywords: ["test q"]
+  )
 }

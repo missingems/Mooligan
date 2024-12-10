@@ -89,7 +89,7 @@ extension SelectionView {
       .padding(.vertical, 13.0)
       
       if shouldShowSeparator {
-        Divider().blendMode(.colorBurn).safeAreaPadding(.leading, nil)
+        Divider().safeAreaPadding(.leading, nil)
       }
     }
   }
