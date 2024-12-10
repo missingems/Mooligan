@@ -22,30 +22,31 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
     ScrollView {
       LazyVStack(spacing: 0, pinnedViews: .sectionFooters) {
         Section {
-          CardView(
-            imageURL: store.content.imageURL,
-            backImageURL: store.content.card.getCardFace(for: .back).getImageURL(),
-            isTransformable: store.content.card.isTransformable,
-            isTransformed: $store.isTransformed,
-            isFlippable: store.content.card.isFlippable,
-            isFlipped: $store.isFlipped,
-            layoutConfiguration: CardView.LayoutConfiguration(
-              rotation: store.content.card.isLandscape ? .landscape : .portrait,
-              layout: .flexible
-            ),
-            usdPrice: nil,
-            usdFoilPrice: nil,
-            shouldShowPrice: false,
-            callToActionIconName: store.content.card.getLayout().value.callToActionIconName,
-            callToActionHorizontalOffset: 21.0
-          )
-          .aspectRatio(layoutConfiguration.rotation.ratio, contentMode: .fit)
+//          CardView(
+//            imageURL: store.content.imageURL,
+//            backImageURL: store.content.card.getCardFace(for: .back).getImageURL(),
+//            isTransformable: store.content.card.isTransformable,
+//            isTransformed: $store.isTransformed,
+//            isFlippable: store.content.card.isFlippable,
+//            isFlipped: $store.isFlipped,
+//            layoutConfiguration: CardView.LayoutConfiguration(
+//              rotation: store.content.card.isLandscape ? .landscape : .portrait,
+//              layout: .flexible
+//            ),
+//            usdPrice: nil,
+//            usdFoilPrice: nil,
+//            shouldShowPrice: false,
+//            callToActionIconName: store.content.card.getLayout().value.callToActionIconName,
+//            callToActionHorizontalOffset: 21.0
+//          )
+          Rectangle().fill(.black).frame(width: 300, height: 500, alignment: .center)
+//          .aspectRatio(layoutConfiguration.rotation.ratio, contentMode: .fit)
           .padding(layoutConfiguration.insets)
-          .safeAreaPadding(.horizontal, nil)
-          .zIndex(1)
-          .shadow(color: DesignComponentsAsset.shadow.swiftUIColor, radius: 13, x: 0, y: 13)
+//          .safeAreaPadding(.horizontal, nil)
+//          .zIndex(1)
+//          .shadow(color: DesignComponentsAsset.shadow.swiftUIColor, radius: 13, x: 0, y: 13)
           
-          CardDetailTableView(descriptions: store.content.descriptions)
+          CardDetailTableView(descriptions: store.content.descriptions, keywords: store.content.keywords)
           
           InformationView(
             title: store.content.infoLabel,
