@@ -13,7 +13,12 @@ public struct TokenizedText: View {
   ) {
     var _text = text
     for keyword in keywords {
-      _text = _text.replacingOccurrences(of: keyword, with: "[\(keyword)]")
+      if let regex = try? NSRegularExpression(pattern: "\\b\(NSRegularExpression.escapedPattern(for: keyword))\\b", options: [.caseInsensitive]) {
+        if let match = regex.firstMatch(in: _text, options: [], range: NSRange(_text.startIndex..<_text.endIndex, in: _text)) {
+          let matchRange = Range(match.range, in: _text)!
+          _text.replaceSubrange(matchRange, with: "[\(_text[matchRange])]")
+        }
+      }
     }
     
     self.text = _text
@@ -110,13 +115,13 @@ public struct TokenizedText: View {
       }
     }
     
-    return (text ?? Text(""))
+    return (text ?? Text("")).fixedSize(horizontal: false, vertical: true)
   }
   
   private func getCustomImage(image: String, newSize: CGSize) -> Text {
     if let image = UIImage(named: image, in: DesignComponentsResources.bundle, with: nil),
        let newImage = convertImageToNewFrame(image: image, newFrameSize: newSize) {
-      return Text(Image(uiImage: newImage).resizable()).baselineOffset(-2)
+      return Text(Image(uiImage: newImage).resizable()).baselineOffset(-3)
     } else {
       return Text("")
     }
