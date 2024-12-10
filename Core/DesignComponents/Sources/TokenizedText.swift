@@ -12,12 +12,12 @@ public struct TokenizedText: View {
     keywords: [String]
   ) {
     var _text = text
+    
     for keyword in keywords {
-      if let regex = try? NSRegularExpression(pattern: "\\b\(NSRegularExpression.escapedPattern(for: keyword))\\b", options: [.caseInsensitive]) {
-        if let match = regex.firstMatch(in: _text, options: [], range: NSRange(_text.startIndex..<_text.endIndex, in: _text)) {
-          let matchRange = Range(match.range, in: _text)!
+      if let regex = try? NSRegularExpression(pattern: "\\b\(NSRegularExpression.escapedPattern(for: keyword))\\b", options: [.caseInsensitive]),
+          let match = regex.firstMatch(in: _text, options: [], range: NSRange(_text.startIndex..<_text.endIndex, in: _text)),
+          let matchRange = Range(match.range, in: _text) {
           _text.replaceSubrange(matchRange, with: "[\(_text[matchRange])]")
-        }
       }
     }
     
@@ -88,9 +88,9 @@ public struct TokenizedText: View {
       case let .text(value, isItalic, isKeyword):
         if isKeyword {
           if text == nil {
-            text = Text(value).font(Font.system(size: self.font.pointSize)).underline()
+            text = Text("[\(value)](https://google.com)").font(Font.system(size: self.font.pointSize)).underline()
           } else if let _text = text {
-            text = _text + Text(value).font(Font.system(size: self.font.pointSize)).underline()
+            text = _text + Text("[\(value)](https://google.com)").font(Font.system(size: self.font.pointSize)).underline()
           }
         } else if isItalic {
           if text == nil {

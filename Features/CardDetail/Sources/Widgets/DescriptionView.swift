@@ -20,6 +20,7 @@ struct DescriptionView: View {
     )
     .multilineTextAlignment(.leading)
     .frame(maxWidth: .infinity, alignment: .leading)
+    .tint(.primary)
   }
 }
 
