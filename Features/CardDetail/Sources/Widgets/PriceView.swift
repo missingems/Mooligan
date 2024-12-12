@@ -131,7 +131,7 @@ extension PriceView {
         HStack(spacing: 3) {
           if isFoil {
             PillText("FOIL", isFoil: true)
-              .font(.caption)
+              .font(.caption2)
               .foregroundStyle(.black.opacity(0.8))
               .monospaced()
               .fontWeight(.medium)

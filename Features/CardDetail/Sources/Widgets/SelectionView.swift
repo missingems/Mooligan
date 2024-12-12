@@ -65,24 +65,24 @@ extension SelectionView {
             .resizable()
             .aspectRatio(contentMode: .fit)
             .frame(width: 21.0, height: 21.0)
-            .tint(.primary)
+            .tint(DesignComponentsAsset.accentColor.swiftUIColor)
           
           Text(title)
             .font(.headline)
-            .tint(.primary)
+            .tint(DesignComponentsAsset.accentColor.swiftUIColor)
           
           Spacer()
           
           if let detail {
             Text(detail)
               .font(.body)
-              .tint(.secondary)
+              .tint(DesignComponentsAsset.accentColor.swiftUIColor.secondary)
           }
           
           Image(systemName: "chevron.right")
             .fontWeight(.medium)
             .imageScale(.small)
-            .tint(.secondary)
+            .tint(DesignComponentsAsset.accentColor.swiftUIColor.secondary)
         }
       }
       .safeAreaPadding(.horizontal, nil)
