@@ -127,7 +127,6 @@ extension PriceView {
             .background(Color(.systemFill))
             .clipShape(RoundedRectangle(cornerRadius: 13))
         }
-        .buttonStyle(.sinkableButtonStyle)
         
         HStack(spacing: 3) {
           if isFoil {
