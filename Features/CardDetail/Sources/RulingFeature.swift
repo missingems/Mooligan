@@ -33,6 +33,7 @@ import Networking
 extension RulingFeature {
   @ObservableState struct State: Equatable {
     var rulings: [MagicCardRuling]
+    let title: String
   }
   
   enum Action: Equatable {

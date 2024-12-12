@@ -52,6 +52,9 @@ import Networking
         
         return .none
         
+      case .rulingsTapped:
+        return .none
+        
       case let .updateRulings(rulings):
         state.content.rulings = rulings
         return .none
@@ -113,6 +116,7 @@ extension CardDetailFeature {
     case binding(BindingAction<State>)
     case fetchAdditionalInformation(card: Client.MagicCardModel)
     case descriptionCallToActionTapped
+    case rulingsTapped
     case updateRulings(_ rulings: [MagicCardRuling])
     case updateSetIconURL(_ setIconURL: Result<URL?, FeatureError>)
     case updateVariants(_ variants: Result<[Client.MagicCardModel], FeatureError>)

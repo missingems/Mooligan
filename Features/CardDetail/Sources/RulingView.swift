@@ -1,18 +1,17 @@
+import ComposableArchitecture
 import DesignComponents
 import Networking
+import ScryfallKit
 import SwiftUI
 
 struct RulingView<Client: MagicCardDetailRequestClient>: View {
-  let card: Client.MagicCardModel
-  let client: Client
-  let rulings: [MagicCardRuling]
-  let title: String
+  let store: StoreOf<RulingFeature<Client>>
   
   var body: some View {
     ScrollView {
       LazyVStack(alignment: .leading, spacing: 13) {
-        ForEach(rulings.indices, id: \.self) { index in
-          let ruling = rulings[index]
+        ForEach(store.rulings.indices, id: \.self) { index in
+          let ruling = store.rulings[index]
           
           VStack(alignment: .leading, spacing: 3) {
             Text(ruling.displayDate)
@@ -30,20 +29,11 @@ struct RulingView<Client: MagicCardDetailRequestClient>: View {
         }
       }
     }
-    .task {
-      let _ = try? await client.getRulings(of: card)
-    }
   }
   
   init(
-    card: Client.MagicCardModel,
-    rulings: [MagicCardRuling],
-    title: String,
-    client: Client
+    store: StoreOf<RulingFeature<Client>>
   ) {
-    self.card = card
-    self.rulings = rulings
-    self.title = title
-    self.client = client
+    self.store = store
   }
 }
