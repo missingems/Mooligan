@@ -23,7 +23,7 @@ struct LegalityView: View {
             legality: legalities[0]
           )
           .background(Color(.systemFill))
-          .clipShape(RoundedRectangle(cornerRadius: 5))
+          .clipShape(RoundedRectangle(cornerRadius: 8))
           
           legalityRow(
             index: 1,
@@ -31,7 +31,7 @@ struct LegalityView: View {
             legality: legalities[1]
           )
           .background(Color(.systemFill))
-          .clipShape(RoundedRectangle(cornerRadius: 5))
+          .clipShape(RoundedRectangle(cornerRadius: 8))
         }
         
         GridRow {
@@ -55,7 +55,7 @@ struct LegalityView: View {
             legality: legalities[4]
           )
           .background(Color(.systemFill))
-          .clipShape(RoundedRectangle(cornerRadius: 5))
+          .clipShape(RoundedRectangle(cornerRadius: 8))
           
           legalityRow(
             index: 5,
@@ -63,7 +63,7 @@ struct LegalityView: View {
             legality: legalities[5]
           )
           .background(Color(.systemFill))
-          .clipShape(RoundedRectangle(cornerRadius: 5))
+          .clipShape(RoundedRectangle(cornerRadius: 8))
         }
         
         GridRow {
@@ -87,7 +87,7 @@ struct LegalityView: View {
             legality: legalities[8]
           )
           .background(Color(.systemFill))
-          .clipShape(RoundedRectangle(cornerRadius: 5))
+          .clipShape(RoundedRectangle(cornerRadius: 8))
           
           legalityRow(
             index: 9,
@@ -95,7 +95,7 @@ struct LegalityView: View {
             legality: legalities[9]
           )
           .background(Color(.systemFill))
-          .clipShape(RoundedRectangle(cornerRadius: 5))
+          .clipShape(RoundedRectangle(cornerRadius: 8))
         }
       }
       .padding(.top, 3.0)
@@ -131,7 +131,7 @@ struct LegalityView: View {
             bundle: DesignComponentsResources.bundle
           )
         }
-        .clipShape(RoundedRectangle(cornerRadius: 5.0))
+        .clipShape(RoundedRectangle(cornerRadius: 8.0))
       
       Text(legality.title)
         .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)

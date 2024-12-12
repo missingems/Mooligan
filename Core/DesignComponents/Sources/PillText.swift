@@ -40,7 +40,7 @@ public struct PillText: View {
           .blur(radius: 3)
           .overlay(
             RoundedRectangle(cornerRadius: 8)
-              .stroke(Color.black.opacity(0.3), lineWidth: 1)
+              .strokeBorder(.separator, lineWidth: 1 / UIScreen.main.nativeScale)
           )
         } else {
           background
