@@ -18,11 +18,8 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
   }
   
   var body: some View {
-    GeometryReader { proxy in
       ScrollView {
-        LazyVStack(spacing: 0) {
-          let cardWidth = proxy.size.width - layoutConfiguration.insets.leading - layoutConfiguration.insets.trailing
-          
+        VStack(spacing: 0) {
           CardView(
             imageURL: store.content.imageURL,
             backImageURL: store.content.card.getCardFace(for: .back).getImageURL(),
@@ -32,7 +29,7 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
             isFlipped: $store.isFlipped,
             layoutConfiguration: CardView.LayoutConfiguration(
               rotation: store.content.card.isLandscape ? .landscape : .portrait,
-              layout: .fixedWidth(cardWidth)
+              layout: .flexible
             ),
             usdPrice: nil,
             usdFoilPrice: nil,
@@ -40,7 +37,9 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
             callToActionIconName: store.content.card.getLayout().value.callToActionIconName,
             callToActionHorizontalOffset: 21.0
           )
+          .aspectRatio(layoutConfiguration.rotation.ratio, contentMode: .fit)
           .padding(layoutConfiguration.insets)
+          .safeAreaPadding(.horizontal, nil)
           .zIndex(1)
           .shadow(color: DesignComponentsAsset.shadow.swiftUIColor, radius: 13, x: 0, y: 13)
           
@@ -138,20 +137,12 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
       }
       .background {
         ZStack {
-          
           LazyImage(
             url: store.content.artCroppedImageURL(with: .front),
             transaction: Transaction(animation: .default)
           ) { state in
             if let image = state.image {
               image.resizable().blur(radius: 34, opaque: true)
-            } else {
-              Color.primary.shimmering(
-                animation: .easeInOut(duration: 2)
-                  .delay(0.315)
-                  .repeatForever(autoreverses: false)
-              )
-              .blur(radius: 34, opaque: true)
             }
           }
           .opacity((store.content.faceDirection == .front) ? 1 : 0)
@@ -161,14 +152,7 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
             transaction: Transaction(animation: .easeInOut(duration: 2))
           ) { state in
             if let image = state.image {
-              image.resizable().blur(radius: 34, opaque: true)
-            } else {
-              Color.primary.shimmering(
-                animation: .easeInOut(duration: 2)
-                  .delay(0.315)
-                  .repeatForever(autoreverses: false)
-              )
-              .blur(radius: 34, opaque: true)
+              image.resizable().blur(radius: 89, opaque: true)
             }
           }
           .opacity((store.content.faceDirection == .back) ? 1 : 0)
@@ -181,7 +165,6 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
       .task {
         store.send(.fetchAdditionalInformation(card: store.content.card))
       }
-    }
   }
 }
 

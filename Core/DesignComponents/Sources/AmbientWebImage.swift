@@ -73,13 +73,9 @@ public struct AmbientWebImage: View {
           isImageLoaded.wrappedValue = true
         }
       } else {
-        Color.primary.opacity(0.3).shimmering(
-          animation: .easeInOut(duration: 2)
-            .delay(0.315)
-            .repeatForever(autoreverses: false)
-        )
-        .blur(radius: 34.0)
-        .background(.clear)
+        Color.primary.opacity(0.3).shimmering()
+          .blur(radius: 34.0)
+          .background(.clear)
       }
     }
     .modifier(ConditionalFrameModifier(size: size))

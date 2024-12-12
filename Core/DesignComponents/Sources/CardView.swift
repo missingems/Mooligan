@@ -76,7 +76,6 @@ public struct CardView: View {
               .opacity(isTransformed ?? isTransformedInternal ? 1 : 0)
               .rotationEffect(.degrees(isFlipped ?? isFlippedInternal ? 180 : 0))
               .rotation3DEffect(.degrees(isTransformed ?? isTransformedInternal ? 180 : 0), axis: (x: 0, y: 1, z: 0))
-              .animation(.bouncy, value: isTransformed ?? isTransformedInternal || isFlipped ?? isFlippedInternal)
               .zIndex(isTransformed ?? isTransformedInternal ? 1 : 0)
             }
             
@@ -94,14 +93,13 @@ public struct CardView: View {
             .opacity(isTransformed ?? isTransformedInternal ? 0 : 1)
             .rotationEffect(.degrees(isFlipped ?? isFlippedInternal ? 180 : 0))
             .rotation3DEffect(.degrees(isTransformed ?? isTransformedInternal ? 180 : 0), axis: (x: 0, y: 1, z: 0))
-            .animation(.bouncy, value: isTransformed ?? isTransformedInternal || isFlipped ?? isFlippedInternal)
             .zIndex(isTransformed ?? isTransformedInternal ? 0 : 1)
             
           case .flexible:
             if let backImageURL {
               AmbientWebImage(
                 url: backImageURL,
-                cornerRadius: 8,
+                cornerRadius: 13,
                 rotation: layoutConfiguration.rotation.degrees,
                 isTransformed: true,
                 isImageLoaded: $isImageLoaded
@@ -109,13 +107,12 @@ public struct CardView: View {
               .opacity(isTransformed ?? isTransformedInternal ? 1 : 0)
               .rotationEffect(.degrees(isFlipped ?? isFlippedInternal ? 180 : 0))
               .rotation3DEffect(.degrees(isTransformed ?? isTransformedInternal ? 180 : 0), axis: (x: 0, y: 1, z: 0))
-              .animation(.bouncy, value: isTransformed ?? isTransformedInternal || isFlipped ?? isFlippedInternal)
               .zIndex(isTransformed ?? isTransformedInternal ? 1 : 0)
             }
             
             AmbientWebImage(
               url: imageURL,
-              cornerRadius: 8,
+              cornerRadius: 13,
               rotation: layoutConfiguration.rotation.degrees,
               isTransformed: false,
               isImageLoaded: $isImageLoaded
@@ -123,7 +120,6 @@ public struct CardView: View {
             .opacity(isTransformed ?? isTransformedInternal ? 0 : 1)
             .rotationEffect(.degrees(isFlipped ?? isFlippedInternal ? 180 : 0))
             .rotation3DEffect(.degrees(isTransformed ?? isTransformedInternal ? 180 : 0), axis: (x: 0, y: 1, z: 0))
-            .animation(.bouncy, value: isTransformed ?? isTransformedInternal || isFlipped ?? isFlippedInternal)
             .zIndex(isTransformed ?? isTransformedInternal ? 0 : 1)
           }
         }
