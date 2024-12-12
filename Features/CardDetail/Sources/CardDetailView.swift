@@ -18,6 +18,7 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
   }
   
   var body: some View {
+    GeometryReader { proxy in
       ScrollView {
         VStack(spacing: 0) {
           CardView(
@@ -29,7 +30,7 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
             isFlipped: $store.isFlipped,
             layoutConfiguration: CardView.LayoutConfiguration(
               rotation: store.content.card.isLandscape ? .landscape : .portrait,
-              layout: .flexible
+              layout: .fixedWidth(proxy.size.width - layoutConfiguration.insets.leading - layoutConfiguration.insets.trailing)
             ),
             usdPrice: nil,
             usdFoilPrice: nil,
@@ -37,11 +38,9 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
             callToActionIconName: store.content.card.getLayout().value.callToActionIconName,
             callToActionHorizontalOffset: 21.0
           )
-          .aspectRatio(layoutConfiguration.rotation.ratio, contentMode: .fit)
-          .padding(layoutConfiguration.insets)
-          .safeAreaPadding(.horizontal, nil)
-          .zIndex(1)
           .shadow(color: DesignComponentsAsset.shadow.swiftUIColor, radius: 13, x: 0, y: 13)
+          .padding(EdgeInsets(top: layoutConfiguration.insets.top, leading: 0, bottom: layoutConfiguration.insets.bottom, trailing: 0))
+          .zIndex(1)
           
           CardDetailTableView(descriptions: store.content.descriptions, keywords: store.content.keywords)
           
@@ -160,11 +159,11 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
           Color(asset: DesignComponentsAsset.backgroundPlaceholder)
         }
         .ignoresSafeArea(.all, edges: .all)
-        .containerRelativeFrame(.horizontal)
       }
-      .task {
-        store.send(.fetchAdditionalInformation(card: store.content.card))
-      }
+    }
+    .task(priority: .background) {
+      store.send(.fetchAdditionalInformation(card: store.content.card))
+    }
   }
 }
 
@@ -175,7 +174,7 @@ private extension CardView.LayoutConfiguration {
       EdgeInsets(top: 21, leading: 8, bottom: 29, trailing: 8)
       
     case .portrait:
-      EdgeInsets(top: 21, leading: 71, bottom: 29, trailing: 71)
+      EdgeInsets(top: 21, leading: 89, bottom: 29, trailing: 89)
     }
   }
 }
