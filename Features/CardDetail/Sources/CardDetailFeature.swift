@@ -18,6 +18,10 @@ import Networking
       case .binding:
         return .none
         
+      case .dismissRulingsTapped:
+        state.showRulings = nil
+        return .none
+        
       case let .fetchAdditionalInformation(card):
         return .merge(
           [
@@ -52,13 +56,6 @@ import Networking
         
         return .none
         
-      case .rulingsTapped:
-        return .none
-        
-      case let .updateRulings(rulings):
-        state.content.rulings = rulings
-        return .none
-        
       case let .updateSetIconURL(value):
         state.content.setIconURL = value
         return .none
@@ -71,13 +68,29 @@ import Networking
         return .run { send in
           await send(action)
         }
+        
+      case .viewRulingsTapped:
+        state.showRulings = RulingFeature.State(
+          card: state.content.card,
+          rulings: [],
+          title: "Rulings"
+        )
+        
+        return .none
+        
+      case .showRulings:
+        return .none
       }
+    }
+    .ifLet(\.$showRulings, action: \.showRulings) {
+      RulingFeature(client: client)
     }
   }
 }
 
 extension CardDetailFeature {
   @ObservableState struct State: Equatable, Identifiable {
+    @Presents var showRulings: RulingFeature<Client>.State?
     let id: UUID
     var content: Content<Client.MagicCardModel>
     let start: Action
@@ -112,15 +125,16 @@ extension CardDetailFeature {
     }
   }
   
-  indirect enum Action: Equatable, Sendable, BindableAction {
+  @CasePathable indirect enum Action: Equatable, Sendable, BindableAction {
     case binding(BindingAction<State>)
+    case dismissRulingsTapped
     case fetchAdditionalInformation(card: Client.MagicCardModel)
     case descriptionCallToActionTapped
-    case rulingsTapped
-    case updateRulings(_ rulings: [MagicCardRuling])
     case updateSetIconURL(_ setIconURL: Result<URL?, FeatureError>)
     case updateVariants(_ variants: Result<[Client.MagicCardModel], FeatureError>)
     case viewAppeared(initialAction: Action)
+    case viewRulingsTapped
+    case showRulings(PresentationAction<RulingFeature<Client>.Action>)
   }
 }
 

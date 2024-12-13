@@ -36,9 +36,9 @@ extension SelectionView {
     let icon: Image
     let title: String
     let detail: String?
-    let action: @Sendable () -> Void
+    let action: @MainActor @Sendable () -> Void
     
-    init(icon: Image, title: String, detail: String? = nil, action: @escaping @Sendable () -> Void) {
+    init(icon: Image, title: String, detail: String? = nil, action: @escaping @MainActor @Sendable () -> Void) {
       self.icon = icon
       self.title = title
       self.detail = detail
@@ -53,7 +53,7 @@ extension SelectionView {
     title: String,
     detail: String?,
     shouldShowSeparator: Bool,
-    didSelect: @escaping @Sendable () -> Void
+    didSelect: @escaping @MainActor @Sendable () -> Void
   ) -> some View {
     VStack(alignment: .leading, spacing: 0) {
       Button {

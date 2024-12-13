@@ -9,26 +9,34 @@ struct RulingView<Client: MagicCardDetailRequestClient>: View {
   
   var body: some View {
     ScrollView {
-      LazyVStack(alignment: .leading, spacing: 13) {
-        ForEach(store.rulings.indices, id: \.self) { index in
-          let ruling = store.rulings[index]
-          
-          VStack(alignment: .leading, spacing: 3) {
-            Text(ruling.displayDate)
-              .font(.caption)
-              .foregroundStyle(.secondary)
+      if store.rulings.isEmpty {
+        ProgressView()
+      } else {
+        VStack(alignment: .leading, spacing: 13) {
+          ForEach(store.rulings) { ruling in
+            VStack(alignment: .leading, spacing: 3) {
+              Text(ruling.displayDate)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+              
+              TokenizedText(
+                text: ruling.description,
+                font: .preferredFont(forTextStyle: .body),
+                paragraphSpacing: 8.0,
+                keywords: []
+              )
+            }
+            .safeAreaPadding(.horizontal, nil)
             
-            TokenizedText(
-              text: ruling.description,
-              font: .preferredFont(forTextStyle: .body),
-              paragraphSpacing: 8.0,
-              keywords: []
-            )
+            Divider().safeAreaPadding(.leading, nil)
           }
-          .safeAreaPadding(.horizontal, nil)
         }
       }
     }
+    .task {
+      store.send(.fetchRulings)
+    }
+    .navigationTitle(store.title)
   }
   
   init(
