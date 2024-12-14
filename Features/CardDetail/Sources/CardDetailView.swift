@@ -149,7 +149,7 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
           
           LazyImage(
             url: store.content.artCroppedImageURL(with: .back),
-            transaction: Transaction(animation: .easeInOut(duration: 2))
+            transaction: Transaction(animation: .default)
           ) { state in
             if let image = state.image {
               image.resizable().blur(radius: 89, opaque: true)
