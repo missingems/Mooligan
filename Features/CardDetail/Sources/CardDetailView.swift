@@ -135,6 +135,11 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
           )
         }
       }
+      .onScrollGeometryChange(for: CGFloat.self, of: { geometry in
+        return geometry.contentOffset.y
+      }, action: { oldValue, newValue in
+        store.send(.scrollViewDidScroll(position: newValue))
+      })
       .background {
         ZStack {
           LazyImage(
@@ -149,7 +154,7 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
           
           LazyImage(
             url: store.content.artCroppedImageURL(with: .back),
-            transaction: Transaction(animation: .easeInOut(duration: 2))
+            transaction: Transaction(animation: .default)
           ) { state in
             if let image = state.image {
               image.resizable().blur(radius: 89, opaque: true)
@@ -188,10 +193,10 @@ private extension CardView.LayoutConfiguration {
   var insets: EdgeInsets {
     switch rotation {
     case .landscape:
-      EdgeInsets(top: 21, leading: 34, bottom: 29, trailing: 34)
+      EdgeInsets(top: 13, leading: 34, bottom: 29, trailing: 34)
       
     case .portrait:
-      EdgeInsets(top: 21, leading: 89, bottom: 29, trailing: 89)
+      EdgeInsets(top: 13, leading: 89, bottom: 29, trailing: 89)
     }
   }
 }

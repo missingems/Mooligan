@@ -1,6 +1,7 @@
 import ComposableArchitecture
 import Foundation
 import Networking
+import SwiftUI
 
 @Reducer struct PageFeature<Client: MagicCardDetailRequestClient> {
   let client: Client
@@ -8,6 +9,9 @@ import Networking
   var body: some ReducerOf<Self> {
     Reduce { state, action in
       switch action {
+      case let .cards(.element(_, .scrollViewDidScroll(position))):
+        state.navigationBarBackgroundVisibility = position > -100.333333 ? .visible : .hidden
+        return .none
       case .cards:
         return .none
       }
@@ -24,6 +28,7 @@ import Networking
 
 extension PageFeature {
   @ObservableState struct State: Equatable {
+    var navigationBarBackgroundVisibility: Visibility = .hidden
     var cards: IdentifiedArrayOf<CardDetailFeature<Client>.State> = []
     
     public init(cards: [Client.MagicCardModel]) {

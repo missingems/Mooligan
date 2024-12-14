@@ -1,4 +1,6 @@
 import ComposableArchitecture
+import DesignComponents
+import VariableBlur
 import SwiftUI
 import Networking
 
@@ -19,7 +21,13 @@ public struct PageView<Client: MagicCardDetailRequestClient>: View {
         ForEach(
           Array(store.scope(state: \.cards, action: \.cards))
         ) { store in
-          CardDetailView(store: store).containerRelativeFrame(.horizontal)
+          CardDetailView(store: store)
+            .containerRelativeFrame(.horizontal)
+            .navigationTitle(" ")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackgroundVisibility(self.store.navigationBarBackgroundVisibility, for: .navigationBar)
+            .toolbarBackground(.clear, for: .navigationBar)
+            .animation(.default, value: self.store.navigationBarBackgroundVisibility)
         }
       }
       .scrollTargetLayout()

@@ -79,6 +79,9 @@ import Networking
         
       case .showRulings:
         return .none
+        
+      case .scrollViewDidScroll:
+        return .none
       }
     }
     .ifLet(\.$showRulings, action: \.showRulings) {
@@ -134,6 +137,7 @@ extension CardDetailFeature {
     case viewAppeared(initialAction: Action)
     case viewRulingsTapped
     case showRulings(PresentationAction<RulingFeature<Client>.Action>)
+    case scrollViewDidScroll(position: CGFloat)
   }
 }
 
