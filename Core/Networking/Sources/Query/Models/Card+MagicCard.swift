@@ -33,6 +33,10 @@ extension Card: MagicCard {
   public func getReleasedAt() -> String { releasedAt }
   public func getSetName() -> String { setName }
   public func getSet() -> String { self.set }
+  
+  public func getMultiverseIds() -> [Int]? {
+    return self.multiverseIds
+  }
 }
 
 extension Card: MagicCardFace {
@@ -69,6 +73,14 @@ extension Card {
       
     case .back:
       cardFaces?.last ?? self
+    }
+  }
+  
+  public func getGathererURLString() -> String? {
+    if let id = getMultiverseIds()?.first {
+      return "https://gatherer.wizards.com/Pages/Card/Details.aspx?multiverseid=\(id)"
+    } else {
+      return nil
     }
   }
 }

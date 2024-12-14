@@ -24,6 +24,7 @@ public struct PillText: View {
       .padding(insets)
       .background {
         if isFoil {
+          Color.black.opacity(0.3)
           LinearGradient(
             colors: [
               Color(#colorLiteral(red: 1.0, green: 0.9, blue: 0.7, alpha: 1)),
@@ -37,10 +38,10 @@ public struct PillText: View {
             startPoint: .topLeading,
             endPoint: .bottomTrailing
           )
-          .blur(radius: 3)
+          .blur(radius: 5)
           .overlay(
             RoundedRectangle(cornerRadius: 8)
-              .stroke(Color.black.opacity(0.3), lineWidth: 1)
+              .strokeBorder(.separator, lineWidth: 1 / UIScreen.main.nativeScale)
           )
         } else {
           background

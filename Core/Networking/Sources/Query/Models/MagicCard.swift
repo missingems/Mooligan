@@ -82,6 +82,8 @@ public protocol MagicCard: Equatable, Hashable, Identifiable, Sendable {
   /// A dictionary of links to other MTG resources
   func getRelatedUris() -> [String: String]
   
+  func getMultiverseIds() -> [Int]?
+  
   /// This card's release date
   func getReleasedAt() -> String
   
@@ -96,6 +98,8 @@ public protocol MagicCard: Equatable, Hashable, Identifiable, Sendable {
   
   /// Get card cropped art
   func getArtCroppedImageURL() -> URL?
+  
+  func getGathererURLString() -> String?
 }
 
 public extension MagicCard {

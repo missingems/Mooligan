@@ -17,7 +17,7 @@ public struct TokenizedText: View {
       if let regex = try? NSRegularExpression(pattern: "\\b\(NSRegularExpression.escapedPattern(for: keyword))\\b", options: [.caseInsensitive]),
           let match = regex.firstMatch(in: _text, options: [], range: NSRange(_text.startIndex..<_text.endIndex, in: _text)),
           let matchRange = Range(match.range, in: _text) {
-          _text.replaceSubrange(matchRange, with: "[\(_text[matchRange])]")
+          _text.replaceSubrange(matchRange, with: "<\(_text[matchRange])>")
       }
     }
     
@@ -29,6 +29,7 @@ public struct TokenizedText: View {
   @ViewBuilder func build() -> some View {
     VStack(alignment: .leading, spacing: paragraphSpacing) {
       let substrings = text.split(separator: "\n")
+      
       ForEach(substrings.indices, id: \.self) { index in
         let element = substrings[index]
         build(elements: parseText(String(element)))
@@ -46,9 +47,9 @@ public struct TokenizedText: View {
     var insideToken = false
     
     for char in text {
-      if char == "[" {
+      if char == "<" {
         isKeyword = true
-      } else if char == "]" {
+      } else if char == ">" {
         isKeyword = false
       } else if char == "(" {
         isItalic = true
@@ -94,9 +95,9 @@ public struct TokenizedText: View {
           }
         } else if isItalic {
           if text == nil {
-            text = Text(value).font(Font.system(size: self.font.pointSize, design: .serif).italic()).foregroundStyle(.secondary)
+            text = Text(LocalizedStringKey(value)).font(Font.system(size: self.font.pointSize, design: .serif).italic()).foregroundStyle(.secondary)
           } else if let _text = text {
-            text = _text + Text(value).font(Font.system(size: self.font.pointSize, design: .serif).italic()).foregroundStyle(.secondary)
+            text = _text + Text(LocalizedStringKey(value)).font(Font.system(size: self.font.pointSize, design: .serif).italic()).foregroundStyle(.secondary)
           }
         } else {
           if text == nil {

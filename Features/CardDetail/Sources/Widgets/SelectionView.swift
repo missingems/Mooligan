@@ -36,9 +36,9 @@ extension SelectionView {
     let icon: Image
     let title: String
     let detail: String?
-    let action: @Sendable () -> Void
+    let action: @MainActor @Sendable () -> Void
     
-    init(icon: Image, title: String, detail: String? = nil, action: @escaping @Sendable () -> Void) {
+    init(icon: Image, title: String, detail: String? = nil, action: @escaping @MainActor @Sendable () -> Void) {
       self.icon = icon
       self.title = title
       self.detail = detail
@@ -53,7 +53,7 @@ extension SelectionView {
     title: String,
     detail: String?,
     shouldShowSeparator: Bool,
-    didSelect: @escaping @Sendable () -> Void
+    didSelect: @escaping @MainActor @Sendable () -> Void
   ) -> some View {
     VStack(alignment: .leading, spacing: 0) {
       Button {
@@ -65,24 +65,24 @@ extension SelectionView {
             .resizable()
             .aspectRatio(contentMode: .fit)
             .frame(width: 21.0, height: 21.0)
-            .tint(.primary)
+            .tint(DesignComponentsAsset.accentColor.swiftUIColor)
           
           Text(title)
             .font(.headline)
-            .tint(.primary)
+            .tint(DesignComponentsAsset.accentColor.swiftUIColor)
           
           Spacer()
           
           if let detail {
             Text(detail)
               .font(.body)
-              .tint(.secondary)
+              .tint(DesignComponentsAsset.accentColor.swiftUIColor.secondary)
           }
           
           Image(systemName: "chevron.right")
             .fontWeight(.medium)
             .imageScale(.small)
-            .tint(.secondary)
+            .tint(DesignComponentsAsset.accentColor.swiftUIColor.secondary)
         }
       }
       .safeAreaPadding(.horizontal, nil)

@@ -180,7 +180,7 @@ public struct CardView: View {
         .frame(width: 44.0, height: 44.0)
         .background(.thinMaterial)
         .clipShape(Circle())
-        .overlay(Circle().stroke(.separator, lineWidth: 1).opacity(0.618))
+        .overlay(Circle().strokeBorder(.separator, lineWidth: 1 / UIScreen.main.nativeScale))
         .offset(x: callToActionHorizontalOffset, y: -13)
       } else if isTransformable {
         Button {
@@ -201,7 +201,7 @@ public struct CardView: View {
         .frame(width: 44.0, height: 44.0)
         .background(.thinMaterial)
         .clipShape(Circle())
-        .overlay(Circle().stroke(.separator, lineWidth: 1).opacity(0.618))
+        .overlay(Circle().strokeBorder(.separator, lineWidth: 1 / UIScreen.main.nativeScale))
         .offset(x: callToActionHorizontalOffset, y: -13)
       }
     }

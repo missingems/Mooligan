@@ -223,7 +223,7 @@ private extension Widget {
               endPoint: .bottomTrailing
             )
             .overlay(
-              RoundedRectangle(cornerRadius: 13.0).stroke(.black.opacity(0.31), lineWidth: 3.0)
+              RoundedRectangle(cornerRadius: 13.0).strokeBorder(.black.opacity(0.31), lineWidth: 1 / UIScreen.main.nativeScale)
             )
           } else {
             Color(.systemFill)

@@ -82,7 +82,7 @@ public struct AmbientWebImage: View {
     .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
     .overlay(
       RoundedRectangle(cornerRadius: cornerRadius)
-        .stroke(.separator, lineWidth: 1 / UIScreen.main.nativeScale)
+        .strokeBorder(.separator, lineWidth: 1 / UIScreen.main.nativeScale)
     )
   }
 }

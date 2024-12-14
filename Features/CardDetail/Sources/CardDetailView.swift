@@ -67,6 +67,7 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
                   .fontWeight(.semibold)
               } icon: {
                 Image(systemName: icon)
+                  .fontWeight(.semibold)
               }
               .foregroundStyle(DesignComponentsAsset.invertedPrimary.swiftUIColor)
               .frame(maxWidth: .infinity, minHeight: 34)
@@ -122,7 +123,7 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
                 icon: store.content.rulingSelectionIcon,
                 title: store.content.rulingSelectionLabel
               ) {
-                
+                store.send(.viewRulingsTapped)
               },
               SelectionView.Item(
                 icon: store.content.relatedSelectionIcon,
@@ -159,6 +160,22 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
           Color(asset: DesignComponentsAsset.backgroundPlaceholder)
         }
         .ignoresSafeArea(.all, edges: .all)
+      }
+      .sheet(
+        item: $store.scope(state: \.showRulings, action: \.showRulings)
+      ) { store in
+        NavigationStack {
+          RulingView(store: store).toolbarTitleDisplayMode(.inline)
+            .toolbar {
+              ToolbarItem(placement: .confirmationAction) {
+                Button("Done") {
+                  self.store.send(.dismissRulingsTapped)
+                }
+                .buttonStyle(.borderSinkableButtonStyle)
+              }
+            }
+        }
+        .presentationDetents([.height(proxy.size.height / 1.618)])
       }
     }
     .task(priority: .background) {
