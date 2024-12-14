@@ -7,8 +7,13 @@ import SwiftUI
 struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
   @Bindable var store: StoreOf<CardDetailFeature<Client>>
   let layoutConfiguration: CardView.LayoutConfiguration
+  let geometryProxy: GeometryProxy
   
-  init(store: StoreOf<CardDetailFeature<Client>>) {
+  init(
+    geometryProxy: GeometryProxy,
+    store: StoreOf<CardDetailFeature<Client>>
+  ) {
+    self.geometryProxy = geometryProxy
     self.store = store
     
     layoutConfiguration = CardView.LayoutConfiguration(
@@ -18,7 +23,6 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
   }
   
   var body: some View {
-    GeometryReader { proxy in
       ScrollView {
         VStack(spacing: 0) {
           CardView(
@@ -30,7 +34,7 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
             isFlipped: $store.isFlipped,
             layoutConfiguration: CardView.LayoutConfiguration(
               rotation: store.content.card.isLandscape ? .landscape : .portrait,
-              layout: .fixedWidth(proxy.size.width - layoutConfiguration.insets.leading - layoutConfiguration.insets.trailing)
+              layout: .fixedWidth(geometryProxy.size.width - layoutConfiguration.insets.leading - layoutConfiguration.insets.trailing)
             ),
             usdPrice: nil,
             usdFoilPrice: nil,
@@ -108,7 +112,6 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
           ) { action in
             
           }
-          .zIndex(1)
           
           SelectionView(
             items: [
@@ -175,8 +178,7 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
               }
             }
         }
-        .presentationDetents([.height(proxy.size.height / 1.618)])
-      }
+        .presentationDetents([.height(geometryProxy.size.height / 1.618)])
     }
     .task(priority: .background) {
       store.send(.fetchAdditionalInformation(card: store.content.card))

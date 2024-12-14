@@ -66,7 +66,7 @@ public struct AmbientWebImage: View {
         url: url,
         processors: transformers
       ),
-      transaction: Transaction(animation: .interpolatingSpring)
+      transaction: Transaction(animation: .default)
     ) { state in
       if let image = state.image {
         image.resizable().task {

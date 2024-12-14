@@ -11,7 +11,10 @@ struct RootView<Client: MagicCardDetailRequestClient>: View {
   private let store: StoreOf<CardDetailFeature<Client>>
   
   var body: some View {
-    CardDetailView(store: store)
+    GeometryReader { proxy in
+      
+      CardDetailView(geometryProxy: proxy, store: store)
+    }
   }
   
   init(store: StoreOf<CardDetailFeature<Client>>) {

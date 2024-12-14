@@ -16,42 +16,44 @@ public struct PageView<Client: MagicCardDetailRequestClient>: View {
   }
   
   public var body: some View {
-    ScrollView(.horizontal, showsIndicators: false) {
-      ZStack(alignment: .top) {
-        LazyHStack(alignment: .top, spacing: 0) {
-          let stores = Array(store.scope(state: \.cards, action: \.cards))
-          ForEach(
-            stores.indices, id: \.self
-          ) { index in
-            CardDetailView(store: stores[index])
-              .containerRelativeFrame(.horizontal)
-              .id(index)
+    GeometryReader { proxy in
+      ScrollView(.horizontal, showsIndicators: false) {
+        ZStack(alignment: .top) {
+          LazyHStack(alignment: .top, spacing: 0) {
+            let stores = Array(store.scope(state: \.cards, action: \.cards))
+            ForEach(
+              stores.indices, id: \.self
+            ) { index in
+              CardDetailView(geometryProxy: proxy, store: stores[index])
+                .containerRelativeFrame(.horizontal)
+                .id(index)
+            }
           }
-        }
-        .scrollTargetLayout()
-        
-        VariableBlurView(direction: .blurredTopClearBottom).frame(height: 105).ignoresSafeArea()
-      }
-      .toolbar {
-        ToolbarItemGroup(placement: .primaryAction) {
-          Button {
-            store.send(.addTapped)
-          } label: {
-            Image(systemName: "plus").fontWeight(.semibold)
-          }
-          .foregroundStyle(DesignComponentsAsset.accentColor.swiftUIColor)
+          .scrollTargetLayout()
           
-          Button {
-            store.send(.shareTapped)
-          } label: {
-            Image(systemName: "square.and.arrow.up").fontWeight(.semibold)
+          VariableBlurView(direction: .blurredTopClearBottom).frame(height: proxy.safeAreaInsets.top).ignoresSafeArea()
+        }
+        .toolbar {
+          ToolbarItemGroup(placement: .primaryAction) {
+            Button {
+              store.send(.addTapped)
+            } label: {
+              Image(systemName: "plus").fontWeight(.semibold)
+            }
+            .foregroundStyle(DesignComponentsAsset.accentColor.swiftUIColor)
+            
+            Button {
+              store.send(.shareTapped)
+            } label: {
+              Image(systemName: "square.and.arrow.up").fontWeight(.semibold)
+            }
+            .foregroundStyle(DesignComponentsAsset.accentColor.swiftUIColor)
           }
-          .foregroundStyle(DesignComponentsAsset.accentColor.swiftUIColor)
         }
       }
+      .scrollPosition(id: $store.currentDisplayingCard)
+      .scrollTargetBehavior(.paging)
+      .background(.black)
     }
-    .scrollPosition(id: $store.currentDisplayingCard)
-    .scrollTargetBehavior(.paging)
-    .background(.black)
   }
 }

@@ -29,7 +29,7 @@ struct RunnerApp: App {
           async let split = try await client.searchCards(query: "layout=split").data.compactMap { $0 }
           async let modaldfcs = try await client.searchCards(query: "layout=modal_dfc").data.compactMap { $0 }
           
-          cards = try await [transforms, flips, split, modaldfcs].joined().shuffled()
+          cards = try await [transforms].joined().shuffled()
         } catch {
           
         }
