@@ -15,8 +15,7 @@ import Networking
         }
         
       case let .updateRulings(rulings):
-        state.rulings = rulings
-        
+        state.mode = .loaded(rulings)
         return .none
       }
     }
@@ -31,9 +30,26 @@ import Networking
 
 extension RulingFeature {
   @ObservableState struct State: Equatable {
+    enum Mode: Equatable {
+      case loading
+      case loaded([MagicCardRuling])
+    }
+    
     let card: Client.MagicCardModel
-    var rulings: [MagicCardRuling] = []
     let title: String
+    var mode: Mode = .loading
+    
+    var emptyStateTitle: String {
+      return "No Results for \(card.getName())"
+    }
+    
+    var emptyStateDescription: String? {
+      if let url = card.getGathererURLString() {
+        return "Look up \(url) for more information."
+      } else {
+        return nil
+      }
+    }
   }
   
   enum Action: Equatable {

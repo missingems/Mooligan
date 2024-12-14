@@ -72,7 +72,6 @@ import Networking
       case .viewRulingsTapped:
         state.showRulings = RulingFeature.State(
           card: state.content.card,
-          rulings: [],
           title: "Rulings"
         )
         
