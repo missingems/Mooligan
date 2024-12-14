@@ -5,7 +5,7 @@ import SwiftUI
 import Networking
 
 public struct PageView<Client: MagicCardDetailRequestClient>: View {
-  let store: StoreOf<PageFeature<Client>>
+  @Bindable var store: StoreOf<PageFeature<Client>>
   
   public init(client: Client, cards: [Client.MagicCardModel]) {
     self.store = Store(
@@ -17,21 +17,40 @@ public struct PageView<Client: MagicCardDetailRequestClient>: View {
   
   public var body: some View {
     ScrollView(.horizontal, showsIndicators: false) {
-      LazyHStack(alignment: .top, spacing: 0) {
-        ForEach(
-          Array(store.scope(state: \.cards, action: \.cards))
-        ) { store in
-          CardDetailView(store: store)
-            .containerRelativeFrame(.horizontal)
-            .navigationTitle(" ")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbarBackgroundVisibility(self.store.navigationBarBackgroundVisibility, for: .navigationBar)
-            .toolbarBackground(.clear, for: .navigationBar)
-            .animation(.default, value: self.store.navigationBarBackgroundVisibility)
+      ZStack(alignment: .top) {
+        LazyHStack(alignment: .top, spacing: 0) {
+          let stores = Array(store.scope(state: \.cards, action: \.cards))
+          ForEach(
+            stores.indices, id: \.self
+          ) { index in
+            CardDetailView(store: stores[index])
+              .containerRelativeFrame(.horizontal)
+              .id(index)
+          }
+        }
+        .scrollTargetLayout()
+        
+        VariableBlurView(direction: .blurredTopClearBottom).frame(height: 105).ignoresSafeArea()
+      }
+      .toolbar {
+        ToolbarItemGroup(placement: .primaryAction) {
+          Button {
+            store.send(.addTapped)
+          } label: {
+            Image(systemName: "plus").fontWeight(.semibold)
+          }
+          .foregroundStyle(DesignComponentsAsset.accentColor.swiftUIColor)
+          
+          Button {
+            store.send(.shareTapped)
+          } label: {
+            Image(systemName: "square.and.arrow.up").fontWeight(.semibold)
+          }
+          .foregroundStyle(DesignComponentsAsset.accentColor.swiftUIColor)
         }
       }
-      .scrollTargetLayout()
     }
+    .scrollPosition(id: $store.currentDisplayingCard)
     .scrollTargetBehavior(.paging)
     .background(.black)
   }

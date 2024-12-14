@@ -21,9 +21,7 @@ struct VariantView<Card: MagicCard>: View {
       
       ScrollView(.horizontal, showsIndicators: false) {
         LazyHStack(spacing: 8.0) {
-          ForEach(cards.indices, id: \.self) { index in
-            let card = cards[index]
-            
+          ForEach(cards) { card in
             Button(
               action: {
                 send(.didSelectCard(card))

@@ -7,11 +7,18 @@ import SwiftUI
   let client: Client
   
   var body: some ReducerOf<Self> {
+    BindingReducer()
+    
     Reduce { state, action in
       switch action {
-      case let .cards(.element(_, .scrollViewDidScroll(position))):
-        state.navigationBarBackgroundVisibility = position > -100.333333 ? .visible : .hidden
+      case .shareTapped:
         return .none
+        
+      case .addTapped:
+        return .none
+      case .binding:
+        return .none
+        
       case .cards:
         return .none
       }
@@ -28,8 +35,8 @@ import SwiftUI
 
 extension PageFeature {
   @ObservableState struct State: Equatable {
-    var navigationBarBackgroundVisibility: Visibility = .hidden
     var cards: IdentifiedArrayOf<CardDetailFeature<Client>.State> = []
+    var currentDisplayingCard: Int? = 0
     
     public init(cards: [Client.MagicCardModel]) {
       self.cards = IdentifiedArrayOf(uniqueElements: cards.map { card in
@@ -38,7 +45,10 @@ extension PageFeature {
     }
   }
   
-  @CasePathable enum Action {
+  @CasePathable enum Action: BindableAction {
+    case binding(BindingAction<State>)
     case cards(IdentifiedActionOf<CardDetailFeature<Client>>)
+    case addTapped
+    case shareTapped
   }
 }

@@ -135,11 +135,6 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
           )
         }
       }
-      .onScrollGeometryChange(for: CGFloat.self, of: { geometry in
-        return geometry.contentOffset.y
-      }, action: { oldValue, newValue in
-        store.send(.scrollViewDidScroll(position: newValue))
-      })
       .background {
         ZStack {
           LazyImage(
@@ -193,10 +188,10 @@ private extension CardView.LayoutConfiguration {
   var insets: EdgeInsets {
     switch rotation {
     case .landscape:
-      EdgeInsets(top: 13, leading: 34, bottom: 29, trailing: 34)
+      EdgeInsets(top: 21, leading: 34, bottom: 29, trailing: 34)
       
     case .portrait:
-      EdgeInsets(top: 13, leading: 89, bottom: 29, trailing: 89)
+      EdgeInsets(top: 21, leading: 89, bottom: 29, trailing: 89)
     }
   }
 }
