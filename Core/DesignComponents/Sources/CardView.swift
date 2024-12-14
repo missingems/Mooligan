@@ -29,10 +29,22 @@ public struct CardView: View {
     
     public let rotation: Rotation
     public let layout: Layout
+    public let cornerRadius: CGFloat
     
     public init(rotation: Rotation, layout: Layout) {
       self.rotation = rotation
       self.layout = layout
+      
+      switch (layout, rotation) {
+      case (.fixedWidth(let width), .landscape):
+        self.cornerRadius = 5 / 100 * width * MagicCardImageRatio.widthToHeight.rawValue
+        
+      case (.fixedWidth(let width), .portrait):
+        self.cornerRadius = 5 / 100 * width
+        
+      default:
+        self.cornerRadius = 13.0
+      }
     }
   }
   
@@ -64,7 +76,7 @@ public struct CardView: View {
             if let backImageURL {
               AmbientWebImage(
                 url: backImageURL,
-                cornerRadius: (5 / 100 * width).rounded(),
+                cornerRadius: layoutConfiguration.cornerRadius.rounded(),
                 rotation: layoutConfiguration.rotation.degrees,
                 isTransformed: true,
                 size: CGSize(
@@ -81,7 +93,7 @@ public struct CardView: View {
             
             AmbientWebImage(
               url: imageURL,
-              cornerRadius: (5 / 100 * width).rounded(),
+              cornerRadius: layoutConfiguration.cornerRadius.rounded(),
               rotation: layoutConfiguration.rotation.degrees,
               isTransformed: false,
               size: CGSize(
