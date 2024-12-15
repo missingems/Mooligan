@@ -84,6 +84,7 @@ import Networking
     .ifLet(\.$showRulings, action: \.showRulings) {
       RulingFeature(client: client)
     }
+    ._printChanges(.actionLabels)
   }
 }
 
@@ -110,7 +111,7 @@ extension CardDetailFeature {
       card: Client.MagicCardModel,
       entryPoint: EntryPoint<Client>
     ) {
-      self.id = UUID()
+      id = UUID()
       
       switch entryPoint {
       case .query:

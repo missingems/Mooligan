@@ -57,13 +57,14 @@ public struct CardView: View {
   private let usdFoilPrice: String?
   private let callToActionIconName: String?
   private let callToActionHorizontalOffset: CGFloat
-  @Binding private var isTransformed: Bool?
+//  @Binding private var isTransformed: Bool?
   @State private var isTransformedInternal = false
-  @Binding private var isFlipped: Bool?
+//  @Binding private var isFlipped: Bool?
   @State private var isFlippedInternal = false
   @State private var isImageLoaded = false
   
   public var body: some View {
+    let _ = Self._printChanges()
     VStack(spacing: 5) {
       ZStack(alignment: .trailing) {
         if let imageURL {
@@ -84,10 +85,10 @@ public struct CardView: View {
                 ),
                 isImageLoaded: $isImageLoaded
               )
-              .opacity(isTransformed ?? isTransformedInternal ? 1 : 0)
-              .rotationEffect(.degrees(isFlipped ?? isFlippedInternal ? 180 : 0))
-              .rotation3DEffect(.degrees(isTransformed ?? isTransformedInternal ? 180 : 0), axis: (x: 0, y: 1, z: 0))
-              .zIndex(isTransformed ?? isTransformedInternal ? 1 : 0)
+              .opacity(isTransformedInternal ? 1 : 0)
+              .rotationEffect(.degrees(isFlippedInternal ? 180 : 0))
+              .rotation3DEffect(.degrees(isTransformedInternal ? 180 : 0), axis: (x: 0, y: 1, z: 0))
+              .zIndex(isTransformedInternal ? 1 : 0)
             }
             
             AmbientWebImage(
@@ -101,10 +102,10 @@ public struct CardView: View {
               ),
               isImageLoaded: $isImageLoaded
             )
-            .opacity(isTransformed ?? isTransformedInternal ? 0 : 1)
-            .rotationEffect(.degrees(isFlipped ?? isFlippedInternal ? 180 : 0))
-            .rotation3DEffect(.degrees(isTransformed ?? isTransformedInternal ? 180 : 0), axis: (x: 0, y: 1, z: 0))
-            .zIndex(isTransformed ?? isTransformedInternal ? 0 : 1)
+            .opacity(isTransformedInternal ? 0 : 1)
+            .rotationEffect(.degrees(isFlippedInternal ? 180 : 0))
+            .rotation3DEffect(.degrees(isTransformedInternal ? 180 : 0), axis: (x: 0, y: 1, z: 0))
+            .zIndex(isTransformedInternal ? 0 : 1)
             
           case .flexible:
             if let backImageURL {
@@ -115,10 +116,10 @@ public struct CardView: View {
                 isTransformed: true,
                 isImageLoaded: $isImageLoaded
               )
-              .opacity(isTransformed ?? isTransformedInternal ? 1 : 0)
-              .rotationEffect(.degrees(isFlipped ?? isFlippedInternal ? 180 : 0))
-              .rotation3DEffect(.degrees(isTransformed ?? isTransformedInternal ? 180 : 0), axis: (x: 0, y: 1, z: 0))
-              .zIndex(isTransformed ?? isTransformedInternal ? 1 : 0)
+//              .opacity(isTransformed ?? isTransformedInternal ? 1 : 0)
+//              .rotationEffect(.degrees(isFlipped ?? isFlippedInternal ? 180 : 0))
+//              .rotation3DEffect(.degrees(isTransformed ?? isTransformedInternal ? 180 : 0), axis: (x: 0, y: 1, z: 0))
+//              .zIndex(isTransformed ?? isTransformedInternal ? 1 : 0)
             }
             
             AmbientWebImage(
@@ -128,10 +129,10 @@ public struct CardView: View {
               isTransformed: false,
               isImageLoaded: $isImageLoaded
             )
-            .opacity(isTransformed ?? isTransformedInternal ? 0 : 1)
-            .rotationEffect(.degrees(isFlipped ?? isFlippedInternal ? 180 : 0))
-            .rotation3DEffect(.degrees(isTransformed ?? isTransformedInternal ? 180 : 0), axis: (x: 0, y: 1, z: 0))
-            .zIndex(isTransformed ?? isTransformedInternal ? 0 : 1)
+//            .opacity(isTransformed ?? isTransformedInternal ? 0 : 1)
+//            .rotationEffect(.degrees(isFlipped ?? isFlippedInternal ? 180 : 0))
+//            .rotation3DEffect(.degrees(isTransformed ?? isTransformedInternal ? 180 : 0), axis: (x: 0, y: 1, z: 0))
+//            .zIndex(isTransformed ?? isTransformedInternal ? 0 : 1)
           }
         }
         
@@ -175,11 +176,11 @@ public struct CardView: View {
       if isFlippable {
         Button {
           withAnimation(.bouncy) {
-            if isFlipped != nil {
-              isFlipped?.toggle()
-            } else {
+//            if isFlipped != nil {
+//              isFlipped?.toggle()
+//            } else {
               isFlippedInternal.toggle()
-            }
+//            }
           }
         } label: {
           if let iconName = callToActionIconName {
@@ -195,13 +196,14 @@ public struct CardView: View {
         .offset(x: callToActionHorizontalOffset, y: -13)
       } else if isTransformable {
         Button {
-          withAnimation(.bouncy) {
-            if isTransformed != nil {
-              isTransformed?.toggle()
-            } else {
+//          withAnimation(.bouncy) {
+//            if isTransformed != nil {
+//              isTransformed?.toggle()
+//            } else {
               isTransformedInternal.toggle()
-            }
-          }
+//            }
+//          }
+          isTransformedInternal.toggle()
         } label: {
           if let iconName = callToActionIconName {
             Image(systemName: iconName)
@@ -248,9 +250,9 @@ public struct CardView: View {
     self.isFlippable = isFlippable
     self.usdPrice = usdPrice
     self.usdFoilPrice = usdFoilPrice
-    self._isTransformed = isTransformed ?? .constant(nil)
+//    self._isTransformed = isTransformed ?? .constant(nil)
     self.isTransformedInternal = false
-    self._isFlipped = isFlipped ?? .constant(nil)
+//    self._isFlipped = isFlipped ?? .constant(nil)
     self.isFlippedInternal = false
     self.callToActionIconName = callToActionIconName
     self.callToActionHorizontalOffset = callToActionHorizontalOffset

@@ -7,19 +7,18 @@ import SwiftUI
   let client: Client
   
   var body: some ReducerOf<Self> {
-    BindingReducer()
-    
     Reduce { state, action in
       switch action {
-      case .shareTapped:
-        return .none
-        
       case .addTapped:
         return .none
+        
       case .binding:
         return .none
         
       case .cards:
+        return .none
+        
+      case .shareTapped:
         return .none
       }
     }
@@ -36,12 +35,13 @@ import SwiftUI
 extension PageFeature {
   @ObservableState struct State: Equatable {
     var cards: IdentifiedArrayOf<CardDetailFeature<Client>.State> = []
-    var currentDisplayingCard: Int? = 0
     
     public init(cards: [Client.MagicCardModel]) {
-      self.cards = IdentifiedArrayOf(uniqueElements: cards.map { card in
-        CardDetailFeature<Client>.State(card: card, entryPoint: .query)
-      })
+      self.cards = IdentifiedArrayOf(
+        uniqueElements: cards.map { card in
+          CardDetailFeature<Client>.State(card: card, entryPoint: .query)
+        }
+      )
     }
   }
   

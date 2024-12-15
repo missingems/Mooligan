@@ -7,13 +7,10 @@ import SwiftUI
 struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
   @Bindable var store: StoreOf<CardDetailFeature<Client>>
   let layoutConfiguration: CardView.LayoutConfiguration
-  let geometryProxy: GeometryProxy
   
   init(
-    geometryProxy: GeometryProxy,
     store: StoreOf<CardDetailFeature<Client>>
   ) {
-    self.geometryProxy = geometryProxy
     self.store = store
     
     layoutConfiguration = CardView.LayoutConfiguration(
@@ -23,28 +20,29 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
   }
   
   var body: some View {
+    let _ = Self._printChanges()
       ScrollView {
         VStack(spacing: 0) {
-          CardView(
-            imageURL: store.content.imageURL,
-            backImageURL: store.content.card.getCardFace(for: .back).getImageURL(),
-            isTransformable: store.content.card.isTransformable,
-            isTransformed: $store.isTransformed,
-            isFlippable: store.content.card.isFlippable,
-            isFlipped: $store.isFlipped,
-            layoutConfiguration: CardView.LayoutConfiguration(
-              rotation: store.content.card.isLandscape ? .landscape : .portrait,
-              layout: .fixedWidth(geometryProxy.size.width - layoutConfiguration.insets.leading - layoutConfiguration.insets.trailing)
-            ),
-            usdPrice: nil,
-            usdFoilPrice: nil,
-            shouldShowPrice: false,
-            callToActionIconName: store.content.card.getLayout().value.callToActionIconName,
-            callToActionHorizontalOffset: 21.0
-          )
-          .shadow(color: DesignComponentsAsset.shadow.swiftUIColor, radius: 13, x: 0, y: 13)
-          .padding(EdgeInsets(top: layoutConfiguration.insets.top, leading: 0, bottom: layoutConfiguration.insets.bottom, trailing: 0))
-          .zIndex(1)
+//          CardView(
+//            imageURL: store.content.imageURL,
+//            backImageURL: store.content.card.getCardFace(for: .back).getImageURL(),
+//            isTransformable: store.content.card.isTransformable,
+//            isTransformed: $store.isTransformed,
+//            isFlippable: store.content.card.isFlippable,
+//            isFlipped: $store.isFlipped,
+//            layoutConfiguration: CardView.LayoutConfiguration(
+//              rotation: store.content.card.isLandscape ? .landscape : .portrait,
+//              layout: .fixedWidth(geometryProxy.size.width - layoutConfiguration.insets.leading - layoutConfiguration.insets.trailing)
+//            ),
+//            usdPrice: nil,
+//            usdFoilPrice: nil,
+//            shouldShowPrice: false,
+//            callToActionIconName: store.content.card.getLayout().value.callToActionIconName,
+//            callToActionHorizontalOffset: 21.0
+//          )
+//          .shadow(color: DesignComponentsAsset.shadow.swiftUIColor, radius: 13, x: 0, y: 13)
+//          .padding(EdgeInsets(top: layoutConfiguration.insets.top, leading: 0, bottom: layoutConfiguration.insets.bottom, trailing: 0))
+//          .zIndex(1)
           
           CardDetailTableView(descriptions: store.content.descriptions, keywords: store.content.keywords)
           
@@ -92,7 +90,6 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
             displayReleaseDate: store.content.displayReleasedDate,
             legalities: store.content.legalities
           )
-          .zIndex(1)
           
           PriceView(
             title: store.content.priceLabel,
@@ -103,7 +100,6 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
             tixLabel: store.content.tixLabel,
             purchaseVendor: store.content.card.getPurchaseUris()
           )
-          .zIndex(1)
           
           VariantView(
             title: store.content.variantLabel,
@@ -178,11 +174,10 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
               }
             }
         }
-        .presentationDetents([.height(geometryProxy.size.height / 1.618)])
     }
-    .task(priority: .background) {
-      store.send(.fetchAdditionalInformation(card: store.content.card))
-    }
+//    .task(priority: .background) {
+//      store.send(.fetchAdditionalInformation(card: store.content.card))
+//    }
   }
 }
 
