@@ -2,6 +2,30 @@ import DesignComponents
 import Networking
 import SwiftUI
 
+struct CellView: View {
+  @State var isSelected: Bool
+  
+  let title: String
+  
+  var body: some View {
+    let _ = Self._printChanges()
+    VStack {
+      LazyHStack {
+        Button {
+          withAnimation {
+            
+            isSelected.toggle()
+          }
+        } label: {
+          Text("Toggle")
+        }
+      }
+      
+      Text(title).opacity(isSelected ? 0 : 1)
+    }
+  }
+}
+
 struct VariantView<Card: MagicCard>: View {
   enum Action: Sendable, Equatable {
     case didSelectCard(Card)
@@ -22,26 +46,27 @@ struct VariantView<Card: MagicCard>: View {
       ScrollView(.horizontal, showsIndicators: false) {
         LazyHStack(spacing: 8.0) {
           ForEach(cards) { card in
-            Button(
-              action: {
-                send(.didSelectCard(card))
-              }, label: {
-                CardView(
-                  imageURL: card.getImageURL(),
-                  backImageURL: card.getCardFace(for: .back).getImageURL(),
-                  isTransformable: card.isTransformable,
-                  isFlippable: card.isFlippable,
-                  layoutConfiguration: CardView.LayoutConfiguration(
-                    rotation: .portrait,
-                    layout: .fixedWidth(170)
-                  ),
-                  usdPrice: card.getPrices().usd,
-                  usdFoilPrice: card.getPrices().usdFoil,
-                  callToActionIconName: card.getLayout().value.callToActionIconName
-                )
-              }
-            )
-            .buttonStyle(.sinkableButtonStyle)
+            CellView(isSelected: false, title: card.getName())
+//            Button(
+//              action: {
+//                send(.didSelectCard(card))
+//              }, label: {
+//                CardView(
+//                  imageURL: card.getImageURL(),
+//                  backImageURL: card.getCardFace(for: .back).getImageURL(),
+//                  isTransformable: card.isTransformable,
+//                  isFlippable: card.isFlippable,
+//                  layoutConfiguration: CardView.LayoutConfiguration(
+//                    rotation: .portrait,
+//                    layout: .fixedWidth(170)
+//                  ),
+//                  usdPrice: card.getPrices().usd,
+//                  usdFoilPrice: card.getPrices().usdFoil,
+//                  callToActionIconName: card.getLayout().value.callToActionIconName
+//                )
+//              }
+//            )
+//            .buttonStyle(.sinkableButtonStyle)
           }
         }
       }

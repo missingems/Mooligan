@@ -89,6 +89,7 @@ public struct CardView: View {
               .rotationEffect(.degrees(isFlippedInternal ? 180 : 0))
               .rotation3DEffect(.degrees(isTransformedInternal ? 180 : 0), axis: (x: 0, y: 1, z: 0))
               .zIndex(isTransformedInternal ? 1 : 0)
+              .animation(.bouncy, value: isTransformedInternal)
             }
             
             AmbientWebImage(
@@ -106,6 +107,7 @@ public struct CardView: View {
             .rotationEffect(.degrees(isFlippedInternal ? 180 : 0))
             .rotation3DEffect(.degrees(isTransformedInternal ? 180 : 0), axis: (x: 0, y: 1, z: 0))
             .zIndex(isTransformedInternal ? 0 : 1)
+            .animation(.bouncy, value: isTransformedInternal)
             
           case .flexible:
             if let backImageURL {
@@ -136,7 +138,46 @@ public struct CardView: View {
           }
         }
         
-        buttons.zIndex(2)
+        if isFlippable {
+          Button {
+            
+            isFlippedInternal.toggle()
+          } label: {
+            if let iconName = callToActionIconName {
+              Image(systemName: iconName)
+                .fontWeight(.semibold)
+            }
+          }
+          .tint(DesignComponentsAsset.accentColor.swiftUIColor)
+          .frame(width: 44.0, height: 44.0)
+          .background(.thinMaterial)
+          .clipShape(Circle())
+          .overlay(Circle().strokeBorder(.separator, lineWidth: 1 / UIScreen.main.nativeScale))
+          .offset(x: callToActionHorizontalOffset, y: -13)
+          .zIndex(1)
+        } else if isTransformable {
+          Button {
+            //          withAnimation(.bouncy) {
+            //            if isTransformed != nil {
+            //              isTransformed?.toggle()
+            //            } else {
+            isTransformedInternal.toggle()
+            //            }
+            //          }
+          } label: {
+            if let iconName = callToActionIconName {
+              Image(systemName: iconName)
+                .fontWeight(.semibold)
+            }
+          }
+          .tint(DesignComponentsAsset.accentColor.swiftUIColor)
+          .frame(width: 44.0, height: 44.0)
+          .background(.thinMaterial)
+          .clipShape(Circle())
+          .overlay(Circle().strokeBorder(.separator, lineWidth: 1 / UIScreen.main.nativeScale))
+          .offset(x: callToActionHorizontalOffset, y: -13)
+          .zIndex(1)
+        }
       }
       .zIndex(1)
       
@@ -169,57 +210,6 @@ public struct CardView: View {
       .monospaced()
       .padding(.bottom, 5.0)
     }
-  }
-  
-  @ViewBuilder private var buttons: some View {
-    Group {
-      if isFlippable {
-        Button {
-          withAnimation(.bouncy) {
-//            if isFlipped != nil {
-//              isFlipped?.toggle()
-//            } else {
-              isFlippedInternal.toggle()
-//            }
-          }
-        } label: {
-          if let iconName = callToActionIconName {
-            Image(systemName: iconName)
-              .fontWeight(.semibold)
-          }
-        }
-        .tint(DesignComponentsAsset.accentColor.swiftUIColor)
-        .frame(width: 44.0, height: 44.0)
-        .background(.thinMaterial)
-        .clipShape(Circle())
-        .overlay(Circle().strokeBorder(.separator, lineWidth: 1 / UIScreen.main.nativeScale))
-        .offset(x: callToActionHorizontalOffset, y: -13)
-      } else if isTransformable {
-        Button {
-//          withAnimation(.bouncy) {
-//            if isTransformed != nil {
-//              isTransformed?.toggle()
-//            } else {
-              isTransformedInternal.toggle()
-//            }
-//          }
-          isTransformedInternal.toggle()
-        } label: {
-          if let iconName = callToActionIconName {
-            Image(systemName: iconName)
-              .fontWeight(.semibold)
-          }
-        }
-        .tint(DesignComponentsAsset.accentColor.swiftUIColor)
-        .frame(width: 44.0, height: 44.0)
-        .background(.thinMaterial)
-        .clipShape(Circle())
-        .overlay(Circle().strokeBorder(.separator, lineWidth: 1 / UIScreen.main.nativeScale))
-        .offset(x: callToActionHorizontalOffset, y: -13)
-      }
-    }
-    .opacity(isImageLoaded ? 1 : 0)
-    .animation(.default, value: isImageLoaded)
   }
   
   public init(
