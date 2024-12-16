@@ -1,30 +1,7 @@
+import ComposableArchitecture
 import DesignComponents
 import Networking
 import SwiftUI
-
-struct CellView: View {
-  @State var isSelected: Bool
-  
-  let title: String
-  
-  var body: some View {
-    let _ = Self._printChanges()
-    VStack {
-      LazyHStack {
-        Button {
-          withAnimation {
-            
-            isSelected.toggle()
-          }
-        } label: {
-          Text("Toggle")
-        }
-      }
-      
-      Text(title).opacity(isSelected ? 0 : 1)
-    }
-  }
-}
 
 struct VariantView<Card: MagicCard>: View {
   enum Action: Sendable, Equatable {
@@ -33,7 +10,7 @@ struct VariantView<Card: MagicCard>: View {
   
   let title: String
   let subtitle: String
-  let cards: [Card]
+  let cards: IdentifiedArrayOf<Card>
   let send: (Action) -> Void
   
   var body: some View {
@@ -46,27 +23,23 @@ struct VariantView<Card: MagicCard>: View {
       ScrollView(.horizontal, showsIndicators: false) {
         LazyHStack(spacing: 8.0) {
           ForEach(cards) { card in
-            CellView(isSelected: false, title: card.getName())
-//            Button(
-//              action: {
-//                send(.didSelectCard(card))
-//              }, label: {
-//                CardView(
-//                  imageURL: card.getImageURL(),
-//                  backImageURL: card.getCardFace(for: .back).getImageURL(),
-//                  isTransformable: card.isTransformable,
-//                  isFlippable: card.isFlippable,
-//                  layoutConfiguration: CardView.LayoutConfiguration(
-//                    rotation: .portrait,
-//                    layout: .fixedWidth(170)
-//                  ),
-//                  usdPrice: card.getPrices().usd,
-//                  usdFoilPrice: card.getPrices().usdFoil,
-//                  callToActionIconName: card.getLayout().value.callToActionIconName
-//                )
-//              }
-//            )
-//            .buttonStyle(.sinkableButtonStyle)
+            Button(
+              action: {
+                send(.didSelectCard(card))
+              }, label: {
+                CardView(
+                  model: .single(displayingImageURL: card.getImageURL()!),
+                  layoutConfiguration: CardView.LayoutConfiguration(
+                    rotation: .portrait,
+                    maxWidth: 170
+                  ),
+                  usdPrice: card.getPrices().usd,
+                  usdFoilPrice: card.getPrices().usdFoil,
+                  callToActionIconName: card.getLayout().value.callToActionIconName
+                )
+              }
+            )
+            .buttonStyle(.sinkableButtonStyle)
           }
         }
       }
@@ -82,11 +55,9 @@ struct VariantView<Card: MagicCard>: View {
   init?(
     title: String,
     subtitle: String,
-    cards: [Card]?,
+    cards: IdentifiedArrayOf<Card>,
     send: @escaping (Action) -> Void
   ) {
-    guard let cards else { return nil }
-    
     self.title = title
     self.subtitle = subtitle
     self.cards = cards

@@ -61,7 +61,9 @@ import Networking
         return .none
         
       case let .updateVariants(value):
-        state.content.variants = value
+        if let cards = try? value.get() {
+          state.content.variants = IdentifiedArrayOf(uniqueElements: cards)
+        }
         return .none
         
       case let .viewAppeared(action):

@@ -6,21 +6,14 @@ import SwiftUI
 
 struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
   @Bindable var store: StoreOf<CardDetailFeature<Client>>
-  let layoutConfiguration: CardView.LayoutConfiguration
   
   init(
     store: StoreOf<CardDetailFeature<Client>>
   ) {
     self.store = store
-    
-    layoutConfiguration = CardView.LayoutConfiguration(
-      rotation: store.content.card.isLandscape ? .landscape : .portrait,
-      layout: .flexible
-    )
   }
   
   var body: some View {
-    let _ = Self._printChanges()
       ScrollView {
         VStack(spacing: 0) {
 //          CardView(
@@ -104,7 +97,7 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
           VariantView(
             title: store.content.variantLabel,
             subtitle: store.content.numberOfVariantsLabel,
-            cards: try? store.content.variants.get()
+            cards: store.content.variants
           ) { action in
             
           }
