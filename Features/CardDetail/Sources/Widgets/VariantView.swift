@@ -33,8 +33,8 @@ struct VariantView<Card: MagicCard>: View {
                     rotation: .portrait,
                     maxWidth: 170
                   ),
-                  usdPrice: card.getPrices().usd,
-                  usdFoilPrice: card.getPrices().usdFoil,
+//                  usdPrice: card.getPrices().usd,
+//                  usdFoilPrice: card.getPrices().usdFoil,
                   callToActionIconName: card.getLayout().value.callToActionIconName
                 )
               }

@@ -60,16 +60,16 @@ public struct CardView: View {
 //  private let imageURL: URL?
 //  private let backImageURL: URL?
   private let layoutConfiguration: LayoutConfiguration
-  private let shouldShowPrice: Bool
-  private let usdPrice: String?
-  private let usdFoilPrice: String?
-  private let callToActionIconName: String?
+//  private let shouldShowPrice: Bool
+//  private let usdPrice: String?
+//  private let usdFoilPrice: String?
+//  private let callToActionIconName: String?
   private let callToActionHorizontalOffset: CGFloat
 //  @Binding private var isTransformed: Bool?
 //  @State private var isTransformedInternal = false
 //  @Binding private var isFlipped: Bool?
 //  @State private var isFlippedInternal = false
-  @State private var isImageLoaded = false
+  @State private var test = false
   private let model: Model
   
   public var body: some View {
@@ -87,9 +87,21 @@ public struct CardView: View {
             cornerRadius: layoutConfiguration.cornerRadius.rounded(),
             rotation: layoutConfiguration.rotation.degrees,
             isTransformed: false,
-            size: layoutConfiguration.size,
-            isImageLoaded: $isImageLoaded
-          )
+            size: layoutConfiguration.size
+          ).opacity(test ? 1 : 0)
+          
+          Button {
+            withAnimation {
+              test.toggle()
+            } completion: {
+              print("done")
+            }
+
+            
+          } label: {
+            Text("Test")
+          }
+
         }
         
         
@@ -182,52 +194,52 @@ public struct CardView: View {
       }
       .zIndex(1)
       
-      priceView
+//      priceView
     }
   }
   
-  @ViewBuilder private var priceView: some View {
-    if shouldShowPrice {
-      HStack(spacing: 5) {
-        if let usd = usdPrice {
-          PillText("$\(usd)")
-        }
-        
-        if let foil = usdFoilPrice {
-          PillText(
-            "$\(foil)",
-            isFoil: true
-          )
-          .foregroundStyle(.black.opacity(0.8))
-        }
-        
-        if usdPrice == nil && usdFoilPrice == nil {
-          PillText("$0.00")
-        }
-      }
-      .foregroundStyle(DesignComponentsAsset.accentColor.swiftUIColor)
-      .font(.caption)
-      .fontWeight(.medium)
-      .monospaced()
-      .padding(.bottom, 5.0)
-    }
-  }
+//  @ViewBuilder private var priceView: some View {
+//    if shouldShowPrice {
+//      HStack(spacing: 5) {
+//        if let usd = usdPrice {
+//          PillText("$\(usd)")
+//        }
+//        
+//        if let foil = usdFoilPrice {
+//          PillText(
+//            "$\(foil)",
+//            isFoil: true
+//          )
+//          .foregroundStyle(.black.opacity(0.8))
+//        }
+//        
+//        if usdPrice == nil && usdFoilPrice == nil {
+//          PillText("$0.00")
+//        }
+//      }
+//      .foregroundStyle(DesignComponentsAsset.accentColor.swiftUIColor)
+//      .font(.caption)
+//      .fontWeight(.medium)
+//      .monospaced()
+//      .padding(.bottom, 5.0)
+//    }
+//  }
   
   public init(
     model: Model,
     layoutConfiguration: LayoutConfiguration,
-    usdPrice: String?,
-    usdFoilPrice: String?,
-    shouldShowPrice: Bool = true,
+//    usdPrice: String?,
+//    usdFoilPrice: String?,
+//    shouldShowPrice: Bool = true,
     callToActionIconName: String?,
     callToActionHorizontalOffset: CGFloat = 5.0
   ) {
     self.model = model
     self.layoutConfiguration = layoutConfiguration
-    self.shouldShowPrice = shouldShowPrice
-    self.usdPrice = usdPrice
-    self.usdFoilPrice = usdFoilPrice
-    self.callToActionIconName = callToActionIconName
+//    self.shouldShowPrice = shouldShowPrice
+//    self.usdPrice = usdPrice
+//    self.usdFoilPrice = usdFoilPrice
+//    self.callToActionIconName = callToActionIconName
     self.callToActionHorizontalOffset = callToActionHorizontalOffset
   }
 }
