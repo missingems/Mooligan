@@ -107,7 +107,7 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
             break
             
           case let .toggledFaceDirection(model):
-            store.send(.variantFaceDirectionToggled(model), transaction: .init(animation: .default))
+            break
           }
         }
         

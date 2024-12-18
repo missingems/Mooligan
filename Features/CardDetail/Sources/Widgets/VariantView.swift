@@ -22,7 +22,7 @@ struct VariantView<Card: MagicCard>: View {
       Text(subtitle).font(.caption).foregroundStyle(.secondary)
       
       ScrollView(.horizontal, showsIndicators: false) {
-        LazyHStack(spacing: 8.0) {
+        HStack(spacing: 8.0) {
           ForEach(cards) { card in
             Button(
               action: {
@@ -33,10 +33,9 @@ struct VariantView<Card: MagicCard>: View {
                   layoutConfiguration: CardView.LayoutConfiguration(
                     rotation: .portrait,
                     maxWidth: 170
-                  ),
+                  )
 //                  usdPrice: card.getPrices().usd,
 //                  usdFoilPrice: card.getPrices().usdFoil,
-                  callToActionIconName: "arrow.trianglehead.clockwise.rotate.90"
                 ) { action in
                   switch action {
                   case let .toggledFaceDirection(model):

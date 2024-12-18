@@ -72,23 +72,6 @@ import Networking
         
         return .none
         
-      case let .variantFaceDirectionToggled(model):
-//        state.content.variants = state.content.variants.elements
-        if let index = state.content.variants.firstIndex(where: { element in
-          return element == model
-        }) {
-          switch model {
-          case let .transformable(direction: direction, frontImageURL, backImageURL):
-            let newModel = CardView<Client.MagicCardModel>.Model.transformable(direction: direction == .back ? .front : .back, frontImageURL: frontImageURL, backImageURL: backImageURL)
-            state.content.variants[index] = newModel
-          default:
-            break
-          }
-        }
-        
-//        if let existingModel = copy.first { $0.}
-        return .none
-        
       case let .viewAppeared(action):
         return .run { send in
           await send(action)
@@ -156,7 +139,6 @@ extension CardDetailFeature {
     case descriptionCallToActionTapped
     case updateSetIconURL(_ setIconURL: Result<URL?, FeatureError>)
     case updateVariants(_ variants: Result<[Client.MagicCardModel], FeatureError>)
-    case variantFaceDirectionToggled(CardView<Client.MagicCardModel>.Model)
     case viewAppeared(initialAction: Action)
     case viewRulingsTapped
     case showRulings(PresentationAction<RulingFeature<Client>.Action>)
