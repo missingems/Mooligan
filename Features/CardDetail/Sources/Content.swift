@@ -77,7 +77,7 @@ struct Content<Card: MagicCard>: Equatable {
   
   var imageURL: URL?
   var setIconURL: Result<URL?, FeatureError>
-  var variants: IdentifiedArrayOf<Card>
+  var variants: IdentifiedArrayOf<CardView<Card>.Model>
   
   func artCroppedImageURL(with faceDirection: MagicCardFaceDirection) -> URL? {
     let url: URL?
@@ -141,7 +141,7 @@ struct Content<Card: MagicCard>: Equatable {
     collectorNumber = card.getCollectorNumber()
     legalities = card.getLegalities().value
     self.setIconURL = .success(setIconURL)
-    self.variants = IdentifiedArrayOf(uniqueElements: [card])
+    self.variants = IdentifiedArrayOf(uniqueElements: [])
     self.rarity = card.getRarity().value
     
     name = card.getDisplayName(faceDirection: faceDirection)

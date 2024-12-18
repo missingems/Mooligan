@@ -4,13 +4,14 @@ import Networking
 import SwiftUI
 
 struct VariantView<Card: MagicCard>: View {
-  enum Action: Sendable, Equatable {
+  enum Action: Equatable {
     case didSelectCard(Card)
+    case toggledFaceDirection(CardView<Card>.Model)
   }
   
   let title: String
   let subtitle: String
-  let cards: IdentifiedArrayOf<Card>
+  let cards: IdentifiedArrayOf<CardView<Card>.Model>
   let send: (Action) -> Void
   
   var body: some View {
@@ -25,21 +26,27 @@ struct VariantView<Card: MagicCard>: View {
           ForEach(cards) { card in
             Button(
               action: {
-                send(.didSelectCard(card))
+//                send(.didSelectCard(card))
               }, label: {
                 CardView(
-                  model: .single(displayingImageURL: card.getImageURL()!),
+                  model: card,
                   layoutConfiguration: CardView.LayoutConfiguration(
                     rotation: .portrait,
                     maxWidth: 170
                   ),
 //                  usdPrice: card.getPrices().usd,
 //                  usdFoilPrice: card.getPrices().usdFoil,
-                  callToActionIconName: card.getLayout().value.callToActionIconName
-                )
+                  callToActionIconName: "arrow.trianglehead.clockwise.rotate.90"
+                ) { action in
+                  switch action {
+                  case let .toggledFaceDirection(model):
+                    send(.toggledFaceDirection(model))
+                  }
+                }
               }
             )
             .buttonStyle(.sinkableButtonStyle)
+            .geometryGroup()
           }
         }
       }
@@ -55,7 +62,7 @@ struct VariantView<Card: MagicCard>: View {
   init?(
     title: String,
     subtitle: String,
-    cards: IdentifiedArrayOf<Card>,
+    cards: IdentifiedArrayOf<CardView<Card>.Model>,
     send: @escaping (Action) -> Void
   ) {
     self.title = title

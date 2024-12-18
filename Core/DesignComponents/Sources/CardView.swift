@@ -1,10 +1,48 @@
 import SwiftUI
+import Networking
 
-public struct CardView: View {
-  public enum Model {
-    case transformable(displayingImageURL: URL, frontImageURL: URL, backImageURL: URL)
-    case flippable(displayingImageURL: URL, frontImageURL: URL, backImageURL: URL)
+public struct CardView<Card: MagicCard>: View {
+  public enum Model: Identifiable, Equatable {
+    public enum FaceDirection {
+      case front
+      case back
+      
+      var id: String {
+        switch self {
+        case .front: return "front"
+        case .back: return "back"
+        }
+      }
+    }
+    
+    case transformable(direction: FaceDirection, frontImageURL: URL, backImageURL: URL)
+    case flippable(displayingImageURL: URL)
     case single(displayingImageURL: URL)
+    
+    public var id: String {
+      switch self {
+      case let .transformable(direction, frontImageURL, backImageURL):
+        return direction.id + frontImageURL.absoluteString + backImageURL.absoluteString
+        
+      case let .flippable(displayingImageURL):
+        return displayingImageURL.absoluteString
+        
+      case let .single(displayingImageURL):
+        return displayingImageURL.absoluteString
+      }
+    }
+    
+    public init?(_ card: Card) {
+      if card.isTransformable, let frontImageURL = card.getCardFace(for: .front).getImageURL(), let backImageURL = card.getCardFace(for: .back).getImageURL() {
+        self = .transformable(direction: .front, frontImageURL: frontImageURL, backImageURL: backImageURL)
+      } else if card.isFlippable, let imageURL = card.getImageURL() {
+        self = .flippable(displayingImageURL: imageURL)
+      } else if let imageURL = card.getImageURL() {
+        self = .single(displayingImageURL: imageURL)
+      } else {
+        return nil
+      }
+    }
   }
   
   public struct LayoutConfiguration {
@@ -69,39 +107,44 @@ public struct CardView: View {
 //  @State private var isTransformedInternal = false
 //  @Binding private var isFlipped: Bool?
 //  @State private var isFlippedInternal = false
-  @State private var test = false
   private let model: Model
   
   public var body: some View {
     VStack(spacing: 5) {
       ZStack(alignment: .trailing) {
         switch model {
-        case let .transformable(displayingImageURL, frontImageURL, backImageURL):
-          Text("Hello World")
-        case let .flippable(displayingImageURL, frontImageURL, backImageURL):
-          Text("Hello World")
-          
-        case let .single(displayingImageURL):
+        case let .transformable(direction, frontImageURL, backImageURL):
           AmbientWebImage(
-            url: displayingImageURL,
+            url: direction == .front ? frontImageURL : backImageURL,
             cornerRadius: layoutConfiguration.cornerRadius.rounded(),
             rotation: layoutConfiguration.rotation.degrees,
             isTransformed: false,
             size: layoutConfiguration.size
-          ).opacity(test ? 1 : 0)
+          )
+          .frame(width: layoutConfiguration.size.width, height: layoutConfiguration.size.height, alignment: .center)
+          .opacity(direction == .front ? 1 : 0)
           
-          Button {
-            withAnimation {
-              test.toggle()
-            } completion: {
-              print("done")
-            }
-
-            
+//          AmbientWebImage(
+//            url: backImageURL,
+//            cornerRadius: layoutConfiguration.cornerRadius.rounded(),
+//            rotation: layoutConfiguration.rotation.degrees,
+//            isTransformed: true,
+//            size: layoutConfiguration.size
+//          )
+//          .frame(width: layoutConfiguration.size.width, height: layoutConfiguration.size.height, alignment: .center)
+//          .opacity(direction == .back ? 1 : 0)
+          
+          Button { [model] in
+            send(.toggledFaceDirection(model))
           } label: {
             Text("Test")
           }
-
+          
+        case let .flippable(displayingImageURL):
+          Text("Hello World")
+          
+        case let .single(displayingImageURL):
+          Text("Hello World")
         }
         
         
@@ -192,7 +235,6 @@ public struct CardView: View {
 //          .zIndex(1)
 //        }
       }
-      .zIndex(1)
       
 //      priceView
     }
@@ -225,6 +267,7 @@ public struct CardView: View {
 //    }
 //  }
   
+  let send: (Action) -> Void
   public init(
     model: Model,
     layoutConfiguration: LayoutConfiguration,
@@ -232,7 +275,8 @@ public struct CardView: View {
 //    usdFoilPrice: String?,
 //    shouldShowPrice: Bool = true,
     callToActionIconName: String?,
-    callToActionHorizontalOffset: CGFloat = 5.0
+    callToActionHorizontalOffset: CGFloat = 5.0,
+    send: @escaping (Action) -> Void
   ) {
     self.model = model
     self.layoutConfiguration = layoutConfiguration
@@ -241,5 +285,10 @@ public struct CardView: View {
 //    self.usdFoilPrice = usdFoilPrice
 //    self.callToActionIconName = callToActionIconName
     self.callToActionHorizontalOffset = callToActionHorizontalOffset
+    self.send = send
+  }
+  
+  public enum Action: Equatable {
+    case toggledFaceDirection(CardView<Card>.Model)
   }
 }
