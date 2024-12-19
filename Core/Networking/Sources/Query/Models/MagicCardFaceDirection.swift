@@ -1,4 +1,4 @@
-public enum MagicCardFaceDirection: Sendable, Equatable {
+public enum MagicCardFaceDirection: Sendable, Equatable, Identifiable {
   case front
   case back
   
@@ -9,6 +9,13 @@ public enum MagicCardFaceDirection: Sendable, Equatable {
       
     case .front:
       return .back
+    }
+  }
+  
+  public var id: String {
+    switch self {
+    case .front: return "front"
+    case .back: return "back"
     }
   }
 }

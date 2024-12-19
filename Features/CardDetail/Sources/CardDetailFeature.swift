@@ -12,13 +12,8 @@ import Networking
   }
   
   var body: some ReducerOf<Self> {
-    BindingReducer()
-    
     Reduce { state, action in
       switch action {
-      case .binding:
-        return .none
-        
       case .dismissRulingsTapped:
         state.showRulings = nil
         return .none
@@ -53,20 +48,20 @@ import Networking
         }
         
       case .descriptionCallToActionTapped:
-        switch state.content.model! {
-          
-        case .transformable(direction: let direction, frontImageURL: let frontImageURL, backImageURL: let backImageURL, callToActionIconName: let callToActionIconName):
-          state.content.model = .transformable(
-            direction: direction == .back ? .front : .back,
-            frontImageURL: frontImageURL,
-            backImageURL: backImageURL,
-            callToActionIconName: callToActionIconName
-          )
-        case .flippable(displayingImageURL: let displayingImageURL, callToActionIconName: let callToActionIconName):
-          break
-        case .single(displayingImageURL: let displayingImageURL):
-          break
-        }
+//        switch state.content.model! {
+//          
+//        case .transformable(direction: let direction, frontImageURL: let frontImageURL, backImageURL: let backImageURL, callToActionIconName: let callToActionIconName):
+//          state.content.model = .transformable(
+//            direction: direction == .back ? .front : .back,
+//            frontImageURL: frontImageURL,
+//            backImageURL: backImageURL,
+//            callToActionIconName: callToActionIconName
+//          )
+//        case .flippable(displayingImageURL: let displayingImageURL, callToActionIconName: let callToActionIconName):
+//          break
+//        case .single(displayingImageURL: let displayingImageURL):
+//          break
+//        }
 
         return .none
         
@@ -76,7 +71,7 @@ import Networking
         
       case let .updateVariants(value):
         if let cards = try? value.get() {
-          state.content.variants = IdentifiedArray(uniqueElements: cards.compactMap(CardView.Model.init))
+          state.content.variants = IdentifiedArray(uniqueElements: cards)
         }
         
         return .none
@@ -95,20 +90,6 @@ import Networking
         return .none
         
       case .showRulings:
-        return .none
-        
-      case let .toggledFaceDirection(model):
-        
-        switch model {
-        case .transformable(direction: let direction, frontImageURL: let frontImageURL, backImageURL: let backImageURL, callToActionIconName: let callToActionIconName):
-          state.content.variants[0] = CardView<Client.MagicCardModel>.Model.transformable(direction: .back, frontImageURL: frontImageURL, backImageURL: backImageURL, callToActionIconName: callToActionIconName)
-          break
-        case .flippable(displayingImageURL: let displayingImageURL, callToActionIconName: let callToActionIconName):
-          break
-        case .single(displayingImageURL: let displayingImageURL):
-          break
-        }
-        
         return .none
       }
     }
@@ -143,8 +124,7 @@ extension CardDetailFeature {
     }
   }
   
-  @CasePathable indirect enum Action: Equatable, BindableAction {
-    case binding(BindingAction<State>)
+  @CasePathable indirect enum Action: Equatable {
     case dismissRulingsTapped
     case fetchAdditionalInformation(card: Client.MagicCardModel)
     case descriptionCallToActionTapped
@@ -153,7 +133,6 @@ extension CardDetailFeature {
     case viewAppeared(initialAction: Action)
     case viewRulingsTapped
     case showRulings(PresentationAction<RulingFeature<Client>.Action>)
-    case toggledFaceDirection(CardView<Client.MagicCardModel>.Model)
   }
 }
 

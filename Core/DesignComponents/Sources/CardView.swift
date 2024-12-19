@@ -3,29 +3,27 @@ import Networking
 
 public struct CardView<Card: MagicCard>: View {
   public enum Model: Identifiable, Equatable {
-    public enum FaceDirection {
-      case front
-      case back
-      
-      var id: String {
-        switch self {
-        case .front: return "front"
-        case .back: return "back"
-        }
-      }
-    }
+    case transformable(
+      direction: MagicCardFaceDirection,
+      frontImageURL: URL,
+      backImageURL: URL,
+      callToActionIconName: String
+    )
     
-    case transformable(direction: FaceDirection, frontImageURL: URL, backImageURL: URL, callToActionIconName: String)
-    case flippable(displayingImageURL: URL, callToActionIconName: String)
+    case flippable(
+      displayingImageURL: URL,
+      callToActionIconName: String
+    )
+    
     case single(displayingImageURL: URL)
     
     public var id: String {
       switch self {
-      case let .transformable(direction, frontImageURL, backImageURL, _):
-        return direction.id + frontImageURL.absoluteString + backImageURL.absoluteString
+      case let .transformable(direction, frontImageURL, backImageURL, callToActionIconName):
+        return direction.id + frontImageURL.absoluteString + backImageURL.absoluteString + callToActionIconName
         
-      case let .flippable(displayingImageURL, _):
-        return displayingImageURL.absoluteString
+      case let .flippable(displayingImageURL, callToActionIconName):
+        return displayingImageURL.absoluteString + callToActionIconName
         
       case let .single(displayingImageURL):
         return displayingImageURL.absoluteString
@@ -33,10 +31,24 @@ public struct CardView<Card: MagicCard>: View {
     }
     
     public init?(_ card: Card) {
-      if card.isTransformable, let frontImageURL = card.getCardFace(for: .front).getImageURL(), let backImageURL = card.getCardFace(for: .back).getImageURL(), let callToActionIconName = card.getLayout().value.callToActionIconName {
-        self = .transformable(direction: .front, frontImageURL: frontImageURL, backImageURL: backImageURL, callToActionIconName: callToActionIconName)
-      } else if card.isFlippable, let imageURL = card.getImageURL(), let callToActionIconName = card.getLayout().value.callToActionIconName {
-        self = .flippable(displayingImageURL: imageURL, callToActionIconName: callToActionIconName)
+      if card.isTransformable,
+          let frontImageURL = card.getCardFace(for: .front).getImageURL(),
+          let backImageURL = card.getCardFace(for: .back).getImageURL(),
+          let callToActionIconName = card.getLayout().value.callToActionIconName {
+        self = .transformable(
+          direction: .front,
+          frontImageURL: frontImageURL,
+          backImageURL: backImageURL,
+          callToActionIconName: callToActionIconName
+        )
+      } else if
+        card.isFlippable,
+        let imageURL = card.getImageURL(),
+        let callToActionIconName = card.getLayout().value.callToActionIconName {
+        self = .flippable(
+          displayingImageURL: imageURL,
+          callToActionIconName: callToActionIconName
+        )
       } else if let imageURL = card.getImageURL() {
         self = .single(displayingImageURL: imageURL)
       } else {
@@ -102,50 +114,20 @@ public struct CardView<Card: MagicCard>: View {
     VStack(spacing: 5) {
       ZStack(alignment: .trailing) {
         switch localModel ?? model {
-        case let .transformable(direction, frontImageURL, backImageURL, callToActionIconName):
-          AmbientWebImage(
-            url: backImageURL,
-            cornerRadius: layoutConfiguration.cornerRadius.rounded(),
-            rotation: layoutConfiguration.rotation.degrees,
-            isTransformed: true,
-            size: layoutConfiguration.size
+        case let .transformable(
+          direction,
+          frontImageURL,
+          backImageURL,
+          callToActionIconName
+        ):
+          transformableCardView(
+            direction: direction,
+            frontImageURL: frontImageURL,
+            backImageURL: backImageURL,
+            callToActionIconName: callToActionIconName
           )
-          .frame(width: layoutConfiguration.size.width, height: layoutConfiguration.size.height, alignment: .center)
-          .opacity(direction == .back ? 1 : 0)
-          .rotation3DEffect(.degrees(direction == .back ? 180 : 0), axis: (x: 0, y: 1, z: 0))
-          .zIndex(direction == .back ? 1 : 0)
           
-          AmbientWebImage(
-            url: frontImageURL,
-            cornerRadius: layoutConfiguration.cornerRadius.rounded(),
-            rotation: layoutConfiguration.rotation.degrees,
-            isTransformed: false,
-            size: layoutConfiguration.size
-          )
-          .frame(width: layoutConfiguration.size.width, height: layoutConfiguration.size.height, alignment: .center)
-          .opacity(direction == .front ? 1 : 0)
-          .rotation3DEffect(.degrees(direction == .front ? 0 : 180), axis: (x: 0, y: 1, z: 0))
-          .zIndex(direction == .front ? 1 : 0)
-          
-          Button {
-            if let send {
-              send(.toggledFaceDirection)
-            } else {
-              localModel = .transformable(direction: direction == .front ? .back : .front, frontImageURL: frontImageURL, backImageURL: backImageURL, callToActionIconName: callToActionIconName)
-            }
-            
-          } label: {
-            Image(systemName: callToActionIconName).fontWeight(.semibold)
-          }
-          .tint(DesignComponentsAsset.accentColor.swiftUIColor)
-          .frame(width: 44.0, height: 44.0)
-          .background(.thinMaterial)
-          .clipShape(Circle())
-          .overlay(Circle().strokeBorder(.separator, lineWidth: 1 / UIScreen.main.nativeScale))
-          .offset(x: callToActionHorizontalOffset, y: -13)
-          .zIndex(2)
-          
-        case let .flippable(displayingImageURL):
+        case let .flippable(displayingImageURL, callToActionIconName):
           Text("Hello World")
           
         case let .single(displayingImageURL):
@@ -158,6 +140,55 @@ public struct CardView<Card: MagicCard>: View {
       
 //      priceView
     }
+  }
+  
+  @ViewBuilder private func transformableCardView(
+    direction: MagicCardFaceDirection,
+    frontImageURL: URL,
+    backImageURL: URL,
+    callToActionIconName: String
+  ) -> some View {
+    AmbientWebImage(
+      url: backImageURL,
+      cornerRadius: layoutConfiguration.cornerRadius.rounded(),
+      rotation: layoutConfiguration.rotation.degrees,
+      isTransformed: true,
+      size: layoutConfiguration.size
+    )
+    .frame(width: layoutConfiguration.size.width, height: layoutConfiguration.size.height, alignment: .center)
+    .opacity(direction == .back ? 1 : 0)
+    .rotation3DEffect(.degrees(direction == .back ? 180 : 0), axis: (x: 0, y: 1, z: 0))
+    .zIndex(direction == .back ? 1 : 0)
+    
+    AmbientWebImage(
+      url: frontImageURL,
+      cornerRadius: layoutConfiguration.cornerRadius.rounded(),
+      rotation: layoutConfiguration.rotation.degrees,
+      isTransformed: false,
+      size: layoutConfiguration.size
+    )
+    .frame(width: layoutConfiguration.size.width, height: layoutConfiguration.size.height, alignment: .center)
+    .opacity(direction == .front ? 1 : 0)
+    .rotation3DEffect(.degrees(direction == .front ? 0 : 180), axis: (x: 0, y: 1, z: 0))
+    .zIndex(direction == .front ? 1 : 0)
+    
+    Button {
+      if let send {
+        send(.toggledFaceDirection)
+      } else {
+        localModel = .transformable(direction: direction == .front ? .back : .front, frontImageURL: frontImageURL, backImageURL: backImageURL, callToActionIconName: callToActionIconName)
+      }
+      
+    } label: {
+      Image(systemName: callToActionIconName).fontWeight(.semibold)
+    }
+    .tint(DesignComponentsAsset.accentColor.swiftUIColor)
+    .frame(width: 44.0, height: 44.0)
+    .background(.thinMaterial)
+    .clipShape(Circle())
+    .overlay(Circle().strokeBorder(.separator, lineWidth: 1 / UIScreen.main.nativeScale))
+    .offset(x: callToActionHorizontalOffset, y: -13)
+    .zIndex(2)
   }
   
 //  @ViewBuilder private var priceView: some View {
@@ -190,12 +221,12 @@ public struct CardView<Card: MagicCard>: View {
   let send: ((Action) -> Void)?
   
   public init?(
-    model: Model?,
+    card: Card,
     layoutConfiguration: LayoutConfiguration,
     callToActionHorizontalOffset: CGFloat = 5.0,
     send: ((Action) -> Void)? = nil
   ) {
-    guard let model else {
+    guard let model = Model(card) else {
       return nil
     }
     

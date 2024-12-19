@@ -19,19 +19,7 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
   var body: some View {
     ScrollView {
       VStack(spacing: 0) {
-        CardView(
-          model: store.content.model,
-          layoutConfiguration: CardView.LayoutConfiguration(
-            rotation: store.content.card.isLandscape ? .landscape : .portrait,
-            maxWidth: geometryProxy.size.width
-          ),
-          callToActionHorizontalOffset: 21.0
-        ) { action in
-          store.send(.descriptionCallToActionTapped, animation: .bouncy)
-        }
-        .padding(EdgeInsets(top: 21.0, leading: 0, bottom: 21.0, trailing: 0))
-        .zIndex(1)
-        .shadow(color: DesignComponentsAsset.shadow.swiftUIColor, radius: 13, x: 0, y: 13)
+        Self.cardView(store: store, geometryProxy: geometryProxy)
         
         CardDetailTableView(
           descriptions: store.content.descriptions,
@@ -101,9 +89,6 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
           switch action {
           case .didSelectCard:
             break
-            
-          case let .toggledFaceDirection(mode):
-            self.store.send(.toggledFaceDirection(mode), animation: .bouncy)
           }
         }
         
@@ -179,14 +164,29 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
   }
 }
 
-private extension CardView.LayoutConfiguration {
-  var insets: EdgeInsets {
-    switch rotation {
-    case .landscape:
-      EdgeInsets(top: 21, leading: 34, bottom: 29, trailing: 34)
-      
-    case .portrait:
-      EdgeInsets(top: 21, leading: 89, bottom: 29, trailing: 89)
+private extension CardDetailView {
+  @ViewBuilder static func cardView(
+    store: StoreOf<CardDetailFeature<Client>>,
+    geometryProxy: GeometryProxy
+  ) -> some View {
+    let insets: EdgeInsets = if store.content.card.isLandscape {
+      EdgeInsets(top: 21.0, leading: 34.0, bottom: 29.0, trailing: 34.0)
+    } else {
+      EdgeInsets(top: 21.0, leading: 68, bottom: 29.0, trailing: 68)
     }
+    
+    CardView(
+      card: store.content.card,
+      layoutConfiguration: CardView.LayoutConfiguration(
+        rotation: store.content.card.isLandscape ? .landscape : .portrait,
+        maxWidth: geometryProxy.size.width - insets.leading - insets.trailing
+      ),
+      callToActionHorizontalOffset: 21.0
+    ) { action in
+      store.send(.descriptionCallToActionTapped, animation: .bouncy)
+    }
+    .padding(insets)
+    .zIndex(1)
+    .shadow(color: DesignComponentsAsset.shadow.swiftUIColor, radius: 13, x: 0, y: 13)
   }
 }

@@ -6,12 +6,11 @@ import SwiftUI
 struct VariantView<Card: MagicCard>: View {
   enum Action: Equatable {
     case didSelectCard(Card)
-    case toggledFaceDirection(CardView<Card>.Model)
   }
   
   let title: String
   let subtitle: String
-  let cards: IdentifiedArrayOf<CardView<Card>.Model>
+  let cards: IdentifiedArrayOf<Card>
   let send: (Action) -> Void
   
   var body: some View {
@@ -29,7 +28,7 @@ struct VariantView<Card: MagicCard>: View {
 //                send(.didSelectCard(card))
               }, label: {
                 CardView(
-                  model: card,
+                  card: card,
                   layoutConfiguration: CardView.LayoutConfiguration(
                     rotation: .portrait,
                     maxWidth: 170
@@ -54,7 +53,7 @@ struct VariantView<Card: MagicCard>: View {
   init?(
     title: String,
     subtitle: String,
-    cards: IdentifiedArrayOf<CardView<Card>.Model>,
+    cards: IdentifiedArrayOf<Card>,
     send: @escaping (Action) -> Void
   ) {
     self.title = title
