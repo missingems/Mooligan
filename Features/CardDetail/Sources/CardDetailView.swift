@@ -157,6 +157,7 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
             }
           }
       }
+      .presentationDetents([.height(geometryProxy.size.height / 1.618)])
     }
     .task(priority: .background) {
       store.send(.fetchAdditionalInformation(card: store.content.card))
