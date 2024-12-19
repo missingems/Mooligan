@@ -29,21 +29,13 @@ struct QueryView<Client: MagicCardQueryRequestClient>: View {
                 store.send(.didSelectCard(card))
               }, label: {
                 CardView(
-                  imageURL: card.getImageURL(),
-                  backImageURL: card.getCardFace(for: .back).getImageURL(),
-                  isTransformable: card.isTransformable,
-                  isTransformed: nil,
-                  isFlippable: card.isFlippable,
-                  isFlipped: nil,
+                  card: card,
                   layoutConfiguration: CardView.LayoutConfiguration(
                     rotation: .portrait,
-                    layout: .fixedWidth(width)
+                    maxWidth: width
                   ),
-                  usdPrice: nil,
-                  usdFoilPrice: nil,
-                  shouldShowPrice: false,
-                  callToActionIconName: card.getLayout().value.callToActionIconName,
-                  callToActionHorizontalOffset: 5
+                  callToActionHorizontalOffset: 5,
+                  priceVisibility: .hidden
                 )
               }
             )
