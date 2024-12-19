@@ -17,6 +17,9 @@ import Networking
       case let .updateRulings(rulings):
         state.mode = .loaded(rulings)
         return .none
+        
+      case .dismissTapped:
+        return .none
       }
     }
   }
@@ -40,7 +43,7 @@ extension RulingFeature {
     var mode: Mode = .loading
     
     var emptyStateTitle: String {
-      return "No Results for \(card.getName())"
+      return "No Results for \"\(card.getName())\""
     }
     
     var emptyStateDescription: String? {
@@ -53,6 +56,7 @@ extension RulingFeature {
   }
   
   enum Action: Equatable {
+    case dismissTapped
     case fetchRulings
     case updateRulings([MagicCardRuling])
   }

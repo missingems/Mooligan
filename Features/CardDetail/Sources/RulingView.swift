@@ -52,6 +52,13 @@ struct RulingView<Client: MagicCardDetailRequestClient>: View {
       store.send(.fetchRulings)
     }
     .navigationTitle(store.title)
+    .toolbar {
+      ToolbarItem(placement: .confirmationAction) {
+        Button("Done") {
+          store.send(.dismissTapped)
+        }
+      }
+    }
   }
   
   init(

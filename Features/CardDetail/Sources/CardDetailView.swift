@@ -148,14 +148,6 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
     ) { store in
       NavigationStack {
         RulingView(store: store).toolbarTitleDisplayMode(.inline)
-          .toolbar {
-            ToolbarItem(placement: .confirmationAction) {
-              Button("Done") {
-                self.store.send(.dismissRulingsTapped)
-              }
-              .buttonStyle(.borderSinkableButtonStyle)
-            }
-          }
       }
       .presentationDetents([.height(geometryProxy.size.height / 1.618)])
     }
@@ -194,7 +186,7 @@ private extension CardDetailView {
       store.send(.descriptionCallToActionTapped, animation: .bouncy)
     }
     .padding(insets)
-    .zIndex(1)
     .shadow(color: DesignComponentsAsset.shadow.swiftUIColor, radius: 13, x: 0, y: 13)
+    .zIndex(1)
   }
 }

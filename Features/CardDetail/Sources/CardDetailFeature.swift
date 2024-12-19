@@ -101,6 +101,16 @@ import Networking
         
         return .none
         
+      case let .showRulings(.presented(action)):
+        switch action {
+        case .dismissTapped:
+          state.showRulings = nil
+          
+        default:
+          break
+        }
+        return .none
+        
       case .showRulings:
         return .none
       }
