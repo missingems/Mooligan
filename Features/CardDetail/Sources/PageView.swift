@@ -17,17 +17,19 @@ public struct PageView<Client: MagicCardDetailRequestClient>: View {
   }
   
   public var body: some View {
-    ScrollView(.horizontal, showsIndicators: false) {
-      LazyHStack(alignment: .top, spacing: 0) {
-        ForEach(
-          Array(store.scope(state: \.cards, action: \.cards))
-        ) { store in
-          CardDetailView(store: store).containerRelativeFrame(.horizontal)
+    GeometryReader { proxy in
+      ScrollView(.horizontal, showsIndicators: false) {
+        LazyHStack(alignment: .top, spacing: 0) {
+          ForEach(
+            Array(store.scope(state: \.cards, action: \.cards))
+          ) { store in
+            CardDetailView(geometryProxy: proxy, store: store).containerRelativeFrame(.horizontal)
+          }
         }
+        .scrollTargetLayout()
       }
-      .scrollTargetLayout()
+      .scrollTargetBehavior(.paging)
+      .background(.black)
     }
-    .scrollTargetBehavior(.paging)
-    .background(.black)
   }
 }

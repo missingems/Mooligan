@@ -53,12 +53,21 @@ import Networking
         }
         
       case .descriptionCallToActionTapped:
-        if state.content.card.isFlippable {
-          state.isFlipped?.toggle()
-        } else if state.content.card.isTransformable {
-          state.isTransformed?.toggle()
+        switch state.content.model! {
+          
+        case .transformable(direction: let direction, frontImageURL: let frontImageURL, backImageURL: let backImageURL, callToActionIconName: let callToActionIconName):
+          state.content.model = .transformable(
+            direction: direction == .back ? .front : .back,
+            frontImageURL: frontImageURL,
+            backImageURL: backImageURL,
+            callToActionIconName: callToActionIconName
+          )
+        case .flippable(displayingImageURL: let displayingImageURL, callToActionIconName: let callToActionIconName):
+          break
+        case .single(displayingImageURL: let displayingImageURL):
+          break
         }
-        
+
         return .none
         
       case let .updateSetIconURL(value):
@@ -87,6 +96,20 @@ import Networking
         
       case .showRulings:
         return .none
+        
+      case let .toggledFaceDirection(model):
+        
+        switch model {
+        case .transformable(direction: let direction, frontImageURL: let frontImageURL, backImageURL: let backImageURL, callToActionIconName: let callToActionIconName):
+          state.content.variants[0] = CardView<Client.MagicCardModel>.Model.transformable(direction: .back, frontImageURL: frontImageURL, backImageURL: backImageURL, callToActionIconName: callToActionIconName)
+          break
+        case .flippable(displayingImageURL: let displayingImageURL, callToActionIconName: let callToActionIconName):
+          break
+        case .single(displayingImageURL: let displayingImageURL):
+          break
+        }
+        
+        return .none
       }
     }
     .ifLet(\.$showRulings, action: \.showRulings) {
@@ -101,18 +124,6 @@ extension CardDetailFeature {
     let id: UUID
     var content: Content<Client.MagicCardModel>
     let start: Action
-    
-    var isTransformed: Bool? = false {
-      didSet {
-        content.faceDirection = content.faceDirection.toggled()
-      }
-    }
-    
-    var isFlipped: Bool? = false {
-      didSet {
-        content.faceDirection = content.faceDirection.toggled()
-      }
-    }
     
     init(
       card: Client.MagicCardModel,
@@ -142,6 +153,7 @@ extension CardDetailFeature {
     case viewAppeared(initialAction: Action)
     case viewRulingsTapped
     case showRulings(PresentationAction<RulingFeature<Client>.Action>)
+    case toggledFaceDirection(CardView<Client.MagicCardModel>.Model)
   }
 }
 

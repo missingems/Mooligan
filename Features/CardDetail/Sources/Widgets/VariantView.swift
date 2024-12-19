@@ -22,7 +22,7 @@ struct VariantView<Card: MagicCard>: View {
       Text(subtitle).font(.caption).foregroundStyle(.secondary)
       
       ScrollView(.horizontal, showsIndicators: false) {
-        HStack(spacing: 8.0) {
+        LazyHStack(spacing: 8.0) {
           ForEach(cards) { card in
             Button(
               action: {
@@ -34,14 +34,7 @@ struct VariantView<Card: MagicCard>: View {
                     rotation: .portrait,
                     maxWidth: 170
                   )
-//                  usdPrice: card.getPrices().usd,
-//                  usdFoilPrice: card.getPrices().usdFoil,
-                ) { action in
-                  switch action {
-                  case let .toggledFaceDirection(model):
-                    send(.toggledFaceDirection(model))
-                  }
-                }
+                )
               }
             )
             .buttonStyle(.sinkableButtonStyle)

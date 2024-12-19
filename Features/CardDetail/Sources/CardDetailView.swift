@@ -5,37 +5,33 @@ import NukeUI
 import SwiftUI
 
 struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
-  @Bindable var store: StoreOf<CardDetailFeature<Client>>
+  @Bindable private var store: StoreOf<CardDetailFeature<Client>>
+  private let geometryProxy: GeometryProxy
   
   init(
+    geometryProxy: GeometryProxy,
     store: StoreOf<CardDetailFeature<Client>>
   ) {
+    self.geometryProxy = geometryProxy
     self.store = store
   }
   
   var body: some View {
     ScrollView {
       VStack(spacing: 0) {
-        //          CardView(
-        //            imageURL: store.content.imageURL,
-        //            backImageURL: store.content.card.getCardFace(for: .back).getImageURL(),
-        //            isTransformable: store.content.card.isTransformable,
-        //            isTransformed: $store.isTransformed,
-        //            isFlippable: store.content.card.isFlippable,
-        //            isFlipped: $store.isFlipped,
-        //            layoutConfiguration: CardView.LayoutConfiguration(
-        //              rotation: store.content.card.isLandscape ? .landscape : .portrait,
-        //              layout: .fixedWidth(geometryProxy.size.width - layoutConfiguration.insets.leading - layoutConfiguration.insets.trailing)
-        //            ),
-        //            usdPrice: nil,
-        //            usdFoilPrice: nil,
-        //            shouldShowPrice: false,
-        //            callToActionIconName: store.content.card.getLayout().value.callToActionIconName,
-        //            callToActionHorizontalOffset: 21.0
-        //          )
-        //          .shadow(color: DesignComponentsAsset.shadow.swiftUIColor, radius: 13, x: 0, y: 13)
-        //          .padding(EdgeInsets(top: layoutConfiguration.insets.top, leading: 0, bottom: layoutConfiguration.insets.bottom, trailing: 0))
-        //          .zIndex(1)
+        CardView(
+          model: store.content.model,
+          layoutConfiguration: CardView.LayoutConfiguration(
+            rotation: store.content.card.isLandscape ? .landscape : .portrait,
+            maxWidth: geometryProxy.size.width
+          ),
+          callToActionHorizontalOffset: 21.0
+        ) { action in
+          store.send(.descriptionCallToActionTapped, animation: .bouncy)
+        }
+        .padding(EdgeInsets(top: 21.0, leading: 0, bottom: 21.0, trailing: 0))
+        .zIndex(1)
+        .shadow(color: DesignComponentsAsset.shadow.swiftUIColor, radius: 13, x: 0, y: 13)
         
         CardDetailTableView(
           descriptions: store.content.descriptions,
@@ -106,8 +102,8 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
           case .didSelectCard:
             break
             
-          case let .toggledFaceDirection(model):
-            break
+          case let .toggledFaceDirection(mode):
+            self.store.send(.toggledFaceDirection(mode), animation: .bouncy)
           }
         }
         
@@ -194,4 +190,3 @@ private extension CardView.LayoutConfiguration {
     }
   }
 }
-
