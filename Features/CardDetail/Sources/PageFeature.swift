@@ -7,6 +7,8 @@ import SwiftUI
   let client: Client
   
   var body: some ReducerOf<Self> {
+    BindingReducer()
+    
     Reduce { state, action in
       switch action {
       case .addTapped:
@@ -35,6 +37,7 @@ import SwiftUI
 extension PageFeature {
   @ObservableState struct State: Equatable {
     var cards: IdentifiedArrayOf<CardDetailFeature<Client>.State> = []
+    var currentDisplayingCard: Int? = 0
     
     public init(cards: [Client.MagicCardModel]) {
       self.cards = IdentifiedArrayOf(

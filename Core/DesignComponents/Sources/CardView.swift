@@ -2,6 +2,10 @@ import SwiftUI
 import Networking
 
 public struct CardView<Card: MagicCard>: View {
+  public enum Action: Equatable {
+    case toggledFaceDirection
+  }
+  
   public enum PriceVisibility {
     case hidden
     case display(usdFoil: String?, usd: String?)
@@ -121,6 +125,8 @@ public struct CardView<Card: MagicCard>: View {
   private let layoutConfiguration: LayoutConfiguration
   private let callToActionHorizontalOffset: CGFloat
   private let mode: Mode
+  private let priceVisibility: PriceVisibility
+  private let send: ((Action) -> Void)?
   @State private var localMode: Mode?
   
   public var body: some View {
@@ -261,7 +267,7 @@ public struct CardView<Card: MagicCard>: View {
     .clipShape(Circle())
     .overlay(Circle().strokeBorder(.separator, lineWidth: 1 / UIScreen.main.nativeScale))
     .offset(x: callToActionHorizontalOffset, y: -13)
-    .zIndex(1)
+    .zIndex(3)
   }
   
   @ViewBuilder private var priceView: some View {
@@ -287,9 +293,6 @@ public struct CardView<Card: MagicCard>: View {
       .padding(.bottom, 5.0)
     }
   }
-  
-  let priceVisibility: PriceVisibility
-  let send: ((Action) -> Void)?
   
   public init?(
     card: Card,
@@ -335,9 +338,5 @@ public struct CardView<Card: MagicCard>: View {
     self.layoutConfiguration = layoutConfiguration
     self.callToActionHorizontalOffset = callToActionHorizontalOffset
     self.send = send
-  }
-  
-  public enum Action: Equatable {
-    case toggledFaceDirection
   }
 }
