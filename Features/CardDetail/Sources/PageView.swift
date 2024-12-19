@@ -8,29 +8,31 @@ public struct PageView<Client: MagicCardDetailRequestClient>: View {
   @Bindable var store: StoreOf<PageFeature<Client>>
   
   public init(client: Client, cards: [Client.MagicCardModel]) {
-    self.store = Store(
-      initialState: PageFeature<Client>.State(cards: cards), reducer: {
+    store = Store(
+      initialState: PageFeature<Client>.State(cards: cards),
+      reducer: {
         PageFeature<Client>(client: client)
       }
     )
   }
   
   public var body: some View {
-    ScrollView(.horizontal, showsIndicators: false) {
+    GeometryReader { proxy in
       ZStack(alignment: .top) {
-        LazyHStack(alignment: .top, spacing: 0) {
-          let stores = Array(store.scope(state: \.cards, action: \.cards))
-          ForEach(
-            stores.indices, id: \.self
-          ) { index in
-            CardDetailView(store: stores[index])
-              .containerRelativeFrame(.horizontal)
-              .id(index)
+        ScrollView(.horizontal, showsIndicators: false) {
+          LazyHStack(alignment: .top, spacing: 0) {
+            ForEach(
+              Array(store.scope(state: \.cards, action: \.cards))
+            ) { store in
+              CardDetailView(geometryProxy: proxy, store: store).containerRelativeFrame(.horizontal)
+            }
           }
+          .scrollTargetLayout()
         }
-        .scrollTargetLayout()
+        .zIndex(0)
         
-        VariableBlurView(direction: .blurredTopClearBottom).frame(height: 105).ignoresSafeArea()
+        VariableBlurView(direction: .blurredTopClearBottom).frame(height: proxy.safeAreaInsets.top).ignoresSafeArea()
+          .zIndex(1)
       }
       .toolbar {
         ToolbarItemGroup(placement: .primaryAction) {
@@ -49,9 +51,10 @@ public struct PageView<Client: MagicCardDetailRequestClient>: View {
           .foregroundStyle(DesignComponentsAsset.accentColor.swiftUIColor)
         }
       }
+      .scrollPosition(id: $store.currentDisplayingCard)
+      .scrollTargetBehavior(.paging)
+      .background(.black)
     }
-    .scrollPosition(id: $store.currentDisplayingCard)
-    .scrollTargetBehavior(.paging)
-    .background(.black)
   }
 }
+

@@ -1,15 +1,16 @@
+import ComposableArchitecture
 import DesignComponents
 import Networking
 import SwiftUI
 
 struct VariantView<Card: MagicCard>: View {
-  enum Action: Sendable, Equatable {
+  enum Action: Equatable {
     case didSelectCard(Card)
   }
   
   let title: String
   let subtitle: String
-  let cards: [Card]
+  let cards: IdentifiedArrayOf<Card>
   let send: (Action) -> Void
   
   var body: some View {
@@ -27,21 +28,20 @@ struct VariantView<Card: MagicCard>: View {
                 send(.didSelectCard(card))
               }, label: {
                 CardView(
-                  imageURL: card.getImageURL(),
-                  backImageURL: card.getCardFace(for: .back).getImageURL(),
-                  isTransformable: card.isTransformable,
-                  isFlippable: card.isFlippable,
+                  card: card,
                   layoutConfiguration: CardView.LayoutConfiguration(
                     rotation: .portrait,
-                    layout: .fixedWidth(170)
+                    maxWidth: 170
                   ),
-                  usdPrice: card.getPrices().usd,
-                  usdFoilPrice: card.getPrices().usdFoil,
-                  callToActionIconName: card.getLayout().value.callToActionIconName
+                  priceVisibility: .display(
+                    usdFoil: card.getPrices().usdFoil,
+                    usd: card.getPrices().usd
+                  )
                 )
               }
             )
             .buttonStyle(.sinkableButtonStyle)
+            .geometryGroup()
           }
         }
       }
@@ -57,11 +57,9 @@ struct VariantView<Card: MagicCard>: View {
   init?(
     title: String,
     subtitle: String,
-    cards: [Card]?,
+    cards: IdentifiedArrayOf<Card>,
     send: @escaping (Action) -> Void
   ) {
-    guard let cards else { return nil }
-    
     self.title = title
     self.subtitle = subtitle
     self.cards = cards

@@ -11,7 +11,7 @@ struct RootView<Client: MagicCardDetailRequestClient>: View {
   private let store: StoreOf<CardDetailFeature<Client>>
   
   var body: some View {
-    CardDetailView(store: store)
+    Text("")
   }
   
   init(store: StoreOf<CardDetailFeature<Client>>) {

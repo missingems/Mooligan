@@ -16,7 +16,8 @@ let project = Project(
         .external(name: "Shimmer"),
         .external(name: "Sticker"),
         .external(name: "VariableBlur"),
-        .external(name: "SVGView")
+        .external(name: "SVGView"),
+        .project(target: "Featurist", path: "../../Core/Featurist"),
       ]
     )
   ]

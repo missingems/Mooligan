@@ -1,13 +1,74 @@
-
 import SwiftUI
+import Networking
 
-public struct CardView: View {
-  public struct LayoutConfiguration {
-    public enum Layout {
-      case fixedWidth(CGFloat)
-      case flexible
+public struct CardView<Card: MagicCard>: View {
+  public enum Action: Equatable {
+    case toggledFaceDirection
+  }
+  
+  public enum PriceVisibility {
+    case hidden
+    case display(usdFoil: String?, usd: String?)
+  }
+  
+  public enum Mode: Identifiable, Equatable {
+    case transformable(
+      direction: MagicCardFaceDirection,
+      frontImageURL: URL,
+      backImageURL: URL,
+      callToActionIconName: String
+    )
+    
+    case flippable(
+      direction: MagicCardFaceDirection,
+      displayingImageURL: URL,
+      callToActionIconName: String
+    )
+    
+    case single(displayingImageURL: URL)
+    
+    public var id: String {
+      switch self {
+      case let .transformable(direction, frontImageURL, backImageURL, callToActionIconName):
+        return direction.id + frontImageURL.absoluteString + backImageURL.absoluteString + callToActionIconName
+        
+      case let .flippable(direction, displayingImageURL, callToActionIconName):
+        return direction.id + displayingImageURL.absoluteString + callToActionIconName
+        
+      case let .single(displayingImageURL):
+        return displayingImageURL.absoluteString
+      }
     }
     
+    public init?(_ card: Card) {
+      if card.isTransformable,
+          let frontImageURL = card.getCardFace(for: .front).getImageURL(),
+          let backImageURL = card.getCardFace(for: .back).getImageURL(),
+          let callToActionIconName = card.getLayout().value.callToActionIconName {
+        self = .transformable(
+          direction: .front,
+          frontImageURL: frontImageURL,
+          backImageURL: backImageURL,
+          callToActionIconName: callToActionIconName
+        )
+      } else if
+        card.isFlippable,
+        let imageURL = card.getImageURL(),
+        let callToActionIconName = card.getLayout().value.callToActionIconName {
+        self = .flippable(
+          direction: .front,
+          displayingImageURL: imageURL,
+          callToActionIconName: callToActionIconName
+        )
+      } else if let imageURL = card.getImageURL() {
+        self = .single(displayingImageURL: imageURL)
+      } else {
+        return nil
+      }
+    }
+  }
+  
+  public struct LayoutConfiguration {
     public enum Rotation {
       case landscape
       case portrait
@@ -28,135 +89,197 @@ public struct CardView: View {
     }
     
     public let rotation: Rotation
-    public let layout: Layout
+    public let maxWidth: CGFloat
     public let cornerRadius: CGFloat
     
-    public init(rotation: Rotation, layout: Layout) {
+    public var size: CGSize {
+      switch rotation {
+      case .landscape:
+        CGSize(
+          width: maxWidth.rounded(),
+          height: (maxWidth * MagicCardImageRatio.widthToHeight.rawValue).rounded()
+        )
+        
+      case .portrait:
+        CGSize(
+          width: maxWidth.rounded(),
+          height: (maxWidth * MagicCardImageRatio.heightToWidth.rawValue).rounded()
+        )
+      }
+    }
+    
+    public init(rotation: Rotation, maxWidth: CGFloat) {
       self.rotation = rotation
-      self.layout = layout
+      self.maxWidth = maxWidth
       
-      switch (layout, rotation) {
-      case (.fixedWidth(let width), .landscape):
-        self.cornerRadius = 5 / 100 * width * MagicCardImageRatio.widthToHeight.rawValue
+      cornerRadius = switch rotation {
+      case .landscape:
+        5 / 100 * maxWidth * MagicCardImageRatio.widthToHeight.rawValue
         
-      case (.fixedWidth(let width), .portrait):
-        self.cornerRadius = 5 / 100 * width
-        
-      default:
-        self.cornerRadius = 13.0
+      case .portrait:
+        5 / 100 * maxWidth
       }
     }
   }
   
-  private let isTransformable: Bool
-  private let isFlippable: Bool
-  private let imageURL: URL?
-  private let backImageURL: URL?
   private let layoutConfiguration: LayoutConfiguration
-  private let shouldShowPrice: Bool
-  private let usdPrice: String?
-  private let usdFoilPrice: String?
-  private let callToActionIconName: String?
   private let callToActionHorizontalOffset: CGFloat
-  @Binding private var isTransformed: Bool?
-  @State private var isTransformedInternal = false
-  @Binding private var isFlipped: Bool?
-  @State private var isFlippedInternal = false
-  @State private var isImageLoaded = false
+  private let mode: Mode
+  private let priceVisibility: PriceVisibility
+  private let send: ((Action) -> Void)?
+  @State private var localMode: Mode?
   
   public var body: some View {
     VStack(spacing: 5) {
       ZStack(alignment: .trailing) {
-        if let imageURL {
-          switch layoutConfiguration.layout {
-          case let .fixedWidth(width):
-            let width = width.rounded()
-            let height = (width / layoutConfiguration.rotation.ratio).rounded()
-            
-            if let backImageURL {
-              AmbientWebImage(
-                url: backImageURL,
-                cornerRadius: layoutConfiguration.cornerRadius.rounded(),
-                rotation: layoutConfiguration.rotation.degrees,
-                isTransformed: true,
-                size: CGSize(
-                  width: width,
-                  height: height
-                ),
-                isImageLoaded: $isImageLoaded
-              )
-              .opacity(isTransformed ?? isTransformedInternal ? 1 : 0)
-              .rotationEffect(.degrees(isFlipped ?? isFlippedInternal ? 180 : 0))
-              .rotation3DEffect(.degrees(isTransformed ?? isTransformedInternal ? 180 : 0), axis: (x: 0, y: 1, z: 0))
-              .zIndex(isTransformed ?? isTransformedInternal ? 1 : 0)
-            }
-            
-            AmbientWebImage(
-              url: imageURL,
-              cornerRadius: layoutConfiguration.cornerRadius.rounded(),
-              rotation: layoutConfiguration.rotation.degrees,
-              isTransformed: false,
-              size: CGSize(
-                width: width,
-                height: height
-              ),
-              isImageLoaded: $isImageLoaded
-            )
-            .opacity(isTransformed ?? isTransformedInternal ? 0 : 1)
-            .rotationEffect(.degrees(isFlipped ?? isFlippedInternal ? 180 : 0))
-            .rotation3DEffect(.degrees(isTransformed ?? isTransformedInternal ? 180 : 0), axis: (x: 0, y: 1, z: 0))
-            .zIndex(isTransformed ?? isTransformedInternal ? 0 : 1)
-            
-          case .flexible:
-            if let backImageURL {
-              AmbientWebImage(
-                url: backImageURL,
-                cornerRadius: 13,
-                rotation: layoutConfiguration.rotation.degrees,
-                isTransformed: true,
-                isImageLoaded: $isImageLoaded
-              )
-              .opacity(isTransformed ?? isTransformedInternal ? 1 : 0)
-              .rotationEffect(.degrees(isFlipped ?? isFlippedInternal ? 180 : 0))
-              .rotation3DEffect(.degrees(isTransformed ?? isTransformedInternal ? 180 : 0), axis: (x: 0, y: 1, z: 0))
-              .zIndex(isTransformed ?? isTransformedInternal ? 1 : 0)
-            }
-            
-            AmbientWebImage(
-              url: imageURL,
-              cornerRadius: 13,
-              rotation: layoutConfiguration.rotation.degrees,
-              isTransformed: false,
-              isImageLoaded: $isImageLoaded
-            )
-            .opacity(isTransformed ?? isTransformedInternal ? 0 : 1)
-            .rotationEffect(.degrees(isFlipped ?? isFlippedInternal ? 180 : 0))
-            .rotation3DEffect(.degrees(isTransformed ?? isTransformedInternal ? 180 : 0), axis: (x: 0, y: 1, z: 0))
-            .zIndex(isTransformed ?? isTransformedInternal ? 0 : 1)
+        switch localMode ?? mode {
+        case let .transformable(
+          direction,
+          frontImageURL,
+          backImageURL,
+          callToActionIconName
+        ):
+          transformableCardView(
+            direction: direction,
+            frontImageURL: frontImageURL,
+            backImageURL: backImageURL,
+            callToActionIconName: callToActionIconName
+          )
+          .transaction { transaction in
+            transaction.animation = .bouncy
           }
+          
+        case let .flippable(direction, displayingImageURL, callToActionIconName):
+          flippableCardView(
+            direction: direction,
+            displayingImageURL: displayingImageURL,
+            callToActionIconName: callToActionIconName
+          )
+          .transaction { transaction in
+            transaction.animation = .bouncy
+          }
+          
+        case let .single(displayingImageURL):
+          AmbientWebImage(
+            url: displayingImageURL,
+            cornerRadius: layoutConfiguration.cornerRadius,
+            rotation: layoutConfiguration.rotation.degrees,
+            isTransformed: false,
+            size: layoutConfiguration.size
+          )
         }
-        
-        buttons.zIndex(2)
       }
+      .frame(
+        width: layoutConfiguration.size.width,
+        height: layoutConfiguration.size.height,
+        alignment: .center
+      )
       .zIndex(1)
       
       priceView
+        .zIndex(0)
     }
   }
   
+  @ViewBuilder private func transformableCardView(
+    direction: MagicCardFaceDirection,
+    frontImageURL: URL,
+    backImageURL: URL,
+    callToActionIconName: String
+  ) -> some View {
+    AmbientWebImage(
+      url: backImageURL,
+      cornerRadius: layoutConfiguration.cornerRadius,
+      rotation: layoutConfiguration.rotation.degrees,
+      isTransformed: true,
+      size: layoutConfiguration.size
+    )
+    .opacity(direction == .back ? 1 : 0)
+    .rotation3DEffect(.degrees(direction == .back ? 180 : 0), axis: (x: 0, y: 1, z: 0))
+    .zIndex(direction == .back ? 2 : 1)
+    
+    AmbientWebImage(
+      url: frontImageURL,
+      cornerRadius: layoutConfiguration.cornerRadius,
+      rotation: layoutConfiguration.rotation.degrees,
+      isTransformed: false,
+      size: layoutConfiguration.size
+    )
+    .opacity(direction == .front ? 1 : 0)
+    .rotation3DEffect(.degrees(direction == .front ? 0 : 180), axis: (x: 0, y: 1, z: 0))
+    .zIndex(direction == .front ? 2 : 1)
+    
+    Button {
+      if let send {
+        send(.toggledFaceDirection)
+      } else {
+        localMode = .transformable(
+          direction: direction.toggled(),
+          frontImageURL: frontImageURL,
+          backImageURL: backImageURL,
+          callToActionIconName: callToActionIconName
+        )
+      }
+      
+    } label: {
+      Image(systemName: callToActionIconName).fontWeight(.semibold)
+    }
+    .tint(DesignComponentsAsset.accentColor.swiftUIColor)
+    .frame(width: 44.0, height: 44.0)
+    .background(.thinMaterial)
+    .clipShape(Circle())
+    .overlay(Circle().strokeBorder(.separator, lineWidth: 1 / UIScreen.main.nativeScale))
+    .offset(x: callToActionHorizontalOffset, y: -13)
+    .zIndex(3)
+  }
+  
+  @ViewBuilder private func flippableCardView(
+    direction: MagicCardFaceDirection,
+    displayingImageURL: URL,
+    callToActionIconName: String
+  ) -> some View {
+    AmbientWebImage(
+      url: displayingImageURL,
+      cornerRadius: layoutConfiguration.cornerRadius,
+      rotation: layoutConfiguration.rotation.degrees,
+      isTransformed: false,
+      size: layoutConfiguration.size
+    )
+    .rotationEffect(.degrees(direction == .front ? 0 : 180))
+    .zIndex(2)
+    
+    Button {
+      if let send {
+        send(.toggledFaceDirection)
+      } else {
+        localMode = .flippable(
+          direction: direction.toggled(),
+          displayingImageURL: displayingImageURL,
+          callToActionIconName: callToActionIconName
+        )
+      }
+    } label: {
+      Image(systemName: callToActionIconName).fontWeight(.semibold)
+    }
+    .tint(DesignComponentsAsset.accentColor.swiftUIColor)
+    .frame(width: 44.0, height: 44.0)
+    .background(.thinMaterial)
+    .clipShape(Circle())
+    .overlay(Circle().strokeBorder(.separator, lineWidth: 1 / UIScreen.main.nativeScale))
+    .offset(x: callToActionHorizontalOffset, y: -13)
+    .zIndex(3)
+  }
+  
   @ViewBuilder private var priceView: some View {
-    if shouldShowPrice {
+    if case let .display(usdFoilPrice, usdPrice) = priceVisibility {
       HStack(spacing: 5) {
         if let usd = usdPrice {
           PillText("$\(usd)")
         }
         
         if let foil = usdFoilPrice {
-          PillText(
-            "$\(foil)",
-            isFoil: true
-          )
-          .foregroundStyle(.black.opacity(0.8))
+          PillText("$\(foil)", isFoil: true)
+            .foregroundStyle(.black.opacity(0.8))
         }
         
         if usdPrice == nil && usdFoilPrice == nil {
@@ -171,89 +294,49 @@ public struct CardView: View {
     }
   }
   
-  @ViewBuilder private var buttons: some View {
-    Group {
-      if isFlippable {
-        Button {
-          withAnimation(.bouncy) {
-            if isFlipped != nil {
-              isFlipped?.toggle()
-            } else {
-              isFlippedInternal.toggle()
-            }
-          }
-        } label: {
-          if let iconName = callToActionIconName {
-            Image(systemName: iconName)
-              .fontWeight(.semibold)
-          }
-        }
-        .tint(DesignComponentsAsset.accentColor.swiftUIColor)
-        .frame(width: 44.0, height: 44.0)
-        .background(.thinMaterial)
-        .clipShape(Circle())
-        .overlay(Circle().strokeBorder(.separator, lineWidth: 1 / UIScreen.main.nativeScale))
-        .offset(x: callToActionHorizontalOffset, y: -13)
-      } else if isTransformable {
-        Button {
-          withAnimation(.bouncy) {
-            if isTransformed != nil {
-              isTransformed?.toggle()
-            } else {
-              isTransformedInternal.toggle()
-            }
-          }
-        } label: {
-          if let iconName = callToActionIconName {
-            Image(systemName: iconName)
-              .fontWeight(.semibold)
-          }
-        }
-        .tint(DesignComponentsAsset.accentColor.swiftUIColor)
-        .frame(width: 44.0, height: 44.0)
-        .background(.thinMaterial)
-        .clipShape(Circle())
-        .overlay(Circle().strokeBorder(.separator, lineWidth: 1 / UIScreen.main.nativeScale))
-        .offset(x: callToActionHorizontalOffset, y: -13)
-      }
-    }
-    .opacity(isImageLoaded ? 1 : 0)
-    .animation(.default, value: isImageLoaded)
-  }
-  
-  public init(
-    imageURL: URL?,
-    backImageURL: URL?,
-    isTransformable: Bool,
-    isTransformed: Binding<Bool?>? = nil,
-    isFlippable: Bool,
-    isFlipped: Binding<Bool?>? = nil,
+  public init?(
+    card: Card,
     layoutConfiguration: LayoutConfiguration,
-    usdPrice: String?,
-    usdFoilPrice: String?,
-    shouldShowPrice: Bool = true,
-    callToActionIconName: String?,
-    callToActionHorizontalOffset: CGFloat = 5.0
+    callToActionHorizontalOffset: CGFloat = 5.0,
+    priceVisibility: PriceVisibility,
+    send: ((Action) -> Void)? = nil
   ) {
-    self.imageURL = imageURL
+    guard let mode = Mode(card) else {
+      return nil
+    }
     
-    if isTransformable {
-      self.backImageURL = backImageURL
-    } else {
-      self.backImageURL = nil
+    self.mode = mode
+    self.priceVisibility = priceVisibility
+    
+    if send == nil {
+      localMode = mode
     }
     
     self.layoutConfiguration = layoutConfiguration
-    self.shouldShowPrice = shouldShowPrice
-    self.isTransformable = isTransformable
-    self.isFlippable = isFlippable
-    self.usdPrice = usdPrice
-    self.usdFoilPrice = usdFoilPrice
-    self._isTransformed = isTransformed ?? .constant(nil)
-    self.isTransformedInternal = false
-    self._isFlipped = isFlipped ?? .constant(nil)
-    self.isFlippedInternal = false
-    self.callToActionIconName = callToActionIconName
     self.callToActionHorizontalOffset = callToActionHorizontalOffset
+    self.send = send
+  }
+  
+  public init?(
+    mode: Mode?,
+    layoutConfiguration: LayoutConfiguration,
+    callToActionHorizontalOffset: CGFloat = 5.0,
+    priceVisibility: PriceVisibility,
+    send: ((Action) -> Void)? = nil
+  ) {
+    guard let mode else {
+      return nil
+    }
+    
+    self.mode = mode
+    self.priceVisibility = priceVisibility
+    
+    if send == nil {
+      localMode = mode
+    }
+    
+    self.layoutConfiguration = layoutConfiguration
+    self.callToActionHorizontalOffset = callToActionHorizontalOffset
+    self.send = send
   }
 }

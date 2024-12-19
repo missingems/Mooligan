@@ -1,4 +1,5 @@
 import ComposableArchitecture
+import DesignComponents
 import Foundation
 import OSLog
 import Networking
@@ -11,49 +12,69 @@ import Networking
   }
   
   var body: some ReducerOf<Self> {
-    BindingReducer()
-    
     Reduce { state, action in
       switch action {
-      case .binding:
-        return .none
-        
       case .dismissRulingsTapped:
         state.showRulings = nil
         return .none
         
       case let .fetchAdditionalInformation(card):
-        return .merge(
-          [
-            .run(
-              operation: { [state] send in
-                if let url = try state.content.setIconURL.get() {
-                  await send(.updateSetIconURL(.success(url)))
-                } else {
-                  try await send(.updateSetIconURL(.success(client.getSet(of: card).iconURL)))
+        if state.content.variants.isEmpty, (try? state.content.setIconURL.get()) == nil {
+          return .merge(
+            [
+              .run(
+                operation: { [state] send in
+                  if let url = try state.content.setIconURL.get() {
+                    await send(.updateSetIconURL(.success(url)))
+                  } else {
+                    try await send(.updateSetIconURL(.success(client.getSet(of: card).iconURL)))
+                  }
+                }, catch: { error, send in
+                  print(error)
                 }
-              }, catch: { error, send in
-                print(error)
-              }
-            ),
-            .run(
-              operation: { send in
-                try await send(.updateVariants(.success(client.getVariants(of: card, page: 0))))
-              }, catch: { error, send in
-                await send(.updateVariants(.success([card])))
-              }
-            ),
-          ]
-        )
-        .cancellable(id: "\(action)", cancelInFlight: true)
-        
-      case .descriptionCallToActionTapped:
-        if state.content.card.isFlippable {
-          state.isFlipped?.toggle()
-        } else if state.content.card.isTransformable {
-          state.isTransformed?.toggle()
+              ),
+              .run(
+                operation: { send in
+                  try await send(.updateVariants(.success(client.getVariants(of: card, page: 0))))
+                }, catch: { error, send in
+                  await send(.updateVariants(.success([card])))
+                }
+              ),
+            ]
+          )
+          .cancellable(id: "\(action)", cancelInFlight: true)
+        } else {
+          return .none
         }
         
+      case .descriptionCallToActionTapped:
+        switch state.content.selectedMode {
+        case let .transformable(direction, frontImageURL, backImageURL, callToActionIconName):
+          state.content.selectedMode = .transformable(
+            direction: direction.toggled(),
+            frontImageURL: frontImageURL,
+            backImageURL: backImageURL,
+            callToActionIconName: callToActionIconName
+          )
+          
+          state.content.faceDirection = state.content.faceDirection.toggled()
+          
+        case let .flippable(direction, displayingImageURL, callToActionIconName):
+          state.content.selectedMode = .flippable(
+            direction: direction.toggled(),
+            displayingImageURL: displayingImageURL,
+            callToActionIconName: callToActionIconName
+          )
+          
+          state.content.faceDirection = state.content.faceDirection.toggled()
+          
+        case let .single(displayingImageURL):
+          break
+          
+        default:
+          break
+        }
+
         return .none
         
       case let .updateSetIconURL(value):
@@ -61,7 +82,10 @@ import Networking
         return .none
         
       case let .updateVariants(value):
-        state.content.variants = value
+        if let cards = try? value.get() {
+          state.content.variants = IdentifiedArray(uniqueElements: cards)
+        }
+        
         return .none
         
       case let .viewAppeared(action):
@@ -94,23 +118,11 @@ extension CardDetailFeature {
     var content: Content<Client.MagicCardModel>
     let start: Action
     
-    var isTransformed: Bool? = false {
-      didSet {
-        content.faceDirection = content.faceDirection.toggled()
-      }
-    }
-    
-    var isFlipped: Bool? = false {
-      didSet {
-        content.faceDirection = content.faceDirection.toggled()
-      }
-    }
-    
     init(
       card: Client.MagicCardModel,
       entryPoint: EntryPoint<Client>
     ) {
-      self.id = UUID()
+      id = UUID()
       
       switch entryPoint {
       case .query:
@@ -124,8 +136,7 @@ extension CardDetailFeature {
     }
   }
   
-  @CasePathable indirect enum Action: Equatable, Sendable, BindableAction {
-    case binding(BindingAction<State>)
+  @CasePathable indirect enum Action: Equatable {
     case dismissRulingsTapped
     case fetchAdditionalInformation(card: Client.MagicCardModel)
     case descriptionCallToActionTapped

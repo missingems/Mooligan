@@ -1,9 +1,10 @@
+import ComposableArchitecture
 import DesignComponents
 import Foundation
 import Networking
 import SwiftUI
 
-struct Content<Card: MagicCard>: Equatable, Sendable {
+struct Content<Card: MagicCard>: Equatable {
   
   // MARK: - Nested Structs and Enums
   
@@ -18,6 +19,7 @@ struct Content<Card: MagicCard>: Equatable, Sendable {
   // MARK: - Identifiers
   
   let card: Card
+  var selectedMode: CardView<Card>.Mode?
   let setCode: String
   let collectorNumber: String
   var faceDirection: MagicCardFaceDirection {
@@ -69,14 +71,14 @@ struct Content<Card: MagicCard>: Equatable, Sendable {
   let descriptionCallToActionIconName: String?
   
   var numberOfVariantsLabel: String {
-    String(localized: "\((try? variants.get().count) ?? 0) Results")
+    String(localized: "\(variants.count) Results")
   }
   
   // MARK: - Images
   
   var imageURL: URL?
   var setIconURL: Result<URL?, FeatureError>
-  var variants: Result<[Card], FeatureError>
+  var variants: IdentifiedArrayOf<Card>
   
   func artCroppedImageURL(with faceDirection: MagicCardFaceDirection) -> URL? {
     let url: URL?
@@ -140,7 +142,7 @@ struct Content<Card: MagicCard>: Equatable, Sendable {
     collectorNumber = card.getCollectorNumber()
     legalities = card.getLegalities().value
     self.setIconURL = .success(setIconURL)
-    self.variants = .success([card])
+    self.variants = IdentifiedArrayOf(uniqueElements: [])
     self.rarity = card.getRarity().value
     
     name = card.getDisplayName(faceDirection: faceDirection)
@@ -169,6 +171,7 @@ struct Content<Card: MagicCard>: Equatable, Sendable {
     loyalty = face.loyalty
     artist = face.artist
     keywords = card.getKeywords()
+    selectedMode = CardView<Card>.Mode(card)
   }
   
   // MARK: - Methods
