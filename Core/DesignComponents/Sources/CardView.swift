@@ -2,7 +2,7 @@ import SwiftUI
 import Networking
 
 public struct CardView<Card: MagicCard>: View {
-  public enum Model: Identifiable, Equatable {
+  public enum Mode: Identifiable, Equatable {
     case transformable(
       direction: MagicCardFaceDirection,
       frontImageURL: URL,
@@ -107,13 +107,13 @@ public struct CardView<Card: MagicCard>: View {
   
   private let layoutConfiguration: LayoutConfiguration
   private let callToActionHorizontalOffset: CGFloat
-  @State private var localModel: Model?
-  private let model: Model
+  @State private var localMode: Mode?
+  private let mode: Mode
   
   public var body: some View {
     VStack(spacing: 5) {
       ZStack(alignment: .trailing) {
-        switch localModel ?? model {
+        switch localMode ?? mode {
         case let .transformable(
           direction,
           frontImageURL,
@@ -176,7 +176,7 @@ public struct CardView<Card: MagicCard>: View {
       if let send {
         send(.toggledFaceDirection)
       } else {
-        localModel = .transformable(direction: direction == .front ? .back : .front, frontImageURL: frontImageURL, backImageURL: backImageURL, callToActionIconName: callToActionIconName)
+        localMode = .transformable(direction: direction == .front ? .back : .front, frontImageURL: frontImageURL, backImageURL: backImageURL, callToActionIconName: callToActionIconName)
       }
       
     } label: {
@@ -226,14 +226,35 @@ public struct CardView<Card: MagicCard>: View {
     callToActionHorizontalOffset: CGFloat = 5.0,
     send: ((Action) -> Void)? = nil
   ) {
-    guard let model = Model(card) else {
+    guard let mode = Mode(card) else {
       return nil
     }
     
-    self.model = model
+    self.mode = mode
     
     if send == nil {
-      self.localModel = model
+      self.localMode = mode
+    }
+    
+    self.layoutConfiguration = layoutConfiguration
+    self.callToActionHorizontalOffset = callToActionHorizontalOffset
+    self.send = send
+  }
+  
+  public init?(
+    mode: Mode?,
+    layoutConfiguration: LayoutConfiguration,
+    callToActionHorizontalOffset: CGFloat = 5.0,
+    send: ((Action) -> Void)? = nil
+  ) {
+    guard let mode else {
+      return nil
+    }
+    
+    self.mode = mode
+    
+    if send == nil {
+      self.localMode = mode
     }
     
     self.layoutConfiguration = layoutConfiguration

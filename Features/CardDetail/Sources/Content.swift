@@ -19,6 +19,7 @@ struct Content<Card: MagicCard>: Equatable {
   // MARK: - Identifiers
   
   let card: Card
+  var selectedMode: CardView<Card>.Mode?
   let setCode: String
   let collectorNumber: String
   var faceDirection: MagicCardFaceDirection {
@@ -170,6 +171,7 @@ struct Content<Card: MagicCard>: Equatable {
     loyalty = face.loyalty
     artist = face.artist
     keywords = card.getKeywords()
+    selectedMode = CardView<Card>.Mode(card)
   }
   
   // MARK: - Methods

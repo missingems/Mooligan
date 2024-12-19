@@ -48,20 +48,26 @@ import Networking
         }
         
       case .descriptionCallToActionTapped:
-//        switch state.content.model! {
-//          
-//        case .transformable(direction: let direction, frontImageURL: let frontImageURL, backImageURL: let backImageURL, callToActionIconName: let callToActionIconName):
-//          state.content.model = .transformable(
-//            direction: direction == .back ? .front : .back,
-//            frontImageURL: frontImageURL,
-//            backImageURL: backImageURL,
-//            callToActionIconName: callToActionIconName
-//          )
-//        case .flippable(displayingImageURL: let displayingImageURL, callToActionIconName: let callToActionIconName):
-//          break
-//        case .single(displayingImageURL: let displayingImageURL):
-//          break
-//        }
+        switch state.content.selectedMode {
+        case let .transformable(direction, frontImageURL, backImageURL, callToActionIconName):
+          state.content.selectedMode = .transformable(
+            direction: direction == .back ? .front : .back,
+            frontImageURL: frontImageURL,
+            backImageURL: backImageURL,
+            callToActionIconName: callToActionIconName
+          )
+          
+          state.content.faceDirection = state.content.faceDirection.toggled()
+          
+        case let .flippable(displayingImageURL, callToActionIconName):
+          break
+          
+        case let .single(displayingImageURL):
+          break
+          
+        default:
+          break
+        }
 
         return .none
         

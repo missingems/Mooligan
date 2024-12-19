@@ -176,7 +176,7 @@ private extension CardDetailView {
     }
     
     CardView(
-      card: store.content.card,
+      mode: store.content.selectedMode,
       layoutConfiguration: CardView.LayoutConfiguration(
         rotation: store.content.card.isLandscape ? .landscape : .portrait,
         maxWidth: geometryProxy.size.width - insets.leading - insets.trailing
