@@ -25,13 +25,17 @@ struct VariantView<Card: MagicCard>: View {
           ForEach(cards) { card in
             Button(
               action: {
-//                send(.didSelectCard(card))
+                send(.didSelectCard(card))
               }, label: {
                 CardView(
                   card: card,
                   layoutConfiguration: CardView.LayoutConfiguration(
                     rotation: .portrait,
                     maxWidth: 170
+                  ),
+                  priceVisibility: .display(
+                    usdFoil: card.getPrices().usdFoil,
+                    usd: card.getPrices().usd
                   )
                 )
               }

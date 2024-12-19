@@ -51,7 +51,7 @@ import Networking
         switch state.content.selectedMode {
         case let .transformable(direction, frontImageURL, backImageURL, callToActionIconName):
           state.content.selectedMode = .transformable(
-            direction: direction == .back ? .front : .back,
+            direction: direction.toggled(),
             frontImageURL: frontImageURL,
             backImageURL: backImageURL,
             callToActionIconName: callToActionIconName
@@ -59,8 +59,14 @@ import Networking
           
           state.content.faceDirection = state.content.faceDirection.toggled()
           
-        case let .flippable(displayingImageURL, callToActionIconName):
-          break
+        case let .flippable(direction, displayingImageURL, callToActionIconName):
+          state.content.selectedMode = .flippable(
+            direction: direction.toggled(),
+            displayingImageURL: displayingImageURL,
+            callToActionIconName: callToActionIconName
+          )
+          
+          state.content.faceDirection = state.content.faceDirection.toggled()
           
         case let .single(displayingImageURL):
           break

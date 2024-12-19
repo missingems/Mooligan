@@ -170,18 +170,25 @@ private extension CardDetailView {
     geometryProxy: GeometryProxy
   ) -> some View {
     let insets: EdgeInsets = if store.content.card.isLandscape {
-      EdgeInsets(top: 21.0, leading: 34.0, bottom: 29.0, trailing: 34.0)
+      EdgeInsets(top: 21.0, leading: 0, bottom: 29.0, trailing: 0)
     } else {
-      EdgeInsets(top: 21.0, leading: 68, bottom: 29.0, trailing: 68)
+      EdgeInsets(top: 21.0, leading: 0, bottom: 29.0, trailing: 0)
+    }
+    
+    let maxWidth: CGFloat = if store.content.card.isLandscape {
+      geometryProxy.size.width - 68
+    } else {
+      ((geometryProxy.size.width - 26.0) * 2 / 3)
     }
     
     CardView(
       mode: store.content.selectedMode,
       layoutConfiguration: CardView.LayoutConfiguration(
         rotation: store.content.card.isLandscape ? .landscape : .portrait,
-        maxWidth: geometryProxy.size.width - insets.leading - insets.trailing
+        maxWidth: maxWidth.rounded()
       ),
-      callToActionHorizontalOffset: 21.0
+      callToActionHorizontalOffset: 21.0,
+      priceVisibility: .hidden
     ) { action in
       store.send(.descriptionCallToActionTapped, animation: .bouncy)
     }
