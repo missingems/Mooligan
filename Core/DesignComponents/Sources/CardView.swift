@@ -108,6 +108,11 @@ public struct CardView<Card: MagicCard>: View {
       }
     }
     
+    public var insets: EdgeInsets {
+      let side = (maxWidth - size.width) / 2
+      return EdgeInsets(top: 21.0, leading: side, bottom: 29.0, trailing: side)
+    }
+    
     public init(rotation: Rotation, maxWidth: CGFloat) {
       self.rotation = rotation
       self.maxWidth = maxWidth
@@ -145,9 +150,6 @@ public struct CardView<Card: MagicCard>: View {
             backImageURL: backImageURL,
             callToActionIconName: callToActionIconName
           )
-          .transaction { transaction in
-            transaction.animation = .bouncy
-          }
           
         case let .flippable(direction, displayingImageURL, callToActionIconName):
           flippableCardView(
@@ -155,9 +157,6 @@ public struct CardView<Card: MagicCard>: View {
             displayingImageURL: displayingImageURL,
             callToActionIconName: callToActionIconName
           )
-          .transaction { transaction in
-            transaction.animation = .bouncy
-          }
           
         case let .single(displayingImageURL):
           AmbientWebImage(
@@ -192,6 +191,9 @@ public struct CardView<Card: MagicCard>: View {
     .opacity(direction == .back ? 1 : 0)
     .rotation3DEffect(.degrees(direction == .back ? 180 : 0), axis: (x: 0, y: 1, z: 0))
     .zIndex(direction == .back ? 2 : 1)
+    .transaction { transaction in
+      transaction.animation = .bouncy
+    }
     
     AmbientWebImage(
       url: frontImageURL,
@@ -203,6 +205,9 @@ public struct CardView<Card: MagicCard>: View {
     .opacity(direction == .front ? 1 : 0)
     .rotation3DEffect(.degrees(direction == .front ? 0 : 180), axis: (x: 0, y: 1, z: 0))
     .zIndex(direction == .front ? 2 : 1)
+    .transaction { transaction in
+      transaction.animation = .bouncy
+    }
     
     Button {
       if let send {
@@ -215,7 +220,6 @@ public struct CardView<Card: MagicCard>: View {
           callToActionIconName: callToActionIconName
         )
       }
-      
     } label: {
       Image(systemName: callToActionIconName).fontWeight(.semibold)
     }
@@ -242,6 +246,7 @@ public struct CardView<Card: MagicCard>: View {
     )
     .rotationEffect(.degrees(direction == .front ? 0 : 180))
     .zIndex(2)
+    .animation(.bouncy, value: direction)
     
     Button {
       if let send {

@@ -26,18 +26,20 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
   var body: some View {
     ScrollView(.vertical) {
       LazyVStack(spacing: 0) {
+        let layout = CardView<Client.MagicCardModel>.LayoutConfiguration(
+          rotation: store.content.card.isLandscape ? .landscape : .portrait,
+          maxWidth: maxWidth.rounded()
+        )
+        
         CardView(
           mode: store.content.selectedMode,
-          layoutConfiguration: CardView.LayoutConfiguration(
-            rotation: store.content.card.isLandscape ? .landscape : .portrait,
-            maxWidth: maxWidth.rounded()
-          ),
+          layoutConfiguration: layout,
           callToActionHorizontalOffset: 21.0,
           priceVisibility: .hidden
         ) { action in
           store.send(.descriptionCallToActionTapped, animation: .bouncy)
         }
-        .padding(EdgeInsets(top: 21, leading: 0, bottom: 29, trailing: 0))
+        .padding(layout.insets)
         .shadow(color: DesignComponentsAsset.shadow.swiftUIColor, radius: 13, x: 0, y: 13)
         .zIndex(1)
         
