@@ -7,6 +7,7 @@ import SwiftUI
 struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
   @Bindable private var store: StoreOf<CardDetailFeature<Client>>
   private let geometryProxy: GeometryProxy
+  private let maxWidth: CGFloat
   
   init(
     geometryProxy: GeometryProxy,
@@ -14,12 +15,31 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
   ) {
     self.geometryProxy = geometryProxy
     self.store = store
+    
+    maxWidth = if store.content.card.isLandscape {
+      geometryProxy.size.width - 68
+    } else {
+      ((geometryProxy.size.width - 26.0) * 2 / 3)
+    }
   }
   
   var body: some View {
-    ScrollView {
-      VStack(spacing: 0) {
-        Self.cardView(store: store, geometryProxy: geometryProxy)
+    ScrollView(.vertical) {
+      LazyVStack(spacing: 0) {
+        CardView(
+          mode: store.content.selectedMode,
+          layoutConfiguration: CardView.LayoutConfiguration(
+            rotation: store.content.card.isLandscape ? .landscape : .portrait,
+            maxWidth: maxWidth.rounded()
+          ),
+          callToActionHorizontalOffset: 21.0,
+          priceVisibility: .hidden
+        ) { action in
+          store.send(.descriptionCallToActionTapped, animation: .bouncy)
+        }
+        .padding(EdgeInsets(top: 21, leading: 0, bottom: 29, trailing: 0))
+        .shadow(color: DesignComponentsAsset.shadow.swiftUIColor, radius: 13, x: 0, y: 13)
+        .zIndex(1)
         
         CardDetailTableView(
           descriptions: store.content.descriptions,
@@ -117,6 +137,9 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
         )
       }
     }
+    .task {
+      store.send(.fetchAdditionalInformation(card: store.content.card))
+    }
     .background {
       ZStack {
         LazyImage(
@@ -151,42 +174,5 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
       }
       .presentationDetents([.height(geometryProxy.size.height / 1.618)])
     }
-    .task(priority: .background) {
-      store.send(.fetchAdditionalInformation(card: store.content.card))
-    }
-  }
-}
-
-private extension CardDetailView {
-  @ViewBuilder static func cardView(
-    store: StoreOf<CardDetailFeature<Client>>,
-    geometryProxy: GeometryProxy
-  ) -> some View {
-    let insets: EdgeInsets = if store.content.card.isLandscape {
-      EdgeInsets(top: 21.0, leading: 0, bottom: 29.0, trailing: 0)
-    } else {
-      EdgeInsets(top: 21.0, leading: 0, bottom: 29.0, trailing: 0)
-    }
-    
-    let maxWidth: CGFloat = if store.content.card.isLandscape {
-      geometryProxy.size.width - 68
-    } else {
-      ((geometryProxy.size.width - 26.0) * 2 / 3)
-    }
-    
-    CardView(
-      mode: store.content.selectedMode,
-      layoutConfiguration: CardView.LayoutConfiguration(
-        rotation: store.content.card.isLandscape ? .landscape : .portrait,
-        maxWidth: maxWidth.rounded()
-      ),
-      callToActionHorizontalOffset: 21.0,
-      priceVisibility: .hidden
-    ) { action in
-      store.send(.descriptionCallToActionTapped, animation: .bouncy)
-    }
-    .padding(insets)
-    .shadow(color: DesignComponentsAsset.shadow.swiftUIColor, radius: 13, x: 0, y: 13)
-    .zIndex(1)
   }
 }

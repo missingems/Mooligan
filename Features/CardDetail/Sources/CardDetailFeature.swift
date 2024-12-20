@@ -19,33 +19,29 @@ import Networking
         return .none
         
       case let .fetchAdditionalInformation(card):
-        if state.content.variants.isEmpty, (try? state.content.setIconURL.get()) == nil {
-          return .merge(
-            [
-              .run(
-                operation: { [state] send in
-                  if let url = try state.content.setIconURL.get() {
-                    await send(.updateSetIconURL(.success(url)))
-                  } else {
-                    try await send(.updateSetIconURL(.success(client.getSet(of: card).iconURL)))
-                  }
-                }, catch: { error, send in
-                  print(error)
+        return .merge(
+          [
+            .run(
+              operation: { [state] send in
+                if let url = try state.content.setIconURL.get() {
+                  await send(.updateSetIconURL(.success(url)))
+                } else {
+                  try await send(.updateSetIconURL(.success(client.getSet(of: card).iconURL)))
                 }
-              ),
-              .run(
-                operation: { send in
-                  try await send(.updateVariants(.success(client.getVariants(of: card, page: 0))))
-                }, catch: { error, send in
-                  await send(.updateVariants(.success([card])))
-                }
-              ),
-            ]
-          )
-          .cancellable(id: "\(action)", cancelInFlight: true)
-        } else {
-          return .none
-        }
+              }, catch: { error, send in
+                print(error)
+              }
+            ),
+            .run(
+              operation: { send in
+                try await send(.updateVariants(.success(client.getVariants(of: card, page: 0))))
+              }, catch: { error, send in
+                await send(.updateVariants(.success([card])))
+              }
+            ),
+          ]
+        )
+        .cancellable(id: "\(action)", cancelInFlight: true)
         
       case .descriptionCallToActionTapped:
         switch state.content.selectedMode {

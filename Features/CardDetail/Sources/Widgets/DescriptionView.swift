@@ -1,19 +1,20 @@
 import DesignComponents
+import Networking
 import SwiftUI
 
 struct DescriptionView: View {
-  let text: String
+  let textElements: [[TextElement]]
   let keywords: [String]
   
-  init?(_ text: String?, keywords: [String]) {
-    guard let text else { return nil }
-    self.text = text
+  init?(_ textElements: [[TextElement]], keywords: [String]) {
+    guard textElements.isEmpty == false else { return nil }
+    self.textElements = textElements
     self.keywords = keywords
   }
   
   var body: some View {
     TokenizedText(
-      text: text,
+      textElements: textElements,
       font: .preferredFont(forTextStyle: .body),
       paragraphSpacing: 8.0,
       keywords: keywords
@@ -22,8 +23,4 @@ struct DescriptionView: View {
     .frame(maxWidth: .infinity, alignment: .leading)
     .tint(.primary)
   }
-}
-
-#Preview {
-  DescriptionView("Crazy 8 - {R}", keywords: ["Crazy"])
 }

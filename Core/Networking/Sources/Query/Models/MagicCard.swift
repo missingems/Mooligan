@@ -152,11 +152,81 @@ public extension MagicCard {
   
   func getDisplayText(faceDirection: MagicCardFaceDirection) -> String? {
     let face = getCardFace(for: faceDirection)
-    return isPhyrexian ? face.oracleText : face.printedText ?? face.oracleText
+    guard var text = isPhyrexian ? face.oracleText : face.printedText ?? face.oracleText else {
+      return nil
+    }
+    
+    for keyword in getKeywords() {
+      if let regex = try? NSRegularExpression(pattern: "\\b\(NSRegularExpression.escapedPattern(for: keyword))\\b", options: [.caseInsensitive]),
+         let match = regex.firstMatch(in: text, options: [], range: NSRange(text.startIndex..<text.endIndex, in: text)),
+         let matchRange = Range(match.range, in: text) {
+        text.replaceSubrange(matchRange, with: "<\(text[matchRange])>")
+      }
+    }
+    
+    return text
+  }
+  
+  func getDisplayTextElements(faceDirection: MagicCardFaceDirection) -> [[TextElement]] {
+    getDisplayText(
+      faceDirection: faceDirection
+    )?.split(
+      separator: "\n"
+    ).map {
+      parseText(String($0))
+    } ?? []
+  }
+  
+  private func parseText(_ text: String) -> [TextElement] {
+    var elements: [TextElement] = []
+    var isKeyword = false
+    var isItalic = false
+    var currentText = ""
+    var currentToken = ""
+    var insideToken = false
+    
+    for char in text {
+      if char == "<" {
+        isKeyword = true
+      } else if char == ">" {
+        isKeyword = false
+      } else if char == "(" {
+        isItalic = true
+        elements.append(.text("(", isItalic: isItalic, isKeyword: isKeyword))
+      } else if char == ")" {
+        elements.append(.text(")", isItalic: isItalic, isKeyword: isKeyword))
+        isItalic = false
+      } else if char == "{" {
+        if !currentText.isEmpty {
+          elements.append(.text(currentText, isItalic: isItalic, isKeyword: isKeyword))
+          currentText = ""
+        }
+        insideToken = true
+      } else if char == "}" && insideToken {
+        insideToken = false
+        elements.append(.token(currentToken))
+        currentToken = ""
+      } else if insideToken {
+        currentToken.append(char)
+      } else {
+        elements.append(.text("\(char)", isItalic: isItalic, isKeyword: isKeyword))
+      }
+    }
+    
+    if !currentText.isEmpty {
+      elements.append(.text(currentText, isItalic: isItalic, isKeyword: isKeyword))
+    }
+    
+    return elements
   }
   
   func getDisplayTypeline(faceDirection: MagicCardFaceDirection) -> String? {
     let face = getCardFace(for: faceDirection)
     return isPhyrexian ? face.typeLine : face.printedTypeLine ?? face.typeLine
   }
+}
+
+public indirect enum TextElement: Hashable, Sendable, Equatable {
+  case text(String, isItalic: Bool, isKeyword: Bool)
+  case token(String)
 }

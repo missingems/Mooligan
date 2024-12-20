@@ -29,6 +29,9 @@ public struct PageView<Client: MagicCardDetailRequestClient>: View {
           }
           .scrollTargetLayout()
         }
+        .scrollPosition(id: $store.currentDisplayingCard)
+        .scrollTargetBehavior(.paging)
+        .background(.black)
         .zIndex(0)
         
         VariableBlurView(direction: .blurredTopClearBottom).frame(height: proxy.safeAreaInsets.top).ignoresSafeArea()
@@ -51,9 +54,6 @@ public struct PageView<Client: MagicCardDetailRequestClient>: View {
           .foregroundStyle(DesignComponentsAsset.accentColor.swiftUIColor)
         }
       }
-      .scrollPosition(id: $store.currentDisplayingCard)
-      .scrollTargetBehavior(.paging)
-      .background(.black)
     }
   }
 }

@@ -1,84 +1,20 @@
+import Networking
 import SwiftUI
 
 public struct TokenizedText: View {
-  private var text: String
+  private var textElements: [[TextElement]]
   private var font: UIFont
   private let paragraphSpacing: CGFloat
   
   public init(
-    text: String,
+    textElements: [[TextElement]],
     font: UIFont,
     paragraphSpacing: CGFloat,
     keywords: [String]
   ) {
-    var _text = text
-    
-    for keyword in keywords {
-      if let regex = try? NSRegularExpression(pattern: "\\b\(NSRegularExpression.escapedPattern(for: keyword))\\b", options: [.caseInsensitive]),
-          let match = regex.firstMatch(in: _text, options: [], range: NSRange(_text.startIndex..<_text.endIndex, in: _text)),
-          let matchRange = Range(match.range, in: _text) {
-          _text.replaceSubrange(matchRange, with: "<\(_text[matchRange])>")
-      }
-    }
-    
-    self.text = _text
+    self.textElements = textElements
     self.font = font
     self.paragraphSpacing = paragraphSpacing
-  }
-  
-  @ViewBuilder func build() -> some View {
-    VStack(alignment: .leading, spacing: paragraphSpacing) {
-      let substrings = text.split(separator: "\n")
-      
-      ForEach(substrings.indices, id: \.self) { index in
-        let element = substrings[index]
-        build(elements: parseText(String(element)))
-      }
-    }
-  }
-  
-  // Parses the given text and returns an array of either text or token identifiers
-  private func parseText(_ text: String) -> [TextElement] {
-    var elements: [TextElement] = []
-    var isKeyword = false
-    var isItalic = false
-    var currentText = ""
-    var currentToken = ""
-    var insideToken = false
-    
-    for char in text {
-      if char == "<" {
-        isKeyword = true
-      } else if char == ">" {
-        isKeyword = false
-      } else if char == "(" {
-        isItalic = true
-        elements.append(.text("(", isItalic: isItalic, isKeyword: isKeyword))
-      } else if char == ")" {
-        elements.append(.text(")", isItalic: isItalic, isKeyword: isKeyword))
-        isItalic = false
-      } else if char == "{" {
-        if !currentText.isEmpty {
-          elements.append(.text(currentText, isItalic: isItalic, isKeyword: isKeyword))
-          currentText = ""
-        }
-        insideToken = true
-      } else if char == "}" && insideToken {
-        insideToken = false
-        elements.append(.token(currentToken))
-        currentToken = ""
-      } else if insideToken {
-        currentToken.append(char)
-      } else {
-        elements.append(.text("\(char)", isItalic: isItalic, isKeyword: isKeyword))
-      }
-    }
-    
-    if !currentText.isEmpty {
-      elements.append(.text(currentText, isItalic: isItalic, isKeyword: isKeyword))
-    }
-    
-    return elements
   }
   
   private func build(elements: [TextElement]) -> some View {
@@ -137,20 +73,10 @@ public struct TokenizedText: View {
   }
   
   public var body: some View {
-    build()
+    VStack(alignment: .leading, spacing: paragraphSpacing) {
+      ForEach(textElements.indices, id: \.self) { index in
+        build(elements: textElements[index])
+      }
+    }
   }
-  
-  indirect enum TextElement: Hashable {
-    case text(String, isItalic: Bool, isKeyword: Bool)
-    case token(String)
-  }
-}
-
-#Preview {
-  TokenizedText(
-    text: "test q test more ({9}{W/B})({W}{R})",
-    font: .systemFont(ofSize: 30),
-    paragraphSpacing: 2.0,
-    keywords: ["test q"]
-  )
 }

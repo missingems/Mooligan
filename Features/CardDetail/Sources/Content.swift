@@ -10,7 +10,7 @@ struct Content<Card: MagicCard>: Equatable {
   
   struct Description: Equatable, Sendable {
     let name: String
-    let text: String?
+    let textElements: [[TextElement]]
     let typeline: String?
     let flavorText: String?
     let manaCost: [String]
@@ -207,7 +207,7 @@ struct Content<Card: MagicCard>: Equatable {
   static func makeDescription(faceDirection: MagicCardFaceDirection, card: Card) -> Description {
     Description(
       name: card.getDisplayName(faceDirection: faceDirection),
-      text: card.getDisplayText(faceDirection: faceDirection),
+      textElements: card.getDisplayTextElements(faceDirection: faceDirection),
       typeline: card.getDisplayTypeline(faceDirection: faceDirection),
       flavorText: card.getCardFace(for: faceDirection).flavorText,
       manaCost: card.getDisplayManaCost(faceDirection: faceDirection)

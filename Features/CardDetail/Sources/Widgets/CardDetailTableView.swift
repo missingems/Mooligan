@@ -66,7 +66,7 @@ struct CardDetailTableView<Card: MagicCard>: View {
           .safeAreaPadding(.horizontal, nil)
           
         case let .description(text, flavor, keywords):
-          if text?.isEmptyOrNil() == false || flavor?.isEmptyOrNil() == false {
+          if text.isEmpty == false || flavor?.isEmptyOrNil() == false {
             VStack(alignment: .leading, spacing: 8) {
               DescriptionView(text, keywords: keywords)
               FlavorView(flavor)
@@ -77,7 +77,7 @@ struct CardDetailTableView<Card: MagicCard>: View {
           
         case let .descriptions(text1, flavor1, text2, flavor2, keywords):
           HStack(alignment: .top, spacing: 8.0) {
-            if text1?.isEmptyOrNil() == false || flavor1?.isEmptyOrNil() == false {
+            if text1.isEmpty == false || flavor1?.isEmptyOrNil() == false {
               VStack(alignment: .leading, spacing: 8) {
                 DescriptionView(text1, keywords: keywords)
                 FlavorView(flavor1)
@@ -85,7 +85,7 @@ struct CardDetailTableView<Card: MagicCard>: View {
               .padding(edgeInsets)
             }
             
-            if text2?.isEmptyOrNil() == false || flavor2?.isEmptyOrNil() == false {
+            if text2.isEmpty == false || flavor2?.isEmptyOrNil() == false {
               Divider()
               
               VStack(alignment: .leading, spacing: 8) {
@@ -106,13 +106,13 @@ struct CardDetailTableView<Card: MagicCard>: View {
       self.sections = [
           .title(main.name, main.manaCost),
           .typeline(main.typeline),
-          .description(main.text, main.flavorText, keywords),
+          .description(main.textElements, main.flavorText, keywords),
       ]
     } else if descriptions.count == 2, let main = descriptions.first, let alternate = descriptions.last {
       self.sections = [
         .titles(title1: main.name, manaCost1: main.manaCost, title2: alternate.name, manaCost2: alternate.manaCost),
         .typelines(typeline1: main.typeline, typeline2: alternate.typeline),
-        .descriptions(description1: main.text, flavorText1: main.flavorText, description2: alternate.text, flavorText2: alternate.flavorText, keywords: keywords),
+        .descriptions(description1: main.textElements, flavorText1: main.flavorText, description2: alternate.textElements, flavorText2: alternate.flavorText, keywords: keywords),
       ]
     } else {
       return nil
@@ -124,8 +124,8 @@ extension CardDetailTableView {
   enum SectionType: Identifiable, Hashable {
     case titles(title1: String, manaCost1: [String], title2: String?, manaCost2: [String]?)
     case title(String, [String])
-    case descriptions(description1: String?, flavorText1: String?, description2: String?, flavorText2: String?, keywords: [String])
-    case description(String?, String?, [String])
+    case descriptions(description1: [[TextElement]], flavorText1: String?, description2: [[TextElement]], flavorText2: String?, keywords: [String])
+    case description([[TextElement]], String?, [String])
     case typelines(typeline1: String?, typeline2: String?)
     case typeline(String?)
     

@@ -169,11 +169,6 @@ public struct CardView<Card: MagicCard>: View {
           )
         }
       }
-      .frame(
-        width: layoutConfiguration.size.width,
-        height: layoutConfiguration.size.height,
-        alignment: .center
-      )
       .zIndex(1)
       
       priceView
