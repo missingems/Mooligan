@@ -16,17 +16,27 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
   var body: some View {
     ScrollView(.vertical) {
       VStack(spacing: 0) {
+        let configuration = CardView<Client.MagicCardModel>.LayoutConfiguration(
+          rotation: store.content.card.isLandscape ? .landscape : .portrait,
+          maxWidth: nil
+        )
         CardView(
           mode: store.content.selectedMode,
-          layoutConfiguration: CardView<Client.MagicCardModel>.LayoutConfiguration(
-            rotation: store.content.card.isLandscape ? .landscape : .portrait,
-            maxWidth: nil
-          ),
+          layoutConfiguration: configuration,
           callToActionHorizontalOffset: 21.0,
           priceVisibility: .hidden
         ) { action in
           store.send(.descriptionCallToActionTapped, animation: .bouncy)
         }
+        .aspectRatio(configuration.rotation.ratio, contentMode: .fit)
+        .padding(
+          EdgeInsets(
+            top: 21,
+            leading: store.content.card.isLandscape ? 34 : 89.0,
+            bottom: 29.0,
+            trailing: store.content.card.isLandscape ? 34 : 89.0
+          )
+        )
         .shadow(color: DesignComponentsAsset.shadow.swiftUIColor, radius: 13, x: 0, y: 13)
         .zIndex(1)
         

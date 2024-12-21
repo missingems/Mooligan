@@ -73,13 +73,6 @@ public struct CardView<Card: MagicCard>: View {
       case landscape
       case portrait
       
-      var degrees: CGFloat {
-        switch self {
-        case .landscape: return 90
-        case .portrait: return 0
-        }
-      }
-      
       public var ratio: CGFloat {
         switch self {
         case .landscape: return MagicCardImageRatio.heightToWidth.rawValue
@@ -125,8 +118,7 @@ public struct CardView<Card: MagicCard>: View {
         ):
           AmbientWebImage(
             url: backImageURL,
-            cornerRadius: layoutConfiguration.cornerRadius,
-            rotation: layoutConfiguration.rotation.degrees,
+            isLandscape: layoutConfiguration.rotation == .landscape,
             isTransformed: true,
             size: layoutConfiguration.size
           )
@@ -139,8 +131,7 @@ public struct CardView<Card: MagicCard>: View {
           
           AmbientWebImage(
             url: frontImageURL,
-            cornerRadius: layoutConfiguration.cornerRadius,
-            rotation: layoutConfiguration.rotation.degrees,
+            isLandscape: layoutConfiguration.rotation == .landscape,
             isTransformed: false,
             size: layoutConfiguration.size
           )
@@ -183,8 +174,7 @@ public struct CardView<Card: MagicCard>: View {
         case let .single(displayingImageURL):
           AmbientWebImage(
             url: displayingImageURL,
-            cornerRadius: layoutConfiguration.cornerRadius,
-            rotation: layoutConfiguration.rotation.degrees,
+            isLandscape: layoutConfiguration.rotation == .landscape,
             isTransformed: false,
             size: layoutConfiguration.size
           )
@@ -204,8 +194,7 @@ public struct CardView<Card: MagicCard>: View {
   ) -> some View {
     AmbientWebImage(
       url: displayingImageURL,
-      cornerRadius: layoutConfiguration.cornerRadius,
-      rotation: layoutConfiguration.rotation.degrees,
+      isLandscape: layoutConfiguration.rotation == .landscape,
       isTransformed: false,
       size: layoutConfiguration.size
     )

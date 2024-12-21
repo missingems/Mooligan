@@ -17,24 +17,24 @@ struct ConditionalFrameModifier: ViewModifier {
 
 public struct AmbientWebImage: View {
   public let url: URL
-  private let cornerRadius: CGFloat
+  @State private var cornerRadius: CGFloat?
   private let transformers: [ImageProcessing]
   private let size: CGSize?
+  private let isLandscape: Bool
   
   public init(
     url: URL,
-    cornerRadius: CGFloat = 0,
-    rotation: CGFloat = 0,
+    isLandscape: Bool = false,
     isTransformed: Bool = false,
     size: CGSize? = nil
   ) {
+    self.isLandscape = isLandscape
     self.url = url
-    self.cornerRadius = cornerRadius
     
     var transformers: [ImageProcessing] = []
     
-    if rotation != 0 {
-      transformers.append(RotationImageProcessor(degrees: rotation))
+    if isLandscape {
+      transformers.append(RotationImageProcessor(degrees: 90))
     }
     
     if isTransformed {
@@ -72,10 +72,15 @@ public struct AmbientWebImage: View {
           .background(.clear)
       }
     }
+    .onGeometryChange(for: CGSize.self, of: { proxy in
+      return proxy.size
+    }, action: { newValue in
+      cornerRadius = 5 / 100 * (isLandscape ? newValue.height : newValue.width)
+    })
     .modifier(ConditionalFrameModifier(size: size))
-    .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+    .clipShape(RoundedRectangle(cornerRadius: cornerRadius ?? 0))
     .overlay(
-      RoundedRectangle(cornerRadius: cornerRadius)
+      RoundedRectangle(cornerRadius: cornerRadius ?? 0)
         .strokeBorder(
           .separator,
           lineWidth: 1 / UIScreen.main.nativeScale
