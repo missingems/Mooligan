@@ -80,6 +80,7 @@ struct CardDetailTableView<Card: MagicCard>: View {
             if text1.isEmpty == false || flavor1?.isEmptyOrNil() == false {
               VStack(alignment: .leading, spacing: 8) {
                 DescriptionView(text1, keywords: keywords)
+                  .frame(maxWidth: .infinity)
                 FlavorView(flavor1)
               }
               .padding(edgeInsets)
@@ -90,6 +91,7 @@ struct CardDetailTableView<Card: MagicCard>: View {
               
               VStack(alignment: .leading, spacing: 8) {
                 DescriptionView(text2, keywords: keywords)
+                  .frame(maxWidth: .infinity)
                 FlavorView(flavor2)
               }
               .padding(edgeInsets)

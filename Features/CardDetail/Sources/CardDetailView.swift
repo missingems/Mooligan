@@ -15,7 +15,7 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
   
   var body: some View {
     ScrollView(.vertical) {
-      LazyVStack(spacing: 0) {
+      VStack(spacing: 0) {
         CardView(
           mode: store.content.selectedMode,
           layoutConfiguration: CardView<Client.MagicCardModel>.LayoutConfiguration(

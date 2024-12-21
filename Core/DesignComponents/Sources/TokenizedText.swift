@@ -73,7 +73,7 @@ public struct TokenizedText: View {
   }
   
   public var body: some View {
-    VStack(alignment: .leading, spacing: paragraphSpacing) {
+    LazyVStack(alignment: .leading, spacing: paragraphSpacing) {
       ForEach(textElements.indices, id: \.self) { index in
         build(elements: textElements[index])
       }

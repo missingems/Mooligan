@@ -3,32 +3,6 @@ import DesignComponents
 import Networking
 import SwiftUI
 
-struct ButtonView: View {
-  @State var isSelected: Bool = false
-  let title: String
-  var body: some View {
-    Text(title).opacity(isSelected ? 1 : 0).animation(.bouncy, value: isSelected)
-    
-    Button {
-      isSelected.toggle()
-    } label: {
-      Text("Toggle")
-    }
-  }
-}
-
-struct CellView: View {
-  let title: String
-  
-  var body: some View {
-    VStack {
-      LazyHStack {
-        ButtonView(title: title).id(title).geometryGroup()
-      }
-    }
-  }
-}
-
 struct VariantView<Card: MagicCard>: View {
   enum Action: Equatable {
     case didSelectCard(Card)
@@ -48,7 +22,27 @@ struct VariantView<Card: MagicCard>: View {
       
       ScrollView(.horizontal, showsIndicators: false) {
         LazyHStack(spacing: 8.0) {
-          CellView(title: "test")
+          ForEach(cards) { card in
+            Button(
+              action: {
+                send(.didSelectCard(card))
+              }, label: {
+                CardView(
+                  card: card,
+                  layoutConfiguration: CardView.LayoutConfiguration(
+                    rotation: .portrait,
+                    maxWidth: 170
+                  ),
+                  priceVisibility: .display(
+                    usdFoil: card.getPrices().usdFoil,
+                    usd: card.getPrices().usd
+                  )
+                )
+              }
+            )
+            .buttonStyle(.sinkableButtonStyle)
+            .geometryGroup()
+          }
         }
       }
       .frame(idealHeight: (170 / MagicCardImageRatio.widthToHeight.rawValue).rounded() + 21.0 + 18.0)
