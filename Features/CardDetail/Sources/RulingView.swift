@@ -20,27 +20,27 @@ struct RulingView<Client: MagicCardDetailRequestClient>: View {
           .frame(maxHeight: .infinity)
           .offset(y: -34.0)
         } else {
-//          ScrollView {
-//            VStack(alignment: .leading, spacing: 13) {
-//              ForEach(rulings) { ruling in
-//                VStack(alignment: .leading, spacing: 3) {
-//                  Text(ruling.displayDate)
-//                    .font(.caption)
-//                    .foregroundStyle(.secondary)
-//                  
+          ScrollView {
+            VStack(alignment: .leading, spacing: 13) {
+              ForEach(rulings) { ruling in
+                VStack(alignment: .leading, spacing: 3) {
+                  Text(ruling.displayDate)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                  
 //                  TokenizedText(
 //                    text: ruling.description,
 //                    font: .preferredFont(forTextStyle: .body),
 //                    paragraphSpacing: 8.0,
 //                    keywords: []
 //                  )
-//                }
-//                .safeAreaPadding(.horizontal, nil)
-//                
-//                Divider().safeAreaPadding(.leading, nil)
-//              }
-//            }
-//          }
+                }
+                .safeAreaPadding(.horizontal, nil)
+                
+                Divider().safeAreaPadding(.leading, nil)
+              }
+            }
+          }
         }
         
       case .loading:

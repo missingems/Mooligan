@@ -19,8 +19,10 @@ import Networking
         return .none
         
       case let .fetchAdditionalInformation(card):
-        return .merge(
-          [
+        var effects: [EffectOf<Self>] = []
+        
+        if (try? state.content.setIconURL.get()) == nil {
+          effects.append(
             .run(
               operation: { [state] send in
                 if let url = try state.content.setIconURL.get() {
@@ -31,17 +33,27 @@ import Networking
               }, catch: { error, send in
                 print(error)
               }
-            ),
+            )
+          )
+        }
+        
+        if state.content.variants.isEmpty {
+          effects.append(
             .run(
               operation: { send in
                 try await send(.updateVariants(.success(client.getVariants(of: card, page: 0))))
               }, catch: { error, send in
                 await send(.updateVariants(.success([card])))
               }
-            ),
-          ]
-        )
-        .cancellable(id: "\(action)", cancelInFlight: true)
+            )
+          )
+        }
+        
+        if effects.isEmpty {
+          return .none
+        } else {
+          return .merge(effects).cancellable(id: "\(action)", cancelInFlight: true)
+        }
         
       case .descriptionCallToActionTapped:
         switch state.content.selectedMode {
@@ -63,9 +75,6 @@ import Networking
           )
           
           state.content.faceDirection = state.content.faceDirection.toggled()
-          
-        case let .single(displayingImageURL):
-          break
           
         default:
           break

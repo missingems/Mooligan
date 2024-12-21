@@ -6,40 +6,27 @@ import SwiftUI
 
 struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
   @Bindable private var store: StoreOf<CardDetailFeature<Client>>
-  private let geometryProxy: GeometryProxy
-  private let maxWidth: CGFloat
   
   init(
-    geometryProxy: GeometryProxy,
     store: StoreOf<CardDetailFeature<Client>>
   ) {
-    self.geometryProxy = geometryProxy
     self.store = store
-    
-    maxWidth = if store.content.card.isLandscape {
-      geometryProxy.size.width - 68
-    } else {
-      ((geometryProxy.size.width - 26.0) * 2 / 3)
-    }
   }
   
   var body: some View {
     ScrollView(.vertical) {
       LazyVStack(spacing: 0) {
-        let layout = CardView<Client.MagicCardModel>.LayoutConfiguration(
-          rotation: store.content.card.isLandscape ? .landscape : .portrait,
-          maxWidth: maxWidth.rounded()
-        )
-        
         CardView(
           mode: store.content.selectedMode,
-          layoutConfiguration: layout,
+          layoutConfiguration: CardView<Client.MagicCardModel>.LayoutConfiguration(
+            rotation: store.content.card.isLandscape ? .landscape : .portrait,
+            maxWidth: nil
+          ),
           callToActionHorizontalOffset: 21.0,
           priceVisibility: .hidden
         ) { action in
           store.send(.descriptionCallToActionTapped, animation: .bouncy)
         }
-        .padding(layout.insets)
         .shadow(color: DesignComponentsAsset.shadow.swiftUIColor, radius: 13, x: 0, y: 13)
         .zIndex(1)
         
@@ -174,7 +161,6 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
       NavigationStack {
         RulingView(store: store).toolbarTitleDisplayMode(.inline)
       }
-      .presentationDetents([.height(geometryProxy.size.height / 1.618)])
     }
   }
 }

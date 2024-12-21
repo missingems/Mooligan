@@ -89,41 +89,20 @@ public struct CardView<Card: MagicCard>: View {
     }
     
     public let rotation: Rotation
-    public let maxWidth: CGFloat
     public let cornerRadius: CGFloat
+    public let size: CGSize?
     
-    public var size: CGSize {
-      switch rotation {
-      case .landscape:
-        CGSize(
-          width: maxWidth.rounded(),
-          height: (maxWidth * MagicCardImageRatio.widthToHeight.rawValue).rounded()
-        )
-        
-      case .portrait:
-        CGSize(
-          width: maxWidth.rounded(),
-          height: (maxWidth * MagicCardImageRatio.heightToWidth.rawValue).rounded()
-        )
-      }
-    }
-    
-    public var insets: EdgeInsets {
-      let side = (maxWidth - size.width) / 2
-      return EdgeInsets(top: 21.0, leading: side, bottom: 29.0, trailing: side)
-    }
-    
-    public init(rotation: Rotation, maxWidth: CGFloat) {
+    public init(rotation: Rotation, maxWidth: CGFloat?) {
       self.rotation = rotation
-      self.maxWidth = maxWidth
       
-      cornerRadius = switch rotation {
-      case .landscape:
-        5 / 100 * maxWidth * MagicCardImageRatio.widthToHeight.rawValue
-        
-      case .portrait:
-        5 / 100 * maxWidth
+      if let maxWidth {
+        let imageHeight = maxWidth / rotation.ratio
+        size = CGSize(width: maxWidth, height: imageHeight)
+      } else {
+        size = nil
       }
+      
+      cornerRadius = 9.0
     }
   }
   
@@ -144,12 +123,50 @@ public struct CardView<Card: MagicCard>: View {
           backImageURL,
           callToActionIconName
         ):
-          transformableCardView(
-            direction: direction,
-            frontImageURL: frontImageURL,
-            backImageURL: backImageURL,
-            callToActionIconName: callToActionIconName
+          AmbientWebImage(
+            url: backImageURL,
+            cornerRadius: layoutConfiguration.cornerRadius,
+            rotation: layoutConfiguration.rotation.degrees,
+            isTransformed: true,
+            size: layoutConfiguration.size
           )
+          .opacity(direction == .back ? 1 : 0)
+          .rotation3DEffect(.degrees(direction == .back ? 180 : 0), axis: (x: 0, y: 1, z: 0))
+          .zIndex(direction == .back ? 2 : 1)
+          .animation(.bouncy, value: localMode)
+          
+          AmbientWebImage(
+            url: frontImageURL,
+            cornerRadius: layoutConfiguration.cornerRadius,
+            rotation: layoutConfiguration.rotation.degrees,
+            isTransformed: false,
+            size: layoutConfiguration.size
+          )
+          .opacity(direction == .front ? 1 : 0)
+          .rotation3DEffect(.degrees(direction == .front ? 0 : 180), axis: (x: 0, y: 1, z: 0))
+          .zIndex(direction == .front ? 2 : 1)
+          
+          Button {
+            if let send {
+              send(.toggledFaceDirection)
+            } else {
+              localMode = .transformable(
+                direction: direction.toggled(),
+                frontImageURL: frontImageURL,
+                backImageURL: backImageURL,
+                callToActionIconName: callToActionIconName
+              )
+            }
+          } label: {
+            Image(systemName: callToActionIconName).fontWeight(.semibold)
+          }
+          .tint(DesignComponentsAsset.accentColor.swiftUIColor)
+          .frame(width: 44.0, height: 44.0)
+          .background(.thinMaterial)
+          .clipShape(Circle())
+          .overlay(Circle().strokeBorder(.separator, lineWidth: 1 / UIScreen.main.nativeScale))
+          .offset(x: callToActionHorizontalOffset, y: -13)
+          .zIndex(3)
           
         case let .flippable(direction, displayingImageURL, callToActionIconName):
           flippableCardView(
@@ -173,63 +190,6 @@ public struct CardView<Card: MagicCard>: View {
       priceView
         .zIndex(0)
     }
-  }
-  
-  @ViewBuilder private func transformableCardView(
-    direction: MagicCardFaceDirection,
-    frontImageURL: URL,
-    backImageURL: URL,
-    callToActionIconName: String
-  ) -> some View {
-    AmbientWebImage(
-      url: backImageURL,
-      cornerRadius: layoutConfiguration.cornerRadius,
-      rotation: layoutConfiguration.rotation.degrees,
-      isTransformed: true,
-      size: layoutConfiguration.size
-    )
-    .opacity(direction == .back ? 1 : 0)
-    .rotation3DEffect(.degrees(direction == .back ? 180 : 0), axis: (x: 0, y: 1, z: 0))
-    .zIndex(direction == .back ? 2 : 1)
-    .transaction { transaction in
-      transaction.animation = .bouncy
-    }
-    
-    AmbientWebImage(
-      url: frontImageURL,
-      cornerRadius: layoutConfiguration.cornerRadius,
-      rotation: layoutConfiguration.rotation.degrees,
-      isTransformed: false,
-      size: layoutConfiguration.size
-    )
-    .opacity(direction == .front ? 1 : 0)
-    .rotation3DEffect(.degrees(direction == .front ? 0 : 180), axis: (x: 0, y: 1, z: 0))
-    .zIndex(direction == .front ? 2 : 1)
-    .transaction { transaction in
-      transaction.animation = .bouncy
-    }
-    
-    Button {
-      if let send {
-        send(.toggledFaceDirection)
-      } else {
-        localMode = .transformable(
-          direction: direction.toggled(),
-          frontImageURL: frontImageURL,
-          backImageURL: backImageURL,
-          callToActionIconName: callToActionIconName
-        )
-      }
-    } label: {
-      Image(systemName: callToActionIconName).fontWeight(.semibold)
-    }
-    .tint(DesignComponentsAsset.accentColor.swiftUIColor)
-    .frame(width: 44.0, height: 44.0)
-    .background(.thinMaterial)
-    .clipShape(Circle())
-    .overlay(Circle().strokeBorder(.separator, lineWidth: 1 / UIScreen.main.nativeScale))
-    .offset(x: callToActionHorizontalOffset, y: -13)
-    .zIndex(3)
   }
   
   @ViewBuilder private func flippableCardView(

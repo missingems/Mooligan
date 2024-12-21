@@ -17,25 +17,26 @@ public struct PageView<Client: MagicCardDetailRequestClient>: View {
   }
   
   public var body: some View {
-    GeometryReader { proxy in
+//    GeometryReader { proxy in
       ZStack(alignment: .top) {
         ScrollView(.horizontal, showsIndicators: false) {
           LazyHStack(alignment: .top, spacing: 0) {
             ForEach(
               Array(store.scope(state: \.cards, action: \.cards))
             ) { store in
-              CardDetailView(geometryProxy: proxy, store: store).containerRelativeFrame(.horizontal)
+              CardDetailView(store: store).containerRelativeFrame(.horizontal)
             }
           }
           .scrollTargetLayout()
         }
-        .scrollPosition(id: $store.currentDisplayingCard)
+        
+//        .scrollPosition(id: $store.currentDisplayingCard)
         .scrollTargetBehavior(.paging)
         .background(.black)
         .zIndex(0)
         
-        VariableBlurView(direction: .blurredTopClearBottom).frame(height: proxy.safeAreaInsets.top).ignoresSafeArea()
-          .zIndex(1)
+//        VariableBlurView(direction: .blurredTopClearBottom).frame(height: proxy.safeAreaInsets.top).ignoresSafeArea()
+//          .zIndex(1)
       }
       .toolbar {
         ToolbarItemGroup(placement: .primaryAction) {
@@ -54,7 +55,7 @@ public struct PageView<Client: MagicCardDetailRequestClient>: View {
           .foregroundStyle(DesignComponentsAsset.accentColor.swiftUIColor)
         }
       }
-    }
+//    }
   }
 }
 
