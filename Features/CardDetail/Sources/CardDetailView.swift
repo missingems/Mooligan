@@ -73,8 +73,18 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
             .foregroundStyle(DesignComponentsAsset.invertedPrimary.swiftUIColor)
             .frame(maxWidth: .infinity, minHeight: 34)
             .padding(.vertical, 5.0)
-            .background(DesignComponentsAsset.accentColor.swiftUIColor)
+            .background(
+              Group {
+                Color.black.opacity(0.3)
+                DesignComponentsAsset.accentColor.swiftUIColor
+                  .blur(radius: 5)
+              }
+            )
             .clipShape(RoundedRectangle(cornerRadius: 13))
+            .overlay(
+              RoundedRectangle(cornerRadius: 13)
+                .strokeBorder(.separator, lineWidth: 1 / UIScreen.main.nativeScale)
+            )
           }
           .buttonStyle(.sinkableButtonStyle)
           .safeAreaPadding(.horizontal, nil)

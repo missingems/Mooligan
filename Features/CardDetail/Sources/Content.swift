@@ -125,7 +125,7 @@ struct Content<Card: MagicCard>: Equatable {
     priceLabel = String(localized: "Market Prices")
     priceSubtitleLabel = String(localized: "Data from Scryfall")
     usdLabel = String(localized: "USD")
-    usdFoilLabel = String(localized: "USD")
+    usdFoilLabel = String(localized: "USD - Foil")
     tixLabel = String(localized: "Tix")
     artistSelectionLabel = String(localized: "Artist")
     rulingSelectionLabel = String(localized: "Rulings")
