@@ -120,23 +120,41 @@ extension PriceView {
           Text("\(currencySymbol)\(price)")
             .font(.body)
             .fontWeight(isDisabled ? .regular : .semibold)
-            .foregroundStyle(DesignComponentsAsset.accentColor.swiftUIColor)
+            .foregroundStyle(
+              isFoil ? Color.black : DesignComponentsAsset.accentColor.swiftUIColor
+            )
             .monospaced()
             .frame(maxWidth: .infinity, minHeight: 34)
             .padding(.vertical, 5.0)
-            .background(Color(.systemFill))
+            .background {
+              if isFoil {
+                Color.black.opacity(0.3)
+                LinearGradient(
+                  colors: [
+                    Color(#colorLiteral(red: 1.0, green: 0.9, blue: 0.7, alpha: 1)),
+                    Color(#colorLiteral(red: 1.0, green: 1.0, blue: 0.8, alpha: 1)),
+                    Color(#colorLiteral(red: 0.8, green: 1.0, blue: 0.8, alpha: 1)),
+                    Color(#colorLiteral(red: 0.8, green: 1.0, blue: 0.8, alpha: 1)),
+                    Color(#colorLiteral(red: 0.85, green: 1.0, blue: 0.9, alpha: 1)),
+                    Color(#colorLiteral(red: 0.7, green: 0.8, blue: 1.0, alpha: 1)),
+                    Color(#colorLiteral(red: 0.6, green: 0.6, blue: 0.9, alpha: 1))
+                  ],
+                  startPoint: .topLeading,
+                  endPoint: .bottomTrailing
+                )
+                .blur(radius: 5)
+                .overlay(
+                  RoundedRectangle(cornerRadius: 8)
+                    .strokeBorder(.separator, lineWidth: 1 / UIScreen.main.nativeScale)
+                )
+              } else {
+                Color(.systemFill)
+              }
+            }
             .clipShape(RoundedRectangle(cornerRadius: 13))
         }
         
         HStack(spacing: 3) {
-          if isFoil {
-            PillText("FOIL", isFoil: true)
-              .font(.caption2)
-              .foregroundStyle(.black.opacity(0.8))
-              .monospaced()
-              .fontWeight(.medium)
-          }
-          
           Text(label)
             .font(.caption)
             .foregroundStyle(.secondary)

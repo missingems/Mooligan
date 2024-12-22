@@ -6,6 +6,7 @@ import SwiftUI
 
 struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
   @Bindable private var store: StoreOf<CardDetailFeature<Client>>
+  @State private var maxWidth: CGFloat?
   
   init(
     store: StoreOf<CardDetailFeature<Client>>
@@ -16,34 +17,35 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
   var body: some View {
     ScrollView(.vertical) {
       VStack(spacing: 0) {
-        let configuration = CardView<Client.MagicCardModel>.LayoutConfiguration(
-          rotation: store.content.card.isLandscape ? .landscape : .portrait,
-          maxWidth: nil
-        )
-        CardView(
-          mode: store.content.selectedMode,
-          layoutConfiguration: configuration,
-          callToActionHorizontalOffset: 21.0,
-          priceVisibility: .hidden
-        ) { action in
-          store.send(.descriptionCallToActionTapped, animation: .bouncy)
-        }
-        .aspectRatio(configuration.rotation.ratio, contentMode: .fit)
-        .padding(
-          EdgeInsets(
-            top: 21,
-            leading: store.content.card.isLandscape ? 34 : 89.0,
-            bottom: 29.0,
-            trailing: store.content.card.isLandscape ? 34 : 89.0
+        if let maxWidth {
+          let cardImageWidth = store.content.card.isLandscape ? 2.5 / 3.0 * maxWidth : 2.0 / 3.0 * maxWidth
+          
+          let configuration = CardView<Client.MagicCardModel>.LayoutConfiguration(
+            rotation: store.content.card.isLandscape ? .landscape : .portrait,
+            maxWidth: cardImageWidth.rounded()
           )
-        )
-        .shadow(color: DesignComponentsAsset.shadow.swiftUIColor, radius: 13, x: 0, y: 13)
-        .zIndex(1)
+          
+          CardView(
+            mode: store.content.selectedMode,
+            layoutConfiguration: configuration,
+            callToActionHorizontalOffset: 21.0,
+            priceVisibility: .hidden
+          ) { action in
+            store.send(.descriptionCallToActionTapped, animation: .bouncy)
+          }
+          .padding(
+            EdgeInsets(
+              top: 21,
+              leading: 0,
+              bottom: 29.0,
+              trailing: 0
+            )
+          )
+          .shadow(color: DesignComponentsAsset.shadow.swiftUIColor, radius: 13, x: 0, y: 13)
+          .zIndex(1)
+        }
         
-        CardDetailTableView(
-          descriptions: store.content.descriptions,
-          keywords: store.content.keywords
-        )
+        CardDetailTableView(descriptions: store.content.descriptions)
         
         InformationView(
           title: store.content.infoLabel,
@@ -73,8 +75,18 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
             .foregroundStyle(DesignComponentsAsset.invertedPrimary.swiftUIColor)
             .frame(maxWidth: .infinity, minHeight: 34)
             .padding(.vertical, 5.0)
-            .background(DesignComponentsAsset.accentColor.swiftUIColor)
+            .background(
+              Group {
+                Color.black.opacity(0.3)
+                DesignComponentsAsset.accentColor.swiftUIColor
+                  .blur(radius: 5)
+              }
+            )
             .clipShape(RoundedRectangle(cornerRadius: 13))
+            .overlay(
+              RoundedRectangle(cornerRadius: 13)
+                .strokeBorder(.separator, lineWidth: 1 / UIScreen.main.nativeScale)
+            )
           }
           .buttonStyle(.sinkableButtonStyle)
           .safeAreaPadding(.horizontal, nil)
@@ -136,6 +148,11 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
         )
       }
     }
+    .onGeometryChange(for: CGFloat.self, of: { proxy in
+      return proxy.size.width
+    }, action: { newValue in
+      maxWidth = newValue
+    })
     .task {
       store.send(.fetchAdditionalInformation(card: store.content.card))
     }
@@ -143,7 +160,7 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
       ZStack {
         LazyImage(
           url: store.content.artCroppedImageURL(with: .front),
-          transaction: Transaction(animation: .default)
+          transaction: Transaction(animation: .smooth)
         ) { state in
           if let image = state.image {
             image.resizable().blur(radius: 34, opaque: true)
@@ -153,7 +170,7 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
         
         LazyImage(
           url: store.content.artCroppedImageURL(with: .back),
-          transaction: Transaction(animation: .default)
+          transaction: Transaction(animation: .smooth)
         ) { state in
           if let image = state.image {
             image.resizable().blur(radius: 89, opaque: true)

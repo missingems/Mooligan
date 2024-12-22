@@ -15,7 +15,7 @@ struct ConditionalFrameModifier: ViewModifier {
   }
 }
 
-public struct AmbientWebImage: View {
+public struct CardRemoteImageView: View {
   public let url: URL
   @State private var cornerRadius: CGFloat?
   private let transformers: [ImageProcessing]
@@ -62,7 +62,8 @@ public struct AmbientWebImage: View {
       request: ImageRequest(
         url: url,
         processors: transformers
-      )
+      ),
+      transaction: Transaction(animation: .smooth)
     ) { state in
       if let image = state.image {
         image.resizable()

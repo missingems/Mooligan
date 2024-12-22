@@ -39,7 +39,6 @@ struct Content<Card: MagicCard>: Equatable {
   var colorIdentity: [String]
   let rarity: MagicCardRarityValue
   let legalities: [MagicCardLegalitiesValue]
-  let keywords: [String]
   
   // MARK: - Prices
   
@@ -125,7 +124,7 @@ struct Content<Card: MagicCard>: Equatable {
     priceLabel = String(localized: "Market Prices")
     priceSubtitleLabel = String(localized: "Data from Scryfall")
     usdLabel = String(localized: "USD")
-    usdFoilLabel = String(localized: "USD")
+    usdFoilLabel = String(localized: "USD - Foil")
     tixLabel = String(localized: "Tix")
     artistSelectionLabel = String(localized: "Artist")
     rulingSelectionLabel = String(localized: "Rulings")
@@ -170,7 +169,6 @@ struct Content<Card: MagicCard>: Equatable {
     toughness = face.toughness
     loyalty = face.loyalty
     artist = face.artist
-    keywords = card.getKeywords()
     selectedMode = CardView<Card>.Mode(card)
   }
   
