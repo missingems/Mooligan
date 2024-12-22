@@ -116,7 +116,7 @@ public struct CardView<Card: MagicCard>: View {
           backImageURL,
           callToActionIconName
         ):
-          AmbientWebImage(
+          CardRemoteImageView(
             url: backImageURL,
             isLandscape: layoutConfiguration.rotation == .landscape,
             isTransformed: true,
@@ -129,7 +129,7 @@ public struct CardView<Card: MagicCard>: View {
             transaction.animation = .bouncy
           }
           
-          AmbientWebImage(
+          CardRemoteImageView(
             url: frontImageURL,
             isLandscape: layoutConfiguration.rotation == .landscape,
             isTransformed: false,
@@ -172,7 +172,7 @@ public struct CardView<Card: MagicCard>: View {
           )
           
         case let .single(displayingImageURL):
-          AmbientWebImage(
+          CardRemoteImageView(
             url: displayingImageURL,
             isLandscape: layoutConfiguration.rotation == .landscape,
             isTransformed: false,
@@ -192,7 +192,7 @@ public struct CardView<Card: MagicCard>: View {
     displayingImageURL: URL,
     callToActionIconName: String
   ) -> some View {
-    AmbientWebImage(
+    CardRemoteImageView(
       url: displayingImageURL,
       isLandscape: layoutConfiguration.rotation == .landscape,
       isTransformed: false,

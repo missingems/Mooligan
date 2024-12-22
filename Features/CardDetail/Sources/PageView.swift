@@ -36,7 +36,7 @@ public struct PageView<Client: MagicCardDetailRequestClient>: View {
       
       if let safeAreaTopInset {
         VariableBlurView(direction: .blurredTopClearBottom)
-          .frame(height: safeAreaTopInset)
+          .frame(height: safeAreaTopInset + 5)
           .ignoresSafeArea()
           .zIndex(1)
       }
