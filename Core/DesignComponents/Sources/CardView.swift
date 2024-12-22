@@ -89,7 +89,7 @@ public struct CardView<Card: MagicCard>: View {
       self.rotation = rotation
       
       if let maxWidth {
-        let imageHeight = maxWidth / rotation.ratio
+        let imageHeight = (maxWidth / rotation.ratio).rounded()
         size = CGSize(width: maxWidth, height: imageHeight)
       } else {
         size = nil
