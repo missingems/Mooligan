@@ -9,8 +9,7 @@ public struct TokenizedText: View {
   public init(
     textElements: [[TextElement]],
     font: UIFont,
-    paragraphSpacing: CGFloat,
-    keywords: [String]
+    paragraphSpacing: CGFloat
   ) {
     self.textElements = textElements
     self.font = font
@@ -23,7 +22,13 @@ public struct TokenizedText: View {
     elements.forEach { element in
       switch element {
       case let .text(value, isItalic, isKeyword):
-        if isKeyword {
+        if isKeyword && isItalic {
+          if text == nil {
+            text = Text("[\(value)](https://google.com)").font(Font.system(size: self.font.pointSize, design: .serif)).underline().italic().foregroundStyle(.secondary)
+          } else if let _text = text {
+            text = _text + Text("[\(value)](https://google.com)").font(Font.system(size: self.font.pointSize, design: .serif)).underline().italic().foregroundStyle(.secondary)
+          }
+        } else if isKeyword {
           if text == nil {
             text = Text("[\(value)](https://google.com)").font(Font.system(size: self.font.pointSize)).underline()
           } else if let _text = text {

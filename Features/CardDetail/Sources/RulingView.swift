@@ -31,8 +31,7 @@ struct RulingView<Client: MagicCardDetailRequestClient>: View {
                   TokenizedText(
                     textElements: ruling.description,
                     font: .preferredFont(forTextStyle: .body),
-                    paragraphSpacing: 8.0,
-                    keywords: []
+                    paragraphSpacing: 8.0
                   )
                 }
                 .safeAreaPadding(.horizontal, nil)

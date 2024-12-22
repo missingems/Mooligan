@@ -8,7 +8,7 @@ extension Card: MagicCard {
   public func getColorIdentity() -> [any MagicCardColor] { colorIdentity }
   public func getColorIndicator() -> [any MagicCardColor]? { colorIndicator }
   public func getColors() -> [any MagicCardColor]? { colors }
-  public func getKeywords() -> [String] { keywords }
+  public func getKeywords() -> Set<String> { Set(keywords) }
   public func getLayout() -> any MagicCardLayout { layout }
   public func getLegalities() -> any MagicCardLegalities { legalities }
   public func getLoyalty() -> String? { loyalty }

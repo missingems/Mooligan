@@ -23,7 +23,7 @@ public protocol MagicCard: Equatable, Hashable, Identifiable, Sendable {
   func getColors() -> [any MagicCardColor]?
   
   /// An array of the keywords on this card (deathouch, first strike, etc)
-  func getKeywords() -> [String]
+  func getKeywords() -> Set<String>
   
   /// This card's layout (normal, transform, split, etc)
   func getLayout() -> any MagicCardLayout
