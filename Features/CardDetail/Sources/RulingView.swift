@@ -28,12 +28,12 @@ struct RulingView<Client: MagicCardDetailRequestClient>: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
                   
-//                  TokenizedText(
-//                    text: ruling.description,
-//                    font: .preferredFont(forTextStyle: .body),
-//                    paragraphSpacing: 8.0,
-//                    keywords: []
-//                  )
+                  TokenizedText(
+                    textElements: ruling.description,
+                    font: .preferredFont(forTextStyle: .body),
+                    paragraphSpacing: 8.0,
+                    keywords: []
+                  )
                 }
                 .safeAreaPadding(.horizontal, nil)
                 

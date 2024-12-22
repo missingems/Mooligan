@@ -12,7 +12,12 @@ public protocol MagicCardDetailRequestClient: Sendable {
 extension ScryfallClient: MagicCardDetailRequestClient {
   public func getRulings(of card: MagicCardModel) async throws -> [MagicCardRuling] {
     try await getRulings(.scryfallID(id: card.id.uuidString)).data.reversed().map { value in
-      MagicCardRuling(displayDate: value.publishedAt, description: value.comment)
+      MagicCardRuling(
+        displayDate: value.publishedAt,
+        description: value.comment.split(separator: "\n").map {
+          TextElementParser.parse(String($0))
+        }
+      )
     }
   }
   
