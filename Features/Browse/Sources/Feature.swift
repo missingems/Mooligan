@@ -8,7 +8,7 @@ import Networking
   @ObservableState struct State: Equatable {
     var isLoading: Bool = false
     var selectedSet: Client.GameSetModel? = nil
-    var sets: [Client.GameSetModel] = []
+    var sets: IdentifiedArrayOf<Client.GameSetModel> = []
     var title = String(localized: "Sets")
     
     func getSetRowViewModel(
@@ -55,7 +55,7 @@ import Networking
         
       case let .updateSets(value):
         state.isLoading = false
-        state.sets = value
+        state.sets = IdentifiedArrayOf<Client.GameSetModel>(uniqueElements: value)
         return .none
       }
     }
