@@ -32,7 +32,7 @@ struct SetRow: View {
         }
         .padding(insets)
         .background { backgroundColor }
-        .clipShape(.buttonBorder)
+        .clipShape(RoundedRectangle(cornerRadius: 13.0))
       }
     )
     .buttonStyle(.sinkableButtonStyle)

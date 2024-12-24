@@ -10,18 +10,6 @@ import Networking
     var selectedSet: Client.GameSetModel? = nil
     var sets: IdentifiedArrayOf<Client.GameSetModel> = []
     var title = String(localized: "Sets")
-    
-    func getSetRowViewModel(
-      at index: Int,
-      colorScheme: ColorScheme
-    ) -> SetRow.ViewModel {
-      SetRow.ViewModel(
-        set: sets[index],
-        selectedSet: selectedSet,
-        index: index,
-        colorScheme: colorScheme
-      )
-    }
   }
   
   enum Action: Equatable {
