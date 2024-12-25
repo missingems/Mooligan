@@ -11,27 +11,43 @@ struct SetRow: View {
         onSelect()
       },
       label: {
-        HStack(spacing: 11.0) {
+        HStack(spacing: 13) {
           if viewModel.shouldShowIndentIndicator {
-            childIndicatorImage.frame(width: 30, height: 30)
+            Image(systemName: viewModel.childIndicatorImageName)
+              .fontWeight(.medium)
+              .imageScale(.small)
+              .foregroundStyle(.tertiary)
+              .frame(width: 34, height: 34)
           }
           
-          iconImage.frame(width: 30, height: 30, alignment: .center)
+          
+          IconLazyImage(viewModel.iconUrl).frame(width: 34, height: 34, alignment: .center)
           
           VStack(alignment: .leading, spacing: 3.0) {
-            titleLabel
+            Text(viewModel.title).multilineTextAlignment(.leading)
             
             HStack(spacing: 5.0) {
-              setCodeLabel
-              numberOfCardsLabel
+              PillText(viewModel.id).font(.caption).monospaced()
+              Text(viewModel.numberOfCardsLabel).font(.caption).foregroundColor(.secondary)
             }
           }
           
           Spacer()
-          disclosureIndicator
+          
+          Image(systemName: viewModel.disclosureIndicatorImageName)
+            .fontWeight(.medium)
+            .imageScale(.small)
+            .foregroundStyle(.tertiary)
         }
-        .padding(insets)
-        .background { backgroundColor }
+        .padding(
+          EdgeInsets(
+            top: viewModel.shouldSetBackground ? 8 : 11,
+            leading: 13,
+            bottom: viewModel.shouldSetBackground ? 11 : 13,
+            trailing: 13
+          )
+        )
+        .background { viewModel.shouldSetBackground ? Color(.tertiarySystemFill) : Color.clear }
         .clipShape(RoundedRectangle(cornerRadius: 13.0))
       }
     )
@@ -43,111 +59,4 @@ struct SetRow: View {
     self.onSelect = onSelect
   }
   
-}
-
-// MARK: - Configuration
-
-extension SetRow {
-  private var insets: EdgeInsets {
-    EdgeInsets(
-      top: viewModel.shouldSetBackground ? 8 : 11,
-      leading: 13,
-      bottom: viewModel.shouldSetBackground ? 11 : 13,
-      trailing: 13
-    )
-  }
-  
-  private var backgroundColor: Color {
-    if viewModel.isSelected {
-      if viewModel.colorScheme == .dark {
-        return DesignComponentsAsset.accentColor.swiftUIColor.opacity(0.382)
-      } else {
-        return DesignComponentsAsset.accentColor.swiftUIColor
-      }
-    } else {
-      return viewModel.shouldSetBackground ? Color(.tertiarySystemFill) : Color.clear
-    }
-  }
-  
-  private var foregroundColor: Color {
-    if viewModel.isSelected {
-      if viewModel.colorScheme == .dark {
-        return DesignComponentsAsset.accentColor.swiftUIColor
-      } else {
-        return Color.white
-      }
-    } else {
-      return Color.primary
-    }
-  }
-  
-  private var tintColor: Color {
-    if viewModel.isSelected {
-      if viewModel.colorScheme == .dark {
-        return DesignComponentsAsset.accentColor.swiftUIColor
-      } else {
-        return Color.white
-      }
-    } else {
-      return DesignComponentsAsset.accentColor.swiftUIColor
-    }
-  }
-  
-  private var tertiaryColor: Color {
-    if viewModel.isSelected {
-      if viewModel.colorScheme == .dark {
-        return DesignComponentsAsset.accentColor.swiftUIColor
-      } else {
-        return Color.white.opacity(0.618)
-      }
-    } else {
-      return Color(.tertiaryLabel)
-    }
-  }
-  
-  private var secondaryColor: Color {
-    if viewModel.isSelected {
-      if viewModel.colorScheme == .dark {
-        return DesignComponentsAsset.accentColor.swiftUIColor
-      } else {
-        return Color.white.opacity(0.618)
-      }
-    } else {
-      return Color.secondary
-    }
-  }
-}
-
-// MARK: - UI Properties
-
-extension SetRow {
-  private var childIndicatorImage: some View {
-    Image(systemName: viewModel.childIndicatorImageName)
-      .foregroundColor(tertiaryColor)
-      .fontWeight(.medium)
-      .imageScale(.small)
-  }
-  
-  private var iconImage: some View {
-    IconLazyImage(viewModel.iconUrl)
-  }
-  
-  private var titleLabel: some View {
-    Text(viewModel.title).multilineTextAlignment(.leading).foregroundColor(foregroundColor)
-  }
-  
-  private var setCodeLabel: some View {
-    PillText(viewModel.id).font(.caption).monospaced().foregroundColor(foregroundColor)
-  }
-  
-  private var numberOfCardsLabel: some View {
-    Text(viewModel.numberOfCardsLabel).font(.caption).foregroundColor(secondaryColor)
-  }
-  
-  private var disclosureIndicator: some View {
-    Image(systemName: viewModel.disclosureIndicatorImageName)
-      .foregroundColor(tertiaryColor)
-      .fontWeight(.medium)
-      .imageScale(.small)
-  }
 }
