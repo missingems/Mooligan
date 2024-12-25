@@ -1,4 +1,5 @@
 import Nuke
+import Shimmer
 import SVGView
 import SwiftUI
 
@@ -14,32 +15,33 @@ public struct IconLazyImage: View {
   
   public var body: some View {
     ZStack {
-      tintColor.mask {
-        if let imageData {
+      if let imageData {
+        tintColor.mask {
           SVGView(data: imageData)
         }
+      } else {
+        Circle().fill(Color.primary.opacity(0.9)).shimmering()
+          .blur(radius: 8)
       }
+    }
+    .task {
+      guard let url else { return }
       
-      ProgressView().task(priority: .background) {
-        guard let url else { return }
-        
-        ImagePipeline.shared.loadImage(with: url) { result in
-          switch result {
-          case let .success(value):
-            if value.cacheType == .memory || value.cacheType == .disk {
+      ImagePipeline.shared.loadImage(with: url) { result in
+        switch result {
+        case let .success(value):
+          if value.cacheType == .memory || value.cacheType == .disk {
+            imageData = value.container.data
+          } else {
+            withAnimation(.smooth) {
               imageData = value.container.data
-            } else {
-              withAnimation(.snappy) {
-                imageData = value.container.data
-              }
             }
-            
-          case .failure:
-            imageData = nil
           }
+          
+        case .failure:
+          imageData = nil
         }
       }
-      .opacity(imageData == nil ? 1 : 0)
     }
   }
 }
