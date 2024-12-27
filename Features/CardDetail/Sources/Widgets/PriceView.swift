@@ -127,7 +127,7 @@ extension PriceView {
             .frame(maxWidth: .infinity, minHeight: 34)
             .padding(.vertical, 5.0)
             .background {
-              if isFoil {
+              if isDisabled == false, isFoil {
                 Color.black.opacity(0.3)
                 LinearGradient(
                   colors: [
