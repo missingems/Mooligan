@@ -76,11 +76,7 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
             .frame(maxWidth: .infinity, minHeight: 34)
             .padding(.vertical, 5.0)
             .background(
-              Group {
-                Color.black.opacity(0.3)
-                DesignComponentsAsset.accentColor.swiftUIColor
-                  .blur(radius: 5)
-              }
+              DesignComponentsAsset.accentColor.swiftUIColor
             )
             .clipShape(RoundedRectangle(cornerRadius: 13))
             .overlay(
