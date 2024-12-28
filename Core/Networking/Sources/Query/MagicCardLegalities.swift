@@ -86,7 +86,3 @@ public enum MagicCardLegality: String, Equatable, Sendable {
     }
   }
 }
-
-public protocol MagicCardLegalities: Equatable, Sendable, Hashable {
-  var value: [MagicCardLegalitiesValue] { get }
-}

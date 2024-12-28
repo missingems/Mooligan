@@ -3,9 +3,9 @@ import DesignComponents
 import SwiftUI
 import Networking
 
-struct SetsView<Client: GameSetRequestClient>: View {
+struct SetsView: View {
   @Environment(\.colorScheme) private var colorScheme
-  private var store: StoreOf<Feature<Client>>
+  private var store: StoreOf<Feature>
   
   var body: some View {
     List(Array(zip(store.sets, store.sets.indices)), id: \.0) { value in
@@ -29,7 +29,7 @@ struct SetsView<Client: GameSetRequestClient>: View {
     }
   }
   
-  init(store: StoreOf<Feature<Client>>) {
+  init(store: StoreOf<Feature>) {
     self.store = store
   }
 }

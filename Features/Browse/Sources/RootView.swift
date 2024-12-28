@@ -6,7 +6,7 @@ public struct RootView: View {
   private let store = Store(
     initialState: Feature.State(),
     reducer: {
-      Feature(client: ScryfallClient(networkLogLevel: .minimal))
+      Feature()
     }
   )
   

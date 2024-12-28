@@ -1,5 +1,23 @@
+import ComposableArchitecture
 import Foundation
 import ScryfallKit
+
+public protocol GameSetRequestClient: Sendable {
+  func getAllSets() async throws -> [MTGSet]
+}
+
+public enum GameSetRequestClientKey: DependencyKey {
+  public static let liveValue: any GameSetRequestClient = ScryfallClient()
+  public static let previewValue: any GameSetRequestClient = ScryfallClient()
+  public static let testValue: any GameSetRequestClient = ScryfallClient()
+}
+
+public extension DependencyValues {
+  var gameSetRequestClient: any GameSetRequestClient {
+    get { self[GameSetRequestClientKey.self] }
+    set { self[GameSetRequestClientKey.self] = newValue }
+  }
+}
 
 extension ScryfallClient: GameSetRequestClient {
   public func getAllSets() async throws -> [MTGSet] {

@@ -1,7 +1,8 @@
+import ScryfallKit
 import SwiftUI
 import Networking
 
-public struct CardView<Card: MagicCard>: View {
+public struct CardView: View {
   public enum Action: Equatable {
     case toggledFaceDirection
   }
@@ -42,9 +43,11 @@ public struct CardView<Card: MagicCard>: View {
     
     public init?(_ card: Card) {
       if card.isTransformable,
-          let frontImageURL = card.getCardFace(for: .front).getImageURL(),
-          let backImageURL = card.getCardFace(for: .back).getImageURL(),
-          let callToActionIconName = card.getLayout().value.callToActionIconName {
+         let frontImageURLString = card.getCardFace(for: .front)?.imageUris?.normal,
+         let frontImageURL = URL(string: frontImageURLString),
+         let backImageURLString = card.getCardFace(for: .back)?.imageUris?.normal,
+         let backImageURL = URL(string: backImageURLString),
+         let callToActionIconName = card.layout.callToActionIconName {
         self = .transformable(
           direction: .front,
           frontImageURL: frontImageURL,
@@ -54,7 +57,7 @@ public struct CardView<Card: MagicCard>: View {
       } else if
         card.isFlippable,
         let imageURL = card.getImageURL(),
-        let callToActionIconName = card.getLayout().value.callToActionIconName {
+        let callToActionIconName = card.layout.callToActionIconName {
         self = .flippable(
           direction: .front,
           displayingImageURL: imageURL,

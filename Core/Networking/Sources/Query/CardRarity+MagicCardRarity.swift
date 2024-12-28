@@ -1,6 +1,6 @@
-public enum MagicCardRarityValue: String, Equatable, Sendable, Hashable {
-  case common, uncommon, rare, special, mythic, bonus, none
-  
+import ScryfallKit
+
+extension Card.Rarity {
   public var colorNames: [String]? {
     switch self {
     case .common: return nil
@@ -9,12 +9,6 @@ public enum MagicCardRarityValue: String, Equatable, Sendable, Hashable {
     case .special: return nil
     case .mythic: return ["mythicDark", "mythicLight", "mythicDark"]
     case .bonus: return nil
-    case .none: return nil
     }
   }
 }
-
-public protocol MagicCardRarity: Equatable, Sendable, Hashable {
-  var value: MagicCardRarityValue { get }
-}
-

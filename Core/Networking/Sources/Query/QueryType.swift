@@ -1,5 +1,7 @@
+import ScryfallKit
+
 public enum QueryType: Equatable, Sendable {
-  case set(any GameSet, page: Int)
+  case set(MTGSet, page: Int)
   case search(String, page: Int)
   
   public func next() -> Self {

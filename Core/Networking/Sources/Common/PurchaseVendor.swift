@@ -10,7 +10,6 @@ public struct PurchaseVendor: Equatable, Sendable {
   public let cardHoarder: Link?
   public let cardMarket: Link?
   
-  
   public init(purchaseURIs: [String: String]?) {
     if let uri = purchaseURIs?["tcgplayer"], let url = URL(string: uri) {
       tcgPlayer = Link(url: url, label: "TCGPlayer")

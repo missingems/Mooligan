@@ -1,16 +1,10 @@
 import ComposableArchitecture
 import DesignComponents
 import Foundation
-import OSLog
 import Networking
+import ScryfallKit
 
-@Reducer struct CardDetailFeature<Client: MagicCardDetailRequestClient> {
-  private let client: Client
-  
-  init(client: Client) {
-    self.client = client
-  }
-  
+@Reducer struct CardDetailFeature {
   var body: some ReducerOf<Self> {
     Reduce { state, action in
       switch action {
@@ -128,13 +122,13 @@ import Networking
 
 extension CardDetailFeature {
   @ObservableState struct State: Equatable, Identifiable {
-    @Presents var showRulings: RulingFeature<Client>.State?
+    @Presents var showRulings: RulingFeature.State?
     let id: UUID
-    var content: Content<Client.MagicCardModel>
+    var content: Content<Card>
     let start: Action
     
     init(
-      card: Client.MagicCardModel,
+      card: Card,
       entryPoint: EntryPoint<Client>
     ) {
       id = UUID()
@@ -153,13 +147,13 @@ extension CardDetailFeature {
   
   @CasePathable indirect enum Action: Equatable {
     case dismissRulingsTapped
-    case fetchAdditionalInformation(card: Client.MagicCardModel)
+    case fetchAdditionalInformation(card: Card)
     case descriptionCallToActionTapped
-    case updateSetIconURL(_ setIconURL: Result<URL?, FeatureError>)
-    case updateVariants(_ variants: Result<[Client.MagicCardModel], FeatureError>)
+    case updateSetIconURL(URL?)
+    case updateVariants([Card])
     case viewAppeared(initialAction: Action)
     case viewRulingsTapped
-    case showRulings(PresentationAction<RulingFeature<Client>.Action>)
+    case showRulings(PresentationAction<RulingFeature.Action>)
   }
 }
 

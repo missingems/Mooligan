@@ -2,7 +2,6 @@ import ComposableArchitecture
 import DesignComponents
 import SwiftUI
 import Browse
-import ScryfallKit
 
 @main
 struct BrowseApp: App {

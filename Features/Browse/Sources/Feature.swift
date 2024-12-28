@@ -1,25 +1,26 @@
 import ComposableArchitecture
 import SwiftUI
 import Networking
+import ScryfallKit
 
-@Reducer struct Feature<Client: GameSetRequestClient> {
-  let client: Client
-  
-  @ObservableState struct State: Equatable {
+@Reducer public struct Feature {
+  @ObservableState public struct State: Equatable {
     var isLoading: Bool = false
-    var selectedSet: Client.GameSetModel? = nil
-    var sets: IdentifiedArrayOf<Client.GameSetModel> = []
-    var title = String(localized: "Sets")
+    var selectedSet: MTGSet? = nil
+    var sets: IdentifiedArrayOf<MTGSet> = []
+    let title = String(localized: "Sets")
   }
   
-  enum Action: Equatable {
+  public enum Action: Equatable {
     case didSelectSet(index: Int)
     case fetchSets
     case viewAppeared
-    case updateSets([Client.GameSetModel])
+    case updateSets([MTGSet])
   }
   
-  var body: some ReducerOf<Self> {
+  @Dependency(\.gameSetRequestClient) var client
+  
+  public var body: some ReducerOf<Self> {
     Reduce { state, action in
       switch action {
       case let .didSelectSet(index):
@@ -43,9 +44,11 @@ import Networking
         
       case let .updateSets(value):
         state.isLoading = false
-        state.sets = IdentifiedArrayOf<Client.GameSetModel>(uniqueElements: value)
+        state.sets = IdentifiedArrayOf<MTGSet>(uniqueElements: value)
         return .none
       }
     }
   }
+  
+  public init() {}
 }

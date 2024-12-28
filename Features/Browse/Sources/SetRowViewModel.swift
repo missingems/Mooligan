@@ -1,6 +1,7 @@
 import Foundation
 import Networking
 import SwiftUI
+import ScryfallKit
 
 extension SetRow {
   struct ViewModel: Equatable {
@@ -16,18 +17,18 @@ extension SetRow {
     let title: String
     
     init(
-      set: any GameSet,
-      selectedSet: (any GameSet)?,
+      set: MTGSet,
+      selectedSet: MTGSet?,
       index: Int,
       colorScheme: ColorScheme
     ) {
       childIndicatorImageName = "arrow.turn.down.right"
       disclosureIndicatorImageName = "chevron.right"
-      iconUrl = set.iconURL
+      iconUrl = URL(string: set.iconSvgUri)
       id = set.code.uppercased()
       isSelected = selectedSet?.id == set.id
-      shouldShowIndentIndicator = set.isParent == false
-      numberOfCardsLabel = String(localized: "\(set.numberOfCards) Cards")
+      shouldShowIndentIndicator = set.parentSetCode != nil
+      numberOfCardsLabel = String(localized: "\(set.cardCount) Cards")
       shouldSetBackground = index.isMultiple(of: 2)
       title = set.name
       self.colorScheme = colorScheme

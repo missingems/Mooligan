@@ -1,5 +1,9 @@
 import ScryfallKit
 
+public protocol MagicCardQueryRequestClient: Sendable {
+  func queryCards(_ query: QueryType) async throws -> ObjectList<[Card]>
+}
+
 extension ScryfallClient: MagicCardQueryRequestClient {
   public func queryCards(_ query: QueryType) async throws -> ObjectList<[Card]> {
     switch query {

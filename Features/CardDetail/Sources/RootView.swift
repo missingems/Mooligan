@@ -1,20 +1,21 @@
 import ComposableArchitecture
 import Networking
+import ScryfallKit
 import SwiftUI
 
-enum EntryPoint<Client: MagicCardDetailRequestClient>: Equatable, Sendable {
+enum EntryPoint: Equatable, Sendable {
   case query
-  case set(Client.MagicCardSet)
+  case set(MTGSet)
 }
 
-struct RootView<Client: MagicCardDetailRequestClient>: View {
-  private let store: StoreOf<CardDetailFeature<Client>>
+struct RootView: View {
+  private let store: StoreOf<CardDetailFeature>
   
   var body: some View {
     Text("")
   }
   
-  init(store: StoreOf<CardDetailFeature<Client>>) {
+  init(store: StoreOf<CardDetailFeature>) {
     self.store = store
   }
 }

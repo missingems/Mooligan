@@ -12,7 +12,8 @@ let project = Project(
       sources: ["Sources/**"],
       resources: [],
       dependencies: [
-        .external(name: "ScryfallKit")
+        .external(name: "ScryfallKit"),
+        .project(target: "Featurist", path: "../../Core/Featurist"),
       ]
     ),
     .target(
