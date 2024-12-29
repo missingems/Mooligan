@@ -4,8 +4,8 @@ import Networking
 import ScryfallKit
 import SwiftUI
 
-struct RulingView<Client: MagicCardDetailRequestClient>: View {
-  let store: StoreOf<RulingFeature<Client>>
+struct RulingView: View {
+  let store: StoreOf<RulingFeature>
   
   var body: some View {
     Group {
@@ -61,7 +61,7 @@ struct RulingView<Client: MagicCardDetailRequestClient>: View {
   }
   
   init(
-    store: StoreOf<RulingFeature<Client>>
+    store: StoreOf<RulingFeature>
   ) {
     self.store = store
   }

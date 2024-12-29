@@ -13,7 +13,16 @@ struct BrowseApp: App {
   var body: some Scene {
     WindowGroup {
       NavigationView {
-        RootView()
+        RootView(
+          store: Store(
+            initialState: Feature.State(selectedSet: nil, sets: []),
+            reducer: {
+              Browse.Feature()
+            }, withDependencies: { value in
+              value.gameSetRequestClient = ScryfallClient(networkLogLevel: .minimal)
+            }
+          )
+        )
       }
     }
   }

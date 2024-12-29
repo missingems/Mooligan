@@ -3,24 +3,22 @@ import DesignComponents
 import SwiftUI
 import Networking
 
-struct SetsView<Client: GameSetRequestClient>: View {
-  @Environment(\.colorScheme) private var colorScheme
-  private var store: StoreOf<Feature<Client>>
+struct SetsView: View {
+  private var store: StoreOf<Feature>
   
   var body: some View {
-    List(store.sets.indices, id: \.self) { index in
-      let element = store.sets[index]
-      
+    List(Array(zip(store.sets, store.sets.indices)), id: \.0) { value in
       SetRow(
-        viewModel: store.state.getSetRowViewModel(
-          at: index,
-          colorScheme: colorScheme
+        viewModel: SetRow.ViewModel(
+          set: value.0,
+          selectedSet: nil,
+          index: value.1
         )
       ) {
-        store.send(.didSelectSet(index: index))
+        store.send(.didSelectSet(index: value.1))
       }
       .listRowSeparator(.hidden)
-      .listRowInsets(EdgeInsets(top: 1, leading: 0, bottom: 0, trailing: 0))
+      .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
       .safeAreaPadding(.horizontal, nil)
     }
     .listStyle(.plain)
@@ -29,7 +27,7 @@ struct SetsView<Client: GameSetRequestClient>: View {
     }
   }
   
-  init(store: StoreOf<Feature<Client>>) {
+  init(store: StoreOf<Feature>) {
     self.store = store
   }
 }

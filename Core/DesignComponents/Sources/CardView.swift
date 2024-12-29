@@ -1,7 +1,8 @@
+import ScryfallKit
 import SwiftUI
 import Networking
 
-public struct CardView<Card: MagicCard>: View {
+public struct CardView: View {
   public enum Action: Equatable {
     case toggledFaceDirection
   }
@@ -40,11 +41,24 @@ public struct CardView<Card: MagicCard>: View {
       }
     }
     
-    public init?(_ card: Card) {
+    public var faceDirection: MagicCardFaceDirection {
+      switch self {
+      case let .transformable(direction, _, _, _):
+        return direction
+        
+      case let .flippable(direction, _, _):
+        return direction
+        
+      case .single:
+        return .front
+      }
+    }
+    
+    public init(_ card: Card) {
       if card.isTransformable,
-          let frontImageURL = card.getCardFace(for: .front).getImageURL(),
-          let backImageURL = card.getCardFace(for: .back).getImageURL(),
-          let callToActionIconName = card.getLayout().value.callToActionIconName {
+         let frontImageURL = card.getImageURL(type: .normal, getSecondFace: false),
+         let backImageURL = card.getImageURL(type: .normal, getSecondFace: true),
+         let callToActionIconName = card.layout.callToActionIconName {
         self = .transformable(
           direction: .front,
           frontImageURL: frontImageURL,
@@ -53,17 +67,17 @@ public struct CardView<Card: MagicCard>: View {
         )
       } else if
         card.isFlippable,
-        let imageURL = card.getImageURL(),
-        let callToActionIconName = card.getLayout().value.callToActionIconName {
+        let imageURL = card.getImageURL(type: .normal),
+        let callToActionIconName = card.layout.callToActionIconName {
         self = .flippable(
           direction: .front,
           displayingImageURL: imageURL,
           callToActionIconName: callToActionIconName
         )
-      } else if let imageURL = card.getImageURL() {
+      } else if let imageURL = card.getImageURL(type: .normal) {
         self = .single(displayingImageURL: imageURL)
       } else {
-        return nil
+        fatalError("Impossible state: ImageURL cannot be nil.")
       }
     }
   }
@@ -82,7 +96,6 @@ public struct CardView<Card: MagicCard>: View {
     }
     
     public let rotation: Rotation
-    public let cornerRadius: CGFloat
     public let size: CGSize?
     
     public init(rotation: Rotation, maxWidth: CGFloat?) {
@@ -94,8 +107,6 @@ public struct CardView<Card: MagicCard>: View {
       } else {
         size = nil
       }
-      
-      cornerRadius = 9.0
     }
   }
   
@@ -250,18 +261,14 @@ public struct CardView<Card: MagicCard>: View {
     }
   }
   
-  public init?(
+  public init(
     card: Card,
     layoutConfiguration: LayoutConfiguration,
     callToActionHorizontalOffset: CGFloat = 5.0,
     priceVisibility: PriceVisibility,
     send: ((Action) -> Void)? = nil
   ) {
-    guard let mode = Mode(card) else {
-      return nil
-    }
-    
-    self.mode = mode
+    mode = Mode(card)
     self.priceVisibility = priceVisibility
     
     if send == nil {

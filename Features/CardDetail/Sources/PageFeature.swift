@@ -1,11 +1,10 @@
 import ComposableArchitecture
 import Foundation
 import Networking
+import ScryfallKit
 import SwiftUI
 
-@Reducer struct PageFeature<Client: MagicCardDetailRequestClient> {
-  let client: Client
-  
+@Reducer struct PageFeature {
   var body: some ReducerOf<Self> {
     BindingReducer()
     
@@ -25,24 +24,20 @@ import SwiftUI
       }
     }
     .forEach(\.cards, action: \.cards) {
-      CardDetailFeature(client: client)
+      CardDetailFeature()
     }
-  }
-  
-  init(client: Client) {
-    self.client = client
   }
 }
 
 extension PageFeature {
   @ObservableState struct State: Equatable {
-    var cards: IdentifiedArrayOf<CardDetailFeature<Client>.State> = []
+    var cards: IdentifiedArrayOf<CardDetailFeature.State> = []
     var currentDisplayingCard: Int? = 0
     
-    public init(cards: [Client.MagicCardModel]) {
+    public init(cards: [Card]) {
       self.cards = IdentifiedArrayOf(
         uniqueElements: cards.map { card in
-          CardDetailFeature<Client>.State(card: card, entryPoint: .query)
+          CardDetailFeature.State(card: card, entryPoint: .query)
         }
       )
     }
@@ -50,7 +45,7 @@ extension PageFeature {
   
   @CasePathable enum Action: BindableAction {
     case binding(BindingAction<State>)
-    case cards(IdentifiedActionOf<CardDetailFeature<Client>>)
+    case cards(IdentifiedActionOf<CardDetailFeature>)
     case addTapped
     case shareTapped
   }

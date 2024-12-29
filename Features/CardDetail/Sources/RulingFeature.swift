@@ -1,9 +1,10 @@
 import ComposableArchitecture
 import Foundation
 import Networking
+import ScryfallKit
 
-@Reducer struct RulingFeature<Client: MagicCardDetailRequestClient> {
-  let client: Client
+@Reducer struct RulingFeature {
+  @Dependency(\.cardDetailRequestClient) var client
   
   var body: some ReducerOf<Self> {
     Reduce { state, action in
@@ -23,12 +24,6 @@ import Networking
       }
     }
   }
-  
-  init(
-    client: Client
-  ) {
-    self.client = client
-  }
 }
 
 extension RulingFeature {
@@ -38,12 +33,12 @@ extension RulingFeature {
       case loaded([MagicCardRuling])
     }
     
-    let card: Client.MagicCardModel
+    let card: Card
     let title: String
     var mode: Mode = .loading
     
     var emptyStateTitle: String {
-      return "No Results for \"\(card.getName())\""
+      return "No Results for \"\(card.name)\""
     }
     
     var emptyStateDescription: String? {

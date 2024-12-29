@@ -1,15 +1,11 @@
 import ComposableArchitecture
 import DesignComponents
 import Foundation
-import OSLog
 import Networking
+import ScryfallKit
 
-@Reducer struct CardDetailFeature<Client: MagicCardDetailRequestClient> {
-  private let client: Client
-  
-  init(client: Client) {
-    self.client = client
-  }
+@Reducer struct CardDetailFeature {
+  @Dependency(\.cardDetailRequestClient) private var client
   
   var body: some ReducerOf<Self> {
     Reduce { state, action in
@@ -21,39 +17,23 @@ import Networking
       case let .fetchAdditionalInformation(card):
         var effects: [EffectOf<Self>] = []
         
-        if (try? state.content.setIconURL.get()) == nil {
+        if state.content.setIconURL == nil {
           effects.append(
-            .run(
-              operation: { [state] send in
-                if let url = try state.content.setIconURL.get() {
-                  await send(.updateSetIconURL(.success(url)))
-                } else {
-                  try await send(.updateSetIconURL(.success(client.getSet(of: card).iconURL)))
-                }
-              }, catch: { error, send in
-                print(error)
-              }
-            )
+            .run { send in
+              try await send(.updateSetIconURL(URL(string: client.getSet(of: card).iconSvgUri)))
+            }.cancellable(id: "getSet: \(card.id.uuidString)", cancelInFlight: true)
           )
         }
         
         if state.content.variants.isEmpty {
           effects.append(
-            .run(
-              operation: { send in
-                try await send(.updateVariants(.success(client.getVariants(of: card, page: 0))))
-              }, catch: { error, send in
-                await send(.updateVariants(.success([card])))
-              }
-            )
+            .run { send in
+              try await send(.updateVariants(client.getVariants(of: card, page: 0)))
+            }.cancellable(id: "getVariants: \(card.id.uuidString)", cancelInFlight: true)
           )
         }
         
-        if effects.isEmpty {
-          return .none
-        } else {
-          return .merge(effects).cancellable(id: "\(action)", cancelInFlight: true)
-        }
+        return .merge(effects)
         
       case .descriptionCallToActionTapped:
         switch state.content.selectedMode {
@@ -65,8 +45,6 @@ import Networking
             callToActionIconName: callToActionIconName
           )
           
-          state.content.faceDirection = state.content.faceDirection.toggled()
-          
         case let .flippable(direction, displayingImageURL, callToActionIconName):
           state.content.selectedMode = .flippable(
             direction: direction.toggled(),
@@ -74,10 +52,8 @@ import Networking
             callToActionIconName: callToActionIconName
           )
           
-          state.content.faceDirection = state.content.faceDirection.toggled()
-          
-        default:
-          break
+        case .single:
+          fatalError("descriptionCallToActionTapped isn't available to single face card.")
         }
 
         return .none
@@ -87,10 +63,7 @@ import Networking
         return .none
         
       case let .updateVariants(value):
-        if let cards = try? value.get() {
-          state.content.variants = IdentifiedArray(uniqueElements: cards)
-        }
-        
+        state.content.variants = IdentifiedArray(uniqueElements: value)
         return .none
         
       case let .viewAppeared(action):
@@ -121,21 +94,21 @@ import Networking
       }
     }
     .ifLet(\.$showRulings, action: \.showRulings) {
-      RulingFeature(client: client)
+      RulingFeature()
     }
   }
 }
 
 extension CardDetailFeature {
   @ObservableState struct State: Equatable, Identifiable {
-    @Presents var showRulings: RulingFeature<Client>.State?
+    @Presents var showRulings: RulingFeature.State?
     let id: UUID
-    var content: Content<Client.MagicCardModel>
+    var content: Content
     let start: Action
     
     init(
-      card: Client.MagicCardModel,
-      entryPoint: EntryPoint<Client>
+      card: Card,
+      entryPoint: EntryPoint
     ) {
       id = UUID()
       
@@ -144,7 +117,7 @@ extension CardDetailFeature {
         content = Content(card: card, setIconURL: nil)
         
       case let .set(value):
-        content = Content(card: card, setIconURL: value.iconURL)
+        content = Content(card: card, setIconURL: URL(string: value.iconSvgUri))
       }
       
       start = .fetchAdditionalInformation(card: card)
@@ -153,24 +126,12 @@ extension CardDetailFeature {
   
   @CasePathable indirect enum Action: Equatable {
     case dismissRulingsTapped
-    case fetchAdditionalInformation(card: Client.MagicCardModel)
+    case fetchAdditionalInformation(card: Card)
     case descriptionCallToActionTapped
-    case updateSetIconURL(_ setIconURL: Result<URL?, FeatureError>)
-    case updateVariants(_ variants: Result<[Client.MagicCardModel], FeatureError>)
+    case updateSetIconURL(URL?)
+    case updateVariants([Card])
     case viewAppeared(initialAction: Action)
     case viewRulingsTapped
-    case showRulings(PresentationAction<RulingFeature<Client>.Action>)
-  }
-}
-
-enum FeatureError: Error, Sendable, Equatable {
-  case failedToFetchVariants(errorMessage: String)
-  case failedToFetchSetIconURL(errorMessage: String)
-  
-  var localizedDescription: String {
-    return switch self {
-    case let .failedToFetchVariants(value): value
-    case let .failedToFetchSetIconURL(value): value
-    }
+    case showRulings(PresentationAction<RulingFeature.Action>)
   }
 }

@@ -1,16 +1,20 @@
+import ComposableArchitecture
 import ScryfallKit
 
 public protocol MagicCardDetailRequestClient: Sendable {
-  associatedtype MagicCardModel: MagicCard
-  associatedtype MagicCardSet: GameSet
-  
-  func getRulings(of card: MagicCardModel) async throws -> [MagicCardRuling]
-  func getVariants(of card: MagicCardModel, page: Int) async throws -> [MagicCardModel]
-  func getSet(of card: MagicCardModel) async throws -> MagicCardSet
+  func getRulings(of card: Card) async throws -> [MagicCardRuling]
+  func getVariants(of card: Card, page: Int) async throws -> [Card]
+  func getSet(of card: Card) async throws -> MTGSet
+}
+
+public enum CardDetailRequestClientKey: DependencyKey {
+  public static let liveValue: any MagicCardDetailRequestClient = ScryfallClient()
+  public static let previewValue: any MagicCardDetailRequestClient = ScryfallClient()
+  public static let testValue: any MagicCardDetailRequestClient = ScryfallClient()
 }
 
 extension ScryfallClient: MagicCardDetailRequestClient {
-  public func getRulings(of card: MagicCardModel) async throws -> [MagicCardRuling] {
+  public func getRulings(of card: Card) async throws -> [MagicCardRuling] {
     try await getRulings(.scryfallID(id: card.id.uuidString)).data.reversed().map { value in
       MagicCardRuling(
         displayDate: value.publishedAt,
@@ -21,8 +25,8 @@ extension ScryfallClient: MagicCardDetailRequestClient {
     }
   }
   
-  public func getVariants(of card: MagicCardModel, page: Int) async throws -> [MagicCardModel] {
-    guard let oracleID = card.getOracleID() else {
+  public func getVariants(of card: Card, page: Int) async throws -> [Card] {
+    guard let oracleID = card.oracleId else {
       throw MagicCardDetailRequestClientError.cardOracleIDIsNil
     }
     
@@ -44,8 +48,15 @@ extension ScryfallClient: MagicCardDetailRequestClient {
     }
   }
   
-  public func getSet(of card: Card) async throws -> some GameSet {
+  public func getSet(of card: Card) async throws -> MTGSet {
     try await getSet(identifier: .code(code: card.set))
+  }
+}
+
+public extension DependencyValues {
+  var cardDetailRequestClient: any MagicCardDetailRequestClient {
+    get { self[CardDetailRequestClientKey.self] }
+    set { self[CardDetailRequestClientKey.self] = newValue }
   }
 }
 

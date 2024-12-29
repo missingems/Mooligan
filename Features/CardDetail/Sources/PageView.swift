@@ -1,18 +1,19 @@
 import ComposableArchitecture
 import DesignComponents
 import VariableBlur
+import ScryfallKit
 import SwiftUI
 import Networking
 
-public struct PageView<Client: MagicCardDetailRequestClient>: View {
-  @State var safeAreaTopInset: CGFloat?
-  @Bindable var store: StoreOf<PageFeature<Client>>
+public struct PageView: View {
+  @State private var safeAreaTopInset: CGFloat?
+  @Bindable private var store: StoreOf<PageFeature>
   
-  public init(client: Client, cards: [Client.MagicCardModel]) {
+  public init(cards: [Card]) {
     store = Store(
-      initialState: PageFeature<Client>.State(cards: cards),
+      initialState: PageFeature.State(cards: cards),
       reducer: {
-        PageFeature<Client>(client: client)
+        PageFeature()
       }
     )
   }
@@ -42,7 +43,7 @@ public struct PageView<Client: MagicCardDetailRequestClient>: View {
       }
     }
     .onGeometryChange(for: CGFloat.self, of: { proxy in
-      return proxy.safeAreaInsets.top
+      proxy.safeAreaInsets.top
     }, action: { newValue in
       safeAreaTopInset = newValue
     })

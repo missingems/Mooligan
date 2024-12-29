@@ -1,8 +1,8 @@
 import ScryfallKit
 
-extension Card.Legalities: MagicCardLegalities {
-  public var value: [MagicCardLegalitiesValue] {
-    let legalities: [MagicCardLegalitiesValue] = [
+extension Card.Legalities {
+  public var all: [MagicCardLegalitiesValue] {
+    [
       .standard(MagicCardLegality(rawValue: standard?.rawValue ?? "") ?? .notLegal),
       .historic(MagicCardLegality(rawValue: historic?.rawValue ?? "") ?? .notLegal),
       .pioneer(MagicCardLegality(rawValue: pioneer?.rawValue ?? "") ?? .notLegal),
@@ -14,7 +14,5 @@ extension Card.Legalities: MagicCardLegalities {
       .commander(MagicCardLegality(rawValue: commander?.rawValue ?? "") ?? .notLegal),
       .brawl(MagicCardLegality(rawValue: brawl?.rawValue ?? "") ?? .notLegal),
     ]
-    
-    return legalities
   }
 }

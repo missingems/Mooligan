@@ -1,45 +1,18 @@
 import ComposableArchitecture
 import SwiftUI
 import Networking
+import ScryfallKit
 
-@Reducer struct Feature<Client: GameSetRequestClient> {
-  let client: Client
+@Reducer public struct Feature {
+  @Dependency(\.gameSetRequestClient) var client
   
-  @ObservableState struct State: Equatable {
-    var isLoading: Bool = false
-    var selectedSet: Client.GameSetModel? = nil
-    var sets: [Client.GameSetModel] = []
-    var title = String(localized: "Sets")
-    
-    func getSetRowViewModel(
-      at index: Int,
-      colorScheme: ColorScheme
-    ) -> SetRow.ViewModel {
-      SetRow.ViewModel(
-        set: sets[index],
-        selectedSet: selectedSet,
-        index: index,
-        colorScheme: colorScheme
-      )
-    }
-  }
-  
-  enum Action: Equatable {
-    case didSelectSet(index: Int)
-    case fetchSets
-    case viewAppeared
-    case updateSets([Client.GameSetModel])
-  }
-  
-  var body: some ReducerOf<Self> {
+  public var body: some ReducerOf<Self> {
     Reduce { state, action in
       switch action {
-      case let .didSelectSet(index):
+      case .didSelectSet:
         return .none
         
       case .fetchSets:
-        state.isLoading = true
-        
         return .run { send in
           try await send(.updateSets(client.getAllSets()))
         }
@@ -54,10 +27,35 @@ import Networking
         }
         
       case let .updateSets(value):
-        state.isLoading = false
-        state.sets = value
+        state.sets = IdentifiedArrayOf<MTGSet>(uniqueElements: value)
         return .none
       }
     }
+  }
+  
+  public init() {}
+}
+
+public extension Feature {
+  @ObservableState struct State: Equatable {
+    var selectedSet: MTGSet?
+    var sets: IdentifiedArrayOf<MTGSet>
+    let title: String
+    
+    public init(
+      selectedSet: MTGSet?,
+      sets: IdentifiedArrayOf<MTGSet>
+    ) {
+      self.selectedSet = selectedSet
+      self.sets = sets
+      title = String(localized: "Sets")
+    }
+  }
+  
+  enum Action: Equatable {
+    case didSelectSet(index: Int)
+    case fetchSets
+    case viewAppeared
+    case updateSets([MTGSet])
   }
 }

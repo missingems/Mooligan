@@ -4,23 +4,17 @@ import Networking
 import NukeUI
 import SwiftUI
 
-struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
-  @Bindable private var store: StoreOf<CardDetailFeature<Client>>
+struct CardDetailView: View {
+  @Bindable var store: StoreOf<CardDetailFeature>
   @State private var maxWidth: CGFloat?
-  
-  init(
-    store: StoreOf<CardDetailFeature<Client>>
-  ) {
-    self.store = store
-  }
   
   var body: some View {
     ScrollView(.vertical) {
       VStack(spacing: 0) {
-        if let maxWidth {
+        if let maxWidth, maxWidth > 0 {
           let cardImageWidth = store.content.card.isLandscape ? 2.5 / 3.0 * maxWidth : 2.0 / 3.0 * maxWidth
           
-          let configuration = CardView<Client.MagicCardModel>.LayoutConfiguration(
+          let configuration = CardView.LayoutConfiguration(
             rotation: store.content.card.isLandscape ? .landscape : .portrait,
             maxWidth: cardImageWidth.rounded()
           )
@@ -45,22 +39,23 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
           .zIndex(1)
         }
         
-        CardDetailTableView(descriptions: store.content.descriptions)
+        CardDetailTableView(descriptions: store.content.getDescriptions())
         
         InformationView(
           title: store.content.infoLabel,
-          power: store.content.power,
-          toughness: store.content.toughness,
-          loyaltyCounters: store.content.loyalty,
-          manaValue: store.content.manaValue,
-          rarity: store.content.rarity,
-          collectorNumber: store.content.collectorNumber,
-          colorIdentity: store.content.colorIdentity,
-          setCode: store.content.setCode,
-          setIconURL: try? store.content.setIconURL.get()
+          power: store.content.getPower(),
+          toughness: store.content.getToughtness(),
+          loyaltyCounters: store.content.getLoyalty(),
+          manaValue: store.content.card.cmc,
+          rarity: store.content.card.rarity,
+          collectorNumber: store.content.card.collectorNumber,
+          colorIdentity: store.content.getColorIdentity(),
+          setCode: store.content.card.set,
+          setIconURL: store.content.setIconURL
         )
         
-        if let label = store.content.descriptionCallToActionLabel, let icon = store.content.descriptionCallToActionIconName {
+        if let label = store.content.card.layout.callToActionLabel,
+            let icon = store.content.card.layout.callToActionIconName {
           Button {
             store.send(.descriptionCallToActionTapped, animation: .bouncy)
           } label: {
@@ -76,11 +71,7 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
             .frame(maxWidth: .infinity, minHeight: 34)
             .padding(.vertical, 5.0)
             .background(
-              Group {
-                Color.black.opacity(0.3)
-                DesignComponentsAsset.accentColor.swiftUIColor
-                  .blur(radius: 5)
-              }
+              DesignComponentsAsset.accentColor.swiftUIColor
             )
             .clipShape(RoundedRectangle(cornerRadius: 13))
             .overlay(
@@ -98,18 +89,18 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
         
         LegalityView(
           title: store.content.legalityLabel,
-          displayReleaseDate: store.content.displayReleasedDate,
-          legalities: store.content.legalities
+          displayReleaseDate: store.content.card.releasedAt,
+          legalities: store.content.card.legalities.all
         )
         
         PriceView(
           title: store.content.priceLabel,
           subtitle: store.content.priceSubtitleLabel,
-          prices: store.content.card.getPrices(),
+          prices: store.content.card.prices,
           usdLabel: store.content.usdLabel,
           usdFoilLabel: store.content.usdFoilLabel,
           tixLabel: store.content.tixLabel,
-          purchaseVendor: store.content.card.getPurchaseUris()
+          purchaseVendor: PurchaseVendor(purchaseURIs: store.content.card.purchaseUris)
         )
         
         VariantView(
@@ -128,7 +119,7 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
             SelectionView.Item(
               icon: store.content.artistSelectionIcon,
               title: store.content.artistSelectionLabel,
-              detail: store.content.artist
+              detail: store.content.card.artist
             ) {
               
             },
@@ -159,24 +150,24 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
     .background {
       ZStack {
         LazyImage(
-          url: store.content.artCroppedImageURL(with: .front),
+          url: store.content.card.getImageURL(type: .artCrop),
           transaction: Transaction(animation: .smooth)
         ) { state in
           if let image = state.image {
             image.resizable().blur(radius: 34, opaque: true)
           }
         }
-        .opacity((store.content.faceDirection == .front) ? 1 : 0)
+        .opacity((store.content.selectedMode.faceDirection == .front) ? 1 : 0)
         
         LazyImage(
-          url: store.content.artCroppedImageURL(with: .back),
+          url: store.content.card.getImageURL(type: .artCrop, getSecondFace: true),
           transaction: Transaction(animation: .smooth)
         ) { state in
           if let image = state.image {
             image.resizable().blur(radius: 89, opaque: true)
           }
         }
-        .opacity((store.content.faceDirection == .back) ? 1 : 0)
+        .opacity((store.content.selectedMode.faceDirection == .back) ? 1 : 0)
         
         Color(asset: DesignComponentsAsset.backgroundPlaceholder)
       }
