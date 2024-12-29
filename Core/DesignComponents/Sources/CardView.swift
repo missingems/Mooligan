@@ -83,7 +83,6 @@ public struct CardView: View {
     }
     
     public let rotation: Rotation
-    public let cornerRadius: CGFloat
     public let size: CGSize?
     
     public init(rotation: Rotation, maxWidth: CGFloat?) {
@@ -95,8 +94,6 @@ public struct CardView: View {
       } else {
         size = nil
       }
-      
-      cornerRadius = 9.0
     }
   }
   
