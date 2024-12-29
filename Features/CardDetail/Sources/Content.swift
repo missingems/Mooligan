@@ -20,7 +20,7 @@ struct Content: Equatable {
   // MARK: - Identifiers
   
   let card: Card
-  var selectedMode: CardView.Mode?
+  var selectedMode: CardView.Mode
   let setCode: String
   let collectorNumber: String
   var faceDirection: MagicCardFaceDirection {

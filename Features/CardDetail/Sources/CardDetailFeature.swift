@@ -5,7 +5,7 @@ import Networking
 import ScryfallKit
 
 @Reducer struct CardDetailFeature {
-  @Dependency(\.cardDetailRequestClient) var client
+  @Dependency(\.cardDetailRequestClient) private var client
   
   var body: some ReducerOf<Self> {
     Reduce { state, action in
@@ -19,21 +19,17 @@ import ScryfallKit
         
         if state.content.setIconURL == nil {
           effects.append(
-            .run { [state] send in
+            .run { send in
               try await send(.updateSetIconURL(URL(string: client.getSet(of: card).iconSvgUri)))
-            }.cancellable(id: "fetchSetIconURL: \(card.id.uuidString)", cancelInFlight: true)
+            }.cancellable(id: "getSet: \(card.id.uuidString)", cancelInFlight: true)
           )
         }
         
         if state.content.variants.isEmpty {
           effects.append(
-            .run(
-              operation: { send in
-                try await send(.updateVariants(client.getVariants(of: card, page: 0)))
-              }, catch: { error, send in
-                await send(.updateVariants([card]))
-              }
-            )
+            .run { send in
+              try await send(.updateVariants(client.getVariants(of: card, page: 0)))
+            }.cancellable(id: "getVariants: \(card.id.uuidString)", cancelInFlight: true)
           )
         }
         
@@ -60,8 +56,8 @@ import ScryfallKit
           
           state.content.faceDirection = state.content.faceDirection.toggled()
           
-        default:
-          break
+        case .single:
+          fatalError("descriptionCallToActionTapped isn't available to single face card.")
         }
 
         return .none
@@ -141,17 +137,5 @@ extension CardDetailFeature {
     case viewAppeared(initialAction: Action)
     case viewRulingsTapped
     case showRulings(PresentationAction<RulingFeature.Action>)
-  }
-}
-
-enum FeatureError: Error, Sendable, Equatable {
-  case failedToFetchVariants(errorMessage: String)
-  case failedToFetchSetIconURL(errorMessage: String)
-  
-  var localizedDescription: String {
-    return switch self {
-    case let .failedToFetchVariants(value): value
-    case let .failedToFetchSetIconURL(value): value
-    }
   }
 }

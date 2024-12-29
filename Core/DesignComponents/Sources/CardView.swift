@@ -41,12 +41,10 @@ public struct CardView: View {
       }
     }
     
-    public init?(_ card: Card) {
+    public init(_ card: Card) {
       if card.isTransformable,
-         let frontImageURLString = card.getCardFace(for: .front)?.imageUris?.normal,
-         let frontImageURL = URL(string: frontImageURLString),
-         let backImageURLString = card.getCardFace(for: .back)?.imageUris?.normal,
-         let backImageURL = URL(string: backImageURLString),
+         let frontImageURL = card.getImageURL(type: .normal, getSecondFace: false),
+         let backImageURL = card.getImageURL(type: .normal, getSecondFace: true),
          let callToActionIconName = card.layout.callToActionIconName {
         self = .transformable(
           direction: .front,
@@ -66,7 +64,7 @@ public struct CardView: View {
       } else if let imageURL = card.getImageURL(type: .normal) {
         self = .single(displayingImageURL: imageURL)
       } else {
-        return nil
+        fatalError("Impossible state: ImageURL cannot be nil.")
       }
     }
   }
@@ -253,18 +251,14 @@ public struct CardView: View {
     }
   }
   
-  public init?(
+  public init(
     card: Card,
     layoutConfiguration: LayoutConfiguration,
     callToActionHorizontalOffset: CGFloat = 5.0,
     priceVisibility: PriceVisibility,
     send: ((Action) -> Void)? = nil
   ) {
-    guard let mode = Mode(card) else {
-      return nil
-    }
-    
-    self.mode = mode
+    mode = Mode(card)
     self.priceVisibility = priceVisibility
     
     if send == nil {
