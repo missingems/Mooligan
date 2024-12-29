@@ -1,5 +1,6 @@
 import DesignComponents
 import Networking
+import ScryfallKit
 import SwiftUI
 
 struct PriceView: View {
@@ -31,7 +32,7 @@ struct PriceView: View {
   init(
     title: String,
     subtitle: String,
-    prices: any MagicCardPrices,
+    prices: Card.Prices,
     usdLabel: String,
     usdFoilLabel: String,
     tixLabel: String,

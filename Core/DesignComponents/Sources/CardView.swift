@@ -56,14 +56,14 @@ public struct CardView: View {
         )
       } else if
         card.isFlippable,
-        let imageURL = card.getImageURL(),
+        let imageURL = card.getImageURL(type: .normal),
         let callToActionIconName = card.layout.callToActionIconName {
         self = .flippable(
           direction: .front,
           displayingImageURL: imageURL,
           callToActionIconName: callToActionIconName
         )
-      } else if let imageURL = card.getImageURL() {
+      } else if let imageURL = card.getImageURL(type: .normal) {
         self = .single(displayingImageURL: imageURL)
       } else {
         return nil

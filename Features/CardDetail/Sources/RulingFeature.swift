@@ -4,6 +4,8 @@ import Networking
 import ScryfallKit
 
 @Reducer struct RulingFeature {
+  @Dependency(\.cardDetailRequestClient) var client
+  
   var body: some ReducerOf<Self> {
     Reduce { state, action in
       switch action {
@@ -36,7 +38,7 @@ extension RulingFeature {
     var mode: Mode = .loading
     
     var emptyStateTitle: String {
-      return "No Results for \"\(card.getName())\""
+      return "No Results for \"\(card.name)\""
     }
     
     var emptyStateDescription: String? {

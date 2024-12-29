@@ -53,6 +53,13 @@ extension ScryfallClient: MagicCardDetailRequestClient {
   }
 }
 
+public extension DependencyValues {
+  var cardDetailRequestClient: any MagicCardDetailRequestClient {
+    get { self[CardDetailRequestClientKey.self] }
+    set { self[CardDetailRequestClientKey.self] = newValue }
+  }
+}
+
 public enum MagicCardDetailRequestClientError: Error {
   case cardOracleIDIsNil
 }

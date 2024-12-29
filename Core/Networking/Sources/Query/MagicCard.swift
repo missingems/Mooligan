@@ -48,6 +48,14 @@ public extension Card {
     return isPhyrexian ? face.name : face.printedName ?? face.name
   }
   
+  func flavorText(faceDirection: MagicCardFaceDirection) -> String {
+    guard let face = getCardFace(for: faceDirection) else {
+      return isPhyrexian ? name : printedName ?? name
+    }
+    
+    return isPhyrexian ? face.name : face.printedName ?? face.name
+  }
+  
   private func getDisplayText(faceDirection: MagicCardFaceDirection) -> String? {
     guard let face = getCardFace(for: faceDirection), var text = isPhyrexian ? face.oracleText : face.printedText ?? face.oracleText else {
       return nil
@@ -81,14 +89,6 @@ public extension Card {
 }
 
 extension Card {
-  public func getImageURL() -> URL? {
-    getImageURL(type: .normal)
-  }
-  
-  public func getArtCroppedImageURL() -> URL? {
-    getImageURL(type: .artCrop)
-  }
-  
   public func getCardFace(for direction: MagicCardFaceDirection) -> Face? {
     switch direction {
     case .front:

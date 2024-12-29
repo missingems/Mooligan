@@ -7,7 +7,7 @@ import Networking
 
 @main
 struct RunnerApp: App {
-  @State var cards: [ScryfallClient.MagicCardModel] = []
+  @State var cards: [Card] = []
   
   let client = ScryfallClient()
   
@@ -19,7 +19,7 @@ struct RunnerApp: App {
     WindowGroup {
       NavigationView {
         if cards.isEmpty == false {
-          PageView(client: client, cards: cards)
+          PageView(cards: cards)
         }
       }
       .task {

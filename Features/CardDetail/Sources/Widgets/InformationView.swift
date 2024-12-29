@@ -1,5 +1,6 @@
 import DesignComponents
 import Networking
+import ScryfallKit
 import SwiftUI
 
 struct InformationView: View {
@@ -29,7 +30,7 @@ struct InformationView: View {
     toughness: String?,
     loyaltyCounters: String?,
     manaValue: Double?,
-    rarity: MagicCardRarityValue,
+    rarity: Card.Rarity,
     collectorNumber: String?,
     colorIdentity: [String]?,
     setCode: String?,
@@ -73,7 +74,7 @@ private enum Widget: Hashable, Identifiable, View {
   case manaValue(String)
   case collectorNumber(String)
   case colorIdentity([String])
-  case set(code: String, rarity: MagicCardRarityValue, iconURL: URL?)
+  case set(code: String, rarity: Card.Rarity, iconURL: URL?)
   
   var body: some View {
     switch self {
@@ -202,7 +203,7 @@ private extension Widget {
   
   @ViewBuilder private func setCodeView(
     _ code: String?,
-    rarity: MagicCardRarityValue,
+    rarity: Card.Rarity,
     iconURL: URL?
   ) -> some View {
     let colors = rarity.colorNames?.map({ Color($0, bundle: DesignComponentsResources.bundle)})

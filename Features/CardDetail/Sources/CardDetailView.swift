@@ -4,15 +4,9 @@ import Networking
 import NukeUI
 import SwiftUI
 
-struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
-  @Bindable private var store: StoreOf<CardDetailFeature<Client>>
+struct CardDetailView: View {
+  @Bindable var store: StoreOf<CardDetailFeature>
   @State private var maxWidth: CGFloat?
-  
-  init(
-    store: StoreOf<CardDetailFeature<Client>>
-  ) {
-    self.store = store
-  }
   
   var body: some View {
     ScrollView(.vertical) {
@@ -20,7 +14,7 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
         if let maxWidth {
           let cardImageWidth = store.content.card.isLandscape ? 2.5 / 3.0 * maxWidth : 2.0 / 3.0 * maxWidth
           
-          let configuration = CardView<Client.MagicCardModel>.LayoutConfiguration(
+          let configuration = CardView.LayoutConfiguration(
             rotation: store.content.card.isLandscape ? .landscape : .portrait,
             maxWidth: cardImageWidth.rounded()
           )
@@ -57,7 +51,7 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
           collectorNumber: store.content.collectorNumber,
           colorIdentity: store.content.colorIdentity,
           setCode: store.content.setCode,
-          setIconURL: try? store.content.setIconURL.get()
+          setIconURL: store.content.setIconURL
         )
         
         if let label = store.content.descriptionCallToActionLabel, let icon = store.content.descriptionCallToActionIconName {
@@ -101,11 +95,11 @@ struct CardDetailView<Client: MagicCardDetailRequestClient>: View {
         PriceView(
           title: store.content.priceLabel,
           subtitle: store.content.priceSubtitleLabel,
-          prices: store.content.card.getPrices(),
+          prices: store.content.card.prices,
           usdLabel: store.content.usdLabel,
           usdFoilLabel: store.content.usdFoilLabel,
           tixLabel: store.content.tixLabel,
-          purchaseVendor: store.content.card.getPurchaseUris()
+          purchaseVendor: PurchaseVendor(purchaseURIs: store.content.card.purchaseUris)
         )
         
         VariantView(

@@ -5,6 +5,8 @@ import Networking
 import ScryfallKit
 
 @Reducer struct CardDetailFeature {
+  @Dependency(\.cardDetailRequestClient) var client
+  
   var body: some ReducerOf<Self> {
     Reduce { state, action in
       switch action {
@@ -15,19 +17,11 @@ import ScryfallKit
       case let .fetchAdditionalInformation(card):
         var effects: [EffectOf<Self>] = []
         
-        if (try? state.content.setIconURL.get()) == nil {
+        if state.content.setIconURL == nil {
           effects.append(
-            .run(
-              operation: { [state] send in
-                if let url = try state.content.setIconURL.get() {
-                  await send(.updateSetIconURL(.success(url)))
-                } else {
-                  try await send(.updateSetIconURL(.success(client.getSet(of: card).iconURL)))
-                }
-              }, catch: { error, send in
-                print(error)
-              }
-            )
+            .run { [state] send in
+              try await send(.updateSetIconURL(URL(string: client.getSet(of: card).iconSvgUri)))
+            }.cancellable(id: "fetchSetIconURL: \(card.id.uuidString)", cancelInFlight: true)
           )
         }
         
@@ -35,19 +29,15 @@ import ScryfallKit
           effects.append(
             .run(
               operation: { send in
-                try await send(.updateVariants(.success(client.getVariants(of: card, page: 0))))
+                try await send(.updateVariants(client.getVariants(of: card, page: 0)))
               }, catch: { error, send in
-                await send(.updateVariants(.success([card])))
+                await send(.updateVariants([card]))
               }
             )
           )
         }
         
-        if effects.isEmpty {
-          return .none
-        } else {
-          return .merge(effects).cancellable(id: "\(action)", cancelInFlight: true)
-        }
+        return .merge(effects)
         
       case .descriptionCallToActionTapped:
         switch state.content.selectedMode {
@@ -81,10 +71,7 @@ import ScryfallKit
         return .none
         
       case let .updateVariants(value):
-        if let cards = try? value.get() {
-          state.content.variants = IdentifiedArray(uniqueElements: cards)
-        }
-        
+        state.content.variants = IdentifiedArray(uniqueElements: value)
         return .none
         
       case let .viewAppeared(action):
@@ -115,7 +102,7 @@ import ScryfallKit
       }
     }
     .ifLet(\.$showRulings, action: \.showRulings) {
-      RulingFeature(client: client)
+      RulingFeature()
     }
   }
 }
@@ -124,12 +111,12 @@ extension CardDetailFeature {
   @ObservableState struct State: Equatable, Identifiable {
     @Presents var showRulings: RulingFeature.State?
     let id: UUID
-    var content: Content<Card>
+    var content: Content
     let start: Action
     
     init(
       card: Card,
-      entryPoint: EntryPoint<Client>
+      entryPoint: EntryPoint
     ) {
       id = UUID()
       
@@ -138,7 +125,7 @@ extension CardDetailFeature {
         content = Content(card: card, setIconURL: nil)
         
       case let .set(value):
-        content = Content(card: card, setIconURL: value.iconURL)
+        content = Content(card: card, setIconURL: URL(string: value.iconSvgUri))
       }
       
       start = .fetchAdditionalInformation(card: card)

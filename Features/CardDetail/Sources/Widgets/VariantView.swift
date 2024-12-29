@@ -1,9 +1,10 @@
 import ComposableArchitecture
 import DesignComponents
 import Networking
+import ScryfallKit
 import SwiftUI
 
-struct VariantView<Card: MagicCard>: View {
+struct VariantView: View {
   enum Action: Equatable {
     case didSelectCard(Card)
   }
@@ -34,8 +35,8 @@ struct VariantView<Card: MagicCard>: View {
                     maxWidth: 170
                   ),
                   priceVisibility: .display(
-                    usdFoil: card.getPrices().usdFoil,
-                    usd: card.getPrices().usd
+                    usdFoil: card.prices.usdFoil,
+                    usd: card.prices.usd
                   )
                 )
               }

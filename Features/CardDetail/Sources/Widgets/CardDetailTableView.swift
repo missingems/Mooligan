@@ -1,7 +1,7 @@
 import Networking
 import SwiftUI
 
-struct CardDetailTableView<Card: MagicCard>: View {
+struct CardDetailTableView: View {
   let sections: [SectionType]
   
   var body: some View {
@@ -103,7 +103,7 @@ struct CardDetailTableView<Card: MagicCard>: View {
     }
   }
   
-  init?(descriptions: [Content<Card>.Description]) {
+  init?(descriptions: [Content.Description]) {
     if descriptions.count == 1, let main = descriptions.first {
       self.sections = [
           .title(main.name, main.manaCost),

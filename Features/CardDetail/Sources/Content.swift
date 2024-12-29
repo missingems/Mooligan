@@ -2,9 +2,10 @@ import ComposableArchitecture
 import DesignComponents
 import Foundation
 import Networking
+import ScryfallKit
 import SwiftUI
 
-struct Content<Card: MagicCard>: Equatable {
+struct Content: Equatable {
   
   // MARK: - Nested Structs and Enums
   
@@ -19,7 +20,7 @@ struct Content<Card: MagicCard>: Equatable {
   // MARK: - Identifiers
   
   let card: Card
-  var selectedMode: CardView<Card>.Mode?
+  var selectedMode: CardView.Mode?
   let setCode: String
   let collectorNumber: String
   var faceDirection: MagicCardFaceDirection {
@@ -37,7 +38,7 @@ struct Content<Card: MagicCard>: Equatable {
   var loyalty: String?
   var artist: String?
   var colorIdentity: [String]
-  let rarity: MagicCardRarityValue
+  let rarity: Card.Rarity
   let legalities: [MagicCardLegalitiesValue]
   
   // MARK: - Prices
@@ -76,7 +77,7 @@ struct Content<Card: MagicCard>: Equatable {
   // MARK: - Images
   
   var imageURL: URL?
-  var setIconURL: Result<URL?, FeatureError>
+  var setIconURL: URL?
   var variants: IdentifiedArrayOf<Card>
   
   func artCroppedImageURL(with faceDirection: MagicCardFaceDirection) -> URL? {
@@ -84,13 +85,13 @@ struct Content<Card: MagicCard>: Equatable {
     
     switch faceDirection {
     case .front:
-      url = card.getCardFace(for: faceDirection).getArtCroppedImageURL()
+      url = card.getImageURL(type: .artCrop, getSecondFace: false)
       
     case .back:
-      url = card.getCardFace(for: faceDirection).getArtCroppedImageURL()
+      url = card.getImageURL(type: .artCrop, getSecondFace: true)
     }
     
-    return url ?? card.getArtCroppedImageURL()
+    return url ?? card.getImageURL(type: .artCrop)
   }
   
   // MARK: - Icons
@@ -109,11 +110,11 @@ struct Content<Card: MagicCard>: Equatable {
     self.faceDirection = faceDirection
     self.card = card
     
-    usdPrice = card.getPrices().usd
-    usdFoilPrice = card.getPrices().usdFoil
-    tixPrice = card.getPrices().tix
-    manaValue = card.getManaValue()
-    displayReleasedDate = String(localized: "Release Date: \(card.getReleasedAt())")
+    usdPrice = card.prices.usd
+    usdFoilPrice = card.prices.usdFoil
+    tixPrice = card.prices.tix
+    manaValue = card.cmc
+    displayReleasedDate = String(localized: "Release Date: \(card.releasedAt)")
     
     // Initialize Labels
     illstrautedLabel = String(localized: "Artist")
@@ -129,86 +130,86 @@ struct Content<Card: MagicCard>: Equatable {
     artistSelectionLabel = String(localized: "Artist")
     rulingSelectionLabel = String(localized: "Rulings")
     relatedSelectionLabel = String(localized: "Related")
-    descriptionCallToActionLabel = card.getLayout().value.callToActionLabel
-    descriptionCallToActionIconName = card.getLayout().value.callToActionIconName
+    descriptionCallToActionLabel = card.layout.callToActionLabel
+    descriptionCallToActionIconName = card.layout.callToActionIconName
     
     // Initialize Icons
     artistSelectionIcon = Image(asset: DesignComponentsAsset.artist)
     rulingSelectionIcon = Image(systemName: "text.book.closed.fill")
     relatedSelectionIcon = Image(systemName: "ellipsis.circle")
     
-    setCode = card.getSet()
-    collectorNumber = card.getCollectorNumber()
-    legalities = card.getLegalities().value
-    self.setIconURL = .success(setIconURL)
+    setCode = card.set
+    collectorNumber = card.collectorNumber
+    legalities = card.legalities.all
+    self.setIconURL = setIconURL
     self.variants = IdentifiedArrayOf(uniqueElements: [])
-    self.rarity = card.getRarity().value
+    self.rarity = card.rarity
     
-    name = card.getDisplayName(faceDirection: faceDirection)
+    name = card.name(faceDirection: faceDirection)
     
-    let identity = card.getColorIdentity().map { "{\($0.value.rawValue)}" }
+    let identity = card.colorIdentity.map { "{\($0.rawValue)}" }
     colorIdentity = identity.isEmpty ? ["{C}"] : identity
     
     let face = card.getCardFace(for: faceDirection)
-    imageURL = face.getImageURL() ?? card.getImageURL()
+    imageURL = face?.imageUris?.normal.map { URL(string: $0)} ?? card.getImageURL(type: .normal)
     
-    var descriptions = card.hasMultipleColumns ? [
+    let descriptions = card.hasMultipleColumns ? [
       Self.makeDescription(faceDirection: .front, card: card),
       Self.makeDescription(faceDirection: .back, card: card)
     ] : [
       Self.makeDescription(faceDirection: faceDirection, card: card)
     ]
     
-    if card.getLayout().value == .adventure {
-      descriptions = descriptions.reversed()
+    if card.layout == .adventure {
+      self.descriptions = descriptions.reversed()
+    } else {
+      self.descriptions = descriptions
     }
     
-    self.descriptions = descriptions
-    
-    power = face.power
-    toughness = face.toughness
-    loyalty = face.loyalty
-    artist = face.artist
-    selectedMode = CardView<Card>.Mode(card)
+    power = face?.power
+    toughness = face?.toughness
+    loyalty = face?.loyalty
+    artist = face?.artist
+    selectedMode = CardView.Mode(card)
   }
   
   // MARK: - Methods
   
   mutating func populate(with card: Card, faceDirection: MagicCardFaceDirection) {
-    name = card.getDisplayName(faceDirection: faceDirection)
+    name = card.name(faceDirection: faceDirection)
     
-    let identity = card.getColorIdentity().map { "{\($0.value.rawValue)}" }
+    let identity = card.colorIdentity.map { "{\($0.rawValue)}" }
     colorIdentity = identity.isEmpty ? ["{C}"] : identity
     
     let face = card.getCardFace(for: faceDirection)
-    imageURL = card.getImageURL()
+    imageURL = face?.imageUris?.normal.map { URL(string: $0)} ?? card.getImageURL(type: .normal)
     
-    var descriptions = card.hasMultipleColumns ? [
+    let descriptions = card.hasMultipleColumns ? [
       Self.makeDescription(faceDirection: .front, card: card),
       Self.makeDescription(faceDirection: .back, card: card)
     ] : [
       Self.makeDescription(faceDirection: faceDirection, card: card)
     ]
     
-    if card.getLayout().value == .adventure {
-      descriptions = descriptions.reversed()
+    if card.layout == .adventure {
+      self.descriptions = descriptions.reversed()
+    } else {
+      self.descriptions = descriptions
     }
     
-    self.descriptions = descriptions
-    
-    power = face.power
-    toughness = face.toughness
-    loyalty = face.loyalty
-    artist = face.artist
+    power = face?.power
+    toughness = face?.toughness
+    loyalty = face?.loyalty
+    artist = face?.artist
   }
   
   static func makeDescription(faceDirection: MagicCardFaceDirection, card: Card) -> Description {
     Description(
-      name: card.getDisplayName(faceDirection: faceDirection),
-      textElements: card.getDisplayTextElements(faceDirection: faceDirection),
-      typeline: card.getDisplayTypeline(faceDirection: faceDirection),
-      flavorText: card.getCardFace(for: faceDirection).flavorText,
-      manaCost: card.getDisplayManaCost(faceDirection: faceDirection)
+      name: card.name(faceDirection: faceDirection),
+      textElements: card.text(faceDirection: faceDirection),
+      typeline: card.typeline(faceDirection: faceDirection),
+      flavorText: card.flavorText(faceDirection: faceDirection),
+      manaCost: card.manaCost(faceDirection: faceDirection)
     )
   }
 }
