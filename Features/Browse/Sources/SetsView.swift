@@ -4,7 +4,6 @@ import SwiftUI
 import Networking
 
 struct SetsView: View {
-  @Environment(\.colorScheme) private var colorScheme
   private var store: StoreOf<Feature>
   
   var body: some View {
@@ -13,8 +12,7 @@ struct SetsView: View {
         viewModel: SetRow.ViewModel(
           set: value.0,
           selectedSet: nil,
-          index: value.1,
-          colorScheme: colorScheme
+          index: value.1
         )
       ) {
         store.send(.didSelectSet(index: value.1))

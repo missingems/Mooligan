@@ -5,7 +5,6 @@ import ScryfallKit
 
 extension SetRow {
   struct ViewModel: Equatable {
-    let colorScheme: ColorScheme
     let childIndicatorImageName: String
     let disclosureIndicatorImageName: String
     let iconUrl: URL?
@@ -19,8 +18,7 @@ extension SetRow {
     init(
       set: MTGSet,
       selectedSet: MTGSet?,
-      index: Int,
-      colorScheme: ColorScheme
+      index: Int
     ) {
       childIndicatorImageName = "arrow.turn.down.right"
       disclosureIndicatorImageName = "chevron.right"
@@ -31,7 +29,6 @@ extension SetRow {
       numberOfCardsLabel = String(localized: "\(set.cardCount) Cards")
       shouldSetBackground = index.isMultiple(of: 2)
       title = set.name
-      self.colorScheme = colorScheme
     }
   }
 }
