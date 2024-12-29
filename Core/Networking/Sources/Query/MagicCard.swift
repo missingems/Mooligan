@@ -56,12 +56,12 @@ public extension Card {
     return isPhyrexian ? face.name : face.printedName ?? face.name
   }
   
-  func flavorText(faceDirection: MagicCardFaceDirection) -> String {
+  func flavorText(faceDirection: MagicCardFaceDirection) -> String? {
     guard let face = getCardFace(for: faceDirection) else {
-      return isPhyrexian ? name : printedName ?? name
+      return flavorText
     }
     
-    return isPhyrexian ? face.name : face.printedName ?? face.name
+    return face.flavorText
   }
   
   private func getDisplayText(faceDirection: MagicCardFaceDirection) -> String? {
