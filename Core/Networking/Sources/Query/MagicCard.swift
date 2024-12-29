@@ -26,9 +26,17 @@ public extension Card {
   }
   
   func manaCost(faceDirection: MagicCardFaceDirection) -> [String] {
+    var manaCost: String?
+    
+    if let face = getCardFace(for: faceDirection) {
+      manaCost = face.manaCost
+    } else {
+      manaCost = self.manaCost
+    }
+    
     guard
       let pattern = try? Regex("\\{[^}]+\\}"),
-      let manaCost = getCardFace(for: faceDirection)?.manaCost
+      let manaCost = manaCost?
         .replacingOccurrences(of: "/", with: ":")
         .replacingOccurrences(of: "∞", with: "INFINITY")
     else {
@@ -57,9 +65,15 @@ public extension Card {
   }
   
   private func getDisplayText(faceDirection: MagicCardFaceDirection) -> String? {
-    guard let face = getCardFace(for: faceDirection), var text = isPhyrexian ? face.oracleText : face.printedText ?? face.oracleText else {
-      return nil
+    var text: String?
+    
+    if let face = getCardFace(for: faceDirection) {
+      text = isPhyrexian ? face.oracleText : face.printedText ?? face.oracleText
+    } else {
+      text = isPhyrexian ? oracleText : printedText ?? oracleText
     }
+    
+    guard var text else { return nil }
     
     for keyword in keywords {
       if let regex = try? NSRegularExpression(pattern: "\\b\(NSRegularExpression.escapedPattern(for: keyword))\\b", options: [.caseInsensitive]),
@@ -83,8 +97,11 @@ public extension Card {
   }
   
   func typeline(faceDirection: MagicCardFaceDirection) -> String? {
-    let face = getCardFace(for: faceDirection)
-    return isPhyrexian ? face?.typeLine : face?.printedTypeLine ?? face?.typeLine
+    guard let face = getCardFace(for: faceDirection) else {
+      return isPhyrexian ? typeLine : printedTypeLine ?? typeLine
+    }
+    
+    return isPhyrexian ? face.typeLine : face.printedTypeLine ?? face.typeLine
   }
 }
 

@@ -11,7 +11,7 @@ struct CardDetailView: View {
   var body: some View {
     ScrollView(.vertical) {
       VStack(spacing: 0) {
-        if let maxWidth {
+        if let maxWidth, maxWidth > 0 {
           let cardImageWidth = store.content.card.isLandscape ? 2.5 / 3.0 * maxWidth : 2.0 / 3.0 * maxWidth
           
           let configuration = CardView.LayoutConfiguration(
@@ -39,22 +39,23 @@ struct CardDetailView: View {
           .zIndex(1)
         }
         
-        CardDetailTableView(descriptions: store.content.descriptions)
+        CardDetailTableView(descriptions: store.content.getDescriptions())
         
         InformationView(
           title: store.content.infoLabel,
-          power: store.content.power,
-          toughness: store.content.toughness,
-          loyaltyCounters: store.content.loyalty,
-          manaValue: store.content.manaValue,
-          rarity: store.content.rarity,
-          collectorNumber: store.content.collectorNumber,
-          colorIdentity: store.content.colorIdentity,
-          setCode: store.content.setCode,
+          power: store.content.getPower(),
+          toughness: store.content.getToughtness(),
+          loyaltyCounters: store.content.getLoyalty(),
+          manaValue: store.content.card.cmc,
+          rarity: store.content.card.rarity,
+          collectorNumber: store.content.card.collectorNumber,
+          colorIdentity: store.content.getColorIdentity(),
+          setCode: store.content.card.set,
           setIconURL: store.content.setIconURL
         )
         
-        if let label = store.content.descriptionCallToActionLabel, let icon = store.content.descriptionCallToActionIconName {
+        if let label = store.content.card.layout.callToActionLabel,
+            let icon = store.content.card.layout.callToActionIconName {
           Button {
             store.send(.descriptionCallToActionTapped, animation: .bouncy)
           } label: {
@@ -88,8 +89,8 @@ struct CardDetailView: View {
         
         LegalityView(
           title: store.content.legalityLabel,
-          displayReleaseDate: store.content.displayReleasedDate,
-          legalities: store.content.legalities
+          displayReleaseDate: store.content.card.releasedAt,
+          legalities: store.content.card.legalities.all
         )
         
         PriceView(
@@ -118,7 +119,7 @@ struct CardDetailView: View {
             SelectionView.Item(
               icon: store.content.artistSelectionIcon,
               title: store.content.artistSelectionLabel,
-              detail: store.content.artist
+              detail: store.content.card.artist
             ) {
               
             },
@@ -149,24 +150,24 @@ struct CardDetailView: View {
     .background {
       ZStack {
         LazyImage(
-          url: store.content.artCroppedImageURL(with: .front),
+          url: store.content.card.getImageURL(type: .artCrop),
           transaction: Transaction(animation: .smooth)
         ) { state in
           if let image = state.image {
             image.resizable().blur(radius: 34, opaque: true)
           }
         }
-        .opacity((store.content.faceDirection == .front) ? 1 : 0)
+        .opacity((store.content.selectedMode.faceDirection == .front) ? 1 : 0)
         
         LazyImage(
-          url: store.content.artCroppedImageURL(with: .back),
+          url: store.content.card.getImageURL(type: .artCrop, getSecondFace: true),
           transaction: Transaction(animation: .smooth)
         ) { state in
           if let image = state.image {
             image.resizable().blur(radius: 89, opaque: true)
           }
         }
-        .opacity((store.content.faceDirection == .back) ? 1 : 0)
+        .opacity((store.content.selectedMode.faceDirection == .back) ? 1 : 0)
         
         Color(asset: DesignComponentsAsset.backgroundPlaceholder)
       }

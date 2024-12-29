@@ -45,16 +45,12 @@ import ScryfallKit
             callToActionIconName: callToActionIconName
           )
           
-          state.content.faceDirection = state.content.faceDirection.toggled()
-          
         case let .flippable(direction, displayingImageURL, callToActionIconName):
           state.content.selectedMode = .flippable(
             direction: direction.toggled(),
             displayingImageURL: displayingImageURL,
             callToActionIconName: callToActionIconName
           )
-          
-          state.content.faceDirection = state.content.faceDirection.toggled()
           
         case .single:
           fatalError("descriptionCallToActionTapped isn't available to single face card.")

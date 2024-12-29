@@ -41,6 +41,19 @@ public struct CardView: View {
       }
     }
     
+    public var faceDirection: MagicCardFaceDirection {
+      switch self {
+      case let .transformable(direction, _, _, _):
+        return direction
+        
+      case let .flippable(direction, _, _):
+        return direction
+        
+      case .single:
+        return .front
+      }
+    }
+    
     public init(_ card: Card) {
       if card.isTransformable,
          let frontImageURL = card.getImageURL(type: .normal, getSecondFace: false),
