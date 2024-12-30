@@ -9,7 +9,8 @@ import ScryfallKit
   public var body: some ReducerOf<Self> {
     Reduce { state, action in
       switch action {
-      case .didSelectSet:
+      case let .didSelectSet(index):
+        state.selectedSet = state.sets[index]
         return .none
         
       case .fetchSets:

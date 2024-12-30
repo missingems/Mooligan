@@ -1,102 +1,69 @@
 @testable import Browse
 import ComposableArchitecture
+import Foundation
 import Networking
-import XCTest
+import Testing
+import ScryfallKit
 
-private let gameSet = MockGameSet()
-
-final actor MockBrowseRequestClient: GameSetRequestClient {
-  typealias Model = MockGameSet
+struct BrowseFeatureTests {
+  private let mockSet = MTGSet(
+    id: UUID(),
+    code: "123",
+    mtgoCode: "123",
+    tcgplayerId: 1,
+    name: "Testing",
+    setType: .alchemy,
+    releasedAt: "19-10-1992",
+    blockCode: "123",
+    block: "123",
+    parentSetCode: "123",
+    cardCount: 100,
+    printedSize: 100,
+    digital: false,
+    foilOnly: false,
+    nonfoilOnly: false,
+    scryfallUri: "scryfallUri",
+    uri: "uri",
+    iconSvgUri: "iconSvgUri",
+    searchUri: "searchUri"
+  )
   
-  func getAllSets() -> [MockGameSet] {
-    return [gameSet]
-  }
-}
-
-final class BrowseFeatureTests: XCTestCase {
-  private var store: TestStore<Feature<MockBrowseRequestClient>.State, Feature<MockBrowseRequestClient>.Action>!
-  
-  override func setUp() {
-    super.setUp()
-    
-    store = TestStore(initialState: Feature.State()) {
-      Feature(client: MockBrowseRequestClient())
-    }
-  }
-  
-  override func tearDown() {
-    store = nil
-    super.tearDown()
-  }
-}
-
-extension BrowseFeatureTests {
-  @MainActor
-  func test_sendShowSets_shouldUpdateState() async {
-    let expectedSets = [MockGameSet()]
-    
-    await store.send(.updateSets(expectedSets)) { state in
-      state.isLoading = false
-      state.sets = expectedSets
-    }
-  }
-  
-  @MainActor
-  func test_sendDidSelectSet_shouldSetSelectedSet() async {
-    let expectedSet = MockGameSet()
-    
-    await store.send(.updateSets([expectedSet])) { state in
-      state.sets = [expectedSet]
+  @Test func whenViewAppeared_shouldFetchSets_thenUpdateSets() async {
+    let store: TestStoreOf<Browse.Feature> = await TestStore(initialState: Browse.Feature.State(selectedSet: nil, sets: [])) {
+      Browse.Feature()
     }
     
-    await store.send(.didSelectSet(index: 0)) { state in
-      state.selectedSet = expectedSet
-    }
-  }
-  
-  @MainActor
-  func test_sendViewAppeared_shouldFetchSets() async {
+    // When
     await store.send(.viewAppeared)
     
-    await store.receive(.fetchSets) { state in
-      state.isLoading = true
-      state.sets = []
-    }
+    // Should
+    await store.receive(.fetchSets, timeout: 1)
     
-    await store.receive(.updateSets([gameSet])) { state in
-      state.sets = [gameSet]
-      state.isLoading = false
-    }
-  }
-
-  @MainActor
-  func test_sendFetchSets_shouldSetSets_withValue() async {
-    let expectedSets = [gameSet]
-    
-    await store.send(.fetchSets) { state in
-      state.isLoading = true
-    }
-    
-    await store.receive(.updateSets(expectedSets)) { state in
-      state.sets = [gameSet]
-      state.isLoading = false
+    // Then
+    await store.receive(.updateSets(MockGameSetRequestClient.mockSets)) { state in
+      state.sets = .init(uniqueElements: MockGameSetRequestClient.mockSets)
     }
   }
   
-  @MainActor
-  func test_setRowViewModel() async {
-    await store.send(.updateSets([gameSet])) { state in
-      state.sets = [gameSet]
+  @Test func whenDidSelectSet_shouldUpdateSelectedSet() async {
+    let store: TestStoreOf<Browse.Feature> = await TestStore(initialState: Browse.Feature.State(selectedSet: nil, sets: .init(uniqueElements: MockGameSetRequestClient.mockSets))) {
+      Browse.Feature()
     }
     
-    let given = store.state.getSetRowViewModel(at: 0, colorScheme: .light)
-    let expected = SetRow.ViewModel(
-      set: gameSet,
-      selectedSet: nil,
-      index: 0,
-      colorScheme: .light
-    )
+    // When
+    await store.send(.didSelectSet(index: 1)) { state in
+      // Should
+      state.selectedSet = MockGameSetRequestClient.mockSets[1]
+    }
+  }
+  
+  @Test func defaultState() async {
+    let store: TestStoreOf<Browse.Feature> = await TestStore(initialState: Browse.Feature.State(selectedSet: nil, sets: [])) {
+      Browse.Feature()
+    }
     
-    XCTAssertEqual(given, expected)
+    #expect(await store.state.sets.isEmpty == true)
+    #expect(await store.state.selectedSet == nil)
+    #expect(await store.state.title == String(localized: "Sets"))
   }
 }
