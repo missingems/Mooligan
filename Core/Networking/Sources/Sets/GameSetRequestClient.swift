@@ -8,8 +8,8 @@ public protocol GameSetRequestClient: Sendable {
 
 public enum GameSetRequestClientKey: DependencyKey {
   public static let liveValue: any GameSetRequestClient = ScryfallClient()
-  public static let previewValue: any GameSetRequestClient = ScryfallClient()
-  public static let testValue: any GameSetRequestClient = ScryfallClient()
+  public static let previewValue: any GameSetRequestClient = MockGameSetRequestClient()
+  public static let testValue: any GameSetRequestClient = MockGameSetRequestClient()
 }
 
 public extension DependencyValues {
