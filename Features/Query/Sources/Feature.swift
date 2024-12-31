@@ -1,4 +1,5 @@
 import ComposableArchitecture
+import Foundation
 import ScryfallKit
 import Networking
 
@@ -8,16 +9,116 @@ struct Feature {
   
   @ObservableState
   struct State: Equatable {
-    var dataSource: DataSource
+    enum Mode: Equatable {
+      case placeholder(numberOfDataSource: Int)
+      case data(DataSource)
+      
+      var isPlaceholder: Bool {
+        switch self {
+        case .placeholder:
+          return true
+          
+        case .data:
+          return false
+        }
+      }
+      
+      var dataSource: DataSource {
+        switch self {
+        case let .placeholder(numberOfDataSource):
+          var cards: [Card] = []
+          
+          for _ in 0...numberOfDataSource {
+            cards.append(
+              Card(
+                id: UUID(),
+                oracleId: "1",
+                lang: "en",
+                printsSearchUri: "",
+                rulingsUri: "",
+                scryfallUri: "",
+                uri: "",
+                cmc: 0,
+                colorIdentity: [],
+                keywords: [],
+                layout: .normal,
+                legalities: .init(
+                  standard: nil,
+                  historic: nil,
+                  pioneer: nil,
+                  modern: nil,
+                  legacy: nil,
+                  pauper: nil,
+                  vintage: nil,
+                  penny: nil,
+                  commander: nil,
+                  brawl: nil
+                ),
+                name: "",
+                oversized: false,
+                reserved: false,
+                booster: false,
+                borderColor: .black,
+                collectorNumber: "",
+                digital: false,
+                finishes: [],
+                frame: .future,
+                fullArt: false,
+                games: [],
+                highresImage: false,
+                imageStatus: .highresScan,
+                imageUris: .init(
+                  small: "https://google.com",
+                  normal: "https://google.com",
+                  large: "https://google.com",
+                  png: "https://google.com",
+                  artCrop: "https://google.com",
+                  borderCrop: "https://google.com"
+                ),
+                prices: .init(
+                  tix: nil,
+                  usd: "1",
+                  usdFoil: "1",
+                  eur: "1"
+                ),
+                promo: false,
+                rarity: .bonus,
+                relatedUris: [:],
+                releasedAt: "1",
+                reprint: false,
+                scryfallSetUri: "",
+                setName: "",
+                setSearchUri: URL.init(
+                  string: "https://google.com"
+                )!,
+                setType: .alchemy,
+                setUri: "",
+                set: "",
+                storySpotlight: false,
+                textless: false,
+                variation: false
+              )
+            )
+          }
+          
+          return DataSource(cards: IdentifiedArray(uniqueElements: cards), hasNextPage: false)
+          
+        case let .data(value):
+          return value
+        }
+      }
+    }
+    
+    var mode: Mode
     var queryType: QueryType
     var selectedCard: Card?
     
     init(
-      dataSource: DataSource,
+      mode: Mode,
       queryType: QueryType,
       selectedCard: Card?
     ) {
-      self.dataSource = dataSource
+      self.mode = mode
       self.queryType = queryType
       self.selectedCard = selectedCard
     }
@@ -39,8 +140,8 @@ struct Feature {
         
       case let .loadMoreCardsIfNeeded(displayingIndex):
         guard
-          displayingIndex == state.dataSource.cards.count - 1,
-          state.dataSource.hasNextPage
+          displayingIndex == state.mode.dataSource.cards.count - 1,
+          state.mode.dataSource.hasNextPage
         else {
           return .none
         }
@@ -64,11 +165,17 @@ struct Feature {
         )
         
       case let .updateCards(value, hasNextPage, nextQuery):
-        var dataSource = state.dataSource
-        dataSource.cards.append(contentsOf: value)
-        dataSource.hasNextPage = hasNextPage
-        state.dataSource = dataSource
-        state.queryType = nextQuery
+        switch state.mode {
+        case var .data(dataSource):
+          dataSource.cards.append(contentsOf: value)
+          dataSource.hasNextPage = hasNextPage
+          state.mode = .data(dataSource)
+          state.queryType = nextQuery
+          
+        case .placeholder:
+          state.mode = .data(DataSource(cards: IdentifiedArray(uniqueElements: value), hasNextPage: hasNextPage))
+          state.queryType = nextQuery
+        }
         
         return .none
         

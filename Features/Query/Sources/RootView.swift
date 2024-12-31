@@ -10,7 +10,7 @@ public struct RootView: View {
     QueryView(
       store: Store(
         initialState: Feature.State(
-          dataSource: Feature.DataSource(cards: [], hasNextPage: false),
+          mode: .placeholder(numberOfDataSource: 10),
           queryType: .set(MockGameSetRequestClient.mockSets[0], page: 1),
           selectedCard: nil
         ),

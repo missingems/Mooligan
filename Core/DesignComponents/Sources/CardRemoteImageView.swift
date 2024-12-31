@@ -3,11 +3,21 @@ import NukeUI
 import Shimmer
 import SwiftUI
 
+struct ConditionalFrameModifier: ViewModifier {
+  let size: CGSize
+  
+  func body(content: Content) -> some View {
+    if size.width > 0, size.height > 0 {
+      content.frame(width: size.width, height: size.height, alignment: .center)
+    }
+  }
+}
+
 public struct CardRemoteImageView: View {
   public let url: URL
   @State private var cornerRadius: CGFloat?
   private let transformers: [ImageProcessing]
-  private let size: CGSize?
+  private let size: CGSize
   private let isLandscape: Bool
   
   public init(
@@ -52,10 +62,7 @@ public struct CardRemoteImageView: View {
       transaction: Transaction(animation: .smooth)
     ) { state in
       if let image = state.image {
-        image.resizable().overlay(
-          RoundedRectangle(cornerRadius: cornerRadius ?? 0)
-            .strokeBorder(.separator)
-        )
+        image.resizable()
       } else {
         Color.primary.opacity(0.3).shimmering()
           .blur(radius: 34.0)
@@ -67,6 +74,11 @@ public struct CardRemoteImageView: View {
     }, action: { newValue in
       cornerRadius = 5 / 100 * (isLandscape ? newValue.height : newValue.width)
     })
+    .modifier(ConditionalFrameModifier(size: size))
     .clipShape(RoundedRectangle(cornerRadius: cornerRadius ?? 0))
+    .overlay(
+      RoundedRectangle(cornerRadius: cornerRadius ?? 0)
+        .strokeBorder(.separator, lineWidth: 1 / UIScreen.main.nativeScale)
+    )
   }
 }
