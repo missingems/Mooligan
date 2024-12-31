@@ -14,54 +14,77 @@ struct QueryView: View {
   }
   
   var body: some View {
+    let _ = Self._printChanges()
     ScrollView(.vertical) {
-      if let itemWidth {
-        LazyVGrid(
-          columns: [GridItem](
-            repeating: GridItem(),
-            count: 2
-          ),
-          spacing: 8
-        ) {
-          ForEach(Array(zip(store.dataSource.cards, store.dataSource.cards.indices)), id: \.0) { value in
-            let card = value.0
-            let index = value.1
-            
-            Button(
-              action: {
-                store.send(.didSelectCard(card))
-              }, label: {
-                CardView(
-                  card: card,
-                  layoutConfiguration: CardView.LayoutConfiguration(
-                    rotation: .portrait,
-                    maxWidth: itemWidth
-                  ),
-                  callToActionHorizontalOffset: 5,
-                  priceVisibility: .display(usdFoil: card.prices.usdFoil, usd: card.prices.usd)
+      Group {
+        if let itemWidth, itemWidth > 0 {
+          LazyVGrid(
+            columns: [GridItem](
+              repeating: GridItem(
+                .fixed(itemWidth),
+                spacing: 8.0,
+                alignment: .center
+              ),
+              count: 2
+            ),
+            spacing: 13
+          ) {
+            ForEach(
+              Array(
+                zip(
+                  store.dataSource.cards,
+                  store.dataSource.cards.indices
                 )
+              ),
+              id: \.0
+            ) { value in
+              let card = value.0
+              let index = value.1
+              
+              Button(
+                action: {
+                  store.send(.didSelectCard(card))
+                }, label: {
+                  CardView(
+                    card: card,
+                    layoutConfiguration: CardView.LayoutConfiguration(
+                      rotation: .portrait,
+                      maxWidth: itemWidth
+                    ),
+                    callToActionHorizontalOffset: 5,
+                    priceVisibility: .display(
+                      usdFoil: card.prices.usdFoil,
+                      usd: card.prices.usd
+                    )
+                  )
+                }
+              )
+              .buttonStyle(.sinkableButtonStyle)
+              .frame(
+                idealHeight: (
+                  itemWidth / MagicCardImageRatio.widthToHeight.rawValue
+                )
+                .rounded() + 25.0
+              )
+              .task {
+                store.send(.loadMoreCardsIfNeeded(displayingIndex: index))
               }
-            )
-            .buttonStyle(.sinkableButtonStyle)
-            .frame(
-              idealHeight: (itemWidth / MagicCardImageRatio.widthToHeight.rawValue).rounded() + 21.0 + 18.0
-            )
-            .task {
-              store.send(.loadMoreCardsIfNeeded(displayingIndex: index))
             }
           }
+        } else {
+          ProgressView()
         }
-        .padding(.horizontal, 8)
       }
+      .onGeometryChange(
+        for: CGFloat.self,
+        of: { proxy in
+          proxy.size.width
+        }, action: { newValue in
+          itemWidth = (newValue - 8.0) / 2
+        }
+      )
+      .padding(.horizontal, 11)
     }
-    .onGeometryChange(
-      for: CGFloat.self,
-      of: { proxy in
-        proxy.size.width
-      }, action: { newValue in
-        itemWidth = (newValue - 24) / 2
-      }
-    )
     .background(Color(.secondarySystemBackground).ignoresSafeArea())
     .navigationBarTitleDisplayMode(.inline)
     .task {

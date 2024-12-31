@@ -66,7 +66,10 @@ public struct CardRemoteImageView: View {
       transaction: Transaction(animation: .smooth)
     ) { state in
       if let image = state.image {
-        image.resizable()
+        image.resizable().overlay(
+          RoundedRectangle(cornerRadius: cornerRadius ?? 0)
+            .strokeBorder(.separator)
+        )
       } else {
         Color.primary.opacity(0.3).shimmering()
           .blur(radius: 34.0)
@@ -80,12 +83,5 @@ public struct CardRemoteImageView: View {
     })
     .modifier(ConditionalFrameModifier(size: size))
     .clipShape(RoundedRectangle(cornerRadius: cornerRadius ?? 0))
-    .overlay(
-      RoundedRectangle(cornerRadius: cornerRadius ?? 0)
-        .strokeBorder(
-          .separator,
-          lineWidth: 1 / UIScreen.main.nativeScale
-        )
-    )
   }
 }

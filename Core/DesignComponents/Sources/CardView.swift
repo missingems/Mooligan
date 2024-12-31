@@ -257,7 +257,6 @@ public struct CardView: View {
       .font(.caption)
       .fontWeight(.medium)
       .monospaced()
-      .padding(.bottom, 5.0)
     }
   }
   
