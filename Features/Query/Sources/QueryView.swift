@@ -91,10 +91,10 @@ struct QueryView: View {
       )
       .padding(.horizontal, 11)
     }
+    .scrollDisabled(store.mode.isPlaceholder)
     .background(Color(.secondarySystemBackground).ignoresSafeArea())
     .navigationBarTitleDisplayMode(.inline)
     .task {
-      sleep(1)
       store.send(.viewAppeared)
     }
   }
