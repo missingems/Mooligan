@@ -7,7 +7,12 @@ struct RunnerApp: App {
   var body: some Scene {
     WindowGroup {
       NavigationView {
-        RootView(queryType: .set(MockGameSet(), page: 1))
+        Query.RootView(
+          queryType: .set(
+            MockGameSetRequestClient.mockSets[0],
+            page: 1
+          )
+        )
       }
     }
   }

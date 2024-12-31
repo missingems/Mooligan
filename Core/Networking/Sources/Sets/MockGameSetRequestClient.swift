@@ -5,7 +5,7 @@ public struct MockGameSetRequestClient: GameSetRequestClient {
   public static let mockSets: [MTGSet] = [
     MTGSet(
       id: UUID(),
-      code: "123",
+      code: "FDN",
       mtgoCode: "123",
       tcgplayerId: 1,
       name: "Test Set",
