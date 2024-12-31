@@ -96,17 +96,13 @@ public struct CardView: View {
     }
     
     public let rotation: Rotation
-    public let size: CGSize?
+    public let size: CGSize
     
-    public init(rotation: Rotation, maxWidth: CGFloat?) {
+    public init(rotation: Rotation, maxWidth: CGFloat) {
       self.rotation = rotation
       
-      if let maxWidth {
-        let imageHeight = (maxWidth / rotation.ratio).rounded()
-        size = CGSize(width: maxWidth, height: imageHeight)
-      } else {
-        size = nil
-      }
+      let imageHeight = (maxWidth / rotation.ratio).rounded()
+      size = CGSize(width: maxWidth, height: imageHeight)
     }
   }
   

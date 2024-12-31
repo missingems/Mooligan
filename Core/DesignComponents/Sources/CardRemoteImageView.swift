@@ -3,18 +3,6 @@ import NukeUI
 import Shimmer
 import SwiftUI
 
-struct ConditionalFrameModifier: ViewModifier {
-  let size: CGSize?
-  
-  func body(content: Content) -> some View {
-    if let size = size {
-      content.frame(width: size.width, height: size.height, alignment: .center)
-    } else {
-      content
-    }
-  }
-}
-
 public struct CardRemoteImageView: View {
   public let url: URL
   @State private var cornerRadius: CGFloat?
@@ -26,7 +14,7 @@ public struct CardRemoteImageView: View {
     url: URL,
     isLandscape: Bool = false,
     isTransformed: Bool = false,
-    size: CGSize? = nil
+    size: CGSize
   ) {
     self.isLandscape = isLandscape
     self.url = url
@@ -41,17 +29,15 @@ public struct CardRemoteImageView: View {
       transformers.append(FlipImageProcessor())
     }
     
-    if let size {
-      transformers.append(
-        ImageProcessors.Resize(
-          size: size,
-          unit: .points,
-          contentMode: .aspectFit,
-          crop: false,
-          upscale: true
-        )
+    transformers.append(
+      ImageProcessors.Resize(
+        size: size,
+        unit: .points,
+        contentMode: .aspectFit,
+        crop: false,
+        upscale: true
       )
-    }
+    )
     
     self.transformers = transformers
     self.size = size
@@ -81,7 +67,6 @@ public struct CardRemoteImageView: View {
     }, action: { newValue in
       cornerRadius = 5 / 100 * (isLandscape ? newValue.height : newValue.width)
     })
-    .modifier(ConditionalFrameModifier(size: size))
     .clipShape(RoundedRectangle(cornerRadius: cornerRadius ?? 0))
   }
 }
