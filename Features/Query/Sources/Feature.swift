@@ -1,33 +1,65 @@
 import ComposableArchitecture
+import Foundation
+import ScryfallKit
 import Networking
 
 @Reducer
-struct Feature<Client: MagicCardQueryRequestClient> {
-  let client: Client
-  
-  enum Cancellables: Hashable {
-    case queryCards(page: Int)
-  }
+struct Feature {
+  @Dependency(\.cardQueryRequestClient) var client
   
   @ObservableState
   struct State: Equatable {
-    var queryType: QueryType
-    var dataSource = ObjectList<[Client.MagicCardModel]>(model: [])
+    enum Mode: Equatable {
+      case placeholder(numberOfDataSource: Int)
+      case data(DataSource)
+      
+      var isPlaceholder: Bool {
+        switch self {
+        case .placeholder:
+          return true
+          
+        case .data:
+          return false
+        }
+      }
+      
+      var dataSource: DataSource {
+        switch self {
+        case let .placeholder(numberOfDataSource):
+          DataSource(
+            cards: IdentifiedArray(
+              uniqueElements: MockCardDetailRequestClient.generateMockCards(
+                number: numberOfDataSource
+              )
+            ),
+            hasNextPage: false
+          )
+          
+        case let .data(value):
+          value
+        }
+      }
+    }
     
-    mutating func update(
-      with queryType: QueryType,
-      dataSource: ObjectList<[Client.MagicCardModel]>
+    var mode: Mode
+    var queryType: QueryType
+    var selectedCard: Card?
+    
+    init(
+      mode: Mode,
+      queryType: QueryType,
+      selectedCard: Card?
     ) {
+      self.mode = mode
       self.queryType = queryType
-      self.dataSource = dataSource
+      self.selectedCard = selectedCard
     }
   }
   
   enum Action: Equatable {
-    case didSelectCard(Client.MagicCardModel)
-    case loadMoreCardsIfNeeded(currentIndex: Int)
-    case showError(title: String, description: String)
-    case updateCards(ObjectList<[Client.MagicCardModel]>, QueryType)
+    case didSelectCard(Card)
+    case loadMoreCardsIfNeeded(displayingIndex: Int)
+    case updateCards([Card], hasNextPage: Bool, queryType: QueryType)
     case viewAppeared
   }
   
@@ -35,68 +67,79 @@ struct Feature<Client: MagicCardQueryRequestClient> {
     Reduce { state, action in
       switch action {
       case let .didSelectCard(value):
+        state.selectedCard = value
         return .none
         
-      case let .loadMoreCardsIfNeeded(currentIndex):
-        let nextQuery = state.queryType.next()
-        
-        return if state.dataSource.shouldFetchNextPage(at: currentIndex) {
-          fetchCardsEffect(queryType: nextQuery)
-        } else {
-          .none
+      case let .loadMoreCardsIfNeeded(displayingIndex):
+        guard
+          displayingIndex == state.mode.dataSource.cards.count - 1,
+          state.mode.dataSource.hasNextPage
+        else {
+          return .none
         }
         
-      case let .showError(title, description):
-        return .none
-      
-      case let .updateCards(value, queryType):
-        return updateCardsEffect(
-          value: value,
-          queryType: queryType,
-          state: &state
+        let nextQuery = state.queryType.next()
+        
+        return .run { [client] send in
+          let result = try await client.queryCards(nextQuery)
+          
+          await send(
+            .updateCards(
+              result.data,
+              hasNextPage: result.hasMore ?? false,
+              queryType: nextQuery
+            )
+          )
+        }
+        .cancellable(
+          id: "loadMoreCardsIfNeeded: \(displayingIndex), for query: \(state.queryType)",
+          cancelInFlight: true
         )
         
+      case let .updateCards(value, hasNextPage, nextQuery):
+        switch state.mode {
+        case var .data(dataSource):
+          dataSource.cards.append(contentsOf: value)
+          dataSource.hasNextPage = hasNextPage
+          state.mode = .data(dataSource)
+          state.queryType = nextQuery
+          
+        case .placeholder:
+          state.mode = .data(DataSource(cards: IdentifiedArray(uniqueElements: value), hasNextPage: hasNextPage))
+          state.queryType = nextQuery
+        }
+        
+        return .none
+        
       case .viewAppeared:
-        return fetchCardsEffect(queryType: state.queryType)
+        return .run { [client, queryType = state.queryType] send in
+          let result = try await client.queryCards(queryType)
+          
+          await send(
+            .updateCards(
+              result.data,
+              hasNextPage: result.hasMore ?? false,
+              queryType: queryType
+            )
+          )
+        }
+        .cancellable(
+          id: "viewAppeared: \(state.queryType)",
+          cancelInFlight: true
+        )
       }
     }
   }
 }
 
 extension Feature {
-  func updateCardsEffect(
-    value: ObjectList<[Client.MagicCardModel]>,
-    queryType: QueryType,
-    state: inout State
-  ) -> Effect<Action> {
-    state.queryType = queryType
-    state.dataSource.model.append(contentsOf: value.model)
-    state.dataSource.hasNextPage = value.hasNextPage
+  struct DataSource: Equatable {
+    var cards: IdentifiedArrayOf<Card>
+    var hasNextPage: Bool
     
-    return .none
-  }
-  
-  func fetchCardsEffect(queryType: QueryType) -> Effect<Action> {
-    .run { [client] send in
-      do {
-        try await send(
-          .updateCards(
-            client.queryCards(queryType),
-            queryType
-          )
-        )
-      } catch {
-        await send(
-          .showError(
-            title: String(localized: "Something went wrong"),
-            description: error.localizedDescription
-          )
-        )
-      }
+    init(cards: IdentifiedArrayOf<Card>, hasNextPage: Bool) {
+      self.cards = cards
+      self.hasNextPage = hasNextPage
     }
-    .cancellable(
-      id: Cancellables.queryCards(page: queryType.page),
-      cancelInFlight: true
-    )
   }
 }

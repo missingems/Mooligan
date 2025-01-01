@@ -9,9 +9,13 @@ public struct RootView: View {
   public var body: some View {
     QueryView(
       store: Store(
-        initialState: Feature.State(queryType: queryType),
+        initialState: Feature.State(
+          mode: .placeholder(numberOfDataSource: 10),
+          queryType: .set(MockGameSetRequestClient.mockSets[0], page: 1),
+          selectedCard: nil
+        ),
         reducer: {
-          Feature(client: ScryfallClient(networkLogLevel: .minimal))
+          Feature()
         }
       )
     )

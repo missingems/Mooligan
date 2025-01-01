@@ -4,13 +4,11 @@ import Shimmer
 import SwiftUI
 
 struct ConditionalFrameModifier: ViewModifier {
-  let size: CGSize?
+  let size: CGSize
   
   func body(content: Content) -> some View {
-    if let size = size {
+    if size.width > 0, size.height > 0 {
       content.frame(width: size.width, height: size.height, alignment: .center)
-    } else {
-      content
     }
   }
 }
@@ -19,14 +17,14 @@ public struct CardRemoteImageView: View {
   public let url: URL
   @State private var cornerRadius: CGFloat?
   private let transformers: [ImageProcessing]
-  private let size: CGSize?
+  private let size: CGSize
   private let isLandscape: Bool
   
   public init(
     url: URL,
     isLandscape: Bool = false,
     isTransformed: Bool = false,
-    size: CGSize? = nil
+    size: CGSize
   ) {
     self.isLandscape = isLandscape
     self.url = url
@@ -41,17 +39,15 @@ public struct CardRemoteImageView: View {
       transformers.append(FlipImageProcessor())
     }
     
-    if let size {
-      transformers.append(
-        ImageProcessors.Resize(
-          size: size,
-          unit: .points,
-          contentMode: .aspectFit,
-          crop: false,
-          upscale: true
-        )
+    transformers.append(
+      ImageProcessors.Resize(
+        size: size,
+        unit: .points,
+        contentMode: .aspectFit,
+        crop: false,
+        upscale: true
       )
-    }
+    )
     
     self.transformers = transformers
     self.size = size
@@ -82,10 +78,7 @@ public struct CardRemoteImageView: View {
     .clipShape(RoundedRectangle(cornerRadius: cornerRadius ?? 0))
     .overlay(
       RoundedRectangle(cornerRadius: cornerRadius ?? 0)
-        .strokeBorder(
-          .separator,
-          lineWidth: 1 / UIScreen.main.nativeScale
-        )
+        .strokeBorder(.separator, lineWidth: 1 / UIScreen.main.nativeScale)
     )
   }
 }
