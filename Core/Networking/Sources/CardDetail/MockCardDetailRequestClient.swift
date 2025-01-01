@@ -2,9 +2,12 @@ import Foundation
 import ScryfallKit
 
 public extension Card {
-  static var mock: Self {
+  
+  static func mock(
+    id: UUID? = UUID(uuidString: "E621E1F8-C36C-495A-93FC-0C247A3E6E5F")
+  ) -> Self {
     Card(
-      id: UUID(uuidString: "E621E1F8-C36C-495A-93FC-0C247A3E6E5F")!,
+      id: id ?? UUID(),
       oracleId: "1",
       lang: "en",
       printsSearchUri: "",
@@ -78,7 +81,7 @@ public struct MockCardDetailRequestClient: MagicCardDetailRequestClient {
   public static func generateMockCards(number: Int) -> [Card] {
     var cards: [Card] = []
     for _ in 0...number {
-      cards.append(.mock)
+      cards.append(.mock(id: nil))
     }
     
     return cards
