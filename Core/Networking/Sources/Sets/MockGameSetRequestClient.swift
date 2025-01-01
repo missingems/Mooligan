@@ -4,7 +4,7 @@ import ScryfallKit
 public struct MockGameSetRequestClient: GameSetRequestClient {
   public static let mockSets: [MTGSet] = [
     MTGSet(
-      id: UUID(),
+      id: UUID(uuidString: "E62111F8-C36C-495A-93FC-0C247A3E6E5F")!,
       code: "FDN",
       mtgoCode: "123",
       tcgplayerId: 1,
@@ -25,7 +25,7 @@ public struct MockGameSetRequestClient: GameSetRequestClient {
       searchUri: "searchURI"
     ),
     MTGSet(
-      id: UUID(),
+      id: UUID(uuidString: "E121E1F8-C36C-495A-93FC-0C247A3E6E5F")!,
       code: "123",
       mtgoCode: "123",
       tcgplayerId: 1,
@@ -46,7 +46,7 @@ public struct MockGameSetRequestClient: GameSetRequestClient {
       searchUri: "searchURI"
     ),
     MTGSet(
-      id: UUID(),
+      id: UUID(uuidString: "E621E1F8-C36C-495A-93FC-0C241A3E6E5F")!,
       code: "123",
       mtgoCode: "123",
       tcgplayerId: 1,
@@ -67,7 +67,7 @@ public struct MockGameSetRequestClient: GameSetRequestClient {
       searchUri: "searchURI"
     ),
     MTGSet(
-      id: UUID(),
+      id: UUID(uuidString: "E621E1F8-C36C-495A-93FC-0C247A3E6E51")!,
       code: "123",
       mtgoCode: "123",
       tcgplayerId: 1,
@@ -88,7 +88,7 @@ public struct MockGameSetRequestClient: GameSetRequestClient {
       searchUri: "searchURI"
     ),
     MTGSet(
-      id: UUID(),
+      id: UUID(uuidString: "E621E1F8-136C-495A-93FC-0C247A3E6E5F")!,
       code: "123",
       mtgoCode: "123",
       tcgplayerId: 1,
