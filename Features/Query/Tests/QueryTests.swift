@@ -91,5 +91,29 @@ struct FeatureTests {
       state.queryType = .set(MockGameSetRequestClient.mockSets[0], page: 2)
     }
   }
+  
+  @Test func withoutHasNextPage_whenLoadMoreCardsIfNeeded_shouldNotUpdateCards() async {
+    let store: TestStoreOf<Query.Feature> = await TestStore(
+      initialState: Query.Feature.State(
+        mode: .data(.init(cards: [.mock(id: UUID(uuidString: "1121E1F8-C36C-495A-93FC-0C247A3E6E5F"))], hasNextPage: false)),
+        queryType: .set(MockGameSetRequestClient.mockSets[0], page: 1),
+        selectedCard: nil
+      )
+    ) {
+      Query.Feature()
+    } withDependencies: { value in
+      value.cardQueryRequestClient = MockCardQueryRequestClient(
+        expectedResponse: ObjectList(
+          data: [],
+          hasMore: false,
+          nextPage: "1",
+          totalCards: 1,
+          warnings: nil
+        )
+      )
+    }
+    
+    await store.send(.loadMoreCardsIfNeeded(displayingIndex: 0))
+  }
 }
 
