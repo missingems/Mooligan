@@ -9,8 +9,8 @@ public protocol MagicCardDetailRequestClient: Sendable {
 
 public enum CardDetailRequestClientKey: DependencyKey {
   public static let liveValue: any MagicCardDetailRequestClient = ScryfallClient()
-  public static let previewValue: any MagicCardDetailRequestClient = ScryfallClient()
-  public static let testValue: any MagicCardDetailRequestClient = ScryfallClient()
+  public static let previewValue: any MagicCardDetailRequestClient = MockCardDetailRequestClient()
+  public static let testValue: any MagicCardDetailRequestClient = MockCardDetailRequestClient()
 }
 
 extension ScryfallClient: MagicCardDetailRequestClient {
