@@ -7,7 +7,6 @@ public struct RootView: View {
   
   public var body: some View {
     SetsView(store: store)
-      .navigationTitle(store.title)
   }
   
   public init(store: StoreOf<Feature>) {

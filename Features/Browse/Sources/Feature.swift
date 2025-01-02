@@ -41,7 +41,6 @@ public extension Feature {
   @ObservableState struct State: Equatable {
     var selectedSet: MTGSet?
     var sets: IdentifiedArrayOf<MTGSet>
-    let title: String
     
     public init(
       selectedSet: MTGSet?,
@@ -49,7 +48,6 @@ public extension Feature {
     ) {
       self.selectedSet = selectedSet
       self.sets = sets
-      title = String(localized: "Sets")
     }
   }
   

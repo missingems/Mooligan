@@ -19,6 +19,7 @@ let project = Project(
         .project(target: "Query", path: .relativeToManifest("Features/Query")),
         .project(target: "Browse", path: .relativeToManifest("Features/Browse")),
         .project(target: "CardDetail", path: .relativeToManifest("Features/CardDetail")),
+        .project(target: "Featurist", path: .relativeToManifest("Core/Featurist")),
       ]
     ),
     .target(
