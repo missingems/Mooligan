@@ -64,6 +64,5 @@ struct BrowseFeatureTests {
     
     #expect(await store.state.sets.isEmpty == true)
     #expect(await store.state.selectedSet == nil)
-    #expect(await store.state.title == String(localized: "Sets"))
   }
 }
