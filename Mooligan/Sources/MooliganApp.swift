@@ -11,7 +11,7 @@ struct MooliganApp: App {
   init() {
     DesignComponents.Main().setup()
     
-    store = Store(initialState: Feature.State()) {
+    store = Store(initialState: Feature.State(sets: .init(selectedSet: nil, sets: []))) {
       Feature()
     }
   }

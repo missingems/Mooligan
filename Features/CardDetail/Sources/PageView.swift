@@ -9,13 +9,8 @@ public struct PageView: View {
   @State private var safeAreaTopInset: CGFloat?
   @Bindable private var store: StoreOf<PageFeature>
   
-  public init(cards: [Card]) {
-    store = Store(
-      initialState: PageFeature.State(cards: cards),
-      reducer: {
-        PageFeature()
-      }
-    )
+  public init(store: StoreOf<PageFeature>) {
+    self.store = store
   }
   
   public var body: some View {

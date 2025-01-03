@@ -4,10 +4,10 @@ import Foundation
 import Networking
 import ScryfallKit
 
-@Reducer struct CardDetailFeature {
+@Reducer public struct CardDetailFeature {
   @Dependency(\.cardDetailRequestClient) private var client
   
-  var body: some ReducerOf<Self> {
+  public var body: some ReducerOf<Self> {
     Reduce { state, action in
       switch action {
       case .dismissRulingsTapped:
@@ -99,10 +99,10 @@ import ScryfallKit
   }
 }
 
-extension CardDetailFeature {
+public extension CardDetailFeature {
   @ObservableState struct State: Equatable, Identifiable {
     @Presents var showRulings: RulingFeature.State?
-    let id: UUID
+    public let id: UUID
     var content: Content
     let start: Action
     

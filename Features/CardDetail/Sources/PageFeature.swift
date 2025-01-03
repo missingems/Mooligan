@@ -4,8 +4,8 @@ import Networking
 import ScryfallKit
 import SwiftUI
 
-@Reducer struct PageFeature {
-  var body: some ReducerOf<Self> {
+@Reducer public struct PageFeature {
+  public var body: some ReducerOf<Self> {
     BindingReducer()
     
     Reduce { state, action in
@@ -27,19 +27,30 @@ import SwiftUI
       CardDetailFeature()
     }
   }
+  
+  public init() {}
 }
 
-extension PageFeature {
+public extension PageFeature {
   @ObservableState struct State: Equatable {
     var cards: IdentifiedArrayOf<CardDetailFeature.State> = []
-    var currentDisplayingCard: Int? = 0
+    var currentDisplayingCard: Card?
     
-    public init(cards: [Card]) {
-      self.cards = IdentifiedArrayOf(
-        uniqueElements: cards.map { card in
-          CardDetailFeature.State(card: card, entryPoint: .query)
-        }
-      )
+    public init(query: QueryType, currentDisplayingCard: Card?) {
+      switch query {
+      case .search:
+        fatalError("Not implemented")
+        
+      case let .set(set, page):
+//        self.cards = IdentifiedArrayOf(
+//          uniqueElements: cards.map { card in
+//            CardDetailFeature.State(card: card, entryPoint: .set(set))
+//          }
+//        )
+        self.cards = []
+      }
+      
+      self.currentDisplayingCard = currentDisplayingCard
     }
   }
   

@@ -3,10 +3,10 @@ import Foundation
 import Networking
 import ScryfallKit
 
-@Reducer struct RulingFeature {
+@Reducer public struct RulingFeature {
   @Dependency(\.cardDetailRequestClient) var client
   
-  var body: some ReducerOf<Self> {
+  public var body: some ReducerOf<Self> {
     Reduce { state, action in
       switch action {
       case .fetchRulings:
@@ -26,7 +26,7 @@ import ScryfallKit
   }
 }
 
-extension RulingFeature {
+public extension RulingFeature {
   @ObservableState struct State: Equatable {
     enum Mode: Equatable {
       case loading
