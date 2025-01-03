@@ -7,9 +7,6 @@ import Networking
 public struct Feature {
   @Dependency(\.cardQueryRequestClient) var client
   
-  public init() {
-  }
-  
   @ObservableState
   public struct State: Equatable {
     public enum Mode: Equatable {
@@ -133,6 +130,8 @@ public struct Feature {
       }
     }
   }
+  
+  public init() {}
 }
 
 public extension Feature {
