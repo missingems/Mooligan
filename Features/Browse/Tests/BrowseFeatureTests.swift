@@ -46,14 +46,15 @@ struct BrowseFeatureTests {
   }
   
   @Test func whenDidSelectSet_shouldUpdateSelectedSet() async {
-    let store: TestStoreOf<Browse.Feature> = await TestStore(initialState: Browse.Feature.State(selectedSet: nil, sets: .init(uniqueElements: MockGameSetRequestClient.mockSets))) {
+    let sets = MockGameSetRequestClient.mockSets
+    let store: TestStoreOf<Browse.Feature> = await TestStore(initialState: Browse.Feature.State(selectedSet: nil, sets: .init(uniqueElements: sets))) {
       Browse.Feature()
     }
     
     // When
-    await store.send(.didSelectSet(index: 1)) { state in
+    await store.send(.didSelectSet(sets[1])) { state in
       // Should
-      state.selectedSet = MockGameSetRequestClient.mockSets[1]
+      state.selectedSet = sets[1]
     }
   }
   

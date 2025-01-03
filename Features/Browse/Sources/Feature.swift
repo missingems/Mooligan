@@ -9,8 +9,8 @@ import ScryfallKit
   public var body: some ReducerOf<Self> {
     Reduce { state, action in
       switch action {
-      case let .didSelectSet(index):
-        state.selectedSet = state.sets[index]
+      case let .didSelectSet(value):
+        state.selectedSet = value
         return .none
         
       case .fetchSets:
@@ -52,7 +52,7 @@ public extension Feature {
   }
   
   enum Action: Equatable {
-    case didSelectSet(index: Int)
+    case didSelectSet(MTGSet)
     case fetchSets
     case viewAppeared
     case updateSets([MTGSet])

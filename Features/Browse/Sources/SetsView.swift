@@ -8,14 +8,17 @@ struct SetsView: View {
   
   var body: some View {
     List(Array(zip(store.sets, store.sets.indices)), id: \.0) { value in
+      let card = value.0
+      let index = value.1
+      
       SetRow(
         viewModel: SetRow.ViewModel(
-          set: value.0,
+          set: card,
           selectedSet: nil,
-          index: value.1
+          index: index
         )
       ) {
-        store.send(.didSelectSet(index: value.1))
+        store.send(.didSelectSet(card))
       }
       .listRowSeparator(.hidden)
       .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
