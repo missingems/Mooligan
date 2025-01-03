@@ -1,5 +1,6 @@
 import Browse
 import ComposableArchitecture
+import Query
 import ScryfallKit
 
 @Reducer struct Feature {
@@ -25,7 +26,7 @@ import ScryfallKit
   }
   
   @Reducer enum Path {
-    case showSetDetail(Browse.Feature)
+    case showSetDetail(Query.Feature)
   }
   
   enum Action {
@@ -40,7 +41,19 @@ import ScryfallKit
     
     Reduce { state, action in
       switch action {
-      case .sets:
+      case let .sets(action):
+        if case let .didSelectSet(value) = action {
+          state.path.append(
+            .showSetDetail(
+              Query.Feature.State(
+                mode: .placeholder(numberOfDataSource: value.cardCount),
+                queryType: .set(value, page: 1),
+                selectedCard: nil
+              )
+            )
+          )
+        }
+        
         return .none
         
       default:

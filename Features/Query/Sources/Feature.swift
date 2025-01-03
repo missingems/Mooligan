@@ -4,12 +4,15 @@ import ScryfallKit
 import Networking
 
 @Reducer
-struct Feature {
+public struct Feature {
   @Dependency(\.cardQueryRequestClient) var client
   
+  public init() {
+  }
+  
   @ObservableState
-  struct State: Equatable {
-    enum Mode: Equatable {
+  public struct State: Equatable {
+    public enum Mode: Equatable {
       case placeholder(numberOfDataSource: Int)
       case data(DataSource)
       
@@ -45,7 +48,7 @@ struct Feature {
     var queryType: QueryType
     var selectedCard: Card?
     
-    init(
+    public init(
       mode: Mode,
       queryType: QueryType,
       selectedCard: Card?
@@ -56,14 +59,14 @@ struct Feature {
     }
   }
   
-  enum Action: Equatable {
+  public enum Action: Equatable {
     case didSelectCard(Card)
     case loadMoreCardsIfNeeded(displayingIndex: Int)
     case updateCards([Card], hasNextPage: Bool, queryType: QueryType)
     case viewAppeared
   }
   
-  var body: some ReducerOf<Self> {
+  public var body: some ReducerOf<Self> {
     Reduce { state, action in
       switch action {
       case let .didSelectCard(value):
@@ -132,7 +135,7 @@ struct Feature {
   }
 }
 
-extension Feature {
+public extension Feature {
   struct DataSource: Equatable {
     var cards: IdentifiedArrayOf<Card>
     var hasNextPage: Bool

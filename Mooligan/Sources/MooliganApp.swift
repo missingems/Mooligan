@@ -1,6 +1,7 @@
 import Browse
 import ComposableArchitecture
 import DesignComponents
+import Query
 import SwiftUI
 
 @main
@@ -22,8 +23,15 @@ struct MooliganApp: App {
           Tab(info.title, systemImage: info.systemIconName) {
             switch info {
             case .sets:
-              NavigationStack {
-                Browse.RootView(store: store.scope(state: \.sets, action: \.sets)).navigationTitle(info.title)
+              NavigationStack(path: $store.scope(state: \.path, action: \.path)) {
+                Browse
+                  .RootView(store: store.scope(state: \.sets, action: \.sets))
+                  .navigationTitle(info.title)
+              } destination: { store in
+                switch store.case {
+                case let .showSetDetail(value):
+                  Query.RootView(store: value)
+                }
               }
             }
           }
