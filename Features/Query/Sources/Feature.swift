@@ -41,16 +41,16 @@ public struct Feature {
       }
     }
     
-    var mode: Mode
+    @Shared var mode: Mode
     var queryType: QueryType
     var selectedCard: Card?
     
     public init(
-      mode: Mode,
+      mode: Shared<Mode>,
       queryType: QueryType,
       selectedCard: Card?
     ) {
-      self.mode = mode
+      self._mode = mode
       self.queryType = queryType
       self.selectedCard = selectedCard
     }
@@ -101,11 +101,15 @@ public struct Feature {
         case var .data(dataSource):
           dataSource.cards.append(contentsOf: value)
           dataSource.hasNextPage = hasNextPage
-          state.mode = .data(dataSource)
+          state.$mode.withLock { value in
+            value = .data(dataSource)
+          }
           state.queryType = nextQuery
           
         case .placeholder:
-          state.mode = .data(DataSource(cards: IdentifiedArray(uniqueElements: value), hasNextPage: hasNextPage))
+          state.$mode.withLock { _value in
+            _value = .data(DataSource(cards: IdentifiedArray(uniqueElements: value), hasNextPage: hasNextPage))
+          }
           state.queryType = nextQuery
         }
         

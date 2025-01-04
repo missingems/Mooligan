@@ -51,7 +51,7 @@ import ScryfallKit
           state.path.append(
             .showSetDetail(
               Query.Feature.State(
-                mode: .placeholder(numberOfDataSource: value.cardCount),
+                mode: Shared(value: .placeholder(numberOfDataSource: value.cardCount)),
                 queryType: .set(value, page: 1),
                 selectedCard: nil
               )
