@@ -28,7 +28,6 @@ struct QueryView: View {
   }
   
   var body: some View {
-    let _ = Self._printChanges()
     ScrollView(.vertical) {
       LazyVGrid(
         columns: [GridItem](

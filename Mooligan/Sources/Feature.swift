@@ -28,6 +28,7 @@ import ScryfallKit
   }
   
   @Reducer enum Path {
+    case showCardDetail(CardDetail.PageFeature)
     case showSetDetail(Query.Feature)
   }
   
@@ -78,9 +79,14 @@ import ScryfallKit
             case .viewAppeared:
               break
             }
+            
+          case let .showCardDetail(value):
+            break
           }
+          
         case .popFrom(id: let id):
           break
+          
         case .push(id: let id, state: let state):
           break
         }
@@ -89,6 +95,5 @@ import ScryfallKit
       }
     }
     .forEach(\.path, action: \.path)
-    ._printChanges(.actionLabels)
   }
 }

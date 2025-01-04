@@ -1,4 +1,5 @@
 import Browse
+import CardDetail
 import ComposableArchitecture
 import DesignComponents
 import Query
@@ -31,6 +32,9 @@ struct MooliganApp: App {
                 switch store.case {
                 case let .showSetDetail(value):
                   Query.RootView(store: value)
+                  
+                case let .showCardDetail(value):
+                  CardDetail.PageView(store: value)
                 }
               }
             }
