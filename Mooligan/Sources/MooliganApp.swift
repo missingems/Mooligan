@@ -1,6 +1,7 @@
 import Browse
 import CardDetail
 import ComposableArchitecture
+import Foundation
 import DesignComponents
 import Query
 import SwiftUI

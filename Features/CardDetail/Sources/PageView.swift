@@ -7,7 +7,7 @@ import Networking
 
 public struct PageView: View {
   @State private var safeAreaTopInset: CGFloat?
-  @Bindable private var store: StoreOf<PageFeature>
+  private var store: StoreOf<PageFeature>
   
   public init(store: StoreOf<PageFeature>) {
     self.store = store
@@ -21,25 +21,16 @@ public struct PageView: View {
             Array(store.scope(state: \.cards, action: \.cards))
           ) { store in
             CardDetailView(store: store)
-            
-              .containerRelativeFrame(.horizontal).id(store.content.card)
+              .containerRelativeFrame(.horizontal)
           }
         }
         .scrollTargetLayout()
         
       }
-      .scrollPosition($store.scrollPosition)
-      //      .scrollPosition($scrollPosition)
+//      .scrollPosition($store.scrollPosition)
       .scrollTargetBehavior(.paging)
-      //      .background(.black)
+      .background(.black)
       .zIndex(0)
-            .onAppear {
-              if let card = store.dataSource.focusedCard {
-      
-//                scrollPosition.scrollTo(id: index)
-                store.scrollPosition.scrollTo(id: card)
-              }
-            }
       
       if let safeAreaTopInset {
         VariableBlurView(direction: .blurredTopClearBottom)
@@ -72,4 +63,5 @@ public struct PageView: View {
     }
   }
 }
+
 

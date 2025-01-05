@@ -28,6 +28,7 @@ struct QueryView: View {
   }
   
   var body: some View {
+    let _ = Self._printChanges()
     ScrollView(.vertical) {
       LazyVGrid(
         columns: [GridItem](
@@ -75,7 +76,7 @@ struct QueryView: View {
             .rounded() + 25.0
           )
           .task {
-            store.send(.loadMoreCardsIfNeeded(displayingIndex: index))
+//            store.send(.loadMoreCardsIfNeeded(displayingIndex: index))
           }
         }
         .modifier(Placeholder(isPlaceholder: store.mode.isPlaceholder))

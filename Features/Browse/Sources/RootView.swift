@@ -3,7 +3,7 @@ import ScryfallKit
 import SwiftUI
 
 public struct RootView: View {
-  @Bindable public var store: StoreOf<Feature>
+  public var store: StoreOf<Feature>
   
   public var body: some View {
     SetsView(store: store)

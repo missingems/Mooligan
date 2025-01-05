@@ -34,17 +34,18 @@ import SwiftUI
 public extension PageFeature {
   @ObservableState struct State: Equatable {
     var cards: IdentifiedArrayOf<CardDetailFeature.State> = []
-    @Shared var dataSource: QueryDataSource
+    let dataSource: QueryDataSource
     var scrollPosition = ScrollPosition(idType: Card.self)
     
-    public init(dataSource: Shared<QueryDataSource>) {
-      self._dataSource = dataSource
+    public init(dataSource: QueryDataSource) {
+      self.dataSource = dataSource
       
-      cards = IdentifiedArray(uniqueElements: dataSource.cardDetails.wrappedValue.map { cardDetail in
-        CardDetailFeature.State(card: cardDetail.card, queryType: dataSource.queryType.wrappedValue)
+      cards = IdentifiedArray(uniqueElements: dataSource.cardDetails.map { cardDetail in
+        CardDetailFeature.State(card: cardDetail.card, queryType: dataSource.queryType)
       })
       
-      scrollPosition = ScrollPosition(id: dataSource.focusedCard.wrappedValue)
+      scrollPosition = ScrollPosition(id: dataSource.focusedCard)
+      scrollPosition.scrollTo(id: dataSource.focusedCard)
     }
   }
   
