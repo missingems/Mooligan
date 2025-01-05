@@ -57,12 +57,14 @@ public struct Feature {
       case .routeToCardDetail:
         return .none
         
-      case let .didSelectCard(value):
-        return .run { [dataSource = state.$dataSource] send in
-          dataSource.withLock { _value in
-            _value.focusedCard = value
+      case let .didSelectCard(card):
+        return .run { [state] send in
+          
+          await send(.routeToCardDetail(state.$dataSource))
+          
+          state.$dataSource.withLock { _value in
+            _value.focusedCard = card
           }
-          await send(.routeToCardDetail(dataSource))
         }
         
       case let .loadMoreCardsIfNeeded(displayingIndex):

@@ -35,6 +35,7 @@ public extension PageFeature {
   @ObservableState struct State: Equatable {
     var cards: IdentifiedArrayOf<CardDetailFeature.State> = []
     @Shared var dataSource: QueryDataSource
+    var scrollPosition = ScrollPosition(idType: Card.self)
     
     public init(dataSource: Shared<QueryDataSource>) {
       self._dataSource = dataSource
@@ -42,6 +43,8 @@ public extension PageFeature {
       cards = IdentifiedArray(uniqueElements: dataSource.cardDetails.wrappedValue.map { cardDetail in
         CardDetailFeature.State(card: cardDetail.card, queryType: dataSource.queryType.wrappedValue)
       })
+      
+      scrollPosition = ScrollPosition(id: dataSource.focusedCard.wrappedValue)
     }
   }
   

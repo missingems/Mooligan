@@ -76,7 +76,6 @@ import ScryfallKit
               break
               
             case let .routeToCardDetail(detail):
-//              state.path.append(.showCardDetail(CardDetail.PageFeature.State(query: detail.queryType, dataSource: <#T##Shared<QueryDataSource>#>)))
               state.path.append(.showCardDetail(CardDetail.PageFeature.State(dataSource: detail)))
               break
             }

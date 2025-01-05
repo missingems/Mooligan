@@ -20,15 +20,26 @@ public struct PageView: View {
           ForEach(
             Array(store.scope(state: \.cards, action: \.cards))
           ) { store in
-            CardDetailView(store: store).containerRelativeFrame(.horizontal)
+            CardDetailView(store: store)
+            
+              .containerRelativeFrame(.horizontal).id(store.content.card)
           }
         }
         .scrollTargetLayout()
+        
       }
-      .scrollPosition(id: $store.dataSource.focusedCard)
+      .scrollPosition($store.scrollPosition)
+      //      .scrollPosition($scrollPosition)
       .scrollTargetBehavior(.paging)
-      .background(.black)
+      //      .background(.black)
       .zIndex(0)
+            .onAppear {
+              if let card = store.dataSource.focusedCard {
+      
+//                scrollPosition.scrollTo(id: index)
+                store.scrollPosition.scrollTo(id: card)
+              }
+            }
       
       if let safeAreaTopInset {
         VariableBlurView(direction: .blurredTopClearBottom)
@@ -61,3 +72,4 @@ public struct PageView: View {
     }
   }
 }
+
