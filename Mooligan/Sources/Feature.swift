@@ -4,6 +4,11 @@ import CardDetail
 import Query
 import ScryfallKit
 
+@Reducer enum Path {
+  case showCardDetail(CardDetail.PageFeature)
+  case showSetDetail(Query.Feature)
+}
+
 @Reducer struct Feature {
   enum TabInfo: Equatable, CaseIterable, Identifiable {
     case sets
@@ -27,11 +32,6 @@ import ScryfallKit
     var path = StackState<Path.State>()
   }
   
-  @Reducer enum Path {
-    case showCardDetail(CardDetail.PageFeature)
-    case showSetDetail(Query.Feature)
-  }
-  
   enum Action {
     case sets(Browse.Feature.Action)
     case path(StackActionOf<Path>)
@@ -50,11 +50,7 @@ import ScryfallKit
           
           state.path.append(
             .showSetDetail(
-              Query.Feature.State(
-                mode: Shared(value: .placeholder(numberOfDataSource: value.cardCount)),
-                queryType: .set(value, page: 1),
-                selectedCard: nil
-              )
+              Query.Feature.State(mode: .placeholder(numberOfDataSource: 10), queryType: .set(value, page: 1))
             )
           )
         }
@@ -77,6 +73,11 @@ import ScryfallKit
               break
               
             case .viewAppeared:
+              break
+              
+            case let .routeToCardDetail(detail):
+//              state.path.append(.showCardDetail(CardDetail.PageFeature.State(query: detail.queryType, dataSource: <#T##Shared<QueryDataSource>#>)))
+              state.path.append(.showCardDetail(CardDetail.PageFeature.State(dataSource: detail)))
               break
             }
             

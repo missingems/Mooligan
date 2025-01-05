@@ -43,13 +43,13 @@ struct QueryView: View {
         ForEach(
           Array(
             zip(
-              store.mode.dataSource.cards,
-              store.mode.dataSource.cards.indices
+              store.dataSource.cardDetails,
+              store.dataSource.cardDetails.indices
             )
           ),
           id: \.0
         ) { value in
-          let card = value.0
+          let card = value.0.card
           let index = value.1
           
           Button(

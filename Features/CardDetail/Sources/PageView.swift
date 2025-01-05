@@ -25,7 +25,7 @@ public struct PageView: View {
         }
         .scrollTargetLayout()
       }
-      .scrollPosition(id: $store.currentDisplayingCard)
+      .scrollPosition(id: $store.dataSource.focusedCard)
       .scrollTargetBehavior(.paging)
       .background(.black)
       .zIndex(0)

@@ -11,7 +11,7 @@ public struct Feature {
   public struct State: Equatable {
     public enum Mode: Equatable {
       case placeholder(numberOfDataSource: Int)
-      case data(DataSource)
+      case data
       
       var isPlaceholder: Bool {
         switch self {
@@ -22,37 +22,24 @@ public struct Feature {
           return false
         }
       }
-      
-      var dataSource: DataSource {
-        switch self {
-        case let .placeholder(numberOfDataSource):
-          DataSource(
-            cards: IdentifiedArray(
-              uniqueElements: MockCardDetailRequestClient.generateMockCards(
-                number: numberOfDataSource
-              )
-            ),
-            hasNextPage: false
-          )
-          
-        case let .data(value):
-          value
-        }
-      }
     }
     
-    @Shared var mode: Mode
+    var mode: Mode
     var queryType: QueryType
-    var selectedCard: Card?
+    @Shared var dataSource: QueryDataSource
     
     public init(
-      mode: Shared<Mode>,
-      queryType: QueryType,
-      selectedCard: Card?
+      mode: Mode,
+      queryType: QueryType
     ) {
-      self._mode = mode
+      self.mode = mode
       self.queryType = queryType
-      self.selectedCard = selectedCard
+      
+      self._dataSource = Shared(value: QueryDataSource(queryType: queryType, cards: IdentifiedArray(
+        uniqueElements: MockCardDetailRequestClient.generateMockCards(
+          number: 10
+        )
+      ), focusedCard: nil, hasNextPage: false))
     }
   }
   
@@ -60,20 +47,28 @@ public struct Feature {
     case didSelectCard(Card)
     case loadMoreCardsIfNeeded(displayingIndex: Int)
     case updateCards([Card], hasNextPage: Bool, queryType: QueryType)
+    case routeToCardDetail(Shared<QueryDataSource>)
     case viewAppeared
   }
   
   public var body: some ReducerOf<Self> {
     Reduce { state, action in
       switch action {
-      case let .didSelectCard(value):
-        state.selectedCard = value
+      case .routeToCardDetail:
         return .none
+        
+      case let .didSelectCard(value):
+        return .run { [dataSource = state.$dataSource] send in
+          dataSource.withLock { _value in
+            _value.focusedCard = value
+          }
+          await send(.routeToCardDetail(dataSource))
+        }
         
       case let .loadMoreCardsIfNeeded(displayingIndex):
         guard
-          displayingIndex == state.mode.dataSource.cards.count - 1,
-          state.mode.dataSource.hasNextPage
+          displayingIndex == state.dataSource.cardDetails.count - 1,
+          state.dataSource.hasNextPage
         else {
           return .none
         }
@@ -98,20 +93,27 @@ public struct Feature {
         
       case let .updateCards(value, hasNextPage, nextQuery):
         switch state.mode {
-        case var .data(dataSource):
-          dataSource.cards.append(contentsOf: value)
-          dataSource.hasNextPage = hasNextPage
-          state.$mode.withLock { value in
-            value = .data(dataSource)
+        case .data:
+          state.$dataSource.withLock { data in
+            data.append(cards: value)
+            data.hasNextPage = hasNextPage
           }
+          
           state.queryType = nextQuery
           
         case .placeholder:
-          state.$mode.withLock { _value in
-            _value = .data(DataSource(cards: IdentifiedArray(uniqueElements: value), hasNextPage: hasNextPage))
+          state.$dataSource.withLock { _value in
+            _value = QueryDataSource(
+              queryType: nextQuery,
+              cards: IdentifiedArray(uniqueElements: value),
+              focusedCard: nil,
+              hasNextPage: hasNextPage
+            )
           }
           state.queryType = nextQuery
         }
+        
+        state.mode = .data
         
         return .none
         
@@ -136,16 +138,4 @@ public struct Feature {
   }
   
   public init() {}
-}
-
-public extension Feature {
-  struct DataSource: Equatable {
-    var cards: IdentifiedArrayOf<Card>
-    var hasNextPage: Bool
-    
-    init(cards: IdentifiedArrayOf<Card>, hasNextPage: Bool) {
-      self.cards = cards
-      self.hasNextPage = hasNextPage
-    }
-  }
 }

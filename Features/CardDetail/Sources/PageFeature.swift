@@ -34,23 +34,14 @@ import SwiftUI
 public extension PageFeature {
   @ObservableState struct State: Equatable {
     var cards: IdentifiedArrayOf<CardDetailFeature.State> = []
-    var currentDisplayingCard: Card?
+    @Shared var dataSource: QueryDataSource
     
-    public init(query: QueryType, currentDisplayingCard: Card?) {
-      switch query {
-      case .search:
-        fatalError("Not implemented")
-        
-      case let .set(set, page):
-//        self.cards = IdentifiedArrayOf(
-//          uniqueElements: cards.map { card in
-//            CardDetailFeature.State(card: card, entryPoint: .set(set))
-//          }
-//        )
-        self.cards = []
-      }
+    public init(dataSource: Shared<QueryDataSource>) {
+      self._dataSource = dataSource
       
-      self.currentDisplayingCard = currentDisplayingCard
+      cards = IdentifiedArray(uniqueElements: dataSource.cardDetails.wrappedValue.map { cardDetail in
+        CardDetailFeature.State(card: cardDetail.card, queryType: dataSource.queryType.wrappedValue)
+      })
     }
   }
   

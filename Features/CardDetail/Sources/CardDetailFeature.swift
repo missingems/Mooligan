@@ -108,16 +108,19 @@ public extension CardDetailFeature {
     
     init(
       card: Card,
-      entryPoint: EntryPoint
+      queryType: QueryType?
     ) {
       id = UUID()
       
-      switch entryPoint {
-      case .query:
+      switch queryType {
+      case .search:
         content = Content(card: card, setIconURL: nil)
         
-      case let .set(value):
+      case let .set(value, _):
         content = Content(card: card, setIconURL: URL(string: value.iconSvgUri))
+        
+      default:
+        content = Content(card: card, setIconURL: nil)
       }
       
       start = .fetchAdditionalInformation(card: card)

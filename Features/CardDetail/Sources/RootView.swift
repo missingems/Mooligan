@@ -3,10 +3,10 @@ import Networking
 import ScryfallKit
 import SwiftUI
 
-enum EntryPoint: Equatable, Sendable {
-  case query
-  case set(MTGSet)
-}
+//enum EntryPoint: Equatable, Sendable {
+//  case query
+//  case set(MTGSet)
+//}
 
 struct RootView: View {
   private let store: StoreOf<CardDetailFeature>
