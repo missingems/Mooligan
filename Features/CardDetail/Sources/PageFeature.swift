@@ -45,7 +45,6 @@ public extension PageFeature {
       })
       
       scrollPosition = ScrollPosition(id: dataSource.focusedCard)
-      scrollPosition.scrollTo(id: dataSource.focusedCard)
     }
   }
   

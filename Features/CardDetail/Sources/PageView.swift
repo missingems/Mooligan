@@ -25,7 +25,6 @@ public struct PageView: View {
           }
         }
         .scrollTargetLayout()
-        
       }
 //      .scrollPosition($store.scrollPosition)
       .scrollTargetBehavior(.paging)
