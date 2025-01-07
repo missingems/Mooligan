@@ -87,7 +87,8 @@ public extension Card {
   }
   
   func text(faceDirection: MagicCardFaceDirection) -> [[TextElement]] {
-    getDisplayText(
+    print("t0o much")
+    return getDisplayText(
       faceDirection: faceDirection
     )?.split(
       separator: "\n"
