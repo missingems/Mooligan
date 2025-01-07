@@ -39,15 +39,15 @@ public struct CardRemoteImageView: View {
       transformers.append(FlipImageProcessor())
     }
     
-    transformers.append(
-      ImageProcessors.Resize(
-        size: size,
-        unit: .points,
-        contentMode: .aspectFit,
-        crop: false,
-        upscale: true
-      )
-    )
+//    transformers.append(
+//      ImageProcessors.Resize(
+//        size: size,
+//        unit: .points,
+//        contentMode: .aspectFit,
+//        crop: false,
+//        upscale: true
+//      )
+//    )
     
     self.transformers = transformers
     self.size = size
