@@ -28,12 +28,10 @@ struct QueryView: View {
   }
   
   var body: some View {
-    let _ = Self._printChanges()
     ScrollView(.vertical) {
       LazyVGrid(
         columns: [GridItem](
           repeating: GridItem(
-            .flexible(minimum: 10, maximum: .infinity),
             spacing: 8.0,
             alignment: .center
           ),
@@ -64,17 +62,12 @@ struct QueryView: View {
                   maxWidth: (contentWidth - ((numberOfColumns - 1) * 8.0)) / numberOfColumns
                 ),
                 callToActionHorizontalOffset: 5,
-                priceVisibility: .display(usdFoil: card.prices.usdFoil, usd: card.prices.usd)
+                priceVisibility: .hidden
               )
             }
           )
+          .frame(width: 175, height: 300, alignment: .center)
           .buttonStyle(.sinkableButtonStyle)
-          .frame(
-            idealHeight: (
-              (contentWidth - ((numberOfColumns - 1) * 8.0)) / numberOfColumns / MagicCardImageRatio.widthToHeight.rawValue
-            )
-            .rounded() + 25.0
-          )
           .task {
 //            store.send(.loadMoreCardsIfNeeded(displayingIndex: index))
           }
