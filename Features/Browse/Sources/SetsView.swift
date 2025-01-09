@@ -7,6 +7,7 @@ struct SetsView: View {
   private var store: StoreOf<Feature>
   
   var body: some View {
+    let _ = Self._printChanges()
     List(Array(zip(store.sets, store.sets.indices)), id: \.0.id) { value in
       let set = value.0
       let index = value.1

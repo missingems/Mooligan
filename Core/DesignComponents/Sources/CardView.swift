@@ -98,9 +98,10 @@ public struct CardView: View {
   private let mode: Mode
   private let priceVisibility: PriceVisibility
   private let send: ((Action) -> Void)?
-  @State private var localMode: Mode?
+  private var localMode: Mode?
   
   public var body: some View {
+    let _ = Self._printChanges()
     VStack(spacing: 5) {
       ZStack(alignment: .trailing) {
         switch localMode ?? mode {
@@ -142,12 +143,12 @@ public struct CardView: View {
             if let send {
               send(.toggledFaceDirection)
             } else {
-              localMode = .transformable(
-                direction: direction.toggled(),
-                frontImageURL: frontImageURL,
-                backImageURL: backImageURL,
-                callToActionIconName: callToActionIconName
-              )
+//              localMode = .transformable(
+//                direction: direction.toggled(),
+//                frontImageURL: frontImageURL,
+//                backImageURL: backImageURL,
+//                callToActionIconName: callToActionIconName
+//              )
             }
           } label: {
             Image(systemName: callToActionIconName).fontWeight(.semibold)
@@ -206,11 +207,11 @@ public struct CardView: View {
       if let send {
         send(.toggledFaceDirection)
       } else {
-        localMode = .flippable(
-          direction: direction.toggled(),
-          displayingImageURL: displayingImageURL,
-          callToActionIconName: callToActionIconName
-        )
+//        localMode = .flippable(
+//          direction: direction.toggled(),
+//          displayingImageURL: displayingImageURL,
+//          callToActionIconName: callToActionIconName
+//        )
       }
     } label: {
       Image(systemName: callToActionIconName).fontWeight(.semibold)

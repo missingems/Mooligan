@@ -39,32 +39,30 @@ struct QueryView: View {
         ),
         spacing: 13
       ) {
-        if contentWidth > 0 {
-          if let dataSource = store.dataSource {
-            ForEach(
-              dataSource.cardDetails.indices, id: \.self
-            ) { index in
-              let value = dataSource.cardDetails[index]
-              
-              Button(
-                action: {
-                  store.send(.didSelectCard(value.card))
-                }, label: {
-                  CardView(
-                    card: value.card,
-                    layoutConfiguration: CardView.LayoutConfiguration(
-                      rotation: .portrait,
-                      maxWidth: (contentWidth - ((numberOfColumns - 1) * 8.0)) / numberOfColumns
-                    ),
-                    callToActionHorizontalOffset: 5,
-                    priceVisibility: .hidden
-                  )
-                }
-              )
-              .buttonStyle(.sinkableButtonStyle)
-              .task {
-                store.send(.loadMoreCardsIfNeeded(displayingIndex: index))
+        if contentWidth > 0, let dataSource = store.dataSource {
+          let _ = Self._printChanges()
+          ForEach(Array(zip(dataSource.cardDetails, dataSource.cardDetails.indices)), id: \.0.id) { value in
+            let index = value.1
+            let card = value.0.card
+            
+            Button(
+              action: {
+                store.send(.didSelectCard(card))
+              }, label: {
+                CardView(
+                  card: card,
+                  layoutConfiguration: CardView.LayoutConfiguration(
+                    rotation: .portrait,
+                    maxWidth: (contentWidth - ((numberOfColumns - 1) * 8.0)) / numberOfColumns
+                  ),
+                  callToActionHorizontalOffset: 5,
+                  priceVisibility: .display(usdFoil: card.prices.usdFoil, usd: card.prices.usd)
+                )
               }
+            )
+            .buttonStyle(.sinkableButtonStyle)
+            .task {
+              store.send(.loadMoreCardsIfNeeded(displayingIndex: index))
             }
           }
         }
@@ -74,7 +72,10 @@ struct QueryView: View {
         of: { proxy in
           proxy.size.width
         }, action: { newValue in
-          contentWidth = newValue
+          print("new value \(newValue)")
+          if contentWidth != newValue {
+            contentWidth = newValue
+          }
         }
       )
       .padding(.horizontal, 11)
@@ -88,4 +89,3 @@ struct QueryView: View {
     }
   }
 }
-

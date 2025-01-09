@@ -34,8 +34,8 @@ struct MooliganApp: App {
                 case let .showSetDetail(value):
                   Query.RootView(store: value)
                   
-                case let .showCardDetail(value):
-                  CardDetail.PageView(store: value)
+                case .showCardDetail:
+                  Text("Hello World")
                 }
               }
             }

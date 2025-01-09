@@ -8,7 +8,7 @@ public struct Feature {
   @Dependency(\.cardQueryRequestClient) var client
   
   @ObservableState
-  public struct State: Equatable {
+  public struct State {
     public enum Mode: Equatable {
       case placeholder(numberOfDataSource: Int)
       case data
@@ -27,6 +27,7 @@ public struct Feature {
     var mode: Mode
     var queryType: QueryType
     var dataSource: QueryDataSource?
+    var testdataSource: [(Range<Array<CardInfo>.Index>.Element, CardInfo)] = []
     
     public init(
       mode: Mode,
@@ -40,7 +41,7 @@ public struct Feature {
   public enum Action: Equatable {
     case didSelectCard(Card)
     case loadMoreCardsIfNeeded(displayingIndex: Int)
-    case updateCards([Card], hasNextPage: Bool, queryType: QueryType)
+    case updateCards(QueryDataSource?, QueryType)
     case routeToCardDetail(QueryDataSource?)
     case viewAppeared
   }
@@ -51,11 +52,9 @@ public struct Feature {
       case .routeToCardDetail:
         return .none
         
-      case let .didSelectCard(card):
-        state.dataSource?.focusedCard = card
-        
-        return .run { [state] send in
-          await send(.routeToCardDetail(state.dataSource))
+      case .didSelectCard:
+        return .run { [dataSource = state.dataSource] send in
+          await send(.routeToCardDetail(nil))
         }
         
       case let .loadMoreCardsIfNeeded(displayingIndex):
@@ -68,55 +67,37 @@ public struct Feature {
         
         let nextQuery = state.queryType.next()
         
-        return .run { [client] send in
+        return .run { [client, dataSource = state.dataSource] send in
           let result = try await client.queryCards(nextQuery)
+          var dataSource = dataSource
+          dataSource?.append(cards: result.data)
+          dataSource?.hasNextPage = result.hasMore ?? false
           
-          await send(
-            .updateCards(
-              result.data,
-              hasNextPage: result.hasMore ?? false,
-              queryType: nextQuery
-            )
-          )
+          await send(.updateCards(dataSource, nextQuery))
         }
         .cancellable(
           id: "loadMoreCardsIfNeeded: \(displayingIndex), for query: \(state.queryType)",
           cancelInFlight: true
         )
         
-      case let .updateCards(value, hasNextPage, nextQuery):
-        switch state.mode {
-        case .data:
-          state.dataSource?.append(cards: value)
-          state.dataSource?.hasNextPage = hasNextPage
+      case let .updateCards(value, nextQuery):
+        if let value {
+          state.dataSource = value
           state.queryType = nextQuery
           
-        case .placeholder:
-          state.dataSource = QueryDataSource(
-            queryType: nextQuery,
-            cards: value,
-            focusedCard: nil,
-            hasNextPage: hasNextPage
-          )
+          state.testdataSource = Array(zip(state.dataSource!.cardDetails.indices, state.dataSource!.cardDetails))
+          state.mode = .data
         }
         
-        state.queryType = nextQuery
-        state.mode = .data
-        
+//        a        return .none
         return .none
         
       case .viewAppeared:
         if state.mode.isPlaceholder {
           return .run { [client, queryType = state.queryType] send in
             let result = try await client.queryCards(queryType)
-            
-            await send(
-              .updateCards(
-                result.data,
-                hasNextPage: result.hasMore ?? false,
-                queryType: queryType
-              )
-            )
+            let dataSource = QueryDataSource(queryType: queryType, cards: result.data, focusedCard: nil, hasNextPage: result.hasMore ?? false)
+            await send(.updateCards(dataSource, queryType))
           }
           .cancellable(
             id: "viewAppeared: \(state.queryType)",

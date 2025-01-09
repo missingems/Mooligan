@@ -5,7 +5,7 @@ import Query
 import ScryfallKit
 
 @Reducer enum Path {
-  case showCardDetail(CardDetail.PageFeature)
+  case showCardDetail
   case showSetDetail(Query.Feature)
 }
 
@@ -69,14 +69,14 @@ import ScryfallKit
             case .loadMoreCardsIfNeeded(displayingIndex: let displayingIndex):
               break
               
-            case .updateCards(_, hasNextPage: let hasNextPage, queryType: let queryType):
+            case .updateCards(_, _):
               break
               
             case .viewAppeared:
               break
               
             case let .routeToCardDetail(detail):
-//              state.path.append(.showCardDetail(CardDetail.PageFeature.State(dataSource: detail)))
+              state.path.append(.showCardDetail)
               return .none
             }
             
@@ -95,5 +95,6 @@ import ScryfallKit
       }
     }
     .forEach(\.path, action: \.path)
+    ._printChanges(.actionLabels)
   }
 }
