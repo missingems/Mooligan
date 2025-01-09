@@ -31,54 +31,46 @@ public struct CardRemoteImageView: View {
     
     var transformers: [ImageProcessing] = []
     
-//    if isLandscape {
-//      transformers.append(RotationImageProcessor(degrees: 90))
-//    }
-//    
-//    if isTransformed {
-//      transformers.append(FlipImageProcessor())
-//    }
+    if isLandscape {
+      transformers.append(RotationImageProcessor(degrees: 90))
+    }
     
-//    transformers.append(
-//      ImageProcessors.Resize(
-//        size: size,
-//        unit: .points,
-//        contentMode: .aspectFit,
-//        crop: false,
-//        upscale: true
-//      )
-//    )
+    if isTransformed {
+      transformers.append(FlipImageProcessor())
+    }
+    
+    transformers.append(ImageProcessors.Resize(size: size))
     
     self.transformers = transformers
     self.size = size
   }
   
   public var body: some View {
-//    Asyn
-    
-//    asy
-    
     LazyImage(
       request: ImageRequest(
         url: url,
         processors: transformers
-      )
+      ),
+      transaction: Transaction(animation: .smooth)
     ) { state in
       if let image = state.image {
         image.resizable()
+      } else {
+        Color.primary.opacity(0.3).shimmering()
+          .blur(radius: 34.0)
+          .background(.clear)
       }
-//      Rectangle().fill(.red)
     }
-//    .onGeometryChange(for: CGSize.self, of: { proxy in
-//      return proxy.size
-//    }, action: { newValue in
-//      cornerRadius = 5 / 100 * (isLandscape ? newValue.height : newValue.width)
-//    })
-//    .modifier(ConditionalFrameModifier(size: size))
-//    .clipShape(RoundedRectangle(cornerRadius: cornerRadius ?? 0))
-//    .overlay(
-//      RoundedRectangle(cornerRadius: cornerRadius ?? 0)
-//        .strokeBorder(.separator, lineWidth: 1 / UIScreen.main.nativeScale)
-//    )
+    .onGeometryChange(for: CGSize.self, of: { proxy in
+      return proxy.size
+    }, action: { newValue in
+      cornerRadius = 5 / 100 * (isLandscape ? newValue.height : newValue.width)
+    })
+    .modifier(ConditionalFrameModifier(size: size))
+    .clipShape(RoundedRectangle(cornerRadius: cornerRadius ?? 0))
+    .overlay(
+      RoundedRectangle(cornerRadius: cornerRadius ?? 0)
+        .strokeBorder(.separator, lineWidth: 1 / UIScreen.main.nativeScale)
+    )
   }
 }

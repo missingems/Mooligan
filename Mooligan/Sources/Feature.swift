@@ -76,7 +76,7 @@ import ScryfallKit
               break
               
             case let .routeToCardDetail(detail):
-              state.path.append(.showCardDetail(CardDetail.PageFeature.State(dataSource: detail)))
+//              state.path.append(.showCardDetail(CardDetail.PageFeature.State(dataSource: detail)))
               return .none
             }
             

@@ -39,40 +39,35 @@ struct QueryView: View {
         ),
         spacing: 13
       ) {
-        ForEach(
-          Array(
-            zip(
-              store.dataSource.cardDetails,
-              store.dataSource.cardDetails.indices
-            )
-          ),
-          id: \.0
-        ) { value in
-          let card = value.0.card
-          let index = value.1
-          
-          Button(
-            action: {
-              store.send(.didSelectCard(card))
-            }, label: {
-              CardView(
-                card: card,
-                layoutConfiguration: CardView.LayoutConfiguration(
-                  rotation: .portrait,
-                  maxWidth: (contentWidth - ((numberOfColumns - 1) * 8.0)) / numberOfColumns
-                ),
-                callToActionHorizontalOffset: 5,
-                priceVisibility: .hidden
+        if contentWidth > 0 {
+          if let dataSource = store.dataSource {
+            ForEach(
+              dataSource.cardDetails.indices, id: \.self
+            ) { index in
+              let value = dataSource.cardDetails[index]
+              
+              Button(
+                action: {
+                  store.send(.didSelectCard(value.card))
+                }, label: {
+                  CardView(
+                    card: value.card,
+                    layoutConfiguration: CardView.LayoutConfiguration(
+                      rotation: .portrait,
+                      maxWidth: (contentWidth - ((numberOfColumns - 1) * 8.0)) / numberOfColumns
+                    ),
+                    callToActionHorizontalOffset: 5,
+                    priceVisibility: .hidden
+                  )
+                }
               )
+              .buttonStyle(.sinkableButtonStyle)
+              .task {
+                store.send(.loadMoreCardsIfNeeded(displayingIndex: index))
+              }
             }
-          )
-          .frame(width: 175, height: 300, alignment: .center)
-          .buttonStyle(.sinkableButtonStyle)
-          .task {
-//            store.send(.loadMoreCardsIfNeeded(displayingIndex: index))
           }
         }
-        .modifier(Placeholder(isPlaceholder: store.mode.isPlaceholder))
       }
       .onGeometryChange(
         for: CGFloat.self,
@@ -84,6 +79,7 @@ struct QueryView: View {
       )
       .padding(.horizontal, 11)
     }
+    .modifier(Placeholder(isPlaceholder: store.mode.isPlaceholder))
     .scrollDisabled(store.mode.isPlaceholder)
     .background(Color(.secondarySystemBackground).ignoresSafeArea())
     .navigationBarTitleDisplayMode(.inline)
@@ -92,3 +88,4 @@ struct QueryView: View {
     }
   }
 }
+

@@ -12,7 +12,7 @@ public struct CardView: View {
     case display(usdFoil: String?, usd: String?)
   }
   
-  public enum Mode: Identifiable, Equatable {
+  public enum Mode: Equatable {
     case transformable(
       direction: MagicCardFaceDirection,
       frontImageURL: URL,
@@ -27,19 +27,6 @@ public struct CardView: View {
     )
     
     case single(displayingImageURL: URL)
-    
-    public var id: String {
-      switch self {
-      case let .transformable(direction, frontImageURL, backImageURL, callToActionIconName):
-        return direction.id + frontImageURL.absoluteString + backImageURL.absoluteString + callToActionIconName
-        
-      case let .flippable(direction, displayingImageURL, callToActionIconName):
-        return direction.id + displayingImageURL.absoluteString + callToActionIconName
-        
-      case let .single(displayingImageURL):
-        return displayingImageURL.absoluteString
-      }
-    }
     
     public var faceDirection: MagicCardFaceDirection {
       switch self {
@@ -132,9 +119,10 @@ public struct CardView: View {
           .opacity(direction == .back ? 1 : 0)
           .rotation3DEffect(.degrees(direction == .back ? 180 : 0), axis: (x: 0, y: 1, z: 0))
           .zIndex(direction == .back ? 2 : 1)
-          .transaction { transaction in
-            transaction.animation = .bouncy
-          }
+//          .transaction { transaction in
+//            transaction.animation = .bouncy
+//          }
+          .frame(width: layoutConfiguration.size.width, height: layoutConfiguration.size.height, alignment: .center)
           
           CardRemoteImageView(
             url: frontImageURL,
@@ -145,9 +133,10 @@ public struct CardView: View {
           .opacity(direction == .front ? 1 : 0)
           .rotation3DEffect(.degrees(direction == .front ? 0 : 180), axis: (x: 0, y: 1, z: 0))
           .zIndex(direction == .front ? 2 : 1)
-          .transaction { transaction in
-            transaction.animation = .bouncy
-          }
+          .frame(width: layoutConfiguration.size.width, height: layoutConfiguration.size.height, alignment: .center)
+//          .transaction { transaction in
+//            transaction.animation = .bouncy
+//          }
           
           Button {
             if let send {
@@ -177,6 +166,7 @@ public struct CardView: View {
             displayingImageURL: displayingImageURL,
             callToActionIconName: callToActionIconName
           )
+          .frame(width: layoutConfiguration.size.width, height: layoutConfiguration.size.height, alignment: .center)
           
         case let .single(displayingImageURL):
           CardRemoteImageView(
@@ -185,6 +175,7 @@ public struct CardView: View {
             isTransformed: false,
             size: layoutConfiguration.size
           )
+          .frame(width: layoutConfiguration.size.width, height: layoutConfiguration.size.height, alignment: .center)
         }
       }
       .zIndex(1)

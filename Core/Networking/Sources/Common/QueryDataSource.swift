@@ -4,13 +4,13 @@ import ScryfallKit
 
 public struct QueryDataSource: Equatable {
   public var queryType: QueryType?
-  public var cardDetails: IdentifiedArrayOf<CardInfo>
+  public var cardDetails: [CardInfo]
   public var focusedCard: Card?
   public var hasNextPage: Bool
   
   public init(
     queryType: QueryType?,
-    cards: IdentifiedArrayOf<Card>,
+    cards: [Card],
     focusedCard: Card?,
     hasNextPage: Bool
   ) {
@@ -18,17 +18,17 @@ public struct QueryDataSource: Equatable {
     
     switch queryType {
     case let .set(set, page):
-      self.cardDetails = IdentifiedArray(uniqueElements: cards.map { card in
+      self.cardDetails = cards.map { card in
         CardInfo(card: card, set: set)
-      })
+      }
       
     case .search:
       fatalError()
       
     default:
-      self.cardDetails = IdentifiedArray(uniqueElements: cards.map { card in
+      self.cardDetails = cards.map { card in
         CardInfo(card: card, set: nil)
-      })
+      }
     }
     
     self.focusedCard = focusedCard
@@ -38,9 +38,9 @@ public struct QueryDataSource: Equatable {
   public mutating func append(cards: [Card]) {
     switch queryType {
     case let .set(set, page):
-      let cardDetails = IdentifiedArray(uniqueElements: cards.map { card in
+      let cardDetails = cards.map { card in
         CardInfo(card: card, set: set)
-      })
+      }
       
       self.cardDetails.append(contentsOf: cardDetails)
       
@@ -53,7 +53,7 @@ public struct QueryDataSource: Equatable {
   }
 }
 
-public struct CardInfo: Equatable, Identifiable, Hashable {
+public struct CardInfo: Equatable, Identifiable {
   public var card: Card
   public var set: MTGSet?
   

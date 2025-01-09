@@ -26,7 +26,7 @@ public struct Feature {
     
     var mode: Mode
     var queryType: QueryType
-    var dataSource: QueryDataSource
+    var dataSource: QueryDataSource?
     
     public init(
       mode: Mode,
@@ -34,12 +34,6 @@ public struct Feature {
     ) {
       self.mode = mode
       self.queryType = queryType
-      
-      self.dataSource = QueryDataSource(queryType: queryType, cards: IdentifiedArray(
-        uniqueElements: MockCardDetailRequestClient.generateMockCards(
-          number: 10
-        )
-      ), focusedCard: nil, hasNextPage: false)
     }
   }
   
@@ -47,7 +41,7 @@ public struct Feature {
     case didSelectCard(Card)
     case loadMoreCardsIfNeeded(displayingIndex: Int)
     case updateCards([Card], hasNextPage: Bool, queryType: QueryType)
-    case routeToCardDetail(QueryDataSource)
+    case routeToCardDetail(QueryDataSource?)
     case viewAppeared
   }
   
@@ -58,7 +52,7 @@ public struct Feature {
         return .none
         
       case let .didSelectCard(card):
-        state.dataSource.focusedCard = card
+        state.dataSource?.focusedCard = card
         
         return .run { [state] send in
           await send(.routeToCardDetail(state.dataSource))
@@ -66,8 +60,8 @@ public struct Feature {
         
       case let .loadMoreCardsIfNeeded(displayingIndex):
         guard
-          displayingIndex == state.dataSource.cardDetails.count - 1,
-          state.dataSource.hasNextPage
+          displayingIndex == (state.dataSource?.cardDetails.count ?? 1) - 1,
+          state.dataSource?.hasNextPage == true
         else {
           return .none
         }
@@ -93,48 +87,47 @@ public struct Feature {
       case let .updateCards(value, hasNextPage, nextQuery):
         switch state.mode {
         case .data:
-          state.dataSource.append(cards: value)
-          state.dataSource.hasNextPage = hasNextPage
-          
+          state.dataSource?.append(cards: value)
+          state.dataSource?.hasNextPage = hasNextPage
           state.queryType = nextQuery
           
         case .placeholder:
           state.dataSource = QueryDataSource(
             queryType: nextQuery,
-            cards: IdentifiedArray(uniqueElements: value),
+            cards: value,
             focusedCard: nil,
             hasNextPage: hasNextPage
           )
         }
+        
         state.queryType = nextQuery
-      
-      state.mode = .data
-      
-      return .none
-      
-    case .viewAppeared:
-      if state.mode.isPlaceholder {
-        return .run { [client, queryType = state.queryType] send in
-          let result = try await client.queryCards(queryType)
-          
-          await send(
-            .updateCards(
-              result.data,
-              hasNextPage: result.hasMore ?? false,
-              queryType: queryType
-            )
-          )
-        }
-        .cancellable(
-          id: "viewAppeared: \(state.queryType)",
-          cancelInFlight: true
-        )
-      } else {
+        state.mode = .data
+        
         return .none
+        
+      case .viewAppeared:
+        if state.mode.isPlaceholder {
+          return .run { [client, queryType = state.queryType] send in
+            let result = try await client.queryCards(queryType)
+            
+            await send(
+              .updateCards(
+                result.data,
+                hasNextPage: result.hasMore ?? false,
+                queryType: queryType
+              )
+            )
+          }
+          .cancellable(
+            id: "viewAppeared: \(state.queryType)",
+            cancelInFlight: true
+          )
+        } else {
+          return .none
+        }
       }
     }
   }
-}
-
-public init() {}
+  
+  public init() {}
 }
