@@ -40,27 +40,42 @@ struct QueryView: View {
         spacing: 13
       ) {
         if contentWidth > 0, let dataSource = store.dataSource {
-          let _ = Self._printChanges()
-          ForEach(Array(zip(dataSource.cardDetails, dataSource.cardDetails.indices)), id: \.0.id) { value in
-            let index = value.1
-            let card = value.0.card
+          ForEach(dataSource.cardDetails.indices, id: \.self) { index in
+            let card = dataSource.cardDetails[index].card
             
-            Button(
-              action: {
-                store.send(.didSelectCard(card))
-              }, label: {
-                CardView(
-                  card: card,
-                  layoutConfiguration: CardView.LayoutConfiguration(
-                    rotation: .portrait,
-                    maxWidth: (contentWidth - ((numberOfColumns - 1) * 8.0)) / numberOfColumns
-                  ),
-                  callToActionHorizontalOffset: 5,
-                  priceVisibility: .display(usdFoil: card.prices.usdFoil, usd: card.prices.usd)
-                )
-              }
+//            Button(
+//              action: {
+//                store.send(.didSelectCard(card))
+//              }, label: {
+//                
+//              }
+//            )
+            let layout = CardView.LayoutConfiguration(
+              rotation: .portrait,
+              maxWidth: (contentWidth - ((numberOfColumns - 1) * 8.0)) / numberOfColumns
             )
-            .buttonStyle(.sinkableButtonStyle)
+                
+            CardRemoteImageView(
+              url: card.getImageURL(type: .normal)!,
+              isLandscape: layout.rotation == .landscape,
+              isTransformed: false,
+              size: layout.size
+            )
+//            .frame(width: layoutConfiguration.size.width, height: layoutConfiguration.size.height, alignment: .center)
+            
+//            CardView(
+//              card: card,
+//              layoutConfiguration: CardView.LayoutConfiguration(
+//                rotation: .portrait,
+//                maxWidth: (contentWidth - ((numberOfColumns - 1) * 8.0)) / numberOfColumns
+//              ),
+//              callToActionHorizontalOffset: 5,
+//              priceVisibility: .hidden
+//            )
+//            .onTapGesture {
+//              store.send(.didSelectCard(card))
+//            }
+//            .buttonStyle(.sinkableButtonStyle)
             .task {
               store.send(.loadMoreCardsIfNeeded(displayingIndex: index))
             }
@@ -72,7 +87,6 @@ struct QueryView: View {
         of: { proxy in
           proxy.size.width
         }, action: { newValue in
-          print("new value \(newValue)")
           if contentWidth != newValue {
             contentWidth = newValue
           }

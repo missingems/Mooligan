@@ -6,7 +6,6 @@ public struct RootView: View {
   public var store: StoreOf<Feature>
   
   public var body: some View {
-    let _ = Self._printChanges()
     SetsView(store: store)
   }
   

@@ -95,6 +95,5 @@ import ScryfallKit
       }
     }
     .forEach(\.path, action: \.path)
-    ._printChanges(.actionLabels)
   }
 }

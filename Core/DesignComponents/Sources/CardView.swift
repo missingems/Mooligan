@@ -101,9 +101,8 @@ public struct CardView: View {
   private var localMode: Mode?
   
   public var body: some View {
-    let _ = Self._printChanges()
     VStack(spacing: 5) {
-      ZStack(alignment: .trailing) {
+//      ZStack(alignment: .trailing) {
         switch localMode ?? mode {
         case let .transformable(
           direction,
@@ -179,11 +178,11 @@ public struct CardView: View {
           .frame(width: layoutConfiguration.size.width, height: layoutConfiguration.size.height, alignment: .center)
         }
       }
-      .zIndex(1)
+//      .zIndex(1)
       
-      priceView
-        .zIndex(0)
-    }
+//      priceView
+//        .zIndex(0)
+//    }
   }
   
   @ViewBuilder private func flippableCardView(
