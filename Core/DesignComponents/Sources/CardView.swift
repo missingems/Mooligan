@@ -185,6 +185,7 @@ public struct CardView: View {
       .font(.caption)
       .fontWeight(.medium)
       .monospaced()
+      .frame(height: 21.0)
     }
   }
   

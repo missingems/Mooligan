@@ -56,7 +56,7 @@ struct QueryView: View {
                 displayableCard: cardInfo.displayableCardImage,
                 layoutConfiguration: layout,
                 callToActionHorizontalOffset: 5,
-                priceVisibility: .hidden
+                priceVisibility: .display(usdFoil: cardInfo.card.getPrice(for: .usdFoil), usd: cardInfo.card.getPrice(for: .usd))
               )
             }
             .buttonStyle(.sinkableButtonStyle)
