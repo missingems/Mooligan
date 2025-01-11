@@ -21,7 +21,7 @@ struct Placeholder: ViewModifier {
 struct QueryView: View {
   private var store: StoreOf<Feature>
   private var numberOfColumns: Double = 2
-  @State private var contentWidth: CGFloat = 0
+  @State private var contentWidth: CGFloat?
   
   init(store: StoreOf<Feature>) {
     self.store = store
@@ -39,13 +39,13 @@ struct QueryView: View {
         ),
         spacing: 13
       ) {
-        if contentWidth > 0, let dataSource = store.dataSource {
+        if let contentWidth, contentWidth > 0, let dataSource = store.dataSource {
           ForEach(dataSource.cardDetails.indices, id: \.self) { index in
             let card = dataSource.cardDetails[index].card
             
             let layout = CardView.LayoutConfiguration(
               rotation: .portrait,
-              maxWidth: (contentWidth - ((numberOfColumns - 1) * 8.0)) / numberOfColumns
+              maxWidth: contentWidth
             )
             
             Button {
@@ -71,9 +71,11 @@ struct QueryView: View {
         of: { proxy in
           proxy.size.width
         }, action: { newValue in
-          if contentWidth != newValue {
-            contentWidth = newValue
+          guard contentWidth == nil, newValue > 0 else {
+            return
           }
+          
+          contentWidth = (newValue - ((numberOfColumns - 1) * 8.0)) / numberOfColumns
         }
       )
       .padding(.horizontal, 11)

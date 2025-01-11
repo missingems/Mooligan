@@ -22,6 +22,19 @@ public struct Main {
         return nil
       }
     }
+    
+    let pipeline = ImagePipeline {
+      let dataLoader: DataLoader = {
+        let config = URLSessionConfiguration.default
+        config.urlCache = nil
+        return DataLoader(configuration: config)
+      }()
+      
+      $0.dataLoader = dataLoader
+      $0.dataCachePolicy = .storeOriginalData
+    }
+    
+    ImagePipeline.shared = pipeline
   }
   
   public func setup() {}
