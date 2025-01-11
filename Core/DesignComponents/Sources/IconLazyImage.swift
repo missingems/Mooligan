@@ -24,7 +24,7 @@ public struct IconLazyImage: View {
           .blur(radius: 8)
       }
     }
-    .task {
+    .task(priority: .background) {
       guard let url else { return }
       
       ImagePipeline.shared.loadImage(with: url) { result in

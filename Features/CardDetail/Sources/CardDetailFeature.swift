@@ -4,10 +4,10 @@ import Foundation
 import Networking
 import ScryfallKit
 
-@Reducer struct CardDetailFeature {
+@Reducer public struct CardDetailFeature {
   @Dependency(\.cardDetailRequestClient) private var client
   
-  var body: some ReducerOf<Self> {
+  public var body: some ReducerOf<Self> {
     Reduce { state, action in
       switch action {
       case .dismissRulingsTapped:
@@ -17,7 +17,7 @@ import ScryfallKit
       case let .fetchAdditionalInformation(card):
         var effects: [EffectOf<Self>] = []
         
-        if state.content.setIconURL == nil {
+        if state.content?.setIconURL == nil {
           effects.append(
             .run { send in
               try await send(.updateSetIconURL(URL(string: client.getSet(of: card).iconSvgUri)))
@@ -25,20 +25,22 @@ import ScryfallKit
           )
         }
         
-        if state.content.variants.isEmpty {
-          effects.append(
-            .run { send in
-              try await send(.updateVariants(client.getVariants(of: card, page: 0)))
-            }.cancellable(id: "getVariants: \(card.id.uuidString)", cancelInFlight: true)
-          )
-        }
+        effects.append(
+          .run { send in
+            try await send(
+              .updateVariants(
+                IdentifiedArray(uniqueElements: client.getVariants(of: card, page: 0))
+              )
+            )
+          }.cancellable(id: "getVariants: \(card.id.uuidString)", cancelInFlight: true)
+        )
         
         return .merge(effects)
         
       case .descriptionCallToActionTapped:
-        switch state.content.selectedMode {
+        switch state.content?.displayableCardImage {
         case let .transformable(direction, frontImageURL, backImageURL, callToActionIconName):
-          state.content.selectedMode = .transformable(
+          state.content?.displayableCardImage = .transformable(
             direction: direction.toggled(),
             frontImageURL: frontImageURL,
             backImageURL: backImageURL,
@@ -46,24 +48,24 @@ import ScryfallKit
           )
           
         case let .flippable(direction, displayingImageURL, callToActionIconName):
-          state.content.selectedMode = .flippable(
+          state.content?.displayableCardImage = .flippable(
             direction: direction.toggled(),
             displayingImageURL: displayingImageURL,
             callToActionIconName: callToActionIconName
           )
           
-        case .single:
+        default:
           fatalError("descriptionCallToActionTapped isn't available to single face card.")
         }
 
         return .none
         
       case let .updateSetIconURL(value):
-        state.content.setIconURL = value
+        state.content?.setIconURL = value
         return .none
         
       case let .updateVariants(value):
-        state.content.variants = IdentifiedArray(uniqueElements: value)
+        state.content?.variants = value
         return .none
         
       case let .viewAppeared(action):
@@ -72,12 +74,40 @@ import ScryfallKit
         }
         
       case .viewRulingsTapped:
-        state.showRulings = RulingFeature.State(
-          card: state.content.card,
-          title: "Rulings"
-        )
+        if let card = state.content?.card {
+          state.showRulings = RulingFeature.State(
+            card: card,
+            title: "Rulings"
+          )
+        }
         
         return .none
+        
+      case let .setupContentIfNeeded(card, queryType):
+        guard state.content == nil else {
+          return .none
+        }
+        
+        return .run { send in
+          let content: Content
+          
+          switch queryType {
+          case .search:
+            content = Content(card: card, setIconURL: nil)
+            
+          case let .set(value, _):
+            content = Content(card: card, setIconURL: URL(string: value.iconSvgUri))
+          }
+          
+          await send(.updateContent(content))
+        }
+        
+      case let .updateContent(value):
+        state.content = value
+        
+        return .run { send in
+          await send(.fetchAdditionalInformation(card: value.card))
+        }
         
       case let .showRulings(.presented(action)):
         switch action {
@@ -97,30 +127,18 @@ import ScryfallKit
       RulingFeature()
     }
   }
+  
+  public init() {}
 }
 
-extension CardDetailFeature {
-  @ObservableState struct State: Equatable, Identifiable {
+public extension CardDetailFeature {
+  @ObservableState struct State: Equatable {
     @Presents var showRulings: RulingFeature.State?
-    let id: UUID
-    var content: Content
+    var content: Content?
     let start: Action
     
-    init(
-      card: Card,
-      entryPoint: EntryPoint
-    ) {
-      id = UUID()
-      
-      switch entryPoint {
-      case .query:
-        content = Content(card: card, setIconURL: nil)
-        
-      case let .set(value):
-        content = Content(card: card, setIconURL: URL(string: value.iconSvgUri))
-      }
-      
-      start = .fetchAdditionalInformation(card: card)
+    public init(card: Card, queryType: QueryType) {
+      start = .setupContentIfNeeded(card: card, queryType: queryType)
     }
   }
   
@@ -129,9 +147,11 @@ extension CardDetailFeature {
     case fetchAdditionalInformation(card: Card)
     case descriptionCallToActionTapped
     case updateSetIconURL(URL?)
-    case updateVariants([Card])
+    case updateVariants(IdentifiedArrayOf<Card>)
     case viewAppeared(initialAction: Action)
     case viewRulingsTapped
+    case setupContentIfNeeded(card: Card, queryType: QueryType)
+    case updateContent(Content)
     case showRulings(PresentationAction<RulingFeature.Action>)
   }
 }

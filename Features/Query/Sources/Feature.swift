@@ -4,14 +4,14 @@ import ScryfallKit
 import Networking
 
 @Reducer
-struct Feature {
+public struct Feature {
   @Dependency(\.cardQueryRequestClient) var client
   
   @ObservableState
-  struct State: Equatable {
-    enum Mode: Equatable {
+  public struct State {
+    public enum Mode: Equatable {
       case placeholder(numberOfDataSource: Int)
-      case data(DataSource)
+      case data
       
       var isPlaceholder: Bool {
         switch self {
@@ -22,124 +22,87 @@ struct Feature {
           return false
         }
       }
-      
-      var dataSource: DataSource {
-        switch self {
-        case let .placeholder(numberOfDataSource):
-          DataSource(
-            cards: IdentifiedArray(
-              uniqueElements: MockCardDetailRequestClient.generateMockCards(
-                number: numberOfDataSource
-              )
-            ),
-            hasNextPage: false
-          )
-          
-        case let .data(value):
-          value
-        }
-      }
     }
     
     var mode: Mode
     var queryType: QueryType
-    var selectedCard: Card?
+    var dataSource: QueryDataSource?
     
-    init(
+    public init(
       mode: Mode,
-      queryType: QueryType,
-      selectedCard: Card?
+      queryType: QueryType
     ) {
       self.mode = mode
       self.queryType = queryType
-      self.selectedCard = selectedCard
+    }
+    
+    func shouldLoadMore(at index: Int) -> Bool {
+      (index == (dataSource?.cardDetails.count ?? 1) - 1) && dataSource?.hasNextPage == true
     }
   }
   
-  enum Action: Equatable {
-    case didSelectCard(Card)
+  public enum Action: Equatable {
+    case didSelectCard(Card, QueryType)
     case loadMoreCardsIfNeeded(displayingIndex: Int)
-    case updateCards([Card], hasNextPage: Bool, queryType: QueryType)
+    case updateCards(QueryDataSource?, QueryType)
     case viewAppeared
   }
   
-  var body: some ReducerOf<Self> {
+  public var body: some ReducerOf<Self> {
     Reduce { state, action in
       switch action {
-      case let .didSelectCard(value):
-        state.selectedCard = value
+      case .didSelectCard:
         return .none
         
       case let .loadMoreCardsIfNeeded(displayingIndex):
         guard
-          displayingIndex == state.mode.dataSource.cards.count - 1,
-          state.mode.dataSource.hasNextPage
+          displayingIndex == (state.dataSource?.cardDetails.count ?? 1) - 1,
+          state.dataSource?.hasNextPage == true
         else {
           return .none
         }
         
         let nextQuery = state.queryType.next()
         
-        return .run { [client] send in
+        return .run { [client, dataSource = state.dataSource] send in
           let result = try await client.queryCards(nextQuery)
+          var dataSource = dataSource
+          dataSource?.append(cards: result.data)
+          dataSource?.hasNextPage = result.hasMore ?? false
           
-          await send(
-            .updateCards(
-              result.data,
-              hasNextPage: result.hasMore ?? false,
-              queryType: nextQuery
-            )
-          )
+          await send(.updateCards(dataSource, nextQuery))
         }
         .cancellable(
           id: "loadMoreCardsIfNeeded: \(displayingIndex), for query: \(state.queryType)",
           cancelInFlight: true
         )
         
-      case let .updateCards(value, hasNextPage, nextQuery):
-        switch state.mode {
-        case var .data(dataSource):
-          dataSource.cards.append(contentsOf: value)
-          dataSource.hasNextPage = hasNextPage
-          state.mode = .data(dataSource)
+      case let .updateCards(value, nextQuery):
+        if let value {
+          state.dataSource = value
           state.queryType = nextQuery
-          
-        case .placeholder:
-          state.mode = .data(DataSource(cards: IdentifiedArray(uniqueElements: value), hasNextPage: hasNextPage))
-          state.queryType = nextQuery
+          state.mode = .data
         }
         
         return .none
         
       case .viewAppeared:
-        return .run { [client, queryType = state.queryType] send in
-          let result = try await client.queryCards(queryType)
-          
-          await send(
-            .updateCards(
-              result.data,
-              hasNextPage: result.hasMore ?? false,
-              queryType: queryType
-            )
+        if state.mode.isPlaceholder {
+          return .run { [client, queryType = state.queryType] send in
+            let result = try await client.queryCards(queryType)
+            let dataSource = QueryDataSource(queryType: queryType, cards: result.data, focusedCard: nil, hasNextPage: result.hasMore ?? false)
+            await send(.updateCards(dataSource, queryType))
+          }
+          .cancellable(
+            id: "viewAppeared: \(state.queryType)",
+            cancelInFlight: true
           )
+        } else {
+          return .none
         }
-        .cancellable(
-          id: "viewAppeared: \(state.queryType)",
-          cancelInFlight: true
-        )
       }
     }
   }
-}
-
-extension Feature {
-  struct DataSource: Equatable {
-    var cards: IdentifiedArrayOf<Card>
-    var hasNextPage: Bool
-    
-    init(cards: IdentifiedArrayOf<Card>, hasNextPage: Bool) {
-      self.cards = cards
-      self.hasNextPage = hasNextPage
-    }
-  }
+  
+  public init() {}
 }

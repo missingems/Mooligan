@@ -3,14 +3,14 @@ import SwiftUI
 import Networking
 import ScryfallKit
 
-@Reducer public struct Feature {
+@Reducer public struct BrowseFeature {
   @Dependency(\.gameSetRequestClient) var client
   
   public var body: some ReducerOf<Self> {
     Reduce { state, action in
       switch action {
-      case let .didSelectSet(index):
-        state.selectedSet = state.sets[index]
+      case let .didSelectSet(value):
+        state.selectedSet = value
         return .none
         
       case .fetchSets:
@@ -28,7 +28,7 @@ import ScryfallKit
         }
         
       case let .updateSets(value):
-        state.sets = IdentifiedArrayOf<MTGSet>(uniqueElements: value)
+        state.sets = IdentifiedArrayOf(uniqueElements: value)
         return .none
       }
     }
@@ -37,11 +37,10 @@ import ScryfallKit
   public init() {}
 }
 
-public extension Feature {
+public extension BrowseFeature {
   @ObservableState struct State: Equatable {
     var selectedSet: MTGSet?
     var sets: IdentifiedArrayOf<MTGSet>
-    let title: String
     
     public init(
       selectedSet: MTGSet?,
@@ -49,12 +48,11 @@ public extension Feature {
     ) {
       self.selectedSet = selectedSet
       self.sets = sets
-      title = String(localized: "Sets")
     }
   }
   
   enum Action: Equatable {
-    case didSelectSet(index: Int)
+    case didSelectSet(MTGSet)
     case fetchSets
     case viewAppeared
     case updateSets([MTGSet])

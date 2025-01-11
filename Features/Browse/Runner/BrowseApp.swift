@@ -15,9 +15,9 @@ struct BrowseApp: App {
       NavigationView {
         RootView(
           store: Store(
-            initialState: Feature.State(selectedSet: nil, sets: []),
+            initialState: BrowseFeature.State(selectedSet: nil, sets: []),
             reducer: {
-              Browse.Feature()
+              Browse.BrowseFeature()
             }, withDependencies: { value in
               value.gameSetRequestClient = ScryfallClient(networkLogLevel: .minimal)
             }

@@ -29,8 +29,8 @@ struct BrowseFeatureTests {
   )
   
   @Test func whenViewAppeared_shouldFetchSets_thenUpdateSets() async {
-    let store: TestStoreOf<Browse.Feature> = await TestStore(initialState: Browse.Feature.State(selectedSet: nil, sets: [])) {
-      Browse.Feature()
+    let store: TestStoreOf<Browse.BrowseFeature> = await TestStore(initialState: Browse.BrowseFeature.State(selectedSet: nil, sets: [])) {
+      Browse.BrowseFeature()
     }
     
     // When
@@ -46,24 +46,24 @@ struct BrowseFeatureTests {
   }
   
   @Test func whenDidSelectSet_shouldUpdateSelectedSet() async {
-    let store: TestStoreOf<Browse.Feature> = await TestStore(initialState: Browse.Feature.State(selectedSet: nil, sets: .init(uniqueElements: MockGameSetRequestClient.mockSets))) {
-      Browse.Feature()
+    let sets = MockGameSetRequestClient.mockSets
+    let store: TestStoreOf<Browse.BrowseFeature> = await TestStore(initialState: Browse.BrowseFeature.State(selectedSet: nil, sets: .init(uniqueElements: sets))) {
+      Browse.BrowseFeature()
     }
     
     // When
-    await store.send(.didSelectSet(index: 1)) { state in
+    await store.send(.didSelectSet(sets[1])) { state in
       // Should
-      state.selectedSet = MockGameSetRequestClient.mockSets[1]
+      state.selectedSet = sets[1]
     }
   }
   
   @Test func defaultState() async {
-    let store: TestStoreOf<Browse.Feature> = await TestStore(initialState: Browse.Feature.State(selectedSet: nil, sets: [])) {
-      Browse.Feature()
+    let store: TestStoreOf<Browse.BrowseFeature> = await TestStore(initialState: Browse.BrowseFeature.State(selectedSet: nil, sets: [])) {
+      Browse.BrowseFeature()
     }
     
     #expect(await store.state.sets.isEmpty == true)
     #expect(await store.state.selectedSet == nil)
-    #expect(await store.state.title == String(localized: "Sets"))
   }
 }

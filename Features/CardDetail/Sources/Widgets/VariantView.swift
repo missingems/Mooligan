@@ -29,7 +29,7 @@ struct VariantView: View {
                 send(.didSelectCard(card))
               }, label: {
                 CardView(
-                  card: card,
+                  displayableCard: DisplayableCardImage(card),
                   layoutConfiguration: CardView.LayoutConfiguration(
                     rotation: .portrait,
                     maxWidth: 170

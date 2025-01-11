@@ -39,15 +39,7 @@ public struct CardRemoteImageView: View {
       transformers.append(FlipImageProcessor())
     }
     
-    transformers.append(
-      ImageProcessors.Resize(
-        size: size,
-        unit: .points,
-        contentMode: .aspectFit,
-        crop: false,
-        upscale: true
-      )
-    )
+    transformers.append(ImageProcessors.Resize(size: size))
     
     self.transformers = transformers
     self.size = size
@@ -59,22 +51,24 @@ public struct CardRemoteImageView: View {
         url: url,
         processors: transformers
       ),
-      transaction: Transaction(animation: .smooth)
+      transaction: Transaction(animation: .default)
     ) { state in
-      if let image = state.image {
-        image.resizable()
-      } else {
-        Color.primary.opacity(0.3).shimmering()
-          .blur(radius: 34.0)
-          .background(.clear)
+      Group {
+        if let image = state.image {
+          image.resizable()
+        } else {
+          Color.primary.opacity(0.3)
+            .shimmering()
+            .blur(radius: 34.0)
+        }
       }
+      .modifier(ConditionalFrameModifier(size: size))
     }
     .onGeometryChange(for: CGSize.self, of: { proxy in
       return proxy.size
     }, action: { newValue in
       cornerRadius = 5 / 100 * (isLandscape ? newValue.height : newValue.width)
     })
-    .modifier(ConditionalFrameModifier(size: size))
     .clipShape(RoundedRectangle(cornerRadius: cornerRadius ?? 0))
     .overlay(
       RoundedRectangle(cornerRadius: cornerRadius ?? 0)

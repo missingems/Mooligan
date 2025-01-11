@@ -80,7 +80,7 @@ public extension Card {
 public struct MockCardDetailRequestClient: MagicCardDetailRequestClient {
   public static func generateMockCards(number: Int) -> [Card] {
     var cards: [Card] = []
-    for _ in 0...number {
+    for _ in 0..<number {
       cards.append(.mock(id: nil))
     }
     

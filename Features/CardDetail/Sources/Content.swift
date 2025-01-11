@@ -5,7 +5,7 @@ import Networking
 import ScryfallKit
 import SwiftUI
 
-struct Content: Equatable {
+public struct Content: Equatable {
   struct Description: Equatable, Sendable {
     let name: String
     let textElements: [[TextElement]]
@@ -38,7 +38,7 @@ struct Content: Equatable {
   
   var setIconURL: URL?
   var variants: IdentifiedArrayOf<Card>
-  var selectedMode: CardView.Mode
+  var displayableCardImage: DisplayableCardImage
   
   init(
     card: Card,
@@ -65,7 +65,7 @@ struct Content: Equatable {
     
     self.setIconURL = setIconURL
     variants = IdentifiedArrayOf(uniqueElements: [card])
-    selectedMode = CardView.Mode(card)
+    displayableCardImage = DisplayableCardImage(card)
   }
   
   func getColorIdentity() -> [String] {
@@ -74,22 +74,22 @@ struct Content: Equatable {
   }
   
   func getPower() -> String? {
-    let face = card.getCardFace(for: selectedMode.faceDirection)
+    let face = card.getCardFace(for: displayableCardImage.faceDirection)
     return face?.power ?? card.power
   }
   
   func getToughtness() -> String? {
-    let face = card.getCardFace(for: selectedMode.faceDirection)
+    let face = card.getCardFace(for: displayableCardImage.faceDirection)
     return face?.toughness ?? card.toughness
   }
   
   func getLoyalty() -> String? {
-    let face = card.getCardFace(for: selectedMode.faceDirection)
+    let face = card.getCardFace(for: displayableCardImage.faceDirection)
     return face?.loyalty ?? card.loyalty
   }
   
   func getArtistName() -> String? {
-    let face = card.getCardFace(for: selectedMode.faceDirection)
+    let face = card.getCardFace(for: displayableCardImage.faceDirection)
     return face?.artist ?? card.artist
   }
   
@@ -108,7 +108,7 @@ struct Content: Equatable {
       makeDescription(faceDirection: .front, card: card),
       makeDescription(faceDirection: .back, card: card)
     ] : [
-      makeDescription(faceDirection: selectedMode.faceDirection, card: card)
+      makeDescription(faceDirection: displayableCardImage.faceDirection, card: card)
     ]
   }
 }
