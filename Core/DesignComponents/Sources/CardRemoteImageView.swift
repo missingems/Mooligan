@@ -51,15 +51,15 @@ public struct CardRemoteImageView: View {
         url: url,
         processors: transformers
       ),
-      transaction: Transaction(animation: .smooth)
+      transaction: Transaction(animation: .default)
     ) { state in
       Group {
         if let image = state.image {
           image.resizable()
         } else {
-          Color.primary.opacity(0.3).shimmering()
+          Color.primary.opacity(0.3)
+            .shimmering()
             .blur(radius: 34.0)
-            .background(.clear)
         }
       }
       .modifier(ConditionalFrameModifier(size: size))

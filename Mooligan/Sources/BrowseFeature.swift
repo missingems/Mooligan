@@ -5,7 +5,7 @@ import Query
 import ScryfallKit
 
 @Reducer enum Path {
-  case showCardDetail
+  case showCardDetail(CardDetail.CardDetailFeature)
   case showSetDetail(Query.Feature)
 }
 
@@ -27,19 +27,19 @@ import ScryfallKit
   }
   
   @ObservableState struct State {
-    var sets: Browse.Feature.State
+    var sets: Browse.BrowseFeature.State
     var selectedSet: MTGSet?
     var path = StackState<Path.State>()
   }
   
   enum Action {
-    case sets(Browse.Feature.Action)
+    case sets(Browse.BrowseFeature.Action)
     case path(StackActionOf<Path>)
   }
   
   var body: some ReducerOf<Self> {
     Scope(state: \.sets, action: \.sets) {
-      Browse.Feature()
+      Browse.BrowseFeature()
     }
     
     Reduce { state, action in
@@ -63,8 +63,8 @@ import ScryfallKit
           switch action {
           case let .showSetDetail(value):
             switch value {
-            case let .didSelectCard(card):
-              break
+            case let .didSelectCard(card, queryType):
+              state.path.append(.showCardDetail(CardDetailFeature.State(card: card, queryType: queryType)))
               
             case .loadMoreCardsIfNeeded(displayingIndex: let displayingIndex):
               break
@@ -74,10 +74,6 @@ import ScryfallKit
               
             case .viewAppeared:
               break
-              
-            case let .routeToCardDetail(detail):
-              state.path.append(.showCardDetail)
-              return .none
             }
             
           case let .showCardDetail(value):
@@ -95,5 +91,6 @@ import ScryfallKit
       }
     }
     .forEach(\.path, action: \.path)
+    ._printChanges(.actionLabels)
   }
 }

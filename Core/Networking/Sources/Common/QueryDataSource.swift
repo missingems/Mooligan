@@ -17,9 +17,9 @@ public struct QueryDataSource: Equatable {
     self.queryType = queryType
     
     switch queryType {
-    case let .set(set, page):
+    case .set:
       self.cardDetails = cards.map { card in
-        CardInfo(card: card, set: set)
+        CardInfo(card: card)
       }
       
     case .search:
@@ -27,7 +27,7 @@ public struct QueryDataSource: Equatable {
       
     default:
       self.cardDetails = cards.map { card in
-        CardInfo(card: card, set: nil)
+        CardInfo(card: card)
       }
     }
     
@@ -37,12 +37,12 @@ public struct QueryDataSource: Equatable {
   
   public mutating func append(cards: [Card]) {
     switch queryType {
-    case let .set(set, page):
-      let cardDetails = cards.map { card in
-        CardInfo(card: card, set: set)
-      }
-      
-      self.cardDetails.append(contentsOf: cardDetails)
+    case .set:
+      cardDetails.append(
+        contentsOf: cards.map { card in
+          CardInfo(card: card)
+        }
+      )
       
     case .search:
       fatalError()
@@ -53,11 +53,12 @@ public struct QueryDataSource: Equatable {
   }
 }
 
-public struct CardInfo: Equatable, Identifiable {
-  public var card: Card
-  public var set: MTGSet?
+public struct CardInfo: Equatable {
+  public let card: Card
+  public let displayableCardImage: DisplayableCardImage
   
-  public var id: UUID {
-    return card.id
+  init(card: Card) {
+    self.card = card
+    self.displayableCardImage = DisplayableCardImage(card)
   }
 }

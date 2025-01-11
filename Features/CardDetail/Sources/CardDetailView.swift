@@ -11,16 +11,16 @@ struct CardDetailView: View {
   var body: some View {
     ScrollView(.vertical) {
       VStack(spacing: 0) {
-        if let maxWidth, maxWidth > 0 {
-          let cardImageWidth = store.content.card.isLandscape ? 2.5 / 3.0 * maxWidth : 2.0 / 3.0 * maxWidth
+        if let maxWidth, maxWidth > 0, let content = store.content {
+          let cardImageWidth = content.card.isLandscape ? 2.5 / 3.0 * maxWidth : 2.0 / 3.0 * maxWidth
           
           let configuration = CardView.LayoutConfiguration(
-            rotation: store.content.card.isLandscape ? .landscape : .portrait,
+            rotation: content.card.isLandscape ? .landscape : .portrait,
             maxWidth: cardImageWidth.rounded()
           )
           
           CardView(
-            mode: store.content.selectedMode,
+            displayableCard: content.displayableCardImage,
             layoutConfiguration: configuration,
             callToActionHorizontalOffset: 21.0,
             priceVisibility: .hidden
@@ -39,23 +39,26 @@ struct CardDetailView: View {
           .zIndex(1)
         }
         
-        CardDetailTableView(descriptions: store.content.getDescriptions())
+        CardDetailTableView(descriptions: store.content?.getDescriptions() ?? [])
         
-        InformationView(
-          title: store.content.infoLabel,
-          power: store.content.getPower(),
-          toughness: store.content.getToughtness(),
-          loyaltyCounters: store.content.getLoyalty(),
-          manaValue: store.content.card.cmc,
-          rarity: store.content.card.rarity,
-          collectorNumber: store.content.card.collectorNumber,
-          colorIdentity: store.content.getColorIdentity(),
-          setCode: store.content.card.set,
-          setIconURL: store.content.setIconURL
-        )
+        if let content = store.content {
+          InformationView(
+            title: content.infoLabel,
+            power: content.getPower(),
+            toughness: content.getToughtness(),
+            loyaltyCounters: content.getLoyalty(),
+            manaValue: content.card.cmc,
+            rarity: content.card.rarity,
+            collectorNumber: content.card.collectorNumber,
+            colorIdentity: content.getColorIdentity(),
+            setCode: content.card.set,
+            setIconURL: content.setIconURL
+          )
+        }
         
-        if let label = store.content.card.layout.callToActionLabel,
-            let icon = store.content.card.layout.callToActionIconName {
+        if let content = store.content,
+            let label = content.card.layout.callToActionLabel,
+            let icon = content.card.layout.callToActionIconName {
           Button {
             store.send(.descriptionCallToActionTapped, animation: .bouncy)
           } label: {
@@ -83,60 +86,68 @@ struct CardDetailView: View {
           .safeAreaPadding(.horizontal, nil)
         }
         
-        if store.content.card.isTransformable || store.content.card.isFlippable {
+        if store.content?.card.isTransformable == true || store.content?.card.isFlippable == true {
           Spacer(minLength: 13.0)
         }
         
-        LegalityView(
-          title: store.content.legalityLabel,
-          displayReleaseDate: store.content.card.releasedAt,
-          legalities: store.content.card.legalities.all
-        )
+        if let content = store.content {
+          LegalityView(
+            title: content.legalityLabel,
+            displayReleaseDate: content.card.releasedAt,
+            legalities: content.card.legalities.all
+          )
+        }
         
-        PriceView(
-          title: store.content.priceLabel,
-          subtitle: store.content.priceSubtitleLabel,
-          prices: store.content.card.prices,
-          usdLabel: store.content.usdLabel,
-          usdFoilLabel: store.content.usdFoilLabel,
-          tixLabel: store.content.tixLabel,
-          purchaseVendor: PurchaseVendor(purchaseURIs: store.content.card.purchaseUris)
-        )
+        if let content = store.content {
+          PriceView(
+            title: content.priceLabel,
+            subtitle: content.priceSubtitleLabel,
+            prices: content.card.prices,
+            usdLabel: content.usdLabel,
+            usdFoilLabel: content.usdFoilLabel,
+            tixLabel: content.tixLabel,
+            purchaseVendor: PurchaseVendor(purchaseURIs: content.card.purchaseUris)
+          )
+        }
         
-        VariantView(
-          title: store.content.variantLabel,
-          subtitle: store.content.numberOfVariantsLabel,
-          cards: store.content.variants
-        ) { action in
-          switch action {
-          case .didSelectCard:
-            break
+        if let content = store.content {
+          VariantView(
+            title: content.variantLabel,
+            subtitle: content.numberOfVariantsLabel,
+            cards: content.variants
+          ) { action in
+            switch action {
+            case .didSelectCard:
+              break
+            }
           }
         }
         
-        SelectionView(
-          items: [
-            SelectionView.Item(
-              icon: store.content.artistSelectionIcon,
-              title: store.content.artistSelectionLabel,
-              detail: store.content.card.artist
-            ) {
-              
-            },
-            SelectionView.Item(
-              icon: store.content.rulingSelectionIcon,
-              title: store.content.rulingSelectionLabel
-            ) {
-              store.send(.viewRulingsTapped)
-            },
-            SelectionView.Item(
-              icon: store.content.relatedSelectionIcon,
-              title: store.content.relatedSelectionLabel
-            ) {
-              
-            },
-          ]
-        )
+        if let content = store.content {
+          SelectionView(
+            items: [
+              SelectionView.Item(
+                icon: content.artistSelectionIcon,
+                title: content.artistSelectionLabel,
+                detail: content.card.artist
+              ) {
+                
+              },
+              SelectionView.Item(
+                icon: content.rulingSelectionIcon,
+                title: content.rulingSelectionLabel
+              ) {
+                store.send(.viewRulingsTapped)
+              },
+              SelectionView.Item(
+                icon: content.relatedSelectionIcon,
+                title: content.relatedSelectionLabel
+              ) {
+                
+              },
+            ]
+          )
+        }
       }
     }
     .onGeometryChange(for: CGFloat.self, of: { proxy in
@@ -144,32 +155,31 @@ struct CardDetailView: View {
     }, action: { newValue in
       maxWidth = newValue
     })
-    .task {
-      store.send(.fetchAdditionalInformation(card: store.content.card))
-    }
     .background {
       ZStack {
-        LazyImage(
-          url: store.content.card.getImageURL(type: .artCrop),
-          transaction: Transaction(animation: .smooth)
-        ) { state in
-          if let image = state.image {
-            image.resizable().blur(radius: 34, opaque: true)
+        if let content = store.content {
+          LazyImage(
+            url: content.card.getImageURL(type: .artCrop),
+            transaction: Transaction(animation: .smooth)
+          ) { state in
+            if let image = state.image {
+              image.resizable().blur(radius: 34, opaque: true)
+            }
           }
-        }
-        .opacity((store.content.selectedMode.faceDirection == .front) ? 1 : 0)
-        
-        LazyImage(
-          url: store.content.card.getImageURL(type: .artCrop, getSecondFace: true),
-          transaction: Transaction(animation: .smooth)
-        ) { state in
-          if let image = state.image {
-            image.resizable().blur(radius: 89, opaque: true)
+          .opacity((content.displayableCardImage.faceDirection == .front) ? 1 : 0)
+          
+          LazyImage(
+            url: content.card.getImageURL(type: .artCrop, getSecondFace: true),
+            transaction: Transaction(animation: .smooth)
+          ) { state in
+            if let image = state.image {
+              image.resizable().blur(radius: 89, opaque: true)
+            }
           }
+          .opacity((content.displayableCardImage.faceDirection == .back) ? 1 : 0)
+          
+          Color(asset: DesignComponentsAsset.backgroundPlaceholder)
         }
-        .opacity((store.content.selectedMode.faceDirection == .back) ? 1 : 0)
-        
-        Color(asset: DesignComponentsAsset.backgroundPlaceholder)
       }
       .ignoresSafeArea(.all, edges: .all)
     }
@@ -179,6 +189,9 @@ struct CardDetailView: View {
       NavigationStack {
         RulingView(store: store).toolbarTitleDisplayMode(.inline)
       }
+    }
+    .task {
+      store.send(.viewAppeared(initialAction: store.start))
     }
   }
 }

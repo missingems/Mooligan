@@ -12,63 +12,6 @@ public struct CardView: View {
     case display(usdFoil: String?, usd: String?)
   }
   
-  public enum Mode: Equatable {
-    case transformable(
-      direction: MagicCardFaceDirection,
-      frontImageURL: URL,
-      backImageURL: URL,
-      callToActionIconName: String
-    )
-    
-    case flippable(
-      direction: MagicCardFaceDirection,
-      displayingImageURL: URL,
-      callToActionIconName: String
-    )
-    
-    case single(displayingImageURL: URL)
-    
-    public var faceDirection: MagicCardFaceDirection {
-      switch self {
-      case let .transformable(direction, _, _, _):
-        return direction
-        
-      case let .flippable(direction, _, _):
-        return direction
-        
-      case .single:
-        return .front
-      }
-    }
-    
-    public init(_ card: Card) {
-      if card.isTransformable,
-         let frontImageURL = card.getImageURL(type: .normal, getSecondFace: false),
-         let backImageURL = card.getImageURL(type: .normal, getSecondFace: true),
-         let callToActionIconName = card.layout.callToActionIconName {
-        self = .transformable(
-          direction: .front,
-          frontImageURL: frontImageURL,
-          backImageURL: backImageURL,
-          callToActionIconName: callToActionIconName
-        )
-      } else if
-        card.isFlippable,
-        let imageURL = card.getImageURL(type: .normal),
-        let callToActionIconName = card.layout.callToActionIconName {
-        self = .flippable(
-          direction: .front,
-          displayingImageURL: imageURL,
-          callToActionIconName: callToActionIconName
-        )
-      } else if let imageURL = card.getImageURL(type: .normal) {
-        self = .single(displayingImageURL: imageURL)
-      } else {
-        fatalError("Impossible state: ImageURL cannot be nil.")
-      }
-    }
-  }
-  
   public struct LayoutConfiguration {
     public enum Rotation {
       case landscape
@@ -95,15 +38,15 @@ public struct CardView: View {
   
   private let layoutConfiguration: LayoutConfiguration
   private let callToActionHorizontalOffset: CGFloat
-  private let mode: Mode
+  private let displayableCard: DisplayableCardImage
   private let priceVisibility: PriceVisibility
   private let send: ((Action) -> Void)?
-  @State private var localMode: Mode?
+  @State private var localDisplayableCard: DisplayableCardImage?
   
   public var body: some View {
     VStack(spacing: 5) {
       ZStack(alignment: .trailing) {
-        switch localMode ?? mode {
+        switch localDisplayableCard ?? displayableCard {
         case let .transformable(
           direction,
           frontImageURL,
@@ -140,7 +83,7 @@ public struct CardView: View {
             if let send {
               send(.toggledFaceDirection)
             } else {
-              localMode = .transformable(
+              localDisplayableCard = .transformable(
                 direction: direction.toggled(),
                 frontImageURL: frontImageURL,
                 backImageURL: backImageURL,
@@ -204,7 +147,7 @@ public struct CardView: View {
       if let send {
         send(.toggledFaceDirection)
       } else {
-        localMode = .flippable(
+        localDisplayableCard = .flippable(
           direction: direction.toggled(),
           displayingImageURL: displayingImageURL,
           callToActionIconName: callToActionIconName
@@ -226,11 +169,11 @@ public struct CardView: View {
     if case let .display(usdFoilPrice, usdPrice) = priceVisibility {
       HStack(spacing: 5) {
         if let usd = usdPrice {
-          PillText("$\(usd)")
+          PillText(usd)
         }
         
         if let foil = usdFoilPrice {
-          PillText("$\(foil)", isFoil: true)
+          PillText(foil, isFoil: true)
             .foregroundStyle(.black.opacity(0.8))
         }
         
@@ -246,17 +189,17 @@ public struct CardView: View {
   }
   
   public init(
-    card: Card,
+    displayableCard: DisplayableCardImage,
     layoutConfiguration: LayoutConfiguration,
     callToActionHorizontalOffset: CGFloat = 5.0,
     priceVisibility: PriceVisibility,
     send: ((Action) -> Void)? = nil
   ) {
-    mode = Mode(card)
+    self.displayableCard = displayableCard
     self.priceVisibility = priceVisibility
     
     if send == nil {
-      localMode = mode
+      localDisplayableCard = displayableCard
     }
     
     self.layoutConfiguration = layoutConfiguration
@@ -265,21 +208,21 @@ public struct CardView: View {
   }
   
   public init?(
-    mode: Mode?,
+    displayableCard: DisplayableCardImage?,
     layoutConfiguration: LayoutConfiguration,
     callToActionHorizontalOffset: CGFloat = 5.0,
     priceVisibility: PriceVisibility,
     send: ((Action) -> Void)? = nil
   ) {
-    guard let mode else {
+    guard let displayableCard else {
       return nil
     }
     
-    self.mode = mode
+    self.displayableCard = displayableCard
     self.priceVisibility = priceVisibility
     
     if send == nil {
-      localMode = mode
+      localDisplayableCard = displayableCard
     }
     
     self.layoutConfiguration = layoutConfiguration

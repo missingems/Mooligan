@@ -27,7 +27,6 @@ public struct Feature {
     var mode: Mode
     var queryType: QueryType
     var dataSource: QueryDataSource?
-    var testdataSource: [(Range<Array<CardInfo>.Index>.Element, CardInfo)] = []
     
     public init(
       mode: Mode,
@@ -36,26 +35,24 @@ public struct Feature {
       self.mode = mode
       self.queryType = queryType
     }
+    
+    func shouldLoadMore(at index: Int) -> Bool {
+      (index == (dataSource?.cardDetails.count ?? 1) - 1) && dataSource?.hasNextPage == true
+    }
   }
   
   public enum Action: Equatable {
-    case didSelectCard(Card)
+    case didSelectCard(Card, QueryType)
     case loadMoreCardsIfNeeded(displayingIndex: Int)
     case updateCards(QueryDataSource?, QueryType)
-    case routeToCardDetail(QueryDataSource?)
     case viewAppeared
   }
   
   public var body: some ReducerOf<Self> {
     Reduce { state, action in
       switch action {
-      case .routeToCardDetail:
-        return .none
-        
       case .didSelectCard:
-        return .run { [dataSource = state.dataSource] send in
-          await send(.routeToCardDetail(nil))
-        }
+        return .none
         
       case let .loadMoreCardsIfNeeded(displayingIndex):
         guard
@@ -84,12 +81,9 @@ public struct Feature {
         if let value {
           state.dataSource = value
           state.queryType = nextQuery
-          
-          state.testdataSource = Array(zip(state.dataSource!.cardDetails.indices, state.dataSource!.cardDetails))
           state.mode = .data
         }
         
-//        a        return .none
         return .none
         
       case .viewAppeared:

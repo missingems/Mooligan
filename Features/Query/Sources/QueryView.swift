@@ -40,8 +40,9 @@ struct QueryView: View {
         spacing: 13
       ) {
         if let contentWidth, contentWidth > 0, let dataSource = store.dataSource {
-          ForEach(dataSource.cardDetails.indices, id: \.self) { index in
-            let card = dataSource.cardDetails[index].card
+          ForEach(Array(zip(dataSource.cardDetails, dataSource.cardDetails.indices)), id: \.0.card.id) { value in
+            let cardInfo = value.0
+            let index = value.1
             
             let layout = CardView.LayoutConfiguration(
               rotation: .portrait,
@@ -49,19 +50,20 @@ struct QueryView: View {
             )
             
             Button {
-              store.send(.didSelectCard(card))
+              store.send(.didSelectCard(cardInfo.card, store.queryType))
             } label: {
               CardView(
-                card: card,
+                displayableCard: cardInfo.displayableCardImage,
                 layoutConfiguration: layout,
                 callToActionHorizontalOffset: 5,
                 priceVisibility: .hidden
               )
             }
-            .frame(width: layout.size.width, height: layout.size.height, alignment: .center)
             .buttonStyle(.sinkableButtonStyle)
             .task {
-              store.send(.loadMoreCardsIfNeeded(displayingIndex: index))
+              if store.state.shouldLoadMore(at: index) {
+                store.send(.loadMoreCardsIfNeeded(displayingIndex: index))
+              }
             }
           }
         }

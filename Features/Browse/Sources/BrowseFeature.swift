@@ -3,7 +3,7 @@ import SwiftUI
 import Networking
 import ScryfallKit
 
-@Reducer public struct Feature {
+@Reducer public struct BrowseFeature {
   @Dependency(\.gameSetRequestClient) var client
   
   public var body: some ReducerOf<Self> {
@@ -28,7 +28,7 @@ import ScryfallKit
         }
         
       case let .updateSets(value):
-        state.sets = IdentifiedArrayOf<MTGSet>(uniqueElements: value)
+        state.sets = IdentifiedArrayOf(uniqueElements: value)
         return .none
       }
     }
@@ -37,7 +37,7 @@ import ScryfallKit
   public init() {}
 }
 
-public extension Feature {
+public extension BrowseFeature {
   @ObservableState struct State: Equatable {
     var selectedSet: MTGSet?
     var sets: IdentifiedArrayOf<MTGSet>

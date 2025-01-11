@@ -4,7 +4,7 @@ import SwiftUI
 import Networking
 
 struct SetsView: View {
-  private var store: StoreOf<Feature>
+  private var store: StoreOf<BrowseFeature>
   
   var body: some View {
     List(Array(zip(store.sets, store.sets.indices)), id: \.0.id) { value in
@@ -30,7 +30,7 @@ struct SetsView: View {
     }
   }
   
-  init(store: StoreOf<Feature>) {
+  init(store: StoreOf<BrowseFeature>) {
     self.store = store
   }
 }
