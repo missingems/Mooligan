@@ -53,20 +53,22 @@ public struct CardRemoteImageView: View {
       ),
       transaction: Transaction(animation: .smooth)
     ) { state in
-      if let image = state.image {
-        image.resizable()
-      } else {
-        Color.primary.opacity(0.3).shimmering()
-          .blur(radius: 34.0)
-          .background(.clear)
+      Group {
+        if let image = state.image {
+          image.resizable()
+        } else {
+          Color.primary.opacity(0.3).shimmering()
+            .blur(radius: 34.0)
+            .background(.clear)
+        }
       }
+      .modifier(ConditionalFrameModifier(size: size))
     }
     .onGeometryChange(for: CGSize.self, of: { proxy in
       return proxy.size
     }, action: { newValue in
       cornerRadius = 5 / 100 * (isLandscape ? newValue.height : newValue.width)
     })
-    .modifier(ConditionalFrameModifier(size: size))
     .clipShape(RoundedRectangle(cornerRadius: cornerRadius ?? 0))
     .overlay(
       RoundedRectangle(cornerRadius: cornerRadius ?? 0)

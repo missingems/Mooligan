@@ -98,11 +98,11 @@ public struct CardView: View {
   private let mode: Mode
   private let priceVisibility: PriceVisibility
   private let send: ((Action) -> Void)?
-  private var localMode: Mode?
+  @State private var localMode: Mode?
   
   public var body: some View {
     VStack(spacing: 5) {
-//      ZStack(alignment: .trailing) {
+      ZStack(alignment: .trailing) {
         switch localMode ?? mode {
         case let .transformable(
           direction,
@@ -119,10 +119,9 @@ public struct CardView: View {
           .opacity(direction == .back ? 1 : 0)
           .rotation3DEffect(.degrees(direction == .back ? 180 : 0), axis: (x: 0, y: 1, z: 0))
           .zIndex(direction == .back ? 2 : 1)
-//          .transaction { transaction in
-//            transaction.animation = .bouncy
-//          }
-          .frame(width: layoutConfiguration.size.width, height: layoutConfiguration.size.height, alignment: .center)
+          .transaction { transaction in
+            transaction.animation = .bouncy
+          }
           
           CardRemoteImageView(
             url: frontImageURL,
@@ -133,21 +132,20 @@ public struct CardView: View {
           .opacity(direction == .front ? 1 : 0)
           .rotation3DEffect(.degrees(direction == .front ? 0 : 180), axis: (x: 0, y: 1, z: 0))
           .zIndex(direction == .front ? 2 : 1)
-          .frame(width: layoutConfiguration.size.width, height: layoutConfiguration.size.height, alignment: .center)
-//          .transaction { transaction in
-//            transaction.animation = .bouncy
-//          }
+          .transaction { transaction in
+            transaction.animation = .bouncy
+          }
           
           Button {
             if let send {
               send(.toggledFaceDirection)
             } else {
-//              localMode = .transformable(
-//                direction: direction.toggled(),
-//                frontImageURL: frontImageURL,
-//                backImageURL: backImageURL,
-//                callToActionIconName: callToActionIconName
-//              )
+              localMode = .transformable(
+                direction: direction.toggled(),
+                frontImageURL: frontImageURL,
+                backImageURL: backImageURL,
+                callToActionIconName: callToActionIconName
+              )
             }
           } label: {
             Image(systemName: callToActionIconName).fontWeight(.semibold)
@@ -178,11 +176,11 @@ public struct CardView: View {
           .frame(width: layoutConfiguration.size.width, height: layoutConfiguration.size.height, alignment: .center)
         }
       }
-//      .zIndex(1)
+      .zIndex(1)
       
-//      priceView
-//        .zIndex(0)
-//    }
+      priceView
+        .zIndex(0)
+    }
   }
   
   @ViewBuilder private func flippableCardView(
@@ -206,11 +204,11 @@ public struct CardView: View {
       if let send {
         send(.toggledFaceDirection)
       } else {
-//        localMode = .flippable(
-//          direction: direction.toggled(),
-//          displayingImageURL: displayingImageURL,
-//          callToActionIconName: callToActionIconName
-//        )
+        localMode = .flippable(
+          direction: direction.toggled(),
+          displayingImageURL: displayingImageURL,
+          callToActionIconName: callToActionIconName
+        )
       }
     } label: {
       Image(systemName: callToActionIconName).fontWeight(.semibold)

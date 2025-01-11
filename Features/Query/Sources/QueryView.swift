@@ -20,7 +20,7 @@ struct Placeholder: ViewModifier {
 
 struct QueryView: View {
   private var store: StoreOf<Feature>
-  @State private var numberOfColumns: Double = 2
+  private var numberOfColumns: Double = 2
   @State private var contentWidth: CGFloat = 0
   
   init(store: StoreOf<Feature>) {
@@ -43,39 +43,23 @@ struct QueryView: View {
           ForEach(dataSource.cardDetails.indices, id: \.self) { index in
             let card = dataSource.cardDetails[index].card
             
-//            Button(
-//              action: {
-//                store.send(.didSelectCard(card))
-//              }, label: {
-//                
-//              }
-//            )
             let layout = CardView.LayoutConfiguration(
               rotation: .portrait,
               maxWidth: (contentWidth - ((numberOfColumns - 1) * 8.0)) / numberOfColumns
             )
-                
-            CardRemoteImageView(
-              url: card.getImageURL(type: .normal)!,
-              isLandscape: layout.rotation == .landscape,
-              isTransformed: false,
-              size: layout.size
-            )
-//            .frame(width: layoutConfiguration.size.width, height: layoutConfiguration.size.height, alignment: .center)
             
-//            CardView(
-//              card: card,
-//              layoutConfiguration: CardView.LayoutConfiguration(
-//                rotation: .portrait,
-//                maxWidth: (contentWidth - ((numberOfColumns - 1) * 8.0)) / numberOfColumns
-//              ),
-//              callToActionHorizontalOffset: 5,
-//              priceVisibility: .hidden
-//            )
-//            .onTapGesture {
-//              store.send(.didSelectCard(card))
-//            }
-//            .buttonStyle(.sinkableButtonStyle)
+            Button {
+              store.send(.didSelectCard(card))
+            } label: {
+              CardView(
+                card: card,
+                layoutConfiguration: layout,
+                callToActionHorizontalOffset: 5,
+                priceVisibility: .hidden
+              )
+            }
+            .frame(width: layout.size.width, height: layout.size.height, alignment: .center)
+            .buttonStyle(.sinkableButtonStyle)
             .task {
               store.send(.loadMoreCardsIfNeeded(displayingIndex: index))
             }
