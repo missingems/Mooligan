@@ -98,7 +98,7 @@ struct QueryView: View {
       .padding(.horizontal, 11)
     }
     .scrollBounceBehavior(.basedOnSize)
-//    .placeholder(store.mode.isPlaceholder)
+    .placeholder(store.mode.isPlaceholder)
     .navigationBarTitleDisplayMode(.inline)
     .task {
       store.send(.viewAppeared)
