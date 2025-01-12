@@ -42,6 +42,14 @@ struct RootView: View {
                 CardDetail.RootView(store: value)
               }
             }
+          case .game:
+            Text(info.title)
+          case .search:
+            Text(info.title)
+          case .collection:
+            Text(info.title)
+          case .settings:
+            Text(info.title)
           }
         }
       }

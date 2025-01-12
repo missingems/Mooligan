@@ -12,13 +12,39 @@ import ScryfallKit
 @Reducer struct Feature {
   enum TabInfo: Equatable, CaseIterable, Identifiable {
     case sets
+    case search
+    case game
+    case collection
+    case settings
     
     var title: String {
-      return String(localized: "Sets")
+      switch self {
+      case .search:
+        return String(localized: "Search")
+      case .sets:
+        return String(localized: "Sets")
+      case .game:
+        return String(localized: "Game")
+      case .collection:
+        return String(localized: "Collection")
+      case .settings:
+        return String(localized: "Settings")
+      }
     }
     
     var systemIconName: String {
-      return "text.page"
+      switch self {
+      case .search:
+        return "magnifyingglass.circle"
+      case .sets:
+        return "text.page"
+      case .game:
+        return "dice"
+      case .collection:
+        return "folder"
+      case .settings:
+        return "gearshape"
+      }
     }
     
     nonisolated(unsafe) var id: Self {
@@ -50,7 +76,7 @@ import ScryfallKit
           
           state.path.append(
             .showSetDetail(
-              Query.Feature.State(mode: .placeholder(numberOfDataSource: 10), queryType: .set(value, page: 1))
+              Query.Feature.State(mode: .placeholder, queryType: .set(value, page: 1))
             )
           )
         }
@@ -69,7 +95,7 @@ import ScryfallKit
             case .loadMoreCardsIfNeeded(displayingIndex: let displayingIndex):
               break
               
-            case .updateCards(_, _):
+            case .updateCards(_, _, _):
               break
               
             case .viewAppeared:

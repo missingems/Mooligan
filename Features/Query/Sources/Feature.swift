@@ -10,7 +10,7 @@ public struct Feature {
   @ObservableState
   public struct State {
     public enum Mode: Equatable {
-      case placeholder(numberOfDataSource: Int)
+      case placeholder
       case data
       
       var isPlaceholder: Bool {
@@ -27,6 +27,7 @@ public struct Feature {
     var mode: Mode
     var queryType: QueryType
     let title: String
+    let searchPlaceholder: String
     var dataSource: QueryDataSource?
     
     public init(
@@ -39,9 +40,11 @@ public struct Feature {
       switch queryType {
       case let .set(set, _):
         title = set.name
+        searchPlaceholder = "Search \(set.cardCount) cards"
         
       case let .search(query, _):
         title = query
+        searchPlaceholder = "Search"
       }
     }
     
@@ -53,7 +56,7 @@ public struct Feature {
   public enum Action: Equatable {
     case didSelectCard(Card, QueryType)
     case loadMoreCardsIfNeeded(displayingIndex: Int)
-    case updateCards(QueryDataSource?, QueryType)
+    case updateCards(QueryDataSource?, QueryType, State.Mode)
     case viewAppeared
   }
   
@@ -79,36 +82,45 @@ public struct Feature {
           dataSource?.append(cards: result.data)
           dataSource?.hasNextPage = result.hasMore ?? false
           
-          await send(.updateCards(dataSource, nextQuery))
+          await send(.updateCards(dataSource, nextQuery, .data))
         }
         .cancellable(
           id: "loadMoreCardsIfNeeded: \(displayingIndex), for query: \(state.queryType)",
           cancelInFlight: true
         )
         
-      case let .updateCards(value, nextQuery):
+      case let .updateCards(value, nextQuery, mode):
         if let value {
           state.dataSource = value
           state.queryType = nextQuery
-          state.mode = .data
+          state.mode = mode
         }
         
         return .none
         
       case .viewAppeared:
-        if state.mode.isPlaceholder {
-          return .run { [client, queryType = state.queryType] send in
-            let result = try await client.queryCards(queryType)
-            let dataSource = QueryDataSource(cards: result.data, focusedCard: nil, hasNextPage: result.hasMore ?? false)
-            await send(.updateCards(dataSource, queryType))
-          }
-          .cancellable(
-            id: "viewAppeared: \(state.queryType)",
-            cancelInFlight: true
-          )
-        } else {
-          return .none
-        }
+        return .concatenate([
+          .run(operation: { [state] send in
+            if state.mode.isPlaceholder {
+              switch state.queryType {
+              case let .set(value, _):
+                let mocks = MockCardDetailRequestClient.generateMockCards(number: min(10, value.cardCount))
+                let dataSource = QueryDataSource(cards: mocks, focusedCard: nil, hasNextPage: false)
+                await send(.updateCards(dataSource, state.queryType, .placeholder))
+                
+              case .search:
+                fatalError("Unimplemented")
+              }
+            }
+          }),
+          .run(operation: { [state] send in
+            if state.mode.isPlaceholder {
+              let result = try await client.queryCards(state.queryType)
+              let dataSource = QueryDataSource(cards: result.data, focusedCard: nil, hasNextPage: result.hasMore ?? false)
+              await send(.updateCards(dataSource, state.queryType, .data))
+            }
+          })
+        ])
       }
     }
   }
