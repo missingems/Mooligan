@@ -35,7 +35,7 @@ extension ScryfallClient: MagicCardQueryRequestClient {
       
     case let .set(gameSet, page):
       try await searchCards(
-        filters: [.set(gameSet.code)],
+        filters: [.set(gameSet.code), .game(.paper)],
         unique: .prints,
         order: nil,
         sortDirection: nil,
