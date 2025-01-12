@@ -178,7 +178,7 @@ public struct CardView: View {
         }
         
         if usdPrice == nil && usdFoilPrice == nil {
-          PillText("$0.00")
+          PillText("$0.00").unavailable(true)
         }
       }
       .foregroundStyle(DesignComponentsAsset.accentColor.swiftUIColor)

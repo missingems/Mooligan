@@ -122,7 +122,7 @@ extension PriceView {
             .font(.body)
             .fontWeight(isDisabled ? .regular : .semibold)
             .foregroundStyle(
-              isFoil ? Color.black : DesignComponentsAsset.accentColor.swiftUIColor
+              (isDisabled == false && isFoil) ? Color.black : DesignComponentsAsset.accentColor.swiftUIColor
             )
             .monospaced()
             .frame(maxWidth: .infinity, minHeight: 34)
@@ -163,8 +163,7 @@ extension PriceView {
             .frame(maxHeight: .infinity, alignment: .center)
         }
       }
-      .disabled(isDisabled)
-      .opacity(isDisabled ? 0.31 : 1.0)
+      .unavailable(isDisabled)
     }
   }
 }
