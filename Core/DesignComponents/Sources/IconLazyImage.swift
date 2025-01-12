@@ -25,7 +25,7 @@ public struct IconLazyImage: View {
       }
     }
     .task(priority: .background) {
-      guard let url else { return }
+      guard let url, imageData == nil else { return }
       
       ImagePipeline.shared.loadImage(with: url) { result in
         switch result {

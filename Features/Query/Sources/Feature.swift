@@ -26,6 +26,7 @@ public struct Feature {
     
     var mode: Mode
     var queryType: QueryType
+    let title: String
     var dataSource: QueryDataSource?
     
     public init(
@@ -34,6 +35,14 @@ public struct Feature {
     ) {
       self.mode = mode
       self.queryType = queryType
+      
+      switch queryType {
+      case let .set(set, _):
+        title = set.name
+        
+      case let .search(query, _):
+        title = query
+      }
     }
     
     func shouldLoadMore(at index: Int) -> Bool {
@@ -90,7 +99,7 @@ public struct Feature {
         if state.mode.isPlaceholder {
           return .run { [client, queryType = state.queryType] send in
             let result = try await client.queryCards(queryType)
-            let dataSource = QueryDataSource(queryType: queryType, cards: result.data, focusedCard: nil, hasNextPage: result.hasMore ?? false)
+            let dataSource = QueryDataSource(cards: result.data, focusedCard: nil, hasNextPage: result.hasMore ?? false)
             await send(.updateCards(dataSource, queryType))
           }
           .cancellable(

@@ -168,12 +168,12 @@ public struct CardView: View {
   @ViewBuilder private var priceView: some View {
     if case let .display(usdFoilPrice, usdPrice) = priceVisibility {
       HStack(spacing: 5) {
-        if let usd = usdPrice {
-          PillText(usd)
+        if let usdPrice {
+          PillText("$\(usdPrice)")
         }
         
-        if let foil = usdFoilPrice {
-          PillText(foil, isFoil: true)
+        if let usdFoilPrice {
+          PillText("$\(usdFoilPrice)", isFoil: true)
             .foregroundStyle(.black.opacity(0.8))
         }
         

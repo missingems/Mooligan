@@ -6,29 +6,43 @@ import Shimmer
 import SwiftUI
 import NukeUI
 
-struct Placeholder: ViewModifier {
-  let isPlaceholder: Bool
-  
-  func body(content: Content) -> some View {
-    if isPlaceholder {
-      content.redacted(reason: .placeholder)
-    } else {
-      content
-    }
-  }
-}
-
 struct QueryView: View {
   private var store: StoreOf<Feature>
   private var numberOfColumns: Double = 2
   @State private var contentWidth: CGFloat?
-  
+  @State private var search: String = ""
   init(store: StoreOf<Feature>) {
     self.store = store
   }
   
   var body: some View {
     ScrollView(.vertical) {
+      HStack {
+        
+        //          VStack(alignment: .center, spacing: 5.0) {
+          //
+          //
+          //            VStack(alignment: .center, spacing: 3.0) {
+          //              Text(store.title).font(.title).fontWeight(.semibold)
+          //
+          
+          //            }
+          //            .multilineTextAlignment(.center)
+          //          }
+          //          .padding(.bottom, 21.0)
+          //          .safeAreaPadding(.horizontal, nil)
+        
+        if case let .set(set, _) = store.queryType, let url = URL(string: set.iconSvgUri) {
+          PillText(set.code.uppercased()).font(.body).monospaced()
+          Text(store.title).font(.headline).multilineTextAlignment(.center)
+        }
+//        HStack(spacing: 5) {
+          
+//          Text("\(set.cardCount) Cards").font(.body).foregroundStyle(.secondary)
+//        }
+        
+      }
+      
       LazyVGrid(
         columns: [GridItem](
           repeating: GridItem(
@@ -68,6 +82,7 @@ struct QueryView: View {
           }
         }
       }
+      .searchable(text: $search, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search")
       .onGeometryChange(
         for: CGFloat.self,
         of: { proxy in
@@ -82,12 +97,22 @@ struct QueryView: View {
       )
       .padding(.horizontal, 11)
     }
-    .modifier(Placeholder(isPlaceholder: store.mode.isPlaceholder))
-    .scrollDisabled(store.mode.isPlaceholder)
-    .background(Color(.secondarySystemBackground).ignoresSafeArea())
+    .scrollBounceBehavior(.basedOnSize)
+//    .placeholder(store.mode.isPlaceholder)
     .navigationBarTitleDisplayMode(.inline)
     .task {
       store.send(.viewAppeared)
     }
+    .navigationTitle(store.title)
+    .toolbar {
+      ToolbarItem(placement: .principal) {
+        if case let .set(set, _) = store.queryType, let url = URL(string: set.iconSvgUri) {
+          HStack(spacing: 5) {
+            IconLazyImage(url).frame(width: 34, height: 34, alignment: .center)
+          }
+        }
+      }
+    }
+    
   }
 }
