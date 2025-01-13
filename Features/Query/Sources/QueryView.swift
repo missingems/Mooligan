@@ -90,39 +90,47 @@ struct QueryView: View {
             isPresented: $isShowingPopover,
             attachmentAnchor: .rect(.bounds),
             content: {
-              VStack(spacing: 8.0) {
+              VStack(spacing: 0) {
                 HStack {
-                  Text("Set Symbol").safeAreaPadding([.leading, .top], nil)
+                  Text("Set Symbol")
                   Spacer(minLength: 55)
-                  IconLazyImage(iconURL, tintColor: .secondary).frame(width: 21, height: 21, alignment: .center).safeAreaPadding([.trailing, .top], nil)
+                  IconLazyImage(iconURL, tintColor: .secondary).frame(width: 21, height: 21, alignment: .center)
                 }
+                .padding(.vertical, 11.0)
+                .safeAreaPadding(.horizontal, nil)
                 
                 Divider()
                 
                 HStack {
-                  Text("Set Code").safeAreaPadding(.leading, nil)
+                  Text("Set Code")
                   Spacer(minLength: 55)
-                  Text(value.code.uppercased()).foregroundStyle(.secondary).fontDesign(.monospaced).safeAreaPadding(.trailing, nil).multilineTextAlignment(.trailing)
+                  Text(value.code.uppercased()).foregroundStyle(.secondary).fontDesign(.monospaced)
                 }
+                .padding(.vertical, 11.0)
+                .safeAreaPadding(.horizontal, nil)
                 
                 Divider()
                 
                 HStack {
-                  Text("Released Date").safeAreaPadding(.leading, nil)
+                  Text("Released Date")
                   Spacer(minLength: 55)
                   
                   if let date = store.setReleasedDate {
-                    Text(date.formatted(date: .numeric, time: .omitted)).foregroundStyle(.secondary).safeAreaPadding(.trailing, nil).multilineTextAlignment(.trailing)
+                    Text(date.formatted(date: .numeric, time: .omitted)).foregroundStyle(.secondary)
                   }
                 }
+                .padding(.vertical, 11.0)
+                .safeAreaPadding(.horizontal, nil)
                 
                 Divider()
                 
                 HStack {
-                  Text("Number of Cards").safeAreaPadding([.leading, .bottom], nil)
+                  Text("Number of Cards")
                   Spacer(minLength: 55)
-                  Text("\(value.cardCount)").foregroundStyle(.secondary).safeAreaPadding([.trailing, .bottom], nil).multilineTextAlignment(.trailing)
+                  Text("\(value.cardCount)").foregroundStyle(.secondary)
                 }
+                .padding(.vertical, 11.0)
+                .safeAreaPadding(.horizontal, nil)
               }
               
               .presentationCompactAdaptation(.popover)
@@ -132,7 +140,11 @@ struct QueryView: View {
             }
           )
           
-          Button("Info", systemImage: "line.3.horizontal.decrease.circle") {
+          Menu("Info", systemImage: "line.3.horizontal.decrease.circle") {
+            Text("test")
+            Text("test")
+            Text("test")
+            Text("test")
           }
           .labelStyle(.iconOnly)
         }

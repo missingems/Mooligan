@@ -35,7 +35,6 @@ struct CardDetailView: View {
               trailing: 0
             )
           )
-          .shadow(color: DesignComponentsAsset.shadow.swiftUIColor, radius: 13, x: 0, y: 8)
           .zIndex(1)
         }
         
