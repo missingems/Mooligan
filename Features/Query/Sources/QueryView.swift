@@ -141,10 +141,55 @@ struct QueryView: View {
           )
           
           Menu("Info", systemImage: "line.3.horizontal.decrease.circle") {
-            Text("test")
-            Text("test")
-            Text("test")
-            Text("test")
+            Button {
+              print("Pressed")
+            } label: {
+              Label {
+                Text("Alphabet")
+              } icon: {
+                Image(systemName: "characters.uppercase")
+              }
+            }
+            
+            Button {
+              print("Pressed")
+            } label: {
+              Label {
+                Text("Price")
+              } icon: {
+                Image(systemName: "dollarsign.circle.fill")
+              }
+            }
+            
+            Button {
+              print("Pressed")
+            } label: {
+              Label {
+                Text("Rarity")
+              } icon: {
+                Image(systemName: "chart.bar.fill")
+              }
+            }
+            
+            Button {
+              print("Pressed")
+            } label: {
+              Label {
+                Text("Mana Cost")
+              } icon: {
+                DesignComponentsAsset._0.swiftUIImage
+              }
+            }
+            
+            Button {
+              print("Pressed")
+            } label: {
+              Label {
+                Text("Color")
+              } icon: {
+                DesignComponentsAsset.c.swiftUIImage
+              }
+            }
           }
           .labelStyle(.iconOnly)
         }
