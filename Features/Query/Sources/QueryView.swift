@@ -1,5 +1,6 @@
 import ComposableArchitecture
 import DesignComponents
+import Foundation
 import Featurist
 import Networking
 import Shimmer
@@ -11,6 +12,8 @@ struct QueryView: View {
   private var numberOfColumns: Double = 2
   @State private var contentWidth: CGFloat?
   @State private var search: String = ""
+  @State private var isShowingPopover = false
+  
   init(store: StoreOf<Feature>) {
     self.store = store
   }
@@ -77,12 +80,61 @@ struct QueryView: View {
     .navigationTitle(store.title)
     .searchable(text: $search, placement: .navigationBarDrawer(displayMode: .always), prompt: store.searchPlaceholder)
     .toolbar {
-      ToolbarItem(placement: .principal) {
-        if case let .set(set, _) = store.queryType, let url = URL(string: set.iconSvgUri) {
-          HStack(spacing: 5) {
-            IconLazyImage(url).frame(width: 23, height: 23, alignment: .center).offset(y: -1)
-            Text(store.title).font(.headline).multilineTextAlignment(.center)
+      ToolbarItemGroup(placement: .primaryAction) {
+        if case let .set(value, _) = store.queryType, let iconURL = URL(string: value.iconSvgUri) {
+          Button("Info", systemImage: "info.circle") {
+            isShowingPopover.toggle()
           }
+          .labelStyle(.iconOnly)
+          .popover(
+            isPresented: $isShowingPopover,
+            attachmentAnchor: .rect(.bounds),
+            content: {
+              VStack(spacing: 8.0) {
+                HStack {
+                  Text("Set Symbol").safeAreaPadding([.leading, .top], nil)
+                  Spacer(minLength: 55)
+                  IconLazyImage(iconURL, tintColor: .secondary).frame(width: 21, height: 21, alignment: .center).safeAreaPadding([.trailing, .top], nil)
+                }
+                
+                Divider()
+                
+                HStack {
+                  Text("Set Code").safeAreaPadding(.leading, nil)
+                  Spacer(minLength: 55)
+                  Text(value.code.uppercased()).foregroundStyle(.secondary).fontDesign(.monospaced).safeAreaPadding(.trailing, nil).multilineTextAlignment(.trailing)
+                }
+                
+                Divider()
+                
+                HStack {
+                  Text("Released Date").safeAreaPadding(.leading, nil)
+                  Spacer(minLength: 55)
+                  
+                  if let date = store.setReleasedDate {
+                    Text(date.formatted(date: .numeric, time: .omitted)).foregroundStyle(.secondary).safeAreaPadding(.trailing, nil).multilineTextAlignment(.trailing)
+                  }
+                }
+                
+                Divider()
+                
+                HStack {
+                  Text("Number of Cards").safeAreaPadding([.leading, .bottom], nil)
+                  Spacer(minLength: 55)
+                  Text("\(value.cardCount)").foregroundStyle(.secondary).safeAreaPadding([.trailing, .bottom], nil).multilineTextAlignment(.trailing)
+                }
+              }
+              
+              .presentationCompactAdaptation(.popover)
+              .presentationBackground {
+                Color.clear
+              }
+            }
+          )
+          
+          Button("Info", systemImage: "line.3.horizontal.decrease.circle") {
+          }
+          .labelStyle(.iconOnly)
         }
       }
     }

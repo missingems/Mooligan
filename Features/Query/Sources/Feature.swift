@@ -28,6 +28,7 @@ public struct Feature {
     var queryType: QueryType
     let title: String
     let searchPlaceholder: String
+    let setReleasedDate: Date?
     var dataSource: QueryDataSource?
     
     public init(
@@ -42,9 +43,19 @@ public struct Feature {
         title = set.name
         searchPlaceholder = "Search \(set.cardCount) cards"
         
+        if let dateString = set.releasedAt {
+          let dateFormatter = DateFormatter()
+          dateFormatter.dateFormat = "yyyy-MM-dd" // Matches the format of the input string
+          
+          setReleasedDate = dateFormatter.date(from: dateString)
+        } else {
+          setReleasedDate = nil
+        }
+        
       case let .search(query, _):
         title = query
         searchPlaceholder = "Search"
+        setReleasedDate = nil
       }
     }
     
