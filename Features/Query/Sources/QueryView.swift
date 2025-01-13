@@ -76,7 +76,6 @@ struct QueryView: View {
       .scrollDisabled(store.mode.isPlaceholder)
     }
     .scrollBounceBehavior(.basedOnSize)
-    .navigationBarTitleDisplayMode(.inline)
     .navigationTitle(store.title)
     .searchable(text: $search, placement: .navigationBarDrawer(displayMode: .always), prompt: store.searchPlaceholder)
     .toolbar {
@@ -85,6 +84,7 @@ struct QueryView: View {
           Button("Info", systemImage: "info.circle") {
             isShowingPopover.toggle()
           }
+          .disabled(isShowingPopover)
           .labelStyle(.iconOnly)
           .popover(
             isPresented: $isShowingPopover,
