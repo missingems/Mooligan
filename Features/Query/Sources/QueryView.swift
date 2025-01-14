@@ -81,7 +81,7 @@ struct QueryView: View {
     .searchable(text: $search, placement: .navigationBarDrawer(displayMode: .always), prompt: store.searchPlaceholder)
     .toolbar {
       ToolbarItemGroup(placement: .primaryAction) {
-        if case let .set(value, _) = store.queryType, let iconURL = URL(string: value.iconSvgUri) {
+        if case let .query(value, _, _, _, _) = store.queryType, let iconURL = URL(string: value.iconSvgUri) {
           Button("Info", systemImage: "info.circle") {
             isShowingPopover.toggle()
           }
@@ -152,7 +152,7 @@ struct QueryView: View {
             }
             
             Button {
-              print("Pressed")
+              store.send(.didSelectSortByPrice)
             } label: {
               Label {
                 Text("Price")

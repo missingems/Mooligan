@@ -76,7 +76,8 @@ import ScryfallKit
           
           state.path.append(
             .showSetDetail(
-              Query.Feature.State(mode: .placeholder, queryType: .set(value, page: 1))
+//              Query.Feature.State(mode: .placeholder, queryType: .set(value, page: 1))
+              Query.Feature.State(mode: .placeholder, queryType: .query(value, [.set(value.code)], .name, .auto, page: 1))
             )
           )
         }
@@ -89,6 +90,9 @@ import ScryfallKit
           switch action {
           case let .showSetDetail(value):
             switch value {
+            case .didSelectSortByPrice:
+              break
+              
             case let .didSelectCard(card, queryType):
               state.path.append(.showCardDetail(CardDetailFeature.State(card: card, queryType: queryType)))
               

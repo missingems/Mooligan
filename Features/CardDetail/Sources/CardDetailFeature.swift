@@ -95,7 +95,7 @@ import ScryfallKit
           case .search:
             content = Content(card: card, setIconURL: nil)
             
-          case let .set(value, _):
+          case let .query(value, _, _, _, _):
             content = Content(card: card, setIconURL: URL(string: value.iconSvgUri))
           }
           

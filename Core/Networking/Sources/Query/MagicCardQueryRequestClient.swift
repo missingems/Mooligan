@@ -21,21 +21,21 @@ public extension DependencyValues {
 extension ScryfallClient: MagicCardQueryRequestClient {
   public func queryCards(_ query: QueryType) async throws -> ObjectList<Card> {
     switch query {
-    case let .search(text, page):
+    case let .query(_, filters, sortMode, sortDirection, page):
       try await searchCards(
-        query: text,
+        filters: filters,
         unique: .prints,
-        order: nil,
-        sortDirection: nil,
+        order: sortMode,
+        sortDirection: sortDirection,
         includeExtras: true,
         includeMultilingual: false,
         includeVariations: true,
         page: page
       )
       
-    case let .set(gameSet, page):
+    case let .search(text, page):
       try await searchCards(
-        filters: [.set(gameSet.code), .game(.paper)],
+        query: text,
         unique: .prints,
         order: nil,
         sortDirection: nil,

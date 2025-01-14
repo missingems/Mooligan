@@ -39,7 +39,7 @@ public struct Feature {
       self.queryType = queryType
       
       switch queryType {
-      case let .set(set, _):
+      case let .query(set, _, _, _, _):
         title = set.name
         searchPlaceholder = "Search \(set.cardCount) cards"
         
@@ -66,6 +66,7 @@ public struct Feature {
   
   public enum Action: Equatable {
     case didSelectCard(Card, QueryType)
+    case didSelectSortByPrice
     case loadMoreCardsIfNeeded(displayingIndex: Int)
     case updateCards(QueryDataSource?, QueryType, State.Mode)
     case viewAppeared
@@ -74,6 +75,17 @@ public struct Feature {
   public var body: some ReducerOf<Self> {
     Reduce { state, action in
       switch action {
+      case .didSelectSortByPrice:
+        if case let .query(set, filters, _, sortDirection, _) = state.queryType {
+          return .run { [state] send in
+            let result = try await client.queryCards(.query(set, filters, .usd, .desc, page: 1))
+            let dataSource = QueryDataSource(cards: result.data, focusedCard: nil, hasNextPage: result.hasMore ?? false)
+            await send(.updateCards(dataSource, state.queryType, .data))
+          }
+        } else {
+          return .none
+        }
+        
       case .didSelectCard:
         return .none
         
@@ -114,10 +126,16 @@ public struct Feature {
           .run(operation: { [state] send in
             if state.mode.isPlaceholder {
               switch state.queryType {
-              case let .set(value, _):
-                let mocks = MockCardDetailRequestClient.generateMockCards(number: min(10, value.cardCount))
+              case let .query(set, filters, sourtMode, sortDirection, page):
+                let mocks = MockCardDetailRequestClient.generateMockCards(number: min(10, set.cardCount))
                 let dataSource = QueryDataSource(cards: mocks, focusedCard: nil, hasNextPage: false)
-                await send(.updateCards(dataSource, state.queryType, .placeholder))
+                await send(
+                  .updateCards(
+                    dataSource,
+                    state.queryType,
+                    .placeholder
+                  )
+                )
                 
               case .search:
                 fatalError("Unimplemented")
