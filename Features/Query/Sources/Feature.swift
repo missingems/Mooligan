@@ -78,7 +78,7 @@ public struct Feature {
       case .didSelectSortByPrice:
         if case let .query(set, filters, _, sortDirection, _) = state.queryType {
           return .run { [state] send in
-            let result = try await client.queryCards(.query(set, filters, .usd, .desc, page: 1))
+            let result = try await client.queryCards(.query(set, filters, .usd, sortDirection, page: 1))
             let dataSource = QueryDataSource(cards: result.data, focusedCard: nil, hasNextPage: result.hasMore ?? false)
             await send(.updateCards(dataSource, state.queryType, .data))
           }
