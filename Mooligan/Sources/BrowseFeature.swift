@@ -76,8 +76,7 @@ import ScryfallKit
           
           state.path.append(
             .showSetDetail(
-//              Query.Feature.State(mode: .placeholder, queryType: .set(value, page: 1))
-              Query.Feature.State(mode: .placeholder, queryType: .query(value, [.set(value.code)], .name, .auto, page: 1))
+              Query.Feature.State(mode: .placeholder, queryType: .query(value, [.set(value.code), .game(.paper)], .name, .auto, page: 1))
             )
           )
         }

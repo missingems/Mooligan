@@ -12,7 +12,7 @@ struct QueryView: View {
   private var numberOfColumns: Double = 2
   @State private var contentWidth: CGFloat?
   @State private var search: String = ""
-  @State private var isShowingPopover = false
+  @State private var isShowingInfo = false
   
   init(store: StoreOf<Feature>) {
     self.store = store
@@ -83,11 +83,12 @@ struct QueryView: View {
       ToolbarItemGroup(placement: .primaryAction) {
         if case let .query(value, _, _, _, _) = store.queryType, let iconURL = URL(string: value.iconSvgUri) {
           Button("Info", systemImage: "info.circle") {
-            isShowingPopover.toggle()
+            isShowingInfo.toggle()
           }
           .labelStyle(.iconOnly)
+          .disabled(isShowingInfo)
           .popover(
-            isPresented: $isShowingPopover,
+            isPresented: $isShowingInfo,
             attachmentAnchor: .rect(.bounds),
             content: {
               VStack(spacing: 0) {
@@ -132,7 +133,6 @@ struct QueryView: View {
                 .padding(.vertical, 11.0)
                 .safeAreaPadding(.horizontal, nil)
               }
-              
               .presentationCompactAdaptation(.popover)
               .presentationBackground {
                 Color.clear
