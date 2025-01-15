@@ -30,6 +30,10 @@ public struct Feature {
     let searchPlaceholder: String
     let setReleasedDate: Date?
     var dataSource: QueryDataSource?
+    var sortMode: SortMode
+    var sortOrder: SortDirection
+    let availableSortModes: [SortMode]
+    let availableSortOrders: [SortDirection]
     
     public init(
       mode: Mode,
@@ -39,13 +43,15 @@ public struct Feature {
       self.queryType = queryType
       
       switch queryType {
-      case let .query(set, _, _, _, _):
+      case let .query(set, _, sortMode, sortDirection, _):
         title = set.name
         searchPlaceholder = "Search \(set.cardCount) cards"
+        self.sortMode = sortMode
+        sortOrder = sortDirection
         
         if let dateString = set.releasedAt {
           let dateFormatter = DateFormatter()
-          dateFormatter.dateFormat = "yyyy-MM-dd" // Matches the format of the input string
+          dateFormatter.dateFormat = "yyyy-MM-dd"
           
           setReleasedDate = dateFormatter.date(from: dateString)
         } else {
@@ -56,7 +62,12 @@ public struct Feature {
         title = query
         searchPlaceholder = "Search"
         setReleasedDate = nil
+        sortMode = .name
+        sortOrder = .auto
       }
+      
+      availableSortModes = [.usd, .name, .cmc, .color, .rarity, .released]
+      availableSortOrders = [.asc, .desc, .auto]
     }
     
     func shouldLoadMore(at index: Int) -> Bool {
@@ -64,27 +75,46 @@ public struct Feature {
     }
   }
   
-  public enum Action: Equatable {
+  public enum Action: Equatable, BindableAction {
+    case binding(BindingAction<State>)
     case didSelectCard(Card, QueryType)
-    case didSelectSortByPrice
     case loadMoreCardsIfNeeded(displayingIndex: Int)
     case updateCards(QueryDataSource?, QueryType, State.Mode)
     case viewAppeared
   }
   
   public var body: some ReducerOf<Self> {
+    BindingReducer()
     Reduce { state, action in
       switch action {
-      case .didSelectSortByPrice:
-        if case let .query(set, filters, _, sortDirection, _) = state.queryType {
+      case .binding(\.sortMode):
+        if case let .query(set, filters, _, _, _) = state.queryType {
+          state.sortOrder = .auto
+          
           return .run { [state] send in
-            let result = try await client.queryCards(.query(set, filters, .usd, sortDirection, page: 1))
+            let newQuery = QueryType.query(set, filters, state.sortMode, .auto, page: 1)
+            let result = try await client.queryCards(newQuery)
             let dataSource = QueryDataSource(cards: result.data, focusedCard: nil, hasNextPage: result.hasMore ?? false)
-            await send(.updateCards(dataSource, state.queryType, .data))
+            await send(.updateCards(dataSource, newQuery, .data))
           }
         } else {
           return .none
         }
+        
+      case .binding(\.sortOrder):
+        if case let .query(set, filters, sortMode, _, _) = state.queryType {
+          return .run { [state] send in
+            let newQuery = QueryType.query(set, filters, sortMode, state.sortOrder, page: 1)
+            let result = try await client.queryCards(newQuery)
+            let dataSource = QueryDataSource(cards: result.data, focusedCard: nil, hasNextPage: result.hasMore ?? false)
+            await send(.updateCards(dataSource, newQuery, .data))
+          }
+        } else {
+          return .none
+        }
+        
+      case .binding:
+        return .none
         
       case .didSelectCard:
         return .none

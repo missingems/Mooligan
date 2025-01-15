@@ -90,7 +90,7 @@ import ScryfallKit
           switch action {
           case let .showSetDetail(value):
             switch value {
-            case .didSelectSortByPrice:
+            case .binding:
               break
               
             case let .didSelectCard(card, queryType):

@@ -8,7 +8,7 @@ import SwiftUI
 import NukeUI
 
 struct QueryView: View {
-  private var store: StoreOf<Feature>
+  @Bindable private var store: StoreOf<Feature>
   private var numberOfColumns: Double = 2
   @State private var contentWidth: CGFloat?
   @State private var search: String = ""
@@ -141,55 +141,19 @@ struct QueryView: View {
           )
           
           Menu("Info", systemImage: "line.3.horizontal.decrease.circle") {
-            Button {
-              print("Pressed")
-            } label: {
-              Label {
-                Text("Alphabet")
-              } icon: {
-                Image(systemName: "characters.uppercase")
+            Picker("SORT BY", selection: $store.sortMode) {
+              ForEach(store.availableSortModes) { value in
+                Text(value.description)
               }
             }
+            .labelsVisibility(.visible)
             
-            Button {
-              store.send(.didSelectSortByPrice)
-            } label: {
-              Label {
-                Text("Price")
-              } icon: {
-                Image(systemName: "dollarsign.circle.fill")
+            Picker("SORT ORDER", selection: $store.sortOrder) {
+              ForEach(store.availableSortOrders) { value in
+                Text(value.description)
               }
             }
-            
-            Button {
-              print("Pressed")
-            } label: {
-              Label {
-                Text("Rarity")
-              } icon: {
-                Image(systemName: "chart.bar.fill")
-              }
-            }
-            
-            Button {
-              print("Pressed")
-            } label: {
-              Label {
-                Text("Mana Cost")
-              } icon: {
-                DesignComponentsAsset._0.swiftUIImage
-              }
-            }
-            
-            Button {
-              print("Pressed")
-            } label: {
-              Label {
-                Text("Color")
-              } icon: {
-                DesignComponentsAsset.c.swiftUIImage
-              }
-            }
+            .labelsVisibility(.visible)
           }
           .labelStyle(.iconOnly)
         }
