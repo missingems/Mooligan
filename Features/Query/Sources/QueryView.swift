@@ -77,13 +77,19 @@ struct QueryView: View {
     .navigationBarTitleDisplayMode(.inline)
     .navigationTitle(store.title)
     .searchable(
-      text: $store.searchText,
+      text: Binding(get: {
+        store.query.name
+      }, set: { newValue in
+        if newValue != store.query.name {
+          store.query.name = newValue
+        }
+      }),
       placement: .navigationBarDrawer(displayMode: .always),
       prompt: store.searchPlaceholder
     )
     .toolbar {
       ToolbarItemGroup(placement: .primaryAction) {
-        if case let .query(value, _, _, _, _) = store.queryType, let iconURL = URL(string: value.iconSvgUri) {
+        if case let .querySet(value, _) = store.queryType, let iconURL = URL(string: value.iconSvgUri) {
           Button("Info", systemImage: "info.circle") {
             store.send(.didSelectShowInfo)
           }

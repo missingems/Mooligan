@@ -28,12 +28,9 @@ public struct Feature {
     var queryType: QueryType
     let title: String
     let searchPlaceholder: String
-    var searchText: String
     let setReleasedDate: String?
     var isShowingInfo: Bool
     var dataSource: QueryDataSource?
-    var sortMode: SortMode
-    var sortOrder: SortDirection
     let availableSortModes: [SortMode]
     let availableSortOrders: [SortDirection]
     var query: Query
@@ -46,12 +43,9 @@ public struct Feature {
       self.queryType = queryType
       
       switch queryType {
-      case let .query(set, _, sortMode, sortDirection, _):
+      case let .querySet(set, request):
         title = set.name
-        searchText = ""
         searchPlaceholder = "Search \(set.cardCount) cards"
-        self.sortMode = sortMode
-        sortOrder = sortDirection
         
         if let dateString = set.releasedAt {
           let dateFormatter = DateFormatter()
@@ -64,16 +58,10 @@ public struct Feature {
           setReleasedDate = nil
         }
         
-        query = Query(name: "", setCode: set.code, page: 1, sortMode: sortMode, sortDirection: sortDirection)
+        self.query = request
         
-      case let .search(query, _):
-        title = query
-        searchText = ""
-        searchPlaceholder = "Search"
-        setReleasedDate = nil
-        sortMode = .name
-        sortOrder = .auto
-        self.query = Query(name: query, setCode: nil, page: 1, sortMode: .name, sortDirection: .auto)
+      default:
+        fatalError()
       }
       
       availableSortModes = [.usd, .name, .cmc, .color, .rarity, .released]
@@ -91,7 +79,7 @@ public struct Feature {
     case didSelectCard(Card, QueryType)
     case didSelectShowInfo
     case loadMoreCardsIfNeeded(displayingIndex: Int)
-    case updateCards(QueryDataSource?, QueryType, State.Mode)
+    case updateCards(QueryDataSource?, Query, State.Mode)
     case viewAppeared
   }
   
@@ -99,45 +87,27 @@ public struct Feature {
     BindingReducer()
     Reduce { state, action in
       switch action {
-      case .binding(\.sortMode):
-        if case let .query(set, filters, _, _, _) = state.queryType {
-          state.sortOrder = .auto
+      case .binding(\.query):
+        return .run { [query = state.query] send in
+          let result = try await client.queryCards(query)
           
-          return .run { [state] send in
-            let newQuery = QueryType.query(set, filters, state.sortMode, .auto, page: 1)
-            let result = try await client.queryCards(newQuery)
-            let dataSource = QueryDataSource(cards: result.data, focusedCard: nil, hasNextPage: result.hasMore ?? false)
-            await send(.updateCards(dataSource, newQuery, .data))
-          }
-        } else {
-          return .none
+          await send(
+            .updateCards(
+              QueryDataSource(
+                cards: result.data,
+                focusedCard: nil,
+                hasNextPage: result.hasMore ?? false
+              ),
+              query,
+              .data
+            ),
+            animation: .default
+          )
         }
-        
-      case .binding(\.sortOrder):
-        if case let .query(set, filters, sortMode, _, _) = state.queryType {
-          return .run { [state] send in
-            let newQuery = QueryType.query(set, filters, sortMode, state.sortOrder, page: 1)
-            let result = try await client.queryCards(newQuery)
-            let dataSource = QueryDataSource(cards: result.data, focusedCard: nil, hasNextPage: result.hasMore ?? false)
-            await send(.updateCards(dataSource, newQuery, .data))
-          }
-        } else {
-          return .none
-        }
-        
-      case .binding(\.searchText):
-        if case let .query(set, filters, sortMode, sortOrder, _) = state.queryType {
-          return .run { [state] send in
-            var newFilters = filters
-            newFilters.append(.name(state.searchText))
-            let newQuery = QueryType.query(set, newFilters, sortMode, sortOrder, page: 1)
-            let result = try await client.queryCards(newQuery)
-            let dataSource = QueryDataSource(cards: result.data, focusedCard: nil, hasNextPage: result.hasMore ?? false)
-            await send(.updateCards(dataSource, newQuery, .data))
-          }
-        } else {
-          return .none
-        }
+        .cancellable(
+          id: "query",
+          cancelInFlight: true
+        )
         
       case .binding:
         return .none
@@ -157,15 +127,13 @@ public struct Feature {
           return .none
         }
         
-        let nextQuery = state.queryType.next()
-        
-        return .run { [client, dataSource = state.dataSource] send in
-          let result = try await client.queryCards(nextQuery)
+        return .run { [client, dataSource = state.dataSource, query = state.query.next()] send in
+          let result = try await client.queryCards(query)
           var dataSource = dataSource
           dataSource?.append(cards: result.data)
           dataSource?.hasNextPage = result.hasMore ?? false
           
-          await send(.updateCards(dataSource, nextQuery, .data))
+          await send(.updateCards(dataSource, query, .data))
         }
         .cancellable(
           id: "loadMoreCardsIfNeeded: \(displayingIndex), for query: \(state.queryType)",
@@ -175,7 +143,7 @@ public struct Feature {
       case let .updateCards(value, nextQuery, mode):
         if let value {
           state.dataSource = value
-          state.queryType = nextQuery
+          state.query = nextQuery
           state.mode = mode
         }
         
@@ -186,13 +154,13 @@ public struct Feature {
           .run(operation: { [state] send in
             if state.mode.isPlaceholder {
               switch state.queryType {
-              case let .query(set, filters, sourtMode, sortDirection, page):
+              case let .querySet(set, _):
                 let mocks = MockCardDetailRequestClient.generateMockCards(number: min(10, set.cardCount))
                 let dataSource = QueryDataSource(cards: mocks, focusedCard: nil, hasNextPage: false)
                 await send(
                   .updateCards(
                     dataSource,
-                    state.queryType,
+                    state.query,
                     .placeholder
                   )
                 )
@@ -204,9 +172,9 @@ public struct Feature {
           }),
           .run(operation: { [state] send in
             if state.mode.isPlaceholder {
-              let result = try await client.queryCards(state.queryType)
+              let result = try await client.queryCards(state.query)
               let dataSource = QueryDataSource(cards: result.data, focusedCard: nil, hasNextPage: result.hasMore ?? false)
-              await send(.updateCards(dataSource, state.queryType, .data))
+              await send(.updateCards(dataSource, state.query, .data))
             }
           })
         ])
