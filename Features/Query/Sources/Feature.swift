@@ -36,6 +36,7 @@ public struct Feature {
     var sortOrder: SortDirection
     let availableSortModes: [SortMode]
     let availableSortOrders: [SortDirection]
+    var query: Query
     
     public init(
       mode: Mode,
@@ -63,6 +64,8 @@ public struct Feature {
           setReleasedDate = nil
         }
         
+        query = Query(name: "", setCode: set.code, page: 1, sortMode: sortMode, sortDirection: sortDirection)
+        
       case let .search(query, _):
         title = query
         searchText = ""
@@ -70,6 +73,7 @@ public struct Feature {
         setReleasedDate = nil
         sortMode = .name
         sortOrder = .auto
+        self.query = Query(name: query, setCode: nil, page: 1, sortMode: .name, sortDirection: .auto)
       }
       
       availableSortModes = [.usd, .name, .cmc, .color, .rarity, .released]

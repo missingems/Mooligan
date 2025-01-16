@@ -142,14 +142,14 @@ struct QueryView: View {
           )
           
           Menu("Info", systemImage: "line.3.horizontal.decrease.circle") {
-            Picker("SORT BY", selection: $store.sortMode) {
+            Picker("SORT BY", selection: $store.query.sortMode) {
               ForEach(store.availableSortModes) { value in
                 Text(value.description)
               }
             }
             .labelsVisibility(.visible)
             
-            Picker("SORT ORDER", selection: $store.sortOrder) {
+            Picker("SORT ORDER", selection: $store.query.sortDirection) {
               ForEach(store.availableSortOrders) { value in
                 Text(value.description)
               }
