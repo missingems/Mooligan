@@ -121,6 +121,20 @@ public struct Feature {
           return .none
         }
         
+      case .binding(\.searchText):
+        if case let .query(set, filters, sortMode, sortOrder, _) = state.queryType {
+          return .run { [state] send in
+            var newFilters = filters
+            newFilters.append(.name(state.searchText))
+            let newQuery = QueryType.query(set, newFilters, sortMode, sortOrder, page: 1)
+            let result = try await client.queryCards(newQuery)
+            let dataSource = QueryDataSource(cards: result.data, focusedCard: nil, hasNextPage: result.hasMore ?? false)
+            await send(.updateCards(dataSource, newQuery, .data))
+          }
+        } else {
+          return .none
+        }
+        
       case .binding:
         return .none
         

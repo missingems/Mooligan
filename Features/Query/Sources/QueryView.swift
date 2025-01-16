@@ -118,10 +118,7 @@ struct QueryView: View {
                   HStack {
                     Text("Released Date")
                     Spacer(minLength: 55)
-                    
-                    if let date = store.setReleasedDate {
-                      Text(date).foregroundStyle(.secondary)
-                    }
+                    Text(date).foregroundStyle(.secondary)
                   }
                   .padding(.vertical, 11.0)
                   .safeAreaPadding(.horizontal, nil)

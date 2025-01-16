@@ -23,7 +23,7 @@ extension ScryfallClient: MagicCardQueryRequestClient {
     switch query {
     case let .query(_, filters, sortMode, sortDirection, page):
       try await searchCards(
-        filters: filters,
+        filters: Array(filters),
         unique: .prints,
         order: sortMode,
         sortDirection: sortDirection,
