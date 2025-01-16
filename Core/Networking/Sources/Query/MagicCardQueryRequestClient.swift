@@ -2,7 +2,7 @@ import ComposableArchitecture
 import ScryfallKit
 
 public protocol MagicCardQueryRequestClient: Sendable {
-  func queryCards(_ query: QueryType) async throws -> ObjectList<Card>
+  func queryCards(_ query: Query) async throws -> ObjectList<Card>
 }
 
 public enum MagicCardQueryRequestClientKey: DependencyKey {
@@ -19,31 +19,16 @@ public extension DependencyValues {
 }
 
 extension ScryfallClient: MagicCardQueryRequestClient {
-  public func queryCards(_ query: QueryType) async throws -> ObjectList<Card> {
-    switch query {
-    case let .search(text, page):
-      try await searchCards(
-        query: text,
-        unique: .prints,
-        order: nil,
-        sortDirection: nil,
-        includeExtras: true,
-        includeMultilingual: false,
-        includeVariations: true,
-        page: page
-      )
-      
-    case let .set(gameSet, page):
-      try await searchCards(
-        filters: [.set(gameSet.code)],
-        unique: .prints,
-        order: nil,
-        sortDirection: nil,
-        includeExtras: true,
-        includeMultilingual: false,
-        includeVariations: true,
-        page: page
-      )
-    }
+  public func queryCards(_ query: Query) async throws -> ObjectList<Card> {
+    try await searchCards(
+      filters: query.filters(),
+      unique: .prints,
+      order: query.sortMode,
+      sortDirection: query.sortDirection,
+      includeExtras: true,
+      includeMultilingual: false,
+      includeVariations: true,
+      page: query.page
+    )
   }
 }

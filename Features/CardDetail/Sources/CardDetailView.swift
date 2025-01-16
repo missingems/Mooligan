@@ -29,13 +29,12 @@ struct CardDetailView: View {
           }
           .padding(
             EdgeInsets(
-              top: 21,
+              top: 13,
               leading: 0,
-              bottom: 29.0,
+              bottom: 21,
               trailing: 0
             )
           )
-          .shadow(color: DesignComponentsAsset.shadow.swiftUIColor, radius: 13, x: 0, y: 13)
           .zIndex(1)
         }
         

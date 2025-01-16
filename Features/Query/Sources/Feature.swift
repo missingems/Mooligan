@@ -10,7 +10,7 @@ public struct Feature {
   @ObservableState
   public struct State {
     public enum Mode: Equatable {
-      case placeholder(numberOfDataSource: Int)
+      case placeholder
       case data
       
       var isPlaceholder: Bool {
@@ -27,7 +27,13 @@ public struct Feature {
     var mode: Mode
     var queryType: QueryType
     let title: String
+    let searchPlaceholder: String
+    let setReleasedDate: String?
+    var isShowingInfo: Bool
     var dataSource: QueryDataSource?
+    let availableSortModes: [SortMode]
+    let availableSortOrders: [SortDirection]
+    var query: Query
     
     public init(
       mode: Mode,
@@ -37,12 +43,30 @@ public struct Feature {
       self.queryType = queryType
       
       switch queryType {
-      case let .set(set, _):
+      case let .querySet(set, request):
         title = set.name
+        searchPlaceholder = "Search \(set.cardCount) cards"
         
-      case let .search(query, _):
-        title = query
+        if let dateString = set.releasedAt {
+          let dateFormatter = DateFormatter()
+          dateFormatter.dateFormat = "yyyy-MM-dd"
+          
+          setReleasedDate = dateFormatter
+            .date(from: dateString)?
+            .formatted(date: .numeric, time: .omitted)
+        } else {
+          setReleasedDate = nil
+        }
+        
+        self.query = request
+        
+      default:
+        fatalError()
       }
+      
+      availableSortModes = [.usd, .name, .cmc, .color, .rarity, .released]
+      availableSortOrders = [.asc, .desc, .auto]
+      isShowingInfo = false
     }
     
     func shouldLoadMore(at index: Int) -> Bool {
@@ -50,17 +74,49 @@ public struct Feature {
     }
   }
   
-  public enum Action: Equatable {
+  public enum Action: Equatable, BindableAction {
+    case binding(BindingAction<State>)
     case didSelectCard(Card, QueryType)
+    case didSelectShowInfo
     case loadMoreCardsIfNeeded(displayingIndex: Int)
-    case updateCards(QueryDataSource?, QueryType)
+    case updateCards(QueryDataSource?, Query, State.Mode)
     case viewAppeared
   }
   
   public var body: some ReducerOf<Self> {
+    BindingReducer()
     Reduce { state, action in
       switch action {
+      case .binding(\.query):
+        return .run { [query = state.query] send in
+          let result = try await client.queryCards(query)
+          
+          await send(
+            .updateCards(
+              QueryDataSource(
+                cards: result.data,
+                focusedCard: nil,
+                hasNextPage: result.hasMore ?? false
+              ),
+              query,
+              .data
+            ),
+            animation: .default
+          )
+        }
+        .cancellable(
+          id: "query",
+          cancelInFlight: true
+        )
+        
+      case .binding:
+        return .none
+        
       case .didSelectCard:
+        return .none
+        
+      case .didSelectShowInfo:
+        state.isShowingInfo = true
         return .none
         
       case let .loadMoreCardsIfNeeded(displayingIndex):
@@ -71,44 +127,57 @@ public struct Feature {
           return .none
         }
         
-        let nextQuery = state.queryType.next()
-        
-        return .run { [client, dataSource = state.dataSource] send in
-          let result = try await client.queryCards(nextQuery)
+        return .run { [client, dataSource = state.dataSource, query = state.query.next()] send in
+          let result = try await client.queryCards(query)
           var dataSource = dataSource
           dataSource?.append(cards: result.data)
           dataSource?.hasNextPage = result.hasMore ?? false
           
-          await send(.updateCards(dataSource, nextQuery))
+          await send(.updateCards(dataSource, query, .data))
         }
         .cancellable(
           id: "loadMoreCardsIfNeeded: \(displayingIndex), for query: \(state.queryType)",
           cancelInFlight: true
         )
         
-      case let .updateCards(value, nextQuery):
+      case let .updateCards(value, nextQuery, mode):
         if let value {
           state.dataSource = value
-          state.queryType = nextQuery
-          state.mode = .data
+          state.query = nextQuery
+          state.mode = mode
         }
         
         return .none
         
       case .viewAppeared:
-        if state.mode.isPlaceholder {
-          return .run { [client, queryType = state.queryType] send in
-            let result = try await client.queryCards(queryType)
-            let dataSource = QueryDataSource(cards: result.data, focusedCard: nil, hasNextPage: result.hasMore ?? false)
-            await send(.updateCards(dataSource, queryType))
-          }
-          .cancellable(
-            id: "viewAppeared: \(state.queryType)",
-            cancelInFlight: true
-          )
-        } else {
-          return .none
-        }
+        return .concatenate([
+          .run(operation: { [state] send in
+            if state.mode.isPlaceholder {
+              switch state.queryType {
+              case let .querySet(set, _):
+                let mocks = MockCardDetailRequestClient.generateMockCards(number: min(10, set.cardCount))
+                let dataSource = QueryDataSource(cards: mocks, focusedCard: nil, hasNextPage: false)
+                await send(
+                  .updateCards(
+                    dataSource,
+                    state.query,
+                    .placeholder
+                  )
+                )
+                
+              case .search:
+                fatalError("Unimplemented")
+              }
+            }
+          }),
+          .run(operation: { [state] send in
+            if state.mode.isPlaceholder {
+              let result = try await client.queryCards(state.query)
+              let dataSource = QueryDataSource(cards: result.data, focusedCard: nil, hasNextPage: result.hasMore ?? false)
+              await send(.updateCards(dataSource, state.query, .data))
+            }
+          })
+        ])
       }
     }
   }
