@@ -11,7 +11,6 @@ struct QueryView: View {
   @Bindable private var store: StoreOf<Feature>
   private var numberOfColumns: Double = 2
   @State private var contentWidth: CGFloat?
-  @State private var search: String = ""
   @State private var isShowingInfo = false
   
   init(store: StoreOf<Feature>) {
@@ -78,7 +77,7 @@ struct QueryView: View {
     .scrollBounceBehavior(.basedOnSize)
     .navigationBarTitleDisplayMode(.inline)
     .navigationTitle(store.title)
-    .searchable(text: $search, placement: .navigationBarDrawer(displayMode: .always), prompt: store.searchPlaceholder)
+    .searchable(text: $store.searchText, placement: .navigationBarDrawer(displayMode: .always), prompt: store.searchPlaceholder)
     .toolbar {
       ToolbarItemGroup(placement: .primaryAction) {
         if case let .query(value, _, _, _, _) = store.queryType, let iconURL = URL(string: value.iconSvgUri) {

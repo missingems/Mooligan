@@ -28,6 +28,7 @@ public struct Feature {
     var queryType: QueryType
     let title: String
     let searchPlaceholder: String
+    var searchText: String
     let setReleasedDate: Date?
     var dataSource: QueryDataSource?
     var sortMode: SortMode
@@ -45,6 +46,7 @@ public struct Feature {
       switch queryType {
       case let .query(set, _, sortMode, sortDirection, _):
         title = set.name
+        searchText = ""
         searchPlaceholder = "Search \(set.cardCount) cards"
         self.sortMode = sortMode
         sortOrder = sortDirection
@@ -60,6 +62,7 @@ public struct Feature {
         
       case let .search(query, _):
         title = query
+        searchText = ""
         searchPlaceholder = "Search"
         setReleasedDate = nil
         sortMode = .name
