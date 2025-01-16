@@ -11,7 +11,6 @@ struct QueryView: View {
   @Bindable private var store: StoreOf<Feature>
   private var numberOfColumns: Double = 2
   @State private var contentWidth: CGFloat?
-  @State private var isShowingInfo = false
   
   init(store: StoreOf<Feature>) {
     self.store = store
@@ -77,17 +76,21 @@ struct QueryView: View {
     .scrollBounceBehavior(.basedOnSize)
     .navigationBarTitleDisplayMode(.inline)
     .navigationTitle(store.title)
-    .searchable(text: $store.searchText, placement: .navigationBarDrawer(displayMode: .always), prompt: store.searchPlaceholder)
+    .searchable(
+      text: $store.searchText,
+      placement: .navigationBarDrawer(displayMode: .always),
+      prompt: store.searchPlaceholder
+    )
     .toolbar {
       ToolbarItemGroup(placement: .primaryAction) {
         if case let .query(value, _, _, _, _) = store.queryType, let iconURL = URL(string: value.iconSvgUri) {
           Button("Info", systemImage: "info.circle") {
-            isShowingInfo.toggle()
+            store.send(.didSelectShowInfo)
           }
           .labelStyle(.iconOnly)
-          .disabled(isShowingInfo)
+          .disabled(store.isShowingInfo)
           .popover(
-            isPresented: $isShowingInfo,
+            isPresented: $store.isShowingInfo,
             attachmentAnchor: .rect(.bounds),
             content: {
               VStack(spacing: 0) {
@@ -109,18 +112,20 @@ struct QueryView: View {
                 .padding(.vertical, 11.0)
                 .safeAreaPadding(.horizontal, nil)
                 
-                Divider()
-                
-                HStack {
-                  Text("Released Date")
-                  Spacer(minLength: 55)
+                if let date = store.setReleasedDate {
+                  Divider()
                   
-                  if let date = store.setReleasedDate {
-                    Text(date.formatted(date: .numeric, time: .omitted)).foregroundStyle(.secondary)
+                  HStack {
+                    Text("Released Date")
+                    Spacer(minLength: 55)
+                    
+                    if let date = store.setReleasedDate {
+                      Text(date).foregroundStyle(.secondary)
+                    }
                   }
+                  .padding(.vertical, 11.0)
+                  .safeAreaPadding(.horizontal, nil)
                 }
-                .padding(.vertical, 11.0)
-                .safeAreaPadding(.horizontal, nil)
                 
                 Divider()
                 

@@ -29,7 +29,8 @@ public struct Feature {
     let title: String
     let searchPlaceholder: String
     var searchText: String
-    let setReleasedDate: Date?
+    let setReleasedDate: String?
+    var isShowingInfo: Bool
     var dataSource: QueryDataSource?
     var sortMode: SortMode
     var sortOrder: SortDirection
@@ -55,7 +56,9 @@ public struct Feature {
           let dateFormatter = DateFormatter()
           dateFormatter.dateFormat = "yyyy-MM-dd"
           
-          setReleasedDate = dateFormatter.date(from: dateString)
+          setReleasedDate = dateFormatter
+            .date(from: dateString)?
+            .formatted(date: .numeric, time: .omitted)
         } else {
           setReleasedDate = nil
         }
@@ -71,6 +74,7 @@ public struct Feature {
       
       availableSortModes = [.usd, .name, .cmc, .color, .rarity, .released]
       availableSortOrders = [.asc, .desc, .auto]
+      isShowingInfo = false
     }
     
     func shouldLoadMore(at index: Int) -> Bool {
@@ -81,6 +85,7 @@ public struct Feature {
   public enum Action: Equatable, BindableAction {
     case binding(BindingAction<State>)
     case didSelectCard(Card, QueryType)
+    case didSelectShowInfo
     case loadMoreCardsIfNeeded(displayingIndex: Int)
     case updateCards(QueryDataSource?, QueryType, State.Mode)
     case viewAppeared
@@ -120,6 +125,10 @@ public struct Feature {
         return .none
         
       case .didSelectCard:
+        return .none
+        
+      case .didSelectShowInfo:
+        state.isShowingInfo = true
         return .none
         
       case let .loadMoreCardsIfNeeded(displayingIndex):

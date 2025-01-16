@@ -92,6 +92,9 @@ import ScryfallKit
             case .binding:
               break
               
+            case .didSelectShowInfo:
+              break
+              
             case let .didSelectCard(card, queryType):
               state.path.append(.showCardDetail(CardDetailFeature.State(card: card, queryType: queryType)))
               
