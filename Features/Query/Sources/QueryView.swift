@@ -73,6 +73,7 @@ struct QueryView: View {
       .placeholder(store.mode.isPlaceholder)
       .scrollDisabled(store.mode.isPlaceholder)
     }
+    .scrollPosition($store.scrollPosition)
     .scrollBounceBehavior(.basedOnSize)
     .navigationBarTitleDisplayMode(.inline)
     .navigationTitle(store.title)

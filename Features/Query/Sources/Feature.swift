@@ -1,6 +1,8 @@
 import ComposableArchitecture
+import Combine
 import Foundation
 import ScryfallKit
+import SwiftUI
 import Networking
 
 @Reducer
@@ -34,6 +36,7 @@ public struct Feature {
     let availableSortModes: [SortMode]
     let availableSortOrders: [SortDirection]
     var query: Query
+    var scrollPosition: ScrollPosition
     
     public init(
       mode: Mode,
@@ -67,6 +70,7 @@ public struct Feature {
       availableSortModes = [.usd, .name, .cmc, .color, .rarity, .released]
       availableSortOrders = [.asc, .desc, .auto]
       isShowingInfo = false
+      scrollPosition = ScrollPosition(edge: .top)
     }
     
     func shouldLoadMore(at index: Int) -> Bool {
@@ -85,6 +89,7 @@ public struct Feature {
   
   public var body: some ReducerOf<Self> {
     BindingReducer()
+    
     Reduce { state, action in
       switch action {
       case .binding(\.query):
@@ -145,6 +150,7 @@ public struct Feature {
           state.dataSource = value
           state.query = nextQuery
           state.mode = mode
+          state.scrollPosition.scrollTo(edge: .top)
         }
         
         return .none
