@@ -21,7 +21,7 @@ public extension View {
 public struct HierarchicalToolbarButton: ButtonStyle {
   public func makeBody(configuration: Configuration) -> some View {
     configuration.label
-      .font(.title2)
+      .font(.title3)
       .symbolRenderingMode(.palette)
       .foregroundStyle(DesignComponentsAsset.accentColor.swiftUIColor, DesignComponentsAsset.accentColor.swiftUIColor.quinary)
       .scaleEffect(configuration.isPressed ? 0.98 : 1.0)

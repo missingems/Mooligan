@@ -175,11 +175,11 @@ struct QueryView: View {
           )
           
           Button("Filter", systemImage: "line.3.horizontal.decrease.circle.fill") {
-            store.send(.didSelectShowSortOptions)
+            store.send(.didSelectShowFilters)
           }
           .buttonStyle(HierarchicalToolbarButton())
           .popover(
-            isPresented: $store.isShowingSortOptions,
+            isPresented: $store.isShowingSortFilters,
             attachmentAnchor: .rect(.bounds),
             content: {
               List {
