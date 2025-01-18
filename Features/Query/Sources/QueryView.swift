@@ -90,11 +90,10 @@ struct QueryView: View {
     .toolbar {
       ToolbarItemGroup(placement: .primaryAction) {
         if case let .querySet(value, _) = store.queryType, let iconURL = URL(string: value.iconSvgUri) {
-          Button("Info", systemImage: "info.circle") {
+          Button("Info", systemImage: "info.circle.fill") {
             store.send(.didSelectShowInfo)
           }
-          .labelStyle(.iconOnly)
-          .disabled(store.isShowingInfo)
+          .buttonStyle(HierarchicalToolbarButton())
           .popover(
             isPresented: $store.isShowingInfo,
             attachmentAnchor: .rect(.bounds),
@@ -108,7 +107,7 @@ struct QueryView: View {
                 .padding(.vertical, 11.0)
                 .safeAreaPadding(.horizontal, nil)
                 
-                Divider()
+                Divider().safeAreaPadding(.leading, nil)
                 
                 HStack {
                   Text("Set Code")
@@ -119,7 +118,7 @@ struct QueryView: View {
                 .safeAreaPadding(.horizontal, nil)
                 
                 if let date = store.setReleasedDate {
-                  Divider()
+                  Divider().safeAreaPadding(.leading, nil)
                   
                   HStack {
                     Text("Released Date")
@@ -130,7 +129,7 @@ struct QueryView: View {
                   .safeAreaPadding(.horizontal, nil)
                 }
                 
-                Divider()
+                Divider().safeAreaPadding(.leading, nil)
                 
                 HStack {
                   Text("Number of Cards")
@@ -141,29 +140,70 @@ struct QueryView: View {
                 .safeAreaPadding(.horizontal, nil)
               }
               .presentationCompactAdaptation(.popover)
-              .presentationBackground {
-                Color.clear
-              }
             }
           )
           
-          Menu {
-            Picker("SORT BY", selection: $store.query.sortMode) {
-              ForEach(store.availableSortModes) { value in
-                Text(value.description)
-              }
-            }
-            .labelsVisibility(.visible)
-            
-            Picker("SORT ORDER", selection: $store.query.sortDirection) {
-              ForEach(store.availableSortOrders) { value in
-                Text(value.description)
-              }
-            }
-            .labelsVisibility(.visible)
-          } label: {
-            Image(systemName: "arrow.up.arrow.down")
+          Button("Sort", systemImage: "arrow.up.arrow.down.circle.fill") {
+            store.send(.didSelectShowSortOptions)
           }
+          .buttonStyle(HierarchicalToolbarButton())
+          .popover(
+            isPresented: $store.isShowingSortOptions,
+            attachmentAnchor: .rect(.bounds),
+            content: {
+              List {
+                Picker("SORT BY", selection: $store.query.sortMode) {
+                  ForEach(store.availableSortModes) { value in
+                    Text(value.description)
+                  }
+                }
+                .pickerStyle(.inline)
+                .labelsVisibility(.visible)
+                
+                Picker("SORT ORDER", selection: $store.query.sortDirection) {
+                  ForEach(store.availableSortOrders) { value in
+                    Text(value.description)
+                  }
+                }
+                .pickerStyle(.inline)
+                .labelsVisibility(.visible)
+              }
+              .listStyle(.plain)
+              .frame(width: 250, height: 404, alignment: .center)
+              .presentationCompactAdaptation(.popover)
+            }
+          )
+          
+          Button("Filter", systemImage: "line.3.horizontal.decrease.circle.fill") {
+            store.send(.didSelectShowSortOptions)
+          }
+          .buttonStyle(HierarchicalToolbarButton())
+          .popover(
+            isPresented: $store.isShowingSortOptions,
+            attachmentAnchor: .rect(.bounds),
+            content: {
+              List {
+                Picker("SORT BY", selection: $store.query.sortMode) {
+                  ForEach(store.availableSortModes) { value in
+                    Text(value.description)
+                  }
+                }
+                .pickerStyle(.inline)
+                .labelsVisibility(.visible)
+
+                Picker("SORT ORDER", selection: $store.query.sortDirection) {
+                  ForEach(store.availableSortOrders) { value in
+                    Text(value.description)
+                  }
+                }
+                .pickerStyle(.inline)
+                .labelsVisibility(.visible)
+              }
+              .listStyle(.plain)
+              .frame(width: 250, height: 404, alignment: .center)
+              .presentationCompactAdaptation(.popover)
+            }
+          )
         }
       }
     }

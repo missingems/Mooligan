@@ -32,6 +32,7 @@ public struct Feature {
     let searchPlaceholder: String
     let setReleasedDate: String?
     var isShowingInfo: Bool
+    var isShowingSortOptions: Bool
     var dataSource: QueryDataSource?
     let availableSortModes: [SortMode]
     let availableSortOrders: [SortDirection]
@@ -70,6 +71,7 @@ public struct Feature {
       availableSortModes = [.usd, .name, .cmc, .color, .rarity, .released]
       availableSortOrders = [.asc, .desc, .auto]
       isShowingInfo = false
+      isShowingSortOptions = false
       scrollPosition = ScrollPosition(edge: .top)
     }
     
@@ -82,6 +84,7 @@ public struct Feature {
     case binding(BindingAction<State>)
     case didSelectCard(Card, QueryType)
     case didSelectShowInfo
+    case didSelectShowSortOptions
     case loadMoreCardsIfNeeded(displayingIndex: Int)
     case updateCards(QueryDataSource?, Query, State.Mode)
     case viewAppeared
@@ -122,6 +125,10 @@ public struct Feature {
         
       case .didSelectShowInfo:
         state.isShowingInfo = true
+        return .none
+        
+      case .didSelectShowSortOptions:
+        state.isShowingSortOptions = true
         return .none
         
       case let .loadMoreCardsIfNeeded(displayingIndex):
