@@ -71,11 +71,10 @@ struct QueryView: View {
       )
       .safeAreaPadding(.horizontal, nil)
       .placeholder(store.mode.isPlaceholder)
-      .scrollDisabled(store.mode.isPlaceholder)
     }
+    .scrollDisabled(store.mode.isPlaceholder)
     .scrollPosition($store.scrollPosition)
     .scrollBounceBehavior(.basedOnSize)
-    .navigationBarTitleDisplayMode(.inline)
     .navigationTitle(store.title)
     .searchable(
       text: Binding(get: {
@@ -148,7 +147,7 @@ struct QueryView: View {
             }
           )
           
-          Menu("Info", systemImage: "line.3.horizontal.decrease.circle") {
+          Menu {
             Picker("SORT BY", selection: $store.query.sortMode) {
               ForEach(store.availableSortModes) { value in
                 Text(value.description)
@@ -162,8 +161,9 @@ struct QueryView: View {
               }
             }
             .labelsVisibility(.visible)
+          } label: {
+            Image(systemName: "arrow.up.arrow.down")
           }
-          .labelStyle(.iconOnly)
         }
       }
     }
