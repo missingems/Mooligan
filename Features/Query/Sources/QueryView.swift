@@ -96,7 +96,6 @@ struct QueryView: View {
           .buttonStyle(HierarchicalToolbarButton())
           .popover(
             isPresented: $store.isShowingInfo,
-            attachmentAnchor: .rect(.bounds),
             content: {
               VStack(spacing: 0) {
                 HStack {
@@ -149,7 +148,6 @@ struct QueryView: View {
           .buttonStyle(HierarchicalToolbarButton())
           .popover(
             isPresented: $store.isShowingSortOptions,
-            attachmentAnchor: .rect(.bounds),
             content: {
               List {
                 Picker("SORT BY", selection: $store.query.sortMode) {
@@ -180,7 +178,6 @@ struct QueryView: View {
           .buttonStyle(HierarchicalToolbarButton())
           .popover(
             isPresented: $store.isShowingSortFilters,
-            attachmentAnchor: .rect(.bounds),
             content: {
               List {
                 Picker("SORT BY", selection: $store.query.sortMode) {
