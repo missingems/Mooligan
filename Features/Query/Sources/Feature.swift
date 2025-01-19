@@ -99,6 +99,8 @@ public struct Feature {
     Reduce { state, action in
       switch action {
       case .binding(\.query):
+        state.isShowingSortOptions = false
+        
         return .run { [query = state.query] send in
           let result = try await client.queryCards(query)
           

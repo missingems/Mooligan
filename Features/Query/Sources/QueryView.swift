@@ -6,6 +6,7 @@ import Networking
 import Shimmer
 import SwiftUI
 import NukeUI
+import VariableBlur
 
 struct QueryView: View {
   @Bindable private var store: StoreOf<Feature>
@@ -72,26 +73,22 @@ struct QueryView: View {
       .safeAreaPadding(.horizontal, nil)
       .placeholder(store.mode.isPlaceholder)
     }
+    .contentMargins(.vertical, 8, for: .scrollContent)
     .scrollDisabled(store.mode.isPlaceholder)
     .scrollPosition($store.scrollPosition)
     .scrollBounceBehavior(.basedOnSize)
     .navigationTitle(store.title)
-    .searchable(
-      text: Binding(get: {
-        store.query.name
-      }, set: { newValue in
-        if newValue != store.query.name {
-          store.query.name = newValue
-        }
-      }),
-      placement: .navigationBarDrawer(displayMode: .always),
-      prompt: store.searchPlaceholder
-    )
+    .navigationBarTitleDisplayMode(.inline)
     .toolbar {
-      ToolbarItemGroup(placement: .primaryAction) {
-        if case let .querySet(value, _) = store.queryType, let iconURL = URL(string: value.iconSvgUri) {
-          Button("Info", systemImage: "info.circle.fill") {
+      if case let .querySet(value, _) = store.queryType, let iconURL = URL(string: value.iconSvgUri) {
+        ToolbarItem(placement: .principal) {
+          Button {
             store.send(.didSelectShowInfo)
+          } label: {
+            VStack(spacing: 0) {
+              Text(value.name).font(.headline)
+              Text("\(value.cardCount) Cards").font(.caption).foregroundStyle(.secondary)
+            }
           }
           .buttonStyle(HierarchicalToolbarButton())
           .popover(
@@ -141,7 +138,11 @@ struct QueryView: View {
               .presentationCompactAdaptation(.popover)
             }
           )
-          
+        }
+      }
+      
+      ToolbarItemGroup(placement: .primaryAction) {
+        if case let .querySet(value, _) = store.queryType, let iconURL = URL(string: value.iconSvgUri) {
           Button("Sort", systemImage: "arrow.up.arrow.down.circle.fill") {
             store.send(.didSelectShowSortOptions)
           }
@@ -187,7 +188,7 @@ struct QueryView: View {
                 }
                 .pickerStyle(.inline)
                 .labelsVisibility(.visible)
-
+                
                 Picker("SORT ORDER", selection: $store.query.sortDirection) {
                   ForEach(store.availableSortOrders) { value in
                     Text(value.description)
@@ -209,3 +210,5 @@ struct QueryView: View {
     }
   }
 }
+
+
