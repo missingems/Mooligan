@@ -200,6 +200,7 @@ struct QueryView: View {
               .listStyle(.plain)
               .frame(width: 250, height: 404, alignment: .center)
               .presentationCompactAdaptation(.popover)
+              .presentationBackground(.clear)
             }
           )
         }
