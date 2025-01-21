@@ -197,6 +197,7 @@ struct QueryView: View {
                 .pickerStyle(.inline)
                 .labelsVisibility(.visible)
               }
+              .listRowBackground(Color.clear)
               .listStyle(.plain)
               .frame(width: 250, height: 404, alignment: .center)
               .presentationCompactAdaptation(.popover)
