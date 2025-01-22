@@ -211,5 +211,3 @@ struct QueryView: View {
     }
   }
 }
-
-
