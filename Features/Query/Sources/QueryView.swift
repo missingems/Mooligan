@@ -142,7 +142,7 @@ struct QueryView: View {
       }
       
       ToolbarItemGroup(placement: .primaryAction) {
-        if case let .querySet(value, _) = store.queryType, let iconURL = URL(string: value.iconSvgUri) {
+        if case let .querySet(value, _) = store.queryType {
           Button("Sort", systemImage: "arrow.up.arrow.down.circle.fill") {
             store.send(.didSelectShowSortOptions)
           }
@@ -200,7 +200,6 @@ struct QueryView: View {
               .listStyle(.plain)
               .frame(width: 250, height: 404, alignment: .center)
               .presentationCompactAdaptation(.popover)
-              .presentationBackground(.clear)
             }
           )
         }

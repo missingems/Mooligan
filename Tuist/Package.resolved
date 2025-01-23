@@ -21,10 +21,10 @@
     {
       "identity" : "scryfallkit",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/JacobHearst/ScryfallKit",
+      "location" : "https://github.com/missingems/ScryfallKit",
       "state" : {
-        "revision" : "7e3ea0f1f08a1eebbc530c84371017632c77fc5e",
-        "version" : "5.13.0"
+        "branch" : "main",
+        "revision" : "cd2e10a2c64c0f83b290ad0b93fc78580aeb39a7"
       }
     },
     {
