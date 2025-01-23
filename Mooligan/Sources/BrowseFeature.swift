@@ -92,7 +92,13 @@ import ScryfallKit
             case .binding:
               break
               
+            case .didSelectShowFilters:
+              break
+              
             case .didSelectShowInfo:
+              break
+              
+            case .didSelectShowSortOptions:
               break
               
             case let .didSelectCard(card, queryType):

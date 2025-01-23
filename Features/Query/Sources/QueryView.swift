@@ -6,6 +6,7 @@ import Networking
 import Shimmer
 import SwiftUI
 import NukeUI
+import VariableBlur
 
 struct QueryView: View {
   @Bindable private var store: StoreOf<Feature>
@@ -71,33 +72,27 @@ struct QueryView: View {
       )
       .safeAreaPadding(.horizontal, nil)
       .placeholder(store.mode.isPlaceholder)
-      .scrollDisabled(store.mode.isPlaceholder)
     }
+    .contentMargins(.vertical, 8, for: .scrollContent)
+    .scrollDisabled(store.mode.isPlaceholder)
+    .scrollPosition($store.scrollPosition)
     .scrollBounceBehavior(.basedOnSize)
-    .navigationBarTitleDisplayMode(.inline)
     .navigationTitle(store.title)
-    .searchable(
-      text: Binding(get: {
-        store.query.name
-      }, set: { newValue in
-        if newValue != store.query.name {
-          store.query.name = newValue
-        }
-      }),
-      placement: .navigationBarDrawer(displayMode: .always),
-      prompt: store.searchPlaceholder
-    )
+    .navigationBarTitleDisplayMode(.inline)
     .toolbar {
-      ToolbarItemGroup(placement: .primaryAction) {
-        if case let .querySet(value, _) = store.queryType, let iconURL = URL(string: value.iconSvgUri) {
-          Button("Info", systemImage: "info.circle") {
+      if case let .querySet(value, _) = store.queryType, let iconURL = URL(string: value.iconSvgUri) {
+        ToolbarItem(placement: .principal) {
+          Button {
             store.send(.didSelectShowInfo)
+          } label: {
+            VStack(spacing: 0) {
+              Text(value.name).font(.headline)
+              Text("\(value.cardCount) Cards").font(.caption).foregroundStyle(.secondary)
+            }
           }
-          .labelStyle(.iconOnly)
-          .disabled(store.isShowingInfo)
+          .buttonStyle(HierarchicalToolbarButton())
           .popover(
             isPresented: $store.isShowingInfo,
-            attachmentAnchor: .rect(.bounds),
             content: {
               VStack(spacing: 0) {
                 HStack {
@@ -108,7 +103,7 @@ struct QueryView: View {
                 .padding(.vertical, 11.0)
                 .safeAreaPadding(.horizontal, nil)
                 
-                Divider()
+                Divider().safeAreaPadding(.leading, nil)
                 
                 HStack {
                   Text("Set Code")
@@ -119,7 +114,7 @@ struct QueryView: View {
                 .safeAreaPadding(.horizontal, nil)
                 
                 if let date = store.setReleasedDate {
-                  Divider()
+                  Divider().safeAreaPadding(.leading, nil)
                   
                   HStack {
                     Text("Released Date")
@@ -130,7 +125,7 @@ struct QueryView: View {
                   .safeAreaPadding(.horizontal, nil)
                 }
                 
-                Divider()
+                Divider().safeAreaPadding(.leading, nil)
                 
                 HStack {
                   Text("Number of Cards")
@@ -141,28 +136,72 @@ struct QueryView: View {
                 .safeAreaPadding(.horizontal, nil)
               }
               .presentationCompactAdaptation(.popover)
-              .presentationBackground {
-                Color.clear
+            }
+          )
+        }
+      }
+      
+      ToolbarItemGroup(placement: .primaryAction) {
+        if case let .querySet(value, _) = store.queryType {
+          Button("Sort", systemImage: "arrow.up.arrow.down.circle.fill") {
+            store.send(.didSelectShowSortOptions)
+          }
+          .buttonStyle(HierarchicalToolbarButton())
+          .popover(
+            isPresented: $store.isShowingSortOptions,
+            content: {
+              List {
+                Picker("SORT BY", selection: $store.query.sortMode) {
+                  ForEach(store.availableSortModes) { value in
+                    Text(value.description)
+                  }
+                }
+                .pickerStyle(.inline)
+                .labelsVisibility(.visible)
+                
+                Picker("SORT ORDER", selection: $store.query.sortDirection) {
+                  ForEach(store.availableSortOrders) { value in
+                    Text(value.description)
+                  }
+                }
+                .pickerStyle(.inline)
+                .labelsVisibility(.visible)
               }
+              .listStyle(.plain)
+              .frame(width: 250, height: 404, alignment: .center)
+              .presentationCompactAdaptation(.popover)
             }
           )
           
-          Menu("Info", systemImage: "line.3.horizontal.decrease.circle") {
-            Picker("SORT BY", selection: $store.query.sortMode) {
-              ForEach(store.availableSortModes) { value in
-                Text(value.description)
-              }
-            }
-            .labelsVisibility(.visible)
-            
-            Picker("SORT ORDER", selection: $store.query.sortDirection) {
-              ForEach(store.availableSortOrders) { value in
-                Text(value.description)
-              }
-            }
-            .labelsVisibility(.visible)
+          Button("Filter", systemImage: "line.3.horizontal.decrease.circle.fill") {
+            store.send(.didSelectShowFilters)
           }
-          .labelStyle(.iconOnly)
+          .buttonStyle(HierarchicalToolbarButton())
+          .popover(
+            isPresented: $store.isShowingSortFilters,
+            content: {
+              List {
+                Picker("SORT BY", selection: $store.query.sortMode) {
+                  ForEach(store.availableSortModes) { value in
+                    Text(value.description)
+                  }
+                }
+                .pickerStyle(.inline)
+                .labelsVisibility(.visible)
+                
+                Picker("SORT ORDER", selection: $store.query.sortDirection) {
+                  ForEach(store.availableSortOrders) { value in
+                    Text(value.description)
+                  }
+                }
+                .pickerStyle(.inline)
+                .labelsVisibility(.visible)
+              }
+              .listStyle(.plain)
+              .frame(width: 250, height: 404, alignment: .center)
+              .presentationCompactAdaptation(.popover)
+            }
+          )
         }
       }
     }

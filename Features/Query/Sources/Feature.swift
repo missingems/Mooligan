@@ -1,6 +1,8 @@
 import ComposableArchitecture
+import Combine
 import Foundation
 import ScryfallKit
+import SwiftUI
 import Networking
 
 @Reducer
@@ -30,10 +32,13 @@ public struct Feature {
     let searchPlaceholder: String
     let setReleasedDate: String?
     var isShowingInfo: Bool
+    var isShowingSortOptions: Bool
+    var isShowingSortFilters: Bool
     var dataSource: QueryDataSource?
     let availableSortModes: [SortMode]
     let availableSortOrders: [SortDirection]
     var query: Query
+    var scrollPosition: ScrollPosition
     
     public init(
       mode: Mode,
@@ -67,6 +72,9 @@ public struct Feature {
       availableSortModes = [.usd, .name, .cmc, .color, .rarity, .released]
       availableSortOrders = [.asc, .desc, .auto]
       isShowingInfo = false
+      isShowingSortOptions = false
+      isShowingSortFilters = false
+      scrollPosition = ScrollPosition(edge: .top)
     }
     
     func shouldLoadMore(at index: Int) -> Bool {
@@ -78,6 +86,8 @@ public struct Feature {
     case binding(BindingAction<State>)
     case didSelectCard(Card, QueryType)
     case didSelectShowInfo
+    case didSelectShowSortOptions
+    case didSelectShowFilters
     case loadMoreCardsIfNeeded(displayingIndex: Int)
     case updateCards(QueryDataSource?, Query, State.Mode)
     case viewAppeared
@@ -85,9 +95,12 @@ public struct Feature {
   
   public var body: some ReducerOf<Self> {
     BindingReducer()
+    
     Reduce { state, action in
       switch action {
       case .binding(\.query):
+        state.isShowingSortOptions = false
+        
         return .run { [query = state.query] send in
           let result = try await client.queryCards(query)
           
@@ -119,6 +132,14 @@ public struct Feature {
         state.isShowingInfo = true
         return .none
         
+      case .didSelectShowFilters:
+        state.isShowingSortFilters = true
+        return .none
+        
+      case .didSelectShowSortOptions:
+        state.isShowingSortOptions = true
+        return .none
+        
       case let .loadMoreCardsIfNeeded(displayingIndex):
         guard
           displayingIndex == (state.dataSource?.cardDetails.count ?? 1) - 1,
@@ -145,6 +166,7 @@ public struct Feature {
           state.dataSource = value
           state.query = nextQuery
           state.mode = mode
+          state.scrollPosition.scrollTo(edge: .top)
         }
         
         return .none
