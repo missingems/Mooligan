@@ -142,7 +142,7 @@ struct QueryView: View {
       }
       
       ToolbarItemGroup(placement: .primaryAction) {
-        if case let .querySet(value, _) = store.queryType {
+        if case .querySet = store.queryType {
           Button("Sort", systemImage: "arrow.up.arrow.down.circle.fill") {
             store.send(.didSelectShowSortOptions)
           }
