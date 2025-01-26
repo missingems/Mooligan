@@ -10,8 +10,6 @@ import VariableBlur
 
 struct QueryView: View {
   @Bindable private var store: StoreOf<Feature>
-  private var numberOfColumns: Double = 2
-  @State private var contentWidth: CGFloat?
   
   init(store: StoreOf<Feature>) {
     self.store = store
@@ -25,11 +23,11 @@ struct QueryView: View {
             spacing: 8.0,
             alignment: .center
           ),
-          count: Int(numberOfColumns)
+          count: Int(store.numberOfColumns)
         ),
         spacing: 13
       ) {
-        if let contentWidth, contentWidth > 0, let dataSource = store.dataSource {
+        if let contentWidth = store.itemWidth, contentWidth > 0, let dataSource = store.dataSource {
           ForEach(Array(zip(dataSource.cardDetails, dataSource.cardDetails.indices)), id: \.0.card.id) { value in
             let cardInfo = value.0
             let index = value.1
@@ -63,11 +61,11 @@ struct QueryView: View {
         of: { proxy in
           proxy.size.width
         }, action: { newValue in
-          guard contentWidth == nil, newValue > 0 else {
+          guard store.viewWidth == nil, newValue > 0 else {
             return
           }
           
-          contentWidth = (newValue - ((numberOfColumns - 1) * 8.0)) / numberOfColumns
+          store.viewWidth = newValue
         }
       )
       .safeAreaPadding(.horizontal, nil)
@@ -200,7 +198,7 @@ struct QueryView: View {
                   .labelsVisibility(.visible)
                 }
                 .navigationTitle("Filter")
-                .navigation(.inline)
+                .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                   ToolbarItem(placement: .primaryAction) {
                     Button {

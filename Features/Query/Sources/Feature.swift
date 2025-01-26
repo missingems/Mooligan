@@ -39,6 +39,9 @@ public struct Feature {
     let availableSortOrders: [SortDirection]
     var query: Query
     var scrollPosition: ScrollPosition
+    var viewWidth: CGFloat?
+    var itemWidth: CGFloat?
+    var numberOfColumns: Double = 2
     
     public init(
       mode: Mode,
@@ -98,6 +101,13 @@ public struct Feature {
     
     Reduce { state, action in
       switch action {
+      case .binding(\.viewWidth):
+        if let viewWidth = state.viewWidth {
+          state.itemWidth = (viewWidth - ((state.numberOfColumns - 1) * 8.0)) / state.numberOfColumns
+        }
+        
+        return .none
+        
       case .binding(\.query):
         state.isShowingSortOptions = false
         
