@@ -142,7 +142,7 @@ struct QueryView: View {
       }
       
       ToolbarItemGroup(placement: .primaryAction) {
-        if case let .querySet(value, _) = store.queryType {
+        if case .querySet = store.queryType {
           Button("Sort", systemImage: "arrow.up.arrow.down.circle.fill") {
             store.send(.didSelectShowSortOptions)
           }
@@ -180,24 +180,37 @@ struct QueryView: View {
           .popover(
             isPresented: $store.isShowingSortFilters,
             content: {
-              List {
-                Picker("SORT BY", selection: $store.query.sortMode) {
-                  ForEach(store.availableSortModes) { value in
-                    Text(value.description)
+              NavigationStack {
+                List {
+                  TextField("Enter name", text: $store.query.name)
+                  Picker("SORT BY", selection: $store.query.sortMode) {
+                    ForEach(store.availableSortModes) { value in
+                      Text(value.description)
+                    }
+                  }
+                  .pickerStyle(.inline)
+                  .labelsVisibility(.visible)
+                  
+                  Picker("SORT ORDER", selection: $store.query.sortDirection) {
+                    ForEach(store.availableSortOrders) { value in
+                      Text(value.description)
+                    }
+                  }
+                  .pickerStyle(.inline)
+                  .labelsVisibility(.visible)
+                }
+                .navigationTitle("Filter")
+                .navigation(.inline)
+                .toolbar {
+                  ToolbarItem(placement: .primaryAction) {
+                    Button {
+                      print("done")
+                    } label: {
+                      Text("Done")
+                    }
                   }
                 }
-                .pickerStyle(.inline)
-                .labelsVisibility(.visible)
-                
-                Picker("SORT ORDER", selection: $store.query.sortDirection) {
-                  ForEach(store.availableSortOrders) { value in
-                    Text(value.description)
-                  }
-                }
-                .pickerStyle(.inline)
-                .labelsVisibility(.visible)
               }
-              .listStyle(.plain)
               .frame(width: 250, height: 404, alignment: .center)
               .presentationCompactAdaptation(.popover)
             }
