@@ -148,39 +148,8 @@ struct QueryView: View {
           .popover(
             isPresented: $store.isShowingSortOptions,
             content: {
-              List {
-                Picker("SORT BY", selection: $store.query.sortMode) {
-                  ForEach(store.availableSortModes) { value in
-                    Text(value.description)
-                  }
-                }
-                .pickerStyle(.inline)
-                .labelsVisibility(.visible)
-                
-                Picker("SORT ORDER", selection: $store.query.sortDirection) {
-                  ForEach(store.availableSortOrders) { value in
-                    Text(value.description)
-                  }
-                }
-                .pickerStyle(.inline)
-                .labelsVisibility(.visible)
-              }
-              .listStyle(.plain)
-              .frame(width: 250, height: 404, alignment: .center)
-              .presentationCompactAdaptation(.popover)
-            }
-          )
-          
-          Button("Filter", systemImage: "line.3.horizontal.decrease.circle.fill") {
-            store.send(.didSelectShowFilters)
-          }
-          .buttonStyle(HierarchicalToolbarButton())
-          .popover(
-            isPresented: $store.isShowingSortFilters,
-            content: {
               NavigationStack {
                 List {
-                  TextField("Enter name", text: $store.query.name)
                   Picker("SORT BY", selection: $store.query.sortMode) {
                     ForEach(store.availableSortModes) { value in
                       Text(value.description)
@@ -197,6 +166,55 @@ struct QueryView: View {
                   .pickerStyle(.inline)
                   .labelsVisibility(.visible)
                 }
+                .scrollContentBackground(.hidden)
+                .navigationTitle("Sort")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                  ToolbarItem(placement: .primaryAction) {
+                    Button {
+                      print("done")
+                    } label: {
+                      Text("Done")
+                    }
+                  }
+                }
+              }
+              .modifier(ConditionalFrameModifier(size: store.popoverSize ?? .zero))
+              .presentationCompactAdaptation(.popover)
+              .presentationBackground {
+                Color.clear
+              }
+            }
+          )
+          
+          Button("Filter", systemImage: "line.3.horizontal.decrease.circle.fill") {
+            store.send(.didSelectShowFilters)
+          }
+          .buttonStyle(HierarchicalToolbarButton())
+          .popover(
+            isPresented: $store.isShowingSortFilters,
+            content: {
+              NavigationStack {
+                List {
+                  TextField("Enter card name", text: $store.query.name)
+                  
+                  Picker("SORT BY", selection: $store.query.sortMode) {
+                    ForEach(store.availableSortModes) { value in
+                      Text(value.description)
+                    }
+                  }
+                  .pickerStyle(.inline)
+                  .labelsVisibility(.visible)
+                  
+                  Picker("SORT ORDER", selection: $store.query.sortDirection) {
+                    ForEach(store.availableSortOrders) { value in
+                      Text(value.description)
+                    }
+                  }
+                  .pickerStyle(.inline)
+                  .labelsVisibility(.visible)
+                }
+                .scrollContentBackground(.hidden)
                 .navigationTitle("Filter")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
@@ -209,8 +227,11 @@ struct QueryView: View {
                   }
                 }
               }
-              .frame(width: 250, height: 404, alignment: .center)
+              .modifier(ConditionalFrameModifier(size: store.popoverSize ?? .zero))
               .presentationCompactAdaptation(.popover)
+              .presentationBackground {
+                Color.clear
+              }
             }
           )
         }

@@ -3,13 +3,17 @@ import NukeUI
 import Shimmer
 import SwiftUI
 
-struct ConditionalFrameModifier: ViewModifier {
-  let size: CGSize
+public struct ConditionalFrameModifier: ViewModifier {
+  public let size: CGSize
   
-  func body(content: Content) -> some View {
+  public func body(content: Content) -> some View {
     if size.width > 0, size.height > 0 {
       content.frame(width: size.width, height: size.height, alignment: .center)
     }
+  }
+  
+  public init(size: CGSize) {
+    self.size = size
   }
 }
 

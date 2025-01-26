@@ -41,6 +41,7 @@ public struct Feature {
     var scrollPosition: ScrollPosition
     var viewWidth: CGFloat?
     var itemWidth: CGFloat?
+    var popoverSize: CGSize?
     var numberOfColumns: Double = 2
     
     public init(
@@ -104,6 +105,7 @@ public struct Feature {
       case .binding(\.viewWidth):
         if let viewWidth = state.viewWidth {
           state.itemWidth = (viewWidth - ((state.numberOfColumns - 1) * 8.0)) / state.numberOfColumns
+          state.popoverSize = CGSize(width: viewWidth - 68, height: (viewWidth - 21.0) * 1.618)
         }
         
         return .none
