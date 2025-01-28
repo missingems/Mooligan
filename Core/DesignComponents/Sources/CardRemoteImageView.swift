@@ -78,6 +78,5 @@ public struct CardRemoteImageView: View {
       RoundedRectangle(cornerRadius: cornerRadius ?? 0)
         .strokeBorder(.separator, lineWidth: 1 / UIScreen.main.nativeScale)
     )
-    .shadow(color: DesignComponentsAsset.shadow.swiftUIColor, radius: 8, x: 0, y: 5)
   }
 }

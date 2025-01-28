@@ -134,10 +134,12 @@ import ScryfallKit
 public extension CardDetailFeature {
   @ObservableState struct State: Equatable {
     @Presents var showRulings: RulingFeature.State?
+    public let id: UUID
     var content: Content?
     let start: Action
     
     public init(card: Card, queryType: QueryType) {
+      self.id = card.id
       start = .setupContentIfNeeded(card: card, queryType: queryType)
     }
   }

@@ -22,7 +22,9 @@ struct MooliganApp: App {
 }
 
 struct RootView: View {
+  @Namespace private var namespace
   @Bindable var store: StoreOf<Feature>
+  
   var body: some View {
     TabView {
       ForEach(Feature.TabInfo.allCases) { info in
@@ -36,10 +38,11 @@ struct RootView: View {
             } destination: { store in
               switch store.case {
               case let .showSetDetail(value):
-                Query.RootView(store: value)
+                Query.RootView(store: value, namespace: namespace)
                 
               case let .showCardDetail(value):
                 CardDetail.RootView(store: value)
+                  .navigationTransition(.zoom(sourceID: value.state.id, in: namespace))
               }
             }
           case .game:
