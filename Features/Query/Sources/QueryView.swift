@@ -196,7 +196,7 @@ struct QueryView: View {
             content: {
               NavigationStack {
                 List {
-                  TextField("Enter card name", text: $store.query.name).textFieldStyle(.)
+                  TextField("Enter card name", text: $store.query.name)
                   
                   Picker("SORT BY", selection: $store.query.sortMode) {
                     ForEach(store.availableSortModes) { value in
