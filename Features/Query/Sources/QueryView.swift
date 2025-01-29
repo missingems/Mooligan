@@ -19,6 +19,31 @@ struct QueryView: View {
   
   var body: some View {
     ScrollView(.vertical) {
+      HStack(spacing: 13) {
+//        IconLazyImage(viewModel.iconUrl).frame(width: 34, height: 34, alignment: .center)
+        
+        VStack(alignment: .leading, spacing: 3.0) {
+          Text(store.title).multilineTextAlignment(.leading)
+          
+          HStack(spacing: 5.0) {
+            PillText("viewModel.id").font(.caption).monospaced()
+            Text("viewModel.numberOfCardsLabel").font(.caption).foregroundColor(.secondary)
+          }
+        }
+        
+        Spacer()
+      }
+      .padding(
+        EdgeInsets(
+          top: 8
+          leading: 13,
+          bottom: 11
+          trailing: 13
+        )
+      )
+      .background { viewModel.shouldSetBackground ? Color(.tertiarySystemFill) : Color.clear }
+      .clipShape(RoundedRectangle(cornerRadius: 13.0))
+      
       LazyVGrid(
         columns: [GridItem](
           repeating: GridItem(
@@ -30,50 +55,33 @@ struct QueryView: View {
         spacing: 13
       ) {
         if let contentWidth = store.itemWidth, contentWidth > 0, let dataSource = store.dataSource {
-          Section {
-            ForEach(Array(zip(dataSource.cardDetails, dataSource.cardDetails.indices)), id: \.0.card.id) { value in
-              let cardInfo = value.0
-              let index = value.1
-              
-              let layout = CardView.LayoutConfiguration(
-                rotation: .portrait,
-                maxWidth: contentWidth
+          ForEach(Array(zip(dataSource.cardDetails, dataSource.cardDetails.indices)), id: \.0.card.id) { value in
+            let cardInfo = value.0
+            let index = value.1
+            
+            let layout = CardView.LayoutConfiguration(
+              rotation: .portrait,
+              maxWidth: contentWidth
+            )
+            
+            Button {
+              store.send(.didSelectCard(cardInfo.card, store.queryType))
+            } label: {
+              CardView(
+                displayableCard: cardInfo.displayableCardImage,
+                layoutConfiguration: layout,
+                callToActionHorizontalOffset: 5,
+                priceVisibility: .display(usdFoil: cardInfo.card.getPrice(for: .usdFoil), usd: cardInfo.card.getPrice(for: .usd))
               )
-              
-              Button {
-                store.send(.didSelectCard(cardInfo.card, store.queryType))
-              } label: {
-                CardView(
-                  displayableCard: cardInfo.displayableCardImage,
-                  layoutConfiguration: layout,
-                  callToActionHorizontalOffset: 5,
-                  priceVisibility: .display(usdFoil: cardInfo.card.getPrice(for: .usdFoil), usd: cardInfo.card.getPrice(for: .usd))
-                )
-                .matchedTransitionSource(id: cardInfo.card.id, in: namespace)
-              }
-              .buttonStyle(.sinkableButtonStyle)
-              .shadow(color: DesignComponentsAsset.shadow.swiftUIColor, radius: 8, x: 0, y: 5)
-              .task {
-                if store.state.shouldLoadMore(at: index) {
-                  store.send(.loadMoreCardsIfNeeded(displayingIndex: index))
-                }
+              .matchedTransitionSource(id: cardInfo.card.id, in: namespace)
+            }
+            .shadow(color: DesignComponentsAsset.shadow.swiftUIColor, radius: 8, x: 0, y: 5)
+            .buttonStyle(.sinkableButtonStyle)
+            .task {
+              if store.state.shouldLoadMore(at: index) {
+                store.send(.loadMoreCardsIfNeeded(displayingIndex: index))
               }
             }
-          } header: {
-            ScrollView(.horizontal, showsIndicators: false) {
-              HStack(spacing: 5.0) {
-                VStack(alignment: .center, spacing: 3.0) {
-                  HStack(spacing: 5.0) {
-                    Text("Test")
-                  }
-                  .frame(minWidth: 66, minHeight: 34)
-                  .padding(EdgeInsets(top: 5, leading: 11, bottom: 5, trailing: 11))
-                  .background(Color(.systemFill))
-                  .clipShape(RoundedRectangle(cornerRadius: 13.0))
-                }
-              }
-            }
-            .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
           }
         }
       }
