@@ -83,10 +83,10 @@ struct QueryView: View {
               CardView(
                 displayableCard: cardInfo.displayableCardImage,
                 layoutConfiguration: layout,
-                callToActionHorizontalOffset: 5,
-                priceVisibility: .display(usdFoil: cardInfo.card.getPrice(for: .usdFoil), usd: cardInfo.card.getPrice(for: .usd)),
-                namespace: namespace
+                callToActionHorizontalOffset: 0,
+                priceVisibility: .display(usdFoil: cardInfo.card.getPrice(for: .usdFoil), usd: cardInfo.card.getPrice(for: .usd))
               )
+              .matchedTransitionSource(id: cardInfo.card.id, in: namespace)
             }
             .buttonStyle(.sinkableButtonStyle)
             .task {

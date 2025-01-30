@@ -41,7 +41,6 @@ public struct CardView: View {
   private let displayableCard: DisplayableCardImage
   private let priceVisibility: PriceVisibility
   private let send: ((Action) -> Void)?
-  private let namespace: Namespace.ID
   @State private var localDisplayableCard: DisplayableCardImage?
   
   public var body: some View {
@@ -82,7 +81,6 @@ public struct CardView: View {
               transaction.animation = .bouncy
             }
           }
-          .matchedTransitionSource(id: id, in: namespace)
           
           Button {
             if let send {
@@ -123,7 +121,6 @@ public struct CardView: View {
             isTransformed: false,
             size: layoutConfiguration.size
           )
-          .matchedTransitionSource(id: id, in: namespace)
           .frame(width: layoutConfiguration.size.width, height: layoutConfiguration.size.height, alignment: .center)
         }
       }
@@ -144,7 +141,6 @@ public struct CardView: View {
       isTransformed: false,
       size: layoutConfiguration.size
     )
-    .matchedTransitionSource(id: id, in: namespace)
     .rotationEffect(.degrees(direction == .front ? 0 : 180))
     .zIndex(2)
     .transaction { transaction in
@@ -203,7 +199,6 @@ public struct CardView: View {
     layoutConfiguration: LayoutConfiguration,
     callToActionHorizontalOffset: CGFloat = 5.0,
     priceVisibility: PriceVisibility,
-    namespace: Namespace.ID,
     send: ((Action) -> Void)? = nil
   ) {
     self.displayableCard = displayableCard
@@ -215,7 +210,6 @@ public struct CardView: View {
     
     self.layoutConfiguration = layoutConfiguration
     self.callToActionHorizontalOffset = callToActionHorizontalOffset
-    self.namespace = namespace
     self.send = send
   }
   
@@ -224,7 +218,6 @@ public struct CardView: View {
     layoutConfiguration: LayoutConfiguration,
     callToActionHorizontalOffset: CGFloat = 5.0,
     priceVisibility: PriceVisibility,
-    namespace: Namespace.ID,
     send: ((Action) -> Void)? = nil
   ) {
     guard let displayableCard else {
@@ -240,7 +233,6 @@ public struct CardView: View {
     
     self.layoutConfiguration = layoutConfiguration
     self.callToActionHorizontalOffset = callToActionHorizontalOffset
-    self.namespace = namespace
     self.send = send
   }
 }

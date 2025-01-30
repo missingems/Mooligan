@@ -45,7 +45,7 @@ struct RootView: View {
                   .navigationTransition(.zoom(sourceID: value.state.id, in: namespace))
                 
               case let .showCardDetail(value):
-                CardDetail.RootView(store: value, namespace: namespace)
+                CardDetail.RootView(store: value)
                   .navigationTransition(.zoom(sourceID: value.state.id, in: namespace))
               }
             }

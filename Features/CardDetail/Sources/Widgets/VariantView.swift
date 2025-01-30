@@ -38,8 +38,7 @@ struct VariantView: View {
                   priceVisibility: .display(
                     usdFoil: card.prices.usdFoil,
                     usd: card.prices.usd
-                  ),
-                  namespace: namespace
+                  )
                 )
                 .shadow(color: DesignComponentsAsset.shadow.swiftUIColor, radius: 8, x: 0, y: 5)
               }
