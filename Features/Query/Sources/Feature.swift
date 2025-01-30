@@ -43,6 +43,7 @@ public struct Feature {
     var itemWidth: CGFloat?
     var popoverSize: CGSize?
     var numberOfColumns: Double = 2
+    public let id: UUID
     
     public init(
       mode: Mode,
@@ -68,6 +69,7 @@ public struct Feature {
         }
         
         self.query = request
+        self.id = set.id
         
       default:
         fatalError()

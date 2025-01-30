@@ -19,30 +19,33 @@ struct QueryView: View {
   
   var body: some View {
     ScrollView(.vertical) {
-      HStack(spacing: 13) {
-//        IconLazyImage(viewModel.iconUrl).frame(width: 34, height: 34, alignment: .center)
-        
-        VStack(alignment: .leading, spacing: 3.0) {
-          Text(store.title).multilineTextAlignment(.leading)
+      if case let .querySet(value, _) = store.queryType, let iconURL = URL(string: value.iconSvgUri) {
+        HStack(spacing: 13) {
+          IconLazyImage(iconURL).frame(width: 34, height: 34, alignment: .center)
           
-          HStack(spacing: 5.0) {
-            PillText("viewModel.id").font(.caption).monospaced()
-            Text("viewModel.numberOfCardsLabel").font(.caption).foregroundColor(.secondary)
+          VStack(alignment: .leading, spacing: 3.0) {
+            Text(store.title).multilineTextAlignment(.leading).font(.headline)
+            
+            HStack(spacing: 5.0) {
+              PillText(value.code.uppercased()).font(.caption).monospaced()
+              Text("\(value.cardCount) Cards").font(.caption).foregroundStyle(.secondary)
+            }
           }
+          
+          Spacer()
         }
-        
-        Spacer()
-      }
-      .padding(
-        EdgeInsets(
-          top: 8
-          leading: 13,
-          bottom: 11
-          trailing: 13
+        .padding(
+          EdgeInsets(
+            top: 8,
+            leading: 13,
+            bottom: 11,
+            trailing: 13
+          )
         )
-      )
-      .background { viewModel.shouldSetBackground ? Color(.tertiarySystemFill) : Color.clear }
-      .clipShape(RoundedRectangle(cornerRadius: 13.0))
+        .background { Color(.tertiarySystemFill) }
+        .clipShape(RoundedRectangle(cornerRadius: 13.0))
+        .safeAreaPadding(.horizontal, nil)
+      }
       
       LazyVGrid(
         columns: [GridItem](
@@ -75,7 +78,6 @@ struct QueryView: View {
               )
               .matchedTransitionSource(id: cardInfo.card.id, in: namespace)
             }
-            .shadow(color: DesignComponentsAsset.shadow.swiftUIColor, radius: 8, x: 0, y: 5)
             .buttonStyle(.sinkableButtonStyle)
             .task {
               if store.state.shouldLoadMore(at: index) {
@@ -104,71 +106,8 @@ struct QueryView: View {
     .scrollDisabled(store.mode.isPlaceholder)
     .scrollPosition($store.scrollPosition)
     .scrollBounceBehavior(.basedOnSize)
-    .navigationTitle(store.title)
     .navigationBarTitleDisplayMode(.inline)
     .toolbar {
-      if case let .querySet(value, _) = store.queryType, let iconURL = URL(string: value.iconSvgUri) {
-        ToolbarItem(placement: .principal) {
-          Button {
-            store.send(.didSelectShowInfo)
-          } label: {
-            VStack(spacing: 0) {
-              Text(value.name).font(.headline)
-              Text("\(value.cardCount) Cards").font(.caption).foregroundStyle(.secondary)
-            }
-          }
-          .buttonStyle(HierarchicalToolbarButton())
-          .popover(
-            isPresented: $store.isShowingInfo,
-            content: {
-              VStack(spacing: 0) {
-                HStack {
-                  Text("Set Symbol")
-                  Spacer(minLength: 55)
-                  IconLazyImage(iconURL, tintColor: .secondary).frame(width: 21, height: 21, alignment: .center)
-                }
-                .padding(.vertical, 11.0)
-                .safeAreaPadding(.horizontal, nil)
-                
-                Divider().safeAreaPadding(.leading, nil)
-                
-                HStack {
-                  Text("Set Code")
-                  Spacer(minLength: 55)
-                  Text(value.code.uppercased()).foregroundStyle(.secondary).fontDesign(.monospaced)
-                }
-                .padding(.vertical, 11.0)
-                .safeAreaPadding(.horizontal, nil)
-                
-                if let date = store.setReleasedDate {
-                  Divider().safeAreaPadding(.leading, nil)
-                  
-                  HStack {
-                    Text("Released Date")
-                    Spacer(minLength: 55)
-                    Text(date).foregroundStyle(.secondary)
-                  }
-                  .padding(.vertical, 11.0)
-                  .safeAreaPadding(.horizontal, nil)
-                }
-                
-                Divider().safeAreaPadding(.leading, nil)
-                
-                HStack {
-                  Text("Number of Cards")
-                  Spacer(minLength: 55)
-                  Text("\(value.cardCount)").foregroundStyle(.secondary)
-                }
-                .padding(.vertical, 11.0)
-                .safeAreaPadding(.horizontal, nil)
-              }
-              .presentationCompactAdaptation(.popover)
-              .presentationBackground(Color.clear)
-            }
-          )
-        }
-      }
-      
       ToolbarItemGroup(placement: .primaryAction) {
         if case .querySet = store.queryType {
           Menu {

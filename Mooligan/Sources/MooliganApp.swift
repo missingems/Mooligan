@@ -33,12 +33,16 @@ struct RootView: View {
           case .sets:
             NavigationStack(path: $store.scope(state: \.path, action: \.path)) {
               Browse
-                .RootView(store: store.scope(state: \.sets, action: \.sets))
+                .RootView(
+                  store: store.scope(state: \.sets, action: \.sets),
+                  namespace: namespace
+                )
                 .navigationTitle(info.title)
             } destination: { store in
               switch store.case {
               case let .showSetDetail(value):
                 Query.RootView(store: value, namespace: namespace)
+                  .navigationTransition(.zoom(sourceID: value.state.id, in: namespace))
                 
               case let .showCardDetail(value):
                 CardDetail.RootView(store: value)
