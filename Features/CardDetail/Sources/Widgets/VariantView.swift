@@ -13,6 +13,7 @@ struct VariantView: View {
   let subtitle: String
   let cards: IdentifiedArrayOf<Card>
   let send: (Action) -> Void
+  @Namespace var namespace
   
   var body: some View {
     Divider().safeAreaPadding(.leading, nil)
@@ -37,7 +38,8 @@ struct VariantView: View {
                   priceVisibility: .display(
                     usdFoil: card.prices.usdFoil,
                     usd: card.prices.usd
-                  )
+                  ),
+                  namespace: namespace
                 )
                 .shadow(color: DesignComponentsAsset.shadow.swiftUIColor, radius: 8, x: 0, y: 5)
               }

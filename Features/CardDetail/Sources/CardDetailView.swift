@@ -7,6 +7,7 @@ import SwiftUI
 struct CardDetailView: View {
   @Bindable var store: StoreOf<CardDetailFeature>
   @State private var maxWidth: CGFloat?
+  let namespace: Namespace.ID
   
   var body: some View {
     ScrollView(.vertical) {
@@ -23,7 +24,8 @@ struct CardDetailView: View {
             displayableCard: content.displayableCardImage,
             layoutConfiguration: configuration,
             callToActionHorizontalOffset: 21.0,
-            priceVisibility: .hidden
+            priceVisibility: .hidden,
+            namespace: namespace
           ) { action in
             store.send(.descriptionCallToActionTapped, animation: .bouncy)
           }

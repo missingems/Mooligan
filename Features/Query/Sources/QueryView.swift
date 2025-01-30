@@ -20,31 +20,41 @@ struct QueryView: View {
   var body: some View {
     ScrollView(.vertical) {
       if case let .querySet(value, _) = store.queryType, let iconURL = URL(string: value.iconSvgUri) {
-        HStack(spacing: 13) {
-          IconLazyImage(iconURL).frame(width: 34, height: 34, alignment: .center)
+        Button {
           
-          VStack(alignment: .leading, spacing: 3.0) {
-            Text(store.title).multilineTextAlignment(.leading).font(.headline)
+        } label: {
+          HStack(spacing: 13) {
+            IconLazyImage(iconURL).frame(width: 34, height: 34, alignment: .center)
             
-            HStack(spacing: 5.0) {
-              PillText(value.code.uppercased()).font(.caption).monospaced()
-              Text("\(value.cardCount) Cards").font(.caption).foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 3.0) {
+              Text(store.title).multilineTextAlignment(.leading).font(.headline)
+              
+              HStack(spacing: 5.0) {
+                PillText(value.code.uppercased()).font(.caption).monospaced()
+                Text("\(value.cardCount) Cards").font(.caption).foregroundStyle(.secondary)
+              }
             }
+            
+            Spacer()
+            
+            Image(systemName: "chevron.right")
+              .fontWeight(.medium)
+              .imageScale(.small)
+              .foregroundStyle(.tertiary)
           }
-          
-          Spacer()
-        }
-        .padding(
-          EdgeInsets(
-            top: 8,
-            leading: 13,
-            bottom: 11,
-            trailing: 13
+          .padding(
+            EdgeInsets(
+              top: 8,
+              leading: 13,
+              bottom: 11,
+              trailing: 13
+            )
           )
-        )
-        .background { Color(.tertiarySystemFill) }
-        .clipShape(RoundedRectangle(cornerRadius: 13.0))
-        .safeAreaPadding(.horizontal, nil)
+          .background { Color(.tertiarySystemFill) }
+          .clipShape(RoundedRectangle(cornerRadius: 13.0))
+          .safeAreaPadding(.horizontal, nil)
+          .padding(.bottom, 5)
+        }
       }
       
       LazyVGrid(
@@ -74,9 +84,9 @@ struct QueryView: View {
                 displayableCard: cardInfo.displayableCardImage,
                 layoutConfiguration: layout,
                 callToActionHorizontalOffset: 5,
-                priceVisibility: .display(usdFoil: cardInfo.card.getPrice(for: .usdFoil), usd: cardInfo.card.getPrice(for: .usd))
+                priceVisibility: .display(usdFoil: cardInfo.card.getPrice(for: .usdFoil), usd: cardInfo.card.getPrice(for: .usd)),
+                namespace: namespace
               )
-              .matchedTransitionSource(id: cardInfo.card.id, in: namespace)
             }
             .buttonStyle(.sinkableButtonStyle)
             .task {

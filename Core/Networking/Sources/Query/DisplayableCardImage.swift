@@ -6,27 +6,42 @@ public enum DisplayableCardImage: Equatable {
     direction: MagicCardFaceDirection,
     frontImageURL: URL,
     backImageURL: URL,
-    callToActionIconName: String
+    callToActionIconName: String,
+    id: UUID
   )
   
   case flippable(
     direction: MagicCardFaceDirection,
     displayingImageURL: URL,
-    callToActionIconName: String
+    callToActionIconName: String,
+    id: UUID
   )
   
-  case single(displayingImageURL: URL)
+  case single(displayingImageURL: URL, id: UUID)
   
   public var faceDirection: MagicCardFaceDirection {
     switch self {
-    case let .transformable(direction, _, _, _):
+    case let .transformable(direction, _, _, _, _):
       return direction
       
-    case let .flippable(direction, _, _):
+    case let .flippable(direction, _, _, _):
       return direction
       
     case .single:
       return .front
+    }
+  }
+  
+  public var id: UUID {
+    switch self {
+    case let .transformable(_, _, _, _, id):
+      return id
+      
+    case let .flippable(_, _, _, id):
+      return id
+      
+    case let .single(_ ,id):
+      return id
     }
   }
   
@@ -39,7 +54,8 @@ public enum DisplayableCardImage: Equatable {
         direction: .front,
         frontImageURL: frontImageURL,
         backImageURL: backImageURL,
-        callToActionIconName: callToActionIconName
+        callToActionIconName: callToActionIconName,
+        id: card.id
       )
     } else if
       card.isFlippable,
@@ -48,10 +64,11 @@ public enum DisplayableCardImage: Equatable {
       self = .flippable(
         direction: .front,
         displayingImageURL: imageURL,
-        callToActionIconName: callToActionIconName
+        callToActionIconName: callToActionIconName,
+        id: card.id
       )
     } else if let imageURL = card.getImageURL(type: .normal) {
-      self = .single(displayingImageURL: imageURL)
+      self = .single(displayingImageURL: imageURL, id: card.id)
     } else {
       fatalError("Impossible state: ImageURL cannot be nil.")
     }
