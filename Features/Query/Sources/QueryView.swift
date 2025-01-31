@@ -37,7 +37,7 @@ struct QueryView: View {
             
             Spacer()
             
-            Image(systemName: "chevron.right")
+            Image(systemName: "chevron.down")
               .fontWeight(.medium)
               .imageScale(.small)
               .foregroundStyle(.tertiary)
@@ -85,8 +85,9 @@ struct QueryView: View {
                 layoutConfiguration: layout,
                 callToActionHorizontalOffset: 0,
                 priceVisibility: .display(usdFoil: cardInfo.card.getPrice(for: .usdFoil), usd: cardInfo.card.getPrice(for: .usd))
-              )
-              .matchedTransitionSource(id: cardInfo.card.id, in: namespace)
+              ).background {
+                Rectangle().matchedTransitionSource(id: cardInfo.card.id, in: namespace)
+              }
             }
             .buttonStyle(.sinkableButtonStyle)
             .task {
