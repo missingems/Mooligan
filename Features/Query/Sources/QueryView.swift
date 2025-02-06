@@ -177,7 +177,6 @@ struct QueryView: View {
                 .toolbar {
                   ToolbarItem(placement: .primaryAction) {
                     Button {
-                      print("done")
                     } label: {
                       Text("Done")
                     }
