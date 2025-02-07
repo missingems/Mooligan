@@ -96,6 +96,7 @@ public struct Feature {
     case didSelectShowFilters
     case loadMoreCardsIfNeeded(displayingIndex: Int)
     case updateCards(QueryDataSource?, Query, State.Mode)
+    case scrollToTop
     case viewAppeared
   }
   
@@ -115,22 +116,27 @@ public struct Feature {
       case .binding(\.query):
         state.isShowingSortOptions = false
         
-        return .run { [query = state.query] send in
-          let result = try await client.queryCards(query)
-          
-          await send(
-            .updateCards(
-              QueryDataSource(
-                cards: result.data,
-                focusedCard: nil,
-                hasNextPage: result.hasMore ?? false
+        return .concatenate([
+          .run { [query = state.query] send in
+            let result = try await client.queryCards(query)
+            
+            await send(
+              .updateCards(
+                QueryDataSource(
+                  cards: result.data,
+                  focusedCard: nil,
+                  hasNextPage: result.hasMore ?? false
+                ),
+                query,
+                .data
               ),
-              query,
-              .data
-            ),
-            animation: .default
-          )
-        }
+              animation: .default
+            )
+          },
+          .run { send in
+            await send(.scrollToTop)
+          }
+        ])
         .cancellable(
           id: "query",
           cancelInFlight: true
@@ -180,9 +186,12 @@ public struct Feature {
           state.dataSource = value
           state.query = nextQuery
           state.mode = mode
-          state.scrollPosition.scrollTo(edge: .top)
         }
         
+        return .none
+        
+      case .scrollToTop:
+        state.scrollPosition.scrollTo(edge: .top)
         return .none
         
       case .viewAppeared:
