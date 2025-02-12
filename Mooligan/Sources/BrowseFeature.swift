@@ -118,6 +118,9 @@ import ScryfallKit
               
             case .viewAppeared:
               break
+              
+            case .scrollToTop:
+              break
             }
             
           case let .showCardDetail(value):
