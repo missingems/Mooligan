@@ -84,10 +84,9 @@ struct QueryView: View {
                 displayableCard: cardInfo.displayableCardImage,
                 layoutConfiguration: layout,
                 callToActionHorizontalOffset: 0,
-                priceVisibility: .display(usdFoil: cardInfo.card.getPrice(for: .usdFoil), usd: cardInfo.card.getPrice(for: .usd))
-              ).background {
-                Rectangle().matchedTransitionSource(id: cardInfo.card.id, in: namespace)
-              }
+                priceVisibility: .display(usdFoil: cardInfo.card.getPrice(for: .usdFoil), usd: cardInfo.card.getPrice(for: .usd)),
+                namespace: namespace
+              )
             }
             .buttonStyle(.sinkableButtonStyle)
             .task {

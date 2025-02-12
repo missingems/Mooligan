@@ -17,6 +17,20 @@ public struct ConditionalFrameModifier: ViewModifier {
   }
 }
 
+extension View {
+  @ViewBuilder
+  func conditionalModifier<Content: View>(
+    _ condition: Bool,
+    transform: (Self) -> Content
+  ) -> some View {
+    if condition {
+      transform(self)
+    } else {
+      self
+    }
+  }
+}
+
 public struct CardRemoteImageView: View {
   public let url: URL
   @State private var cornerRadius: CGFloat?
