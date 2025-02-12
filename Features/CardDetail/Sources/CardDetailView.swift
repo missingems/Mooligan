@@ -27,6 +27,7 @@ struct CardDetailView: View {
           ) { action in
             store.send(.descriptionCallToActionTapped, animation: .bouncy)
           }
+          .shadow(color: DesignComponentsAsset.shadow.swiftUIColor, radius: 8, x: 0, y: 5)
           .padding(
             EdgeInsets(
               top: 13,

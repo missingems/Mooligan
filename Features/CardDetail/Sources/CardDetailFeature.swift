@@ -39,19 +39,21 @@ import ScryfallKit
         
       case .descriptionCallToActionTapped:
         switch state.content?.displayableCardImage {
-        case let .transformable(direction, frontImageURL, backImageURL, callToActionIconName):
+        case let .transformable(direction, frontImageURL, backImageURL, callToActionIconName, id):
           state.content?.displayableCardImage = .transformable(
             direction: direction.toggled(),
             frontImageURL: frontImageURL,
             backImageURL: backImageURL,
-            callToActionIconName: callToActionIconName
+            callToActionIconName: callToActionIconName,
+            id: id
           )
           
-        case let .flippable(direction, displayingImageURL, callToActionIconName):
+        case let .flippable(direction, displayingImageURL, callToActionIconName, id):
           state.content?.displayableCardImage = .flippable(
             direction: direction.toggled(),
             displayingImageURL: displayingImageURL,
-            callToActionIconName: callToActionIconName
+            callToActionIconName: callToActionIconName,
+            id: id
           )
           
         default:
@@ -134,10 +136,12 @@ import ScryfallKit
 public extension CardDetailFeature {
   @ObservableState struct State: Equatable {
     @Presents var showRulings: RulingFeature.State?
+    public let id: UUID
     var content: Content?
     let start: Action
     
     public init(card: Card, queryType: QueryType) {
+      self.id = card.id
       start = .setupContentIfNeeded(card: card, queryType: queryType)
     }
   }

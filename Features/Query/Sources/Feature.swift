@@ -39,6 +39,11 @@ public struct Feature {
     let availableSortOrders: [SortDirection]
     var query: Query
     var scrollPosition: ScrollPosition
+    var viewWidth: CGFloat?
+    var itemWidth: CGFloat?
+    var popoverSize: CGSize?
+    var numberOfColumns: Double = 2
+    public let id: UUID
     
     public init(
       mode: Mode,
@@ -64,6 +69,7 @@ public struct Feature {
         }
         
         self.query = request
+        self.id = set.id
         
       default:
         fatalError()
@@ -90,6 +96,7 @@ public struct Feature {
     case didSelectShowFilters
     case loadMoreCardsIfNeeded(displayingIndex: Int)
     case updateCards(QueryDataSource?, Query, State.Mode)
+    case scrollToTop
     case viewAppeared
   }
   
@@ -98,25 +105,38 @@ public struct Feature {
     
     Reduce { state, action in
       switch action {
+      case .binding(\.viewWidth):
+        if let viewWidth = state.viewWidth {
+          state.itemWidth = (viewWidth - ((state.numberOfColumns - 1) * 8.0)) / state.numberOfColumns
+          state.popoverSize = CGSize(width: viewWidth - 68, height: (viewWidth - 21.0) * 1.618)
+        }
+        
+        return .none
+        
       case .binding(\.query):
         state.isShowingSortOptions = false
         
-        return .run { [query = state.query] send in
-          let result = try await client.queryCards(query)
-          
-          await send(
-            .updateCards(
-              QueryDataSource(
-                cards: result.data,
-                focusedCard: nil,
-                hasNextPage: result.hasMore ?? false
+        return .concatenate([
+          .run { [query = state.query] send in
+            let result = try await client.queryCards(query)
+            
+            await send(
+              .updateCards(
+                QueryDataSource(
+                  cards: result.data,
+                  focusedCard: nil,
+                  hasNextPage: result.hasMore ?? false
+                ),
+                query,
+                .data
               ),
-              query,
-              .data
-            ),
-            animation: .default
-          )
-        }
+              animation: .default
+            )
+          },
+          .run { send in
+            await send(.scrollToTop)
+          }
+        ])
         .cancellable(
           id: "query",
           cancelInFlight: true
@@ -166,9 +186,12 @@ public struct Feature {
           state.dataSource = value
           state.query = nextQuery
           state.mode = mode
-          state.scrollPosition.scrollTo(edge: .top)
         }
         
+        return .none
+        
+      case .scrollToTop:
+        state.scrollPosition.scrollTo(edge: .top)
         return .none
         
       case .viewAppeared:

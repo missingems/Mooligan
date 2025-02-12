@@ -76,7 +76,13 @@ import ScryfallKit
           
           state.path.append(
             .showSetDetail(
-              Query.Feature.State(mode: .placeholder, queryType: .querySet(value, .init(setCode: value.code, page: 1, sortMode: .name, sortDirection: .auto)))
+              Query.Feature.State(
+                mode: .placeholder,
+                queryType: .querySet(
+                  value,
+                  .init(setCode: value.code, page: 1, sortMode: .name, sortDirection: .auto)
+                )
+              )
             )
           )
         }
@@ -111,6 +117,9 @@ import ScryfallKit
               break
               
             case .viewAppeared:
+              break
+              
+            case .scrollToTop:
               break
             }
             

@@ -41,6 +41,7 @@ public struct CardView: View {
   private let displayableCard: DisplayableCardImage
   private let priceVisibility: PriceVisibility
   private let send: ((Action) -> Void)?
+  private let namespace: Namespace.ID?
   @State private var localDisplayableCard: DisplayableCardImage?
   
   public var body: some View {
@@ -51,7 +52,8 @@ public struct CardView: View {
           direction,
           frontImageURL,
           backImageURL,
-          callToActionIconName
+          callToActionIconName,
+          id
         ):
           CardRemoteImageView(
             url: backImageURL,
@@ -59,6 +61,13 @@ public struct CardView: View {
             isTransformed: true,
             size: layoutConfiguration.size
           )
+          .conditionalModifier(namespace != nil, transform: { view in
+            Group {
+              if let namespace {
+                view.matchedTransitionSource(id: displayableCard.id, in: namespace)
+              }
+            }
+          })
           .opacity(direction == .back ? 1 : 0)
           .rotation3DEffect(.degrees(direction == .back ? 180 : 0), axis: (x: 0, y: 1, z: 0))
           .zIndex(direction == .back ? 2 : 1)
@@ -72,6 +81,13 @@ public struct CardView: View {
             isTransformed: false,
             size: layoutConfiguration.size
           )
+          .conditionalModifier(namespace != nil, transform: { view in
+            Group {
+              if let namespace {
+                view.matchedTransitionSource(id: displayableCard.id, in: namespace)
+              }
+            }
+          })
           .opacity(direction == .front ? 1 : 0)
           .rotation3DEffect(.degrees(direction == .front ? 0 : 180), axis: (x: 0, y: 1, z: 0))
           .zIndex(direction == .front ? 2 : 1)
@@ -87,7 +103,8 @@ public struct CardView: View {
                 direction: direction.toggled(),
                 frontImageURL: frontImageURL,
                 backImageURL: backImageURL,
-                callToActionIconName: callToActionIconName
+                callToActionIconName: callToActionIconName,
+                id: id
               )
             }
           } label: {
@@ -101,15 +118,16 @@ public struct CardView: View {
           .offset(x: callToActionHorizontalOffset, y: -13)
           .zIndex(3)
           
-        case let .flippable(direction, displayingImageURL, callToActionIconName):
+        case let .flippable(direction, displayingImageURL, callToActionIconName, id):
           flippableCardView(
             direction: direction,
             displayingImageURL: displayingImageURL,
-            callToActionIconName: callToActionIconName
+            callToActionIconName: callToActionIconName,
+            id: id
           )
           .frame(width: layoutConfiguration.size.width, height: layoutConfiguration.size.height, alignment: .center)
           
-        case let .single(displayingImageURL):
+        case let .single(displayingImageURL, id):
           CardRemoteImageView(
             url: displayingImageURL,
             isLandscape: layoutConfiguration.rotation == .landscape,
@@ -117,6 +135,13 @@ public struct CardView: View {
             size: layoutConfiguration.size
           )
           .frame(width: layoutConfiguration.size.width, height: layoutConfiguration.size.height, alignment: .center)
+          .conditionalModifier(namespace != nil, transform: { view in
+            Group {
+              if let namespace {
+                view.matchedTransitionSource(id: displayableCard.id, in: namespace)
+              }
+            }
+          })
         }
       }
       
@@ -127,7 +152,8 @@ public struct CardView: View {
   @ViewBuilder private func flippableCardView(
     direction: MagicCardFaceDirection,
     displayingImageURL: URL,
-    callToActionIconName: String
+    callToActionIconName: String,
+    id: UUID
   ) -> some View {
     CardRemoteImageView(
       url: displayingImageURL,
@@ -148,7 +174,8 @@ public struct CardView: View {
         localDisplayableCard = .flippable(
           direction: direction.toggled(),
           displayingImageURL: displayingImageURL,
-          callToActionIconName: callToActionIconName
+          callToActionIconName: callToActionIconName,
+          id: id
         )
       }
     } label: {
@@ -192,6 +219,7 @@ public struct CardView: View {
     layoutConfiguration: LayoutConfiguration,
     callToActionHorizontalOffset: CGFloat = 5.0,
     priceVisibility: PriceVisibility,
+    namespace: Namespace.ID? = nil,
     send: ((Action) -> Void)? = nil
   ) {
     self.displayableCard = displayableCard
@@ -204,6 +232,7 @@ public struct CardView: View {
     self.layoutConfiguration = layoutConfiguration
     self.callToActionHorizontalOffset = callToActionHorizontalOffset
     self.send = send
+    self.namespace = namespace
   }
   
   public init?(
@@ -211,6 +240,7 @@ public struct CardView: View {
     layoutConfiguration: LayoutConfiguration,
     callToActionHorizontalOffset: CGFloat = 5.0,
     priceVisibility: PriceVisibility,
+    namespace: Namespace.ID? = nil,
     send: ((Action) -> Void)? = nil
   ) {
     guard let displayableCard else {
@@ -227,5 +257,6 @@ public struct CardView: View {
     self.layoutConfiguration = layoutConfiguration
     self.callToActionHorizontalOffset = callToActionHorizontalOffset
     self.send = send
+    self.namespace = namespace
   }
 }

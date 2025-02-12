@@ -13,6 +13,7 @@ struct VariantView: View {
   let subtitle: String
   let cards: IdentifiedArrayOf<Card>
   let send: (Action) -> Void
+  @Namespace var namespace
   
   var body: some View {
     Divider().safeAreaPadding(.leading, nil)
@@ -39,6 +40,7 @@ struct VariantView: View {
                     usd: card.prices.usd
                   )
                 )
+                .shadow(color: DesignComponentsAsset.shadow.swiftUIColor, radius: 8, x: 0, y: 5)
               }
             )
             .buttonStyle(.sinkableButtonStyle)
