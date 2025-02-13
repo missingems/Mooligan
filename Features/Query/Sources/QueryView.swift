@@ -10,11 +10,9 @@ import VariableBlur
 
 struct QueryView: View {
   @Bindable private var store: StoreOf<Feature>
-  private var namespace: Namespace.ID
   
-  init(store: StoreOf<Feature>, namespace: Namespace.ID) {
+  init(store: StoreOf<Feature>) {
     self.store = store
-    self.namespace = namespace
   }
   
   var body: some View {
@@ -84,8 +82,7 @@ struct QueryView: View {
                 displayableCard: cardInfo.displayableCardImage,
                 layoutConfiguration: layout,
                 callToActionHorizontalOffset: 0,
-                priceVisibility: .display(usdFoil: cardInfo.card.getPrice(for: .usdFoil), usd: cardInfo.card.getPrice(for: .usd)),
-                namespace: namespace
+                priceVisibility: .display(usdFoil: cardInfo.card.getPrice(for: .usdFoil), usd: cardInfo.card.getPrice(for: .usd))
               )
             }
             .buttonStyle(.sinkableButtonStyle)

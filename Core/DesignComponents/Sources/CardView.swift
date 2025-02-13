@@ -61,13 +61,6 @@ public struct CardView: View {
             isTransformed: true,
             size: layoutConfiguration.size
           )
-          .conditionalModifier(namespace != nil, transform: { view in
-            Group {
-              if let namespace {
-                view.matchedTransitionSource(id: displayableCard.id, in: namespace)
-              }
-            }
-          })
           .opacity(direction == .back ? 1 : 0)
           .rotation3DEffect(.degrees(direction == .back ? 180 : 0), axis: (x: 0, y: 1, z: 0))
           .zIndex(direction == .back ? 2 : 1)
@@ -81,13 +74,6 @@ public struct CardView: View {
             isTransformed: false,
             size: layoutConfiguration.size
           )
-          .conditionalModifier(namespace != nil, transform: { view in
-            Group {
-              if let namespace {
-                view.matchedTransitionSource(id: displayableCard.id, in: namespace)
-              }
-            }
-          })
           .opacity(direction == .front ? 1 : 0)
           .rotation3DEffect(.degrees(direction == .front ? 0 : 180), axis: (x: 0, y: 1, z: 0))
           .zIndex(direction == .front ? 2 : 1)
@@ -127,7 +113,7 @@ public struct CardView: View {
           )
           .frame(width: layoutConfiguration.size.width, height: layoutConfiguration.size.height, alignment: .center)
           
-        case let .single(displayingImageURL, id):
+        case let .single(displayingImageURL, _):
           CardRemoteImageView(
             url: displayingImageURL,
             isLandscape: layoutConfiguration.rotation == .landscape,
@@ -135,13 +121,6 @@ public struct CardView: View {
             size: layoutConfiguration.size
           )
           .frame(width: layoutConfiguration.size.width, height: layoutConfiguration.size.height, alignment: .center)
-          .conditionalModifier(namespace != nil, transform: { view in
-            Group {
-              if let namespace {
-                view.matchedTransitionSource(id: displayableCard.id, in: namespace)
-              }
-            }
-          })
         }
       }
       

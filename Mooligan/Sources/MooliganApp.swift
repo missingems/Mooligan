@@ -22,7 +22,6 @@ struct MooliganApp: App {
 }
 
 struct RootView: View {
-  @Namespace private var namespace
   @Bindable var store: StoreOf<Feature>
   
   var body: some View {
@@ -33,20 +32,15 @@ struct RootView: View {
           case .sets:
             NavigationStack(path: $store.scope(state: \.path, action: \.path)) {
               Browse
-                .RootView(
-                  store: store.scope(state: \.sets, action: \.sets),
-                  namespace: namespace
-                )
+                .RootView(store: store.scope(state: \.sets, action: \.sets))
                 .navigationTitle(info.title)
             } destination: { store in
               switch store.case {
               case let .showSetDetail(value):
-                Query.RootView(store: value, namespace: namespace)
-                  .navigationTransition(.zoom(sourceID: value.state.id, in: namespace))
+                Query.RootView(store: value)
                 
               case let .showCardDetail(value):
                 CardDetail.RootView(store: value)
-                  .navigationTransition(.zoom(sourceID: value.state.id, in: namespace))
               }
             }
           case .game:

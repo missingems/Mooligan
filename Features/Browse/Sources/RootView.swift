@@ -4,14 +4,12 @@ import SwiftUI
 
 public struct RootView: View {
   public var store: StoreOf<BrowseFeature>
-  public let namespace: Namespace.ID
   
   public var body: some View {
-    SetsView(store: store, namespace: namespace)
+    SetsView(store: store)
   }
   
-  public init(store: StoreOf<BrowseFeature>, namespace: Namespace.ID) {
+  public init(store: StoreOf<BrowseFeature>) {
     self.store = store
-    self.namespace = namespace
   }
 }

@@ -5,14 +5,12 @@ import SwiftUI
 
 public struct RootView: View {
   @Bindable var store: StoreOf<Feature>
-  let namespace: Namespace.ID
   
   public var body: some View {
-    QueryView(store: store, namespace: namespace)
+    QueryView(store: store)
   }
   
-  public init(store: StoreOf<Feature>, namespace: Namespace.ID) {
+  public init(store: StoreOf<Feature>) {
     self.store = store
-    self.namespace = namespace
   }
 }
