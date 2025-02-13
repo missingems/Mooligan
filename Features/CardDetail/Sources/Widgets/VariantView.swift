@@ -40,7 +40,6 @@ struct VariantView: View {
                     usd: card.prices.usd
                   )
                 )
-                .shadow(color: DesignComponentsAsset.shadow.swiftUIColor, radius: 8, x: 0, y: 5)
               }
             )
             .buttonStyle(.sinkableButtonStyle)
