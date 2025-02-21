@@ -23,10 +23,11 @@ public struct HierarchicalToolbarButton: ButtonStyle {
     configuration.label
       .font(.title3)
       .symbolRenderingMode(.palette)
-      .foregroundStyle(DesignComponentsAsset.accentColor.swiftUIColor, DesignComponentsAsset.accentColor.swiftUIColor.quinary)
-      .scaleEffect(configuration.isPressed ? 0.98 : 1.0)
+      .foregroundStyle(
+        DesignComponentsAsset.accentColor.swiftUIColor,
+        Color(.tertiarySystemFill)
+      )
       .opacity(configuration.isPressed ? 0.31 : 1)
-      .blur(radius: configuration.isPressed ? 1 : 0)
       .contentShape(Rectangle())
   }
   

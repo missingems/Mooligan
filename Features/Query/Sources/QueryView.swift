@@ -17,44 +17,6 @@ struct QueryView: View {
   
   var body: some View {
     ScrollView(.vertical) {
-      if case let .querySet(value, _) = store.queryType, let iconURL = URL(string: value.iconSvgUri) {
-        Button {
-          
-        } label: {
-          HStack(spacing: 13) {
-            IconLazyImage(iconURL).frame(width: 34, height: 34, alignment: .center)
-            
-            VStack(alignment: .leading, spacing: 3.0) {
-              Text(store.title).multilineTextAlignment(.leading).font(.headline)
-              
-              HStack(spacing: 5.0) {
-                PillText(value.code.uppercased()).font(.caption).monospaced()
-                Text("\(value.cardCount) Cards").font(.caption).foregroundStyle(.secondary)
-              }
-            }
-            
-            Spacer()
-            
-            Image(systemName: "chevron.down")
-              .fontWeight(.medium)
-              .imageScale(.small)
-              .foregroundStyle(.tertiary)
-          }
-          .padding(
-            EdgeInsets(
-              top: 8,
-              leading: 13,
-              bottom: 11,
-              trailing: 13
-            )
-          )
-          .background { Color(.tertiarySystemFill) }
-          .clipShape(RoundedRectangle(cornerRadius: 13.0))
-          .safeAreaPadding(.horizontal, nil)
-          .padding(.bottom, 5)
-        }
-      }
-      
       LazyVGrid(
         columns: [GridItem](
           repeating: GridItem(
@@ -109,14 +71,16 @@ struct QueryView: View {
       .safeAreaPadding(.horizontal, nil)
       .placeholder(store.mode.isPlaceholder)
     }
+    
     .contentMargins(.vertical, 8, for: .scrollContent)
     .scrollDisabled(store.mode.isPlaceholder)
     .scrollPosition($store.scrollPosition)
     .scrollBounceBehavior(.basedOnSize)
     .navigationBarTitleDisplayMode(.inline)
+    .navigationTitle(store.title)
     .toolbar {
       ToolbarItemGroup(placement: .primaryAction) {
-        if case .querySet = store.queryType {
+        if case let .querySet(value, _) = store.queryType {
           Menu {
             Picker("SORT BY", selection: $store.query.sortMode) {
               ForEach(store.availableSortModes) { value in
@@ -135,7 +99,7 @@ struct QueryView: View {
               .symbolRenderingMode(.palette)
               .foregroundStyle(
                 DesignComponentsAsset.accentColor.swiftUIColor,
-                DesignComponentsAsset.accentColor.swiftUIColor.quinary
+                Color(.tertiarySystemFill)
               )
           }
           .pickerStyle(.inline)
