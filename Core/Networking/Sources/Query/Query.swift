@@ -49,7 +49,6 @@ public struct Query: Equatable, Hashable {
     }
     
     filters.append(.set(setCode))
-    filters.append(.game(.paper))
     
     return filters
   }

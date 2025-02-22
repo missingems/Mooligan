@@ -124,9 +124,10 @@ struct QueryView: View {
         }
       }
     } label: {
-      if store.mode == .loading || store.mode == .placeholder {
+      ZStack {
         ProgressView()
-      } else {
+          .opacity((store.mode == .loading || store.mode == .placeholder) ? 1 : 0)
+        
         Image(systemName: "arrow.up.arrow.down.circle.fill")
           .font(.title3)
           .symbolRenderingMode(.palette)
@@ -134,6 +135,7 @@ struct QueryView: View {
             DesignComponentsAsset.accentColor.swiftUIColor,
             Color(.tertiarySystemFill)
           )
+          .opacity((store.mode == .loading || store.mode == .placeholder) ? 0 : 1)
       }
     }
     .pickerStyle(.inline)
