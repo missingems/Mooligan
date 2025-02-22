@@ -70,9 +70,9 @@ public struct Feature {
       switch queryType {
       case let .querySet(set, request):
         title = set.name
-        self.query = request
-        self.id = set.id
-        self.searchPrompt = "Search \(set.cardCount) cards…"
+        query = request
+        id = set.id
+        searchPrompt = String(localized: "Search \(set.cardCount) cards…")
         
       default:
         fatalError()
@@ -137,7 +137,7 @@ public struct Feature {
                 query,
                 .data
               ),
-              animation: .default
+              animation: .smooth
             )
           },
           .run { send in
@@ -199,7 +199,7 @@ public struct Feature {
         
       case .viewAppeared:
         return .concatenate([
-          .run(operation: { [state] send in
+          .run { [state] send in
             if state.mode.isPlaceholder {
               switch state.queryType {
               case let .querySet(set, _):
@@ -217,14 +217,14 @@ public struct Feature {
                 fatalError("Unimplemented")
               }
             }
-          }),
-          .run(operation: { [state] send in
+          },
+          .run { [state] send in
             if state.mode.isPlaceholder {
               let result = try await client.queryCards(state.query)
               let dataSource = QueryDataSource(cards: result.data, focusedCard: nil, hasNextPage: result.hasMore ?? false)
               await send(.updateCards(dataSource, state.query, .data))
             }
-          })
+          }
         ])
       }
     }
@@ -260,10 +260,10 @@ extension QueryType {
       
     case let .querySet(value, _):
       return [
-        .titleIcon(title: "Set Symbol", iconURL: URL(string: value.iconSvgUri)),
-        .titleCode(title: "Set Code", code: value.code),
-        .titleDetail(title: "Release Date", detail: value.releasedAt),
-        .titleDetail(title: "Number of Cards", detail: "\(value.cardCount)"),
+        .titleIcon(title: String(localized: "Set Symbol"), iconURL: URL(string: value.iconSvgUri)),
+        .titleCode(title: String(localized: "Set Code"), code: value.code),
+        .titleDetail(title: String(localized: "Release Date"), detail: value.releasedAt),
+        .titleDetail(title: String(localized: "Number of Cards"), detail: "\(value.cardCount)"),
       ]
     }
   }
