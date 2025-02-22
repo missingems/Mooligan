@@ -98,9 +98,6 @@ import ScryfallKit
             case .binding:
               break
               
-            case .didSelectShowFilters:
-              break
-              
             case .didSelectShowInfo:
               break
               
