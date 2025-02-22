@@ -50,6 +50,7 @@ public struct Query: Equatable, Hashable {
     
     filters.append(.set(setCode))
     filters.append(.game(.paper))
+    filters.append(.game(.mtgo))
     
     return filters
   }
