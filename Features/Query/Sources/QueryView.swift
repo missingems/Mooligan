@@ -124,16 +124,21 @@ struct QueryView: View {
         }
       }
     } label: {
-      Image(systemName: "arrow.up.arrow.down.circle.fill")
-        .font(.title3)
-        .symbolRenderingMode(.palette)
-        .foregroundStyle(
-          DesignComponentsAsset.accentColor.swiftUIColor,
-          Color(.tertiarySystemFill)
-        )
+      if store.mode == .loading || store.mode == .placeholder {
+        ProgressView()
+      } else {
+        Image(systemName: "arrow.up.arrow.down.circle.fill")
+          .font(.title3)
+          .symbolRenderingMode(.palette)
+          .foregroundStyle(
+            DesignComponentsAsset.accentColor.swiftUIColor,
+            Color(.tertiarySystemFill)
+          )
+      }
     }
     .pickerStyle(.inline)
     .labelsVisibility(.visible)
+    .disabled(store.mode == .loading || store.mode == .placeholder)
   }
   
   @ViewBuilder private func infoView(query: QueryType) -> some View {
