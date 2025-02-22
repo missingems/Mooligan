@@ -14,6 +14,7 @@ public struct Feature {
     public enum Mode: Equatable {
       case placeholder
       case data
+      case loading
       
       var isPlaceholder: Bool {
         switch self {
@@ -22,6 +23,22 @@ public struct Feature {
           
         case .data:
           return false
+          
+        case .loading:
+          return false
+        }
+      }
+      
+      var isScrollable: Bool {
+        switch self {
+        case .placeholder:
+          return false
+          
+        case .data:
+          return true
+          
+        case .loading:
+          return false
         }
       }
     }
@@ -29,11 +46,8 @@ public struct Feature {
     var mode: Mode
     var queryType: QueryType
     let title: String
-    let searchPlaceholder: String
-    let setReleasedDate: String?
     var isShowingInfo: Bool
     var isShowingSortOptions: Bool
-    var isShowingSortFilters: Bool
     var dataSource: QueryDataSource?
     let availableSortModes: [SortMode]
     let availableSortOrders: [SortDirection]
@@ -43,6 +57,7 @@ public struct Feature {
     var itemWidth: CGFloat?
     var popoverSize: CGSize?
     var numberOfColumns: Double = 2
+    let searchPrompt: String
     public let id: UUID
     
     public init(
@@ -55,31 +70,18 @@ public struct Feature {
       switch queryType {
       case let .querySet(set, request):
         title = set.name
-        searchPlaceholder = "Search \(set.cardCount) cards"
-        
-        if let dateString = set.releasedAt {
-          let dateFormatter = DateFormatter()
-          dateFormatter.dateFormat = "yyyy-MM-dd"
-          
-          setReleasedDate = dateFormatter
-            .date(from: dateString)?
-            .formatted(date: .numeric, time: .omitted)
-        } else {
-          setReleasedDate = nil
-        }
-        
         self.query = request
         self.id = set.id
+        self.searchPrompt = "Search \(set.cardCount) cards…"
         
       default:
         fatalError()
       }
       
-      availableSortModes = [.usd, .name, .cmc, .color, .rarity, .released]
+      availableSortModes = [.name, .usd, .cmc, .color, .rarity, .released]
       availableSortOrders = [.asc, .desc, .auto]
       isShowingInfo = false
       isShowingSortOptions = false
-      isShowingSortFilters = false
       scrollPosition = ScrollPosition(edge: .top)
     }
     
@@ -93,7 +95,6 @@ public struct Feature {
     case didSelectCard(Card, QueryType)
     case didSelectShowInfo
     case didSelectShowSortOptions
-    case didSelectShowFilters
     case loadMoreCardsIfNeeded(displayingIndex: Int)
     case updateCards(QueryDataSource?, Query, State.Mode)
     case scrollToTop
@@ -117,6 +118,12 @@ public struct Feature {
         state.isShowingSortOptions = false
         
         return .concatenate([
+          .run { [state] send in
+            await send(
+              .updateCards(state.dataSource, state.query, .loading),
+              animation: .default
+            )
+          },
           .run { [query = state.query] send in
             let result = try await client.queryCards(query)
             
@@ -134,8 +141,8 @@ public struct Feature {
             )
           },
           .run { send in
-            await send(.scrollToTop)
-          }
+            await send(.scrollToTop, animation: .default)
+          },
         ])
         .cancellable(
           id: "query",
@@ -150,10 +157,6 @@ public struct Feature {
         
       case .didSelectShowInfo:
         state.isShowingInfo = true
-        return .none
-        
-      case .didSelectShowFilters:
-        state.isShowingSortFilters = true
         return .none
         
       case .didSelectShowSortOptions:
@@ -228,4 +231,40 @@ public struct Feature {
   }
   
   public init() {}
+}
+
+extension QueryType {
+  enum Section: Identifiable {
+    case titleDetail(title: String, detail: String?)
+    case titleIcon(title: String, iconURL: URL?)
+    case titleCode(title: String, code: String)
+    
+    var id: String {
+      switch self {
+      case .titleDetail(let title, let detail):
+        return "titleDetail" + title + (detail ?? "")
+        
+      case .titleIcon(let title, let iconURL):
+        return "titleIcon" + title + (iconURL?.absoluteString ?? "")
+        
+      case .titleCode(let title, let code):
+        return "titleCode" + title + code
+      }
+    }
+  }
+  
+  var sections: [Section] {
+    switch self {
+    case .search:
+      return []
+      
+    case let .querySet(value, _):
+      return [
+        .titleIcon(title: "Set Symbol", iconURL: URL(string: value.iconSvgUri)),
+        .titleCode(title: "Set Code", code: value.code),
+        .titleDetail(title: "Release Date", detail: value.releasedAt),
+        .titleDetail(title: "Number of Cards", detail: "\(value.cardCount)"),
+      ]
+    }
+  }
 }

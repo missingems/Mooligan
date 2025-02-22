@@ -17,7 +17,7 @@ public struct ConditionalFrameModifier: ViewModifier {
   }
 }
 
-extension View {
+public extension View {
   @ViewBuilder
   func conditionalModifier<Content: View>(
     _ condition: Bool,
