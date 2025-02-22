@@ -44,7 +44,10 @@ struct QueryView: View {
                 displayableCard: cardInfo.displayableCardImage,
                 layoutConfiguration: layout,
                 callToActionHorizontalOffset: 0,
-                priceVisibility: .display(usdFoil: cardInfo.card.getPrice(for: .usdFoil), usd: cardInfo.card.getPrice(for: .usd))
+                priceVisibility: .display(
+                  usdFoil: cardInfo.card.getPrice(for: .usdFoil),
+                  usd: cardInfo.card.getPrice(for: .usd)
+                )
               )
             }
             .buttonStyle(.sinkableButtonStyle)
@@ -112,37 +115,7 @@ struct QueryView: View {
           .popover(
             isPresented: $store.isShowingSortFilters,
             content: {
-              NavigationStack {
-                List {
-                  TextField("Enter card name", text: $store.query.name)
-                  
-                  Picker("SORT BY", selection: $store.query.sortMode) {
-                    ForEach(store.availableSortModes) { value in
-                      Text(value.description)
-                    }
-                  }
-                  .pickerStyle(.inline)
-                  .labelsVisibility(.visible)
-                  
-                  Picker("SORT ORDER", selection: $store.query.sortDirection) {
-                    ForEach(store.availableSortOrders) { value in
-                      Text(value.description)
-                    }
-                  }
-                  .pickerStyle(.inline)
-                  .labelsVisibility(.visible)
-                }
-                .navigationTitle("Filter")
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                  ToolbarItem(placement: .primaryAction) {
-                    Button {
-                    } label: {
-                      Text("Done")
-                    }
-                  }
-                }
-              }
+              filterView()
             }
           )
         }
@@ -150,6 +123,40 @@ struct QueryView: View {
     }
     .task {
       store.send(.viewAppeared)
+    }
+  }
+  
+  @ViewBuilder func filterView() -> some View {
+    NavigationStack {
+      List {
+        TextField("Enter card name", text: $store.query.name)
+        
+        Picker("SORT BY", selection: $store.query.sortMode) {
+          ForEach(store.availableSortModes) { value in
+            Text(value.description)
+          }
+        }
+        .pickerStyle(.inline)
+        .labelsVisibility(.visible)
+        
+        Picker("SORT ORDER", selection: $store.query.sortDirection) {
+          ForEach(store.availableSortOrders) { value in
+            Text(value.description)
+          }
+        }
+        .pickerStyle(.inline)
+        .labelsVisibility(.visible)
+      }
+      .navigationTitle("Filter")
+      .navigationBarTitleDisplayMode(.inline)
+      .toolbar {
+        ToolbarItem(placement: .primaryAction) {
+          Button {
+          } label: {
+            Text("Done")
+          }
+        }
+      }
     }
   }
 }
