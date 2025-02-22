@@ -80,7 +80,7 @@ struct QueryView: View {
     .navigationTitle(store.title)
     .toolbar {
       ToolbarItemGroup(placement: .primaryAction) {
-        if case let .querySet(value, _) = store.queryType {
+        if case .querySet = store.queryType {
           Menu {
             Picker("SORT BY", selection: $store.query.sortMode) {
               ForEach(store.availableSortModes) { value in
