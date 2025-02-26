@@ -29,7 +29,7 @@ import ScryfallKit
           .run { send in
             try await send(
               .updateVariants(
-                IdentifiedArray(uniqueElements: client.getVariants(of: card, page: 0))
+                IdentifiedArray(uniqueElements: client.getVariants(of: card, page: 0).data)
               )
             )
           }.cancellable(id: "getVariants: \(card.id.uuidString)", cancelInFlight: true)

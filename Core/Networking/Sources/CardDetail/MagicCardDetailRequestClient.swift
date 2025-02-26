@@ -3,7 +3,7 @@ import ScryfallKit
 
 public protocol MagicCardDetailRequestClient: Sendable {
   func getRulings(of card: Card) async throws -> [MagicCardRuling]
-  func getVariants(of card: Card, page: Int) async throws -> [Card]
+  func getVariants(of card: Card, page: Int) async throws -> ObjectList<Card>
   func getSet(of card: Card) async throws -> MTGSet
 }
 
@@ -25,7 +25,7 @@ extension ScryfallClient: MagicCardDetailRequestClient {
     }
   }
   
-  public func getVariants(of card: Card, page: Int) async throws -> [Card] {
+  public func getVariants(of card: Card, page: Int) async throws -> ObjectList<Card> {
     guard let oracleID = card.oracleId else {
       throw MagicCardDetailRequestClientError.cardOracleIDIsNil
     }
@@ -33,16 +33,16 @@ extension ScryfallClient: MagicCardDetailRequestClient {
     let cards = try await searchCards(
       filters: [.oracleId(oracleID), .game(.paper)],
       unique: .prints,
-      order: nil,
-      sortDirection: nil,
+      order: .released,
+      sortDirection: .desc,
       includeExtras: true,
       includeMultilingual: false,
       includeVariations: true,
       page: page
-    ).data
+    )
     
-    if cards.isEmpty {
-      return [card]
+    if cards.data.isEmpty {
+      return ObjectList(data: [card], hasMore: false, nextPage: nil, totalCards: 1, warnings: nil)
     } else {
       return cards
     }

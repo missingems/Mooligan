@@ -119,8 +119,8 @@ public struct MockCardDetailRequestClient: MagicCardDetailRequestClient {
   public func getVariants(
     of card: Card,
     page: Int
-  ) async throws -> [Card] {
-    Self.generateMockCards(number: 10)
+  ) async throws -> ObjectList<Card> {
+    .init(data: Self.generateMockCards(number: 10))
   }
   
   public func getSet(
