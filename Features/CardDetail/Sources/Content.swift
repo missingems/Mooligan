@@ -33,11 +33,11 @@ public struct Content: Equatable {
   let relatedSelectionIcon: Image
   
   var numberOfVariantsLabel: String {
-    String(localized: "\(variants.count) Results")
+    String(localized: "\(variants.total) Results")
   }
   
   var setIconURL: URL?
-  var variants: IdentifiedArrayOf<Card>
+  var variants: CardDataSource
   var displayableCardImage: DisplayableCardImage
   
   init(
@@ -64,7 +64,7 @@ public struct Content: Equatable {
     relatedSelectionIcon = Image(systemName: "ellipsis.circle")
     
     self.setIconURL = setIconURL
-    variants = IdentifiedArrayOf(uniqueElements: [card])
+    variants = CardDataSource(cards: [card], focusedCard: nil, hasNextPage: false, total: 1)
     displayableCardImage = DisplayableCardImage(card)
   }
   

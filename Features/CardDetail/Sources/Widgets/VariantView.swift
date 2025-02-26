@@ -7,13 +7,13 @@ import SwiftUI
 struct VariantView: View {
   enum Action: Equatable {
     case didSelectCard(Card)
+    case didShowCardAtIndex(Int)
   }
   
   let title: String
   let subtitle: String
-  let cards: IdentifiedArrayOf<Card>
+  let cards: CardDataSource
   let send: (Action) -> Void
-  @Namespace var namespace
   
   var body: some View {
     Divider().safeAreaPadding(.leading, nil)
@@ -24,26 +24,31 @@ struct VariantView: View {
       
       ScrollView(.horizontal, showsIndicators: false) {
         LazyHStack(spacing: 8.0) {
-          ForEach(cards) { card in
+          ForEach(Array(zip(cards.cardDetails, cards.cardDetails.indices)), id: \.0.card.id) { value in
+            let cardInfo = value.0
+            let index = value.1
+            
             Button(
               action: {
-                send(.didSelectCard(card))
+                send(.didSelectCard(cardInfo.card))
               }, label: {
                 CardView(
-                  displayableCard: DisplayableCardImage(card),
+                  displayableCard: cardInfo.displayableCardImage,
                   layoutConfiguration: CardView.LayoutConfiguration(
                     rotation: .portrait,
                     maxWidth: 170
                   ),
                   priceVisibility: .display(
-                    usdFoil: card.prices.usdFoil,
-                    usd: card.prices.usd
+                    usdFoil: cardInfo.card.prices.usdFoil,
+                    usd: cardInfo.card.prices.usd
                   )
                 )
               }
             )
             .buttonStyle(.sinkableButtonStyle)
-            .geometryGroup()
+            .task {
+              send(.didShowCardAtIndex(index))
+            }
           }
         }
       }
@@ -59,7 +64,7 @@ struct VariantView: View {
   init?(
     title: String,
     subtitle: String,
-    cards: IdentifiedArrayOf<Card>,
+    cards: CardDataSource,
     send: @escaping (Action) -> Void
   ) {
     self.title = title

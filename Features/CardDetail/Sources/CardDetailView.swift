@@ -119,6 +119,9 @@ struct CardDetailView: View {
             switch action {
             case .didSelectCard:
               break
+              
+            case let .didShowCardAtIndex(index):
+              break
             }
           }
         }

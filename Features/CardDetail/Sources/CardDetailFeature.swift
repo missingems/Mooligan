@@ -10,6 +10,9 @@ import ScryfallKit
   public var body: some ReducerOf<Self> {
     Reduce { state, action in
       switch action {
+      case let .didShowVariant(index):
+        return .none
+        
       case .dismissRulingsTapped:
         state.showRulings = nil
         return .none
@@ -27,11 +30,11 @@ import ScryfallKit
         
         effects.append(
           .run { send in
-            try await send(
-              .updateVariants(
-                IdentifiedArray(uniqueElements: client.getVariants(of: card, page: 0).data)
-              )
-            )
+//            try await send(
+//              .updateVariants(
+//                IdentifiedArray(uniqueElements: client.getVariants(of: card, page: 0).data)
+//              )
+//            )
           }.cancellable(id: "getVariants: \(card.id.uuidString)", cancelInFlight: true)
         )
         
@@ -151,7 +154,8 @@ public extension CardDetailFeature {
     case fetchAdditionalInformation(card: Card)
     case descriptionCallToActionTapped
     case updateSetIconURL(URL?)
-    case updateVariants(IdentifiedArrayOf<Card>)
+    case updateVariants(CardDataSource)
+    case didShowVariant(index: Int)
     case viewAppeared(initialAction: Action)
     case viewRulingsTapped
     case setupContentIfNeeded(card: Card, queryType: QueryType)
