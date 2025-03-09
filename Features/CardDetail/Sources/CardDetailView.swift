@@ -121,7 +121,7 @@ struct CardDetailView: View {
               break
               
             case let .didShowCardAtIndex(index):
-              break
+              store.send(.didShowVariant(index: index))
             }
           }
         }

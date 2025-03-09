@@ -11,11 +11,29 @@ import ScryfallKit
     Reduce { state, action in
       switch action {
       case let .didShowVariant(index):
-        return .none
+        return .run { [card = state.content?.card] send in
+          await send(.fetchVariants(card: card!, page: index))
+        }
         
       case .dismissRulingsTapped:
         state.showRulings = nil
         return .none
+        
+      case let .fetchVariants(card, page):
+        return .run { [existingVariants = state.content?.variants] send in
+          let result = try await client.getVariants(of: card, page: page)
+          let existingCards = existingVariants?.cardDetails
+          await send(
+            .updateVariants(
+              .init(
+                cards: result.data,
+                focusedCard: card,
+                hasNextPage: result.hasMore ?? false,
+                total: result.totalCards ?? 0
+              )
+            )
+          )
+        }
         
       case let .fetchAdditionalInformation(card):
         var effects: [EffectOf<Self>] = []
@@ -30,11 +48,17 @@ import ScryfallKit
         
         effects.append(
           .run { send in
-//            try await send(
-//              .updateVariants(
-//                IdentifiedArray(uniqueElements: client.getVariants(of: card, page: 0).data)
-//              )
-//            )
+            let result = try await client.getVariants(of: card, page: 0)
+            await send(
+              .updateVariants(
+                .init(
+                  cards: result.data,
+                  focusedCard: card,
+                  hasNextPage: result.hasMore ?? false,
+                  total: result.totalCards ?? 0
+                )
+              )
+            )
           }.cancellable(id: "getVariants: \(card.id.uuidString)", cancelInFlight: true)
         )
         
@@ -156,6 +180,7 @@ public extension CardDetailFeature {
     case updateSetIconURL(URL?)
     case updateVariants(CardDataSource)
     case didShowVariant(index: Int)
+    case fetchVariants(card: Card, page: Int)
     case viewAppeared(initialAction: Action)
     case viewRulingsTapped
     case setupContentIfNeeded(card: Card, queryType: QueryType)
