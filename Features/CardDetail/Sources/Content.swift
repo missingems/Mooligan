@@ -38,6 +38,7 @@ public struct Content: Equatable {
   
   var setIconURL: URL?
   var variants: CardDataSource
+  var variantsQueryPage: Int = 1
   var displayableCardImage: DisplayableCardImage
   
   init(

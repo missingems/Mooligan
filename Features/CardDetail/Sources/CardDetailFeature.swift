@@ -11,8 +11,16 @@ import ScryfallKit
     Reduce { state, action in
       switch action {
       case let .didShowVariant(index):
-        return .run { [card = state.content?.card] send in
-          await send(.fetchVariants(card: card!, page: index))
+        guard
+          let content = state.content,
+          content.variants.hasNextPage,
+          index == content.variants.cardDetails.count - 1
+        else {
+          return .none
+        }
+        
+        return .run { send in
+          await send(.fetchVariants(card: content.card, page: content.variantsQueryPage + 1))
         }
         
       case .dismissRulingsTapped:
@@ -22,15 +30,19 @@ import ScryfallKit
       case let .fetchVariants(card, page):
         return .run { [existingVariants = state.content?.variants] send in
           let result = try await client.getVariants(of: card, page: page)
-          let existingCards = existingVariants?.cardDetails
+          var _existingVariants = existingVariants
+          _existingVariants?.append(cards: result.data)
+          
           await send(
             .updateVariants(
+              _existingVariants ??
               .init(
                 cards: result.data,
                 focusedCard: card,
                 hasNextPage: result.hasMore ?? false,
                 total: result.totalCards ?? 0
-              )
+              ),
+              page: page
             )
           )
         }
@@ -48,17 +60,7 @@ import ScryfallKit
         
         effects.append(
           .run { send in
-            let result = try await client.getVariants(of: card, page: 0)
-            await send(
-              .updateVariants(
-                .init(
-                  cards: result.data,
-                  focusedCard: card,
-                  hasNextPage: result.hasMore ?? false,
-                  total: result.totalCards ?? 0
-                )
-              )
-            )
+            await send(.fetchVariants(card: card, page: 1))
           }.cancellable(id: "getVariants: \(card.id.uuidString)", cancelInFlight: true)
         )
         
@@ -93,8 +95,9 @@ import ScryfallKit
         state.content?.setIconURL = value
         return .none
         
-      case let .updateVariants(value):
+      case let .updateVariants(value, page):
         state.content?.variants = value
+        state.content?.variantsQueryPage = page
         return .none
         
       case let .viewAppeared(action):
@@ -178,7 +181,7 @@ public extension CardDetailFeature {
     case fetchAdditionalInformation(card: Card)
     case descriptionCallToActionTapped
     case updateSetIconURL(URL?)
-    case updateVariants(CardDataSource)
+    case updateVariants(CardDataSource, page: Int)
     case didShowVariant(index: Int)
     case fetchVariants(card: Card, page: Int)
     case viewAppeared(initialAction: Action)
