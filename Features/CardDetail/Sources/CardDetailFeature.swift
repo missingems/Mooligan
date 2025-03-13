@@ -32,6 +32,8 @@ import ScryfallKit
           let result = try await client.getVariants(of: card, page: page)
           var _existingVariants = existingVariants
           _existingVariants?.append(cards: result.data)
+          _existingVariants?.hasNextPage = result.hasMore ?? false
+          _existingVariants?.total = result.totalCards ?? 0
           
           await send(
             .updateVariants(

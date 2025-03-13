@@ -6,7 +6,7 @@ public struct CardDataSource: Equatable {
   public var cardDetails: [CardInfo]
   public var focusedCard: Card?
   public var hasNextPage: Bool
-  public let total: Int
+  public var total: Int
   
   public init(
     cards: [Card],
