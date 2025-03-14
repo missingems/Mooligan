@@ -65,7 +65,7 @@ public struct Content: Equatable {
     relatedSelectionIcon = Image(systemName: "ellipsis.circle")
     
     self.setIconURL = setIconURL
-    variants = CardDataSource(cards: [], focusedCard: nil, hasNextPage: false, total: 1)
+    variants = CardDataSource(cards: [card], focusedCard: nil, hasNextPage: false, total: 1)
     displayableCardImage = DisplayableCardImage(card)
   }
   
