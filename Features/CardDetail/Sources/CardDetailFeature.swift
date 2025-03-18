@@ -171,6 +171,7 @@ public extension CardDetailFeature {
     public let id: UUID
     var content: Content?
     let start: Action
+    var isLoadingVariants = true
     
     public init(card: Card, queryType: QueryType) {
       self.id = card.id
