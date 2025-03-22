@@ -21,7 +21,7 @@ public struct Content: Equatable {
       var subtitle: String {
         return switch self {
         case .initial:
-          String(localized: "Loading...")
+          String(localized: "Fetching more prints...")
           
         case let .data(cardDataSource):
           String(localized: "\(cardDataSource.total) Results")
