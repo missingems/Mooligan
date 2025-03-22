@@ -58,12 +58,13 @@ struct VariantView: View {
                     rotation: .portrait,
                     maxWidth: 170
                   ),
-                  priceVisibility: .display(
-                    set: cardInfo.card.set.uppercased(),
+                  priceVisibility: .displaySet(
+                    cardInfo.card.setName,
                     usdFoil: cardInfo.card.prices.usdFoil,
                     usd: cardInfo.card.prices.usd
                   )
                 )
+                .frame(maxWidth: 170.0)
               }
             )
             .buttonStyle(.sinkableButtonStyle)
@@ -73,7 +74,6 @@ struct VariantView: View {
           }
         }
       }
-      .frame(idealHeight: (170 / MagicCardImageRatio.widthToHeight.rawValue).rounded() + 21.0 + 18.0)
       .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
       .padding(.top, 3.0)
       .scrollClipDisabled(true)
@@ -104,7 +104,7 @@ struct VariantView: View {
         title: "Prints",
         subtitle: "Fetching results...",
         cards: CardDataSource(
-          cards: MockCardDetailRequestClient.generateMockCards(number: 1),
+          cards: MockCardDetailRequestClient.generateMockCards(number: 10),
           hasNextPage: false,
           total: 1
         ),

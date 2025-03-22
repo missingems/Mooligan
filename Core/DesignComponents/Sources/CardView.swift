@@ -9,7 +9,8 @@ public struct CardView: View {
   
   public enum AccessoryInfo {
     case hidden
-    case display(set: String, usdFoil: String?, usd: String?)
+    case display(usdFoil: String?, usd: String?)
+    case displaySet(String, usdFoil: String?, usd: String?)
   }
   
   public struct LayoutConfiguration {
@@ -124,7 +125,7 @@ public struct CardView: View {
         }
       }
       
-      accessoryView
+      accessoryView.padding(.horizontal, 5.0)
     }
   }
   
@@ -170,10 +171,9 @@ public struct CardView: View {
   }
   
   @ViewBuilder private var accessoryView: some View {
-    if case let .display(set, usdFoilPrice, usdPrice) = accessoryInfo {
+    switch accessoryInfo {
+    case let .display(usdFoilPrice, usdPrice):
       HStack(spacing: 5) {
-        PillText(set)
-        
         if let usdPrice {
           PillText("$\(usdPrice)")
         }
@@ -192,6 +192,37 @@ public struct CardView: View {
       .fontWeight(.medium)
       .monospaced()
       .frame(height: 21.0)
+      
+    case let .displaySet(set, usdFoilPrice, usdPrice):
+      VStack(alignment: .center, spacing: 5.0) {
+        Text(set)
+          .font(.caption)
+          .multilineTextAlignment(.center)
+          .foregroundStyle(.secondary)
+        
+        HStack(spacing: 5) {
+          if let usdPrice {
+            PillText("$\(usdPrice)")
+          }
+          
+          if let usdFoilPrice {
+            PillText("$\(usdFoilPrice)", isFoil: true)
+              .foregroundStyle(.black.opacity(0.8))
+          }
+          
+          if usdPrice == nil && usdFoilPrice == nil {
+            PillText("$0.00").unavailable(true)
+          }
+        }
+        .foregroundStyle(DesignComponentsAsset.accentColor.swiftUIColor)
+        .font(.caption)
+        .fontWeight(.medium)
+        .monospaced()
+        .frame(height: 21.0)
+      }
+      
+    case .hidden:
+      EmptyView()
     }
   }
   
