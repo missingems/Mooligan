@@ -7,7 +7,7 @@ public struct CardView: View {
     case toggledFaceDirection
   }
   
-  public enum PriceVisibility {
+  public enum AccessoryInfo {
     case hidden
     case display(set: String, usdFoil: String?, usd: String?)
   }
@@ -39,7 +39,7 @@ public struct CardView: View {
   private let layoutConfiguration: LayoutConfiguration
   private let callToActionHorizontalOffset: CGFloat
   private let displayableCard: DisplayableCardImage
-  private let priceVisibility: PriceVisibility
+  private let accessoryInfo: AccessoryInfo
   private let send: ((Action) -> Void)?
   private let namespace: Namespace.ID?
   @State private var localDisplayableCard: DisplayableCardImage?
@@ -124,7 +124,7 @@ public struct CardView: View {
         }
       }
       
-      priceView
+      accessoryView
     }
   }
   
@@ -169,8 +169,8 @@ public struct CardView: View {
     .zIndex(3)
   }
   
-  @ViewBuilder private var priceView: some View {
-    if case let .display(set, usdFoilPrice, usdPrice) = priceVisibility {
+  @ViewBuilder private var accessoryView: some View {
+    if case let .display(set, usdFoilPrice, usdPrice) = accessoryInfo {
       HStack(spacing: 5) {
         PillText(set)
         
@@ -199,12 +199,12 @@ public struct CardView: View {
     displayableCard: DisplayableCardImage,
     layoutConfiguration: LayoutConfiguration,
     callToActionHorizontalOffset: CGFloat = 5.0,
-    priceVisibility: PriceVisibility,
+    priceVisibility: AccessoryInfo,
     namespace: Namespace.ID? = nil,
     send: ((Action) -> Void)? = nil
   ) {
     self.displayableCard = displayableCard
-    self.priceVisibility = priceVisibility
+    self.accessoryInfo = priceVisibility
     
     if send == nil {
       localDisplayableCard = displayableCard
@@ -220,7 +220,7 @@ public struct CardView: View {
     displayableCard: DisplayableCardImage?,
     layoutConfiguration: LayoutConfiguration,
     callToActionHorizontalOffset: CGFloat = 5.0,
-    priceVisibility: PriceVisibility,
+    priceVisibility: AccessoryInfo,
     namespace: Namespace.ID? = nil,
     send: ((Action) -> Void)? = nil
   ) {
@@ -229,7 +229,7 @@ public struct CardView: View {
     }
     
     self.displayableCard = displayableCard
-    self.priceVisibility = priceVisibility
+    self.accessoryInfo = priceVisibility
     
     if send == nil {
       localDisplayableCard = displayableCard
