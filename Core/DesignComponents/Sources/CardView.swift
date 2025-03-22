@@ -42,7 +42,6 @@ public struct CardView: View {
   private let displayableCard: DisplayableCardImage
   private let accessoryInfo: AccessoryInfo
   private let send: ((Action) -> Void)?
-  private let namespace: Namespace.ID?
   @State private var localDisplayableCard: DisplayableCardImage?
   
   public var body: some View {
@@ -231,7 +230,6 @@ public struct CardView: View {
     layoutConfiguration: LayoutConfiguration,
     callToActionHorizontalOffset: CGFloat = 5.0,
     priceVisibility: AccessoryInfo,
-    namespace: Namespace.ID? = nil,
     send: ((Action) -> Void)? = nil
   ) {
     self.displayableCard = displayableCard
@@ -244,7 +242,6 @@ public struct CardView: View {
     self.layoutConfiguration = layoutConfiguration
     self.callToActionHorizontalOffset = callToActionHorizontalOffset
     self.send = send
-    self.namespace = namespace
   }
   
   public init?(
@@ -252,7 +249,6 @@ public struct CardView: View {
     layoutConfiguration: LayoutConfiguration,
     callToActionHorizontalOffset: CGFloat = 5.0,
     priceVisibility: AccessoryInfo,
-    namespace: Namespace.ID? = nil,
     send: ((Action) -> Void)? = nil
   ) {
     guard let displayableCard else {
@@ -269,6 +265,5 @@ public struct CardView: View {
     self.layoutConfiguration = layoutConfiguration
     self.callToActionHorizontalOffset = callToActionHorizontalOffset
     self.send = send
-    self.namespace = namespace
   }
 }
