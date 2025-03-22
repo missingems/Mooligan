@@ -6,6 +6,30 @@ import ScryfallKit
 import SwiftUI
 
 public struct Content: Equatable {
+  struct VariantQuery: Equatable {
+    var page: Int = 1
+    var state: State = .loading
+    
+    enum State: Equatable {
+      case loading
+      case data(CardDataSource)
+      
+      var title: String {
+        String(localized: "Prints")
+      }
+      
+      var subtitle: String {
+        return switch self {
+        case .loading:
+          String(localized: "Loading...")
+          
+        case let .data(cardDataSource):
+          String(localized: "\(cardDataSource.total) Results")
+        }
+      }
+    }
+  }
+  
   struct Description: Equatable, Sendable {
     let name: String
     let textElements: [[TextElement]]
@@ -32,13 +56,8 @@ public struct Content: Equatable {
   let rulingSelectionIcon: Image
   let relatedSelectionIcon: Image
   
-  var numberOfVariantsLabel: String {
-    String(localized: "\(variants.total) Results")
-  }
-  
   var setIconURL: URL?
-  var variants: CardDataSource
-  var variantsQueryPage: Int = 1
+  var variantQuery: VariantQuery
   var displayableCardImage: DisplayableCardImage
   
   init(
@@ -65,7 +84,7 @@ public struct Content: Equatable {
     relatedSelectionIcon = Image(systemName: "ellipsis.circle")
     
     self.setIconURL = setIconURL
-    variants = CardDataSource(cards: [card], focusedCard: nil, hasNextPage: false, total: 1)
+    variantQuery = VariantQuery()
     displayableCardImage = DisplayableCardImage(card)
   }
   
