@@ -88,6 +88,7 @@ struct QueryView: View {
           layoutConfiguration: layout,
           callToActionHorizontalOffset: 5.0,
           priceVisibility: .display(
+            set: cardInfo.card.set.uppercased(),
             usdFoil: cardInfo.card.getPrice(for: .usdFoil),
             usd: cardInfo.card.getPrice(for: .usd)
           )

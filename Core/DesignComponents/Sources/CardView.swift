@@ -9,7 +9,7 @@ public struct CardView: View {
   
   public enum PriceVisibility {
     case hidden
-    case display(usdFoil: String?, usd: String?)
+    case display(set: String, usdFoil: String?, usd: String?)
   }
   
   public struct LayoutConfiguration {
@@ -170,8 +170,10 @@ public struct CardView: View {
   }
   
   @ViewBuilder private var priceView: some View {
-    if case let .display(usdFoilPrice, usdPrice) = priceVisibility {
+    if case let .display(set, usdFoilPrice, usdPrice) = priceVisibility {
       HStack(spacing: 5) {
+        PillText(set)
+        
         if let usdPrice {
           PillText("$\(usdPrice)")
         }

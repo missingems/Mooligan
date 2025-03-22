@@ -20,8 +20,27 @@ struct VariantView: View {
     Divider().safeAreaPadding(.leading, nil)
     
     VStack(alignment: .leading, spacing: 5.0) {
-      Text(title).font(.headline)
-      Text(subtitle).font(.caption).foregroundStyle(.secondary)
+      HStack {
+        VStack(alignment: .leading) {
+          Text(title).font(.headline)
+          Text(subtitle)
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .shimmering(
+              active: isInitial,
+              gradient: Gradient(
+                colors: [.secondary, .primary, .secondary]
+              ),
+              mode: .mask
+            )
+        }
+        
+        Spacer()
+        
+        if isInitial {
+          ProgressView()
+        }
+      }
       
       ScrollView(.horizontal, showsIndicators: false) {
         LazyHStack(spacing: 8.0) {
@@ -40,6 +59,7 @@ struct VariantView: View {
                     maxWidth: 170
                   ),
                   priceVisibility: .display(
+                    set: cardInfo.card.set.uppercased(),
                     usdFoil: cardInfo.card.prices.usdFoil,
                     usd: cardInfo.card.prices.usd
                   )
@@ -74,5 +94,26 @@ struct VariantView: View {
     self.cards = cards
     self.isInitial = isInitial
     self.send = send
+  }
+}
+
+#Preview {
+  ScrollView {
+    VStack {
+      VariantView(
+        title: "Prints",
+        subtitle: "Fetching results...",
+        cards: CardDataSource(
+          cards: MockCardDetailRequestClient.generateMockCards(number: 1),
+          hasNextPage: false,
+          total: 1
+        ),
+        isInitial: true
+      ) { action in
+        print(action)
+      }
+      
+      Spacer()
+    }
   }
 }
