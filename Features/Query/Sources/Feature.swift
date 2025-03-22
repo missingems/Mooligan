@@ -131,7 +131,6 @@ public struct Feature {
               .updateCards(
                 CardDataSource(
                   cards: result.data,
-                  focusedCard: nil,
                   hasNextPage: result.hasMore ?? false,
                   total: result.totalCards ?? 0
                 ),
@@ -205,7 +204,7 @@ public struct Feature {
               switch state.queryType {
               case let .querySet(set, _):
                 let mocks = MockCardDetailRequestClient.generateMockCards(number: min(10, set.cardCount))
-                let dataSource = CardDataSource(cards: mocks, focusedCard: nil, hasNextPage: false, total: set.cardCount)
+                let dataSource = CardDataSource(cards: mocks, hasNextPage: false, total: set.cardCount)
                 await send(
                   .updateCards(
                     dataSource,
@@ -222,7 +221,7 @@ public struct Feature {
           .run { [state] send in
             if state.mode.isPlaceholder {
               let result = try await client.queryCards(state.query)
-              let dataSource = CardDataSource(cards: result.data, focusedCard: nil, hasNextPage: result.hasMore ?? false, total: result.totalCards ?? 0)
+              let dataSource = CardDataSource(cards: result.data, hasNextPage: result.hasMore ?? false, total: result.totalCards ?? 0)
               await send(.updateCards(dataSource, state.query, .data))
             }
           }

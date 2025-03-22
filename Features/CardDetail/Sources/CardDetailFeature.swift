@@ -13,14 +13,15 @@ import ScryfallKit
       case let .didShowVariant(index):
         guard
           let content = state.content,
-          content.variants.hasNextPage,
-          index == content.variants.cardDetails.count - 1
+          let value = content.variantQuery.state.value,
+          value.hasNextPage == true,
+          index == value.cardDetails.count - 1
         else {
           return .none
         }
         
         return .run { send in
-          await send(.fetchVariants(card: content.card, page: content.variantsQueryPage + 1))
+          await send(.fetchVariants(card: content.card, page: content.variantQuery.page + 1))
         }
         
       case .dismissRulingsTapped:
@@ -28,7 +29,7 @@ import ScryfallKit
         return .none
         
       case let .fetchVariants(card, page):
-        return .run { [existingVariants = state.content?.variants] send in
+        return .run { [existingVariants = state.content?.variantQuery.state.value] send in
           let result = try await client.getVariants(of: card, page: page)
           var _existingVariants = existingVariants
           _existingVariants?.append(cards: result.data.filter { $0 != card })
@@ -40,7 +41,6 @@ import ScryfallKit
               _existingVariants ??
               .init(
                 cards: result.data,
-                focusedCard: card,
                 hasNextPage: result.hasMore ?? false,
                 total: result.totalCards ?? 0
               ),
@@ -98,8 +98,10 @@ import ScryfallKit
         return .none
         
       case let .updateVariants(value, page):
-        state.content?.variants = value
-        state.content?.variantsQueryPage = page
+        state.content?.variantQuery = Content.VariantQuery(
+          page: page,
+          state: Content.VariantQuery.State.data(value)
+        )
         return .none
         
       case let .viewAppeared(action):
@@ -171,7 +173,6 @@ public extension CardDetailFeature {
     public let id: UUID
     var content: Content?
     let start: Action
-    var isLoadingVariants = true
     
     public init(card: Card, queryType: QueryType) {
       self.id = card.id

@@ -27,6 +27,16 @@ public struct Content: Equatable {
           String(localized: "\(cardDataSource.total) Results")
         }
       }
+      
+      var value: CardDataSource? {
+        switch self {
+        case let .data(value):
+          return value
+          
+        case .loading:
+          return nil
+        }
+      }
     }
   }
   

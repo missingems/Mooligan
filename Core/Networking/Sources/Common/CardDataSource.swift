@@ -4,20 +4,18 @@ import ScryfallKit
 
 public struct CardDataSource: Equatable {
   public var cardDetails: [CardInfo]
-  public var focusedCard: Card?
   public var hasNextPage: Bool
   public var total: Int
   
   public init(
     cards: [Card],
-    focusedCard: Card?,
     hasNextPage: Bool,
     total: Int
   ) {
     self.cardDetails = cards.map { card in
       CardInfo(card: card)
     }
-    self.focusedCard = focusedCard
+    
     self.hasNextPage = hasNextPage
     self.total = total
   }
