@@ -112,9 +112,10 @@ struct CardDetailView: View {
         
         if let content = store.content {
           VariantView(
-            title: content.variantLabel,
-            subtitle: content.numberOfVariantsLabel,
-            cards: content.variants
+            title: content.variantQuery.state.title,
+            subtitle: content.variantQuery.state.subtitle,
+            cards: content.variantQuery.state.value,
+            isInitial: content.variantQuery.state.isInitial
           ) { action in
             switch action {
             case .didSelectCard:

@@ -13,9 +13,8 @@ import ScryfallKit
       case let .didShowVariant(index):
         guard
           let content = state.content,
-          let value = content.variantQuery.state.value,
-          value.hasNextPage == true,
-          index == value.cardDetails.count - 1
+          content.variantQuery.state.value.hasNextPage == true,
+          index == content.variantQuery.state.value.cardDetails.count - 1
         else {
           return .none
         }

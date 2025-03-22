@@ -8,10 +8,10 @@ import SwiftUI
 public struct Content: Equatable {
   struct VariantQuery: Equatable {
     var page: Int = 1
-    var state: State = .loading
+    var state: State
     
     enum State: Equatable {
-      case loading
+      case initial(CardDataSource)
       case data(CardDataSource)
       
       var title: String {
@@ -20,7 +20,7 @@ public struct Content: Equatable {
       
       var subtitle: String {
         return switch self {
-        case .loading:
+        case .initial:
           String(localized: "Loading...")
           
         case let .data(cardDataSource):
@@ -28,13 +28,23 @@ public struct Content: Equatable {
         }
       }
       
-      var value: CardDataSource? {
+      var value: CardDataSource {
         switch self {
         case let .data(value):
           return value
           
-        case .loading:
-          return nil
+        case let .initial(value):
+          return value
+        }
+      }
+      
+      var isInitial: Bool {
+        switch self {
+        case .initial:
+          return true
+          
+        case .data:
+          return false
         }
       }
     }
@@ -94,7 +104,16 @@ public struct Content: Equatable {
     relatedSelectionIcon = Image(systemName: "ellipsis.circle")
     
     self.setIconURL = setIconURL
-    variantQuery = VariantQuery()
+    variantQuery = VariantQuery(
+      page: 1,
+      state: VariantQuery.State.initial(
+        CardDataSource(
+          cards: [card],
+          hasNextPage: false,
+          total: 1
+        )
+      )
+    )
     displayableCardImage = DisplayableCardImage(card)
   }
   

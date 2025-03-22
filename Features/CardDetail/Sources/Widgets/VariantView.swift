@@ -13,6 +13,7 @@ struct VariantView: View {
   let title: String
   let subtitle: String
   let cards: CardDataSource
+  var isInitial: Bool
   let send: (Action) -> Void
   
   var body: some View {
@@ -65,11 +66,13 @@ struct VariantView: View {
     title: String,
     subtitle: String,
     cards: CardDataSource,
+    isInitial: Bool,
     send: @escaping (Action) -> Void
   ) {
     self.title = title
     self.subtitle = subtitle
     self.cards = cards
+    self.isInitial = isInitial
     self.send = send
   }
 }
