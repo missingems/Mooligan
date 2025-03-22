@@ -53,9 +53,9 @@ public extension Card {
       ),
       prices: .init(
         tix: nil,
-        usd: "1",
-        usdFoil: "1",
-        eur: "1"
+        usd: "120.90",
+        usdFoil: "240.90",
+        eur: "100"
       ),
       promo: false,
       rarity: .bonus,
@@ -63,13 +63,13 @@ public extension Card {
       releasedAt: "1",
       reprint: false,
       scryfallSetUri: "",
-      setName: "",
+      setName: "Foundation",
       setSearchUri: URL.init(
         string: "https://google.com"
       )!,
       setType: .alchemy,
       setUri: "",
-      set: "",
+      set: "FDN",
       storySpotlight: false,
       textless: false,
       variation: false
@@ -119,8 +119,8 @@ public struct MockCardDetailRequestClient: MagicCardDetailRequestClient {
   public func getVariants(
     of card: Card,
     page: Int
-  ) async throws -> [Card] {
-    Self.generateMockCards(number: 10)
+  ) async throws -> ObjectList<Card> {
+    .init(data: Self.generateMockCards(number: 10))
   }
   
   public func getSet(
@@ -136,7 +136,7 @@ public struct MockCardDetailRequestClient: MagicCardDetailRequestClient {
       releasedAt: "19-10-1992",
       blockCode: "123",
       block: "123",
-      parentSetCode: nil,
+      parentSetCode: "nil",
       cardCount: 10,
       printedSize: 10,
       digital: true,

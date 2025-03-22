@@ -70,7 +70,7 @@ struct QueryView: View {
     .task { store.send(.viewAppeared) }
   }
   
-  @ViewBuilder private func contentScrollView(dataSource: QueryDataSource, contentWidth: CGFloat) -> some View {
+  @ViewBuilder private func contentScrollView(dataSource: CardDataSource, contentWidth: CGFloat) -> some View {
     ForEach(Array(zip(dataSource.cardDetails, dataSource.cardDetails.indices)), id: \.0.card.id) { value in
       let cardInfo = value.0
       let index = value.1

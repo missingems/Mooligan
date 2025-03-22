@@ -48,7 +48,7 @@ public struct Feature {
     let title: String
     var isShowingInfo: Bool
     var isShowingSortOptions: Bool
-    var dataSource: QueryDataSource?
+    var dataSource: CardDataSource?
     let availableSortModes: [SortMode]
     let availableSortOrders: [SortDirection]
     var query: Query
@@ -96,7 +96,7 @@ public struct Feature {
     case didSelectShowInfo
     case didSelectShowSortOptions
     case loadMoreCardsIfNeeded(displayingIndex: Int)
-    case updateCards(QueryDataSource?, Query, State.Mode)
+    case updateCards(CardDataSource?, Query, State.Mode)
     case scrollToTop
     case viewAppeared
   }
@@ -129,10 +129,10 @@ public struct Feature {
             
             await send(
               .updateCards(
-                QueryDataSource(
+                CardDataSource(
                   cards: result.data,
-                  focusedCard: nil,
-                  hasNextPage: result.hasMore ?? false
+                  hasNextPage: result.hasMore ?? false,
+                  total: result.totalCards ?? 0
                 ),
                 query,
                 .data
@@ -204,7 +204,7 @@ public struct Feature {
               switch state.queryType {
               case let .querySet(set, _):
                 let mocks = MockCardDetailRequestClient.generateMockCards(number: min(10, set.cardCount))
-                let dataSource = QueryDataSource(cards: mocks, focusedCard: nil, hasNextPage: false)
+                let dataSource = CardDataSource(cards: mocks, hasNextPage: false, total: set.cardCount)
                 await send(
                   .updateCards(
                     dataSource,
@@ -221,7 +221,7 @@ public struct Feature {
           .run { [state] send in
             if state.mode.isPlaceholder {
               let result = try await client.queryCards(state.query)
-              let dataSource = QueryDataSource(cards: result.data, focusedCard: nil, hasNextPage: result.hasMore ?? false)
+              let dataSource = CardDataSource(cards: result.data, hasNextPage: result.hasMore ?? false, total: result.totalCards ?? 0)
               await send(.updateCards(dataSource, state.query, .data))
             }
           }

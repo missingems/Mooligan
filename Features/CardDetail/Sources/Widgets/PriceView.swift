@@ -155,13 +155,11 @@ extension PriceView {
             .clipShape(RoundedRectangle(cornerRadius: 13))
         }
         
-        HStack(spacing: 3) {
-          Text(label)
-            .font(.caption)
-            .foregroundStyle(.secondary)
-            .multilineTextAlignment(.center)
-            .frame(maxHeight: .infinity, alignment: .center)
-        }
+        Text(label)
+          .font(.caption)
+          .foregroundStyle(.secondary)
+          .multilineTextAlignment(.center)
+          .frame(maxHeight: .infinity, alignment: .center)
       }
       .unavailable(isDisabled)
     }

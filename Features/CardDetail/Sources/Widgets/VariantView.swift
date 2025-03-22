@@ -7,47 +7,73 @@ import SwiftUI
 struct VariantView: View {
   enum Action: Equatable {
     case didSelectCard(Card)
+    case didShowCardAtIndex(Int)
   }
   
   let title: String
   let subtitle: String
-  let cards: IdentifiedArrayOf<Card>
+  let cards: CardDataSource
+  var isInitial: Bool
   let send: (Action) -> Void
-  @Namespace var namespace
   
   var body: some View {
     Divider().safeAreaPadding(.leading, nil)
     
     VStack(alignment: .leading, spacing: 5.0) {
-      Text(title).font(.headline)
-      Text(subtitle).font(.caption).foregroundStyle(.secondary)
+      HStack {
+        VStack(alignment: .leading) {
+          Text(title).font(.headline)
+          Text(subtitle)
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .shimmering(
+              active: isInitial,
+              gradient: Gradient(
+                colors: [.secondary, .primary, .secondary]
+              ),
+              mode: .mask
+            )
+        }
+        
+        Spacer()
+        
+        if isInitial {
+          ProgressView()
+        }
+      }
       
       ScrollView(.horizontal, showsIndicators: false) {
         LazyHStack(spacing: 8.0) {
-          ForEach(cards) { card in
+          ForEach(Array(zip(cards.cardDetails, cards.cardDetails.indices)), id: \.0.card.id) { value in
+            let cardInfo = value.0
+            let index = value.1
+            
             Button(
               action: {
-                send(.didSelectCard(card))
+                send(.didSelectCard(cardInfo.card))
               }, label: {
                 CardView(
-                  displayableCard: DisplayableCardImage(card),
+                  displayableCard: cardInfo.displayableCardImage,
                   layoutConfiguration: CardView.LayoutConfiguration(
                     rotation: .portrait,
                     maxWidth: 170
                   ),
-                  priceVisibility: .display(
-                    usdFoil: card.prices.usdFoil,
-                    usd: card.prices.usd
+                  priceVisibility: .displaySet(
+                    cardInfo.card.setName,
+                    usdFoil: cardInfo.card.prices.usdFoil,
+                    usd: cardInfo.card.prices.usd
                   )
                 )
+                .frame(maxWidth: 170.0)
               }
             )
             .buttonStyle(.sinkableButtonStyle)
-            .geometryGroup()
+            .task {
+              send(.didShowCardAtIndex(index))
+            }
           }
         }
       }
-      .frame(idealHeight: (170 / MagicCardImageRatio.widthToHeight.rawValue).rounded() + 21.0 + 18.0)
       .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
       .padding(.top, 3.0)
       .scrollClipDisabled(true)
@@ -59,12 +85,35 @@ struct VariantView: View {
   init?(
     title: String,
     subtitle: String,
-    cards: IdentifiedArrayOf<Card>,
+    cards: CardDataSource,
+    isInitial: Bool,
     send: @escaping (Action) -> Void
   ) {
     self.title = title
     self.subtitle = subtitle
     self.cards = cards
+    self.isInitial = isInitial
     self.send = send
+  }
+}
+
+#Preview {
+  ScrollView {
+    VStack {
+      VariantView(
+        title: "Prints",
+        subtitle: "Fetching results...",
+        cards: CardDataSource(
+          cards: MockCardDetailRequestClient.generateMockCards(number: 10),
+          hasNextPage: false,
+          total: 1
+        ),
+        isInitial: true
+      ) { action in
+        print(action)
+      }
+      
+      Spacer()
+    }
   }
 }

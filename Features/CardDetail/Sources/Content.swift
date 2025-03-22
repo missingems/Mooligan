@@ -6,6 +6,50 @@ import ScryfallKit
 import SwiftUI
 
 public struct Content: Equatable {
+  struct VariantQuery: Equatable {
+    var page: Int = 1
+    var state: State
+    
+    enum State: Equatable {
+      case initial(CardDataSource)
+      case data(CardDataSource)
+      
+      var title: String {
+        String(localized: "Prints")
+      }
+      
+      var subtitle: String {
+        return switch self {
+        case .initial:
+          String(localized: "Fetching more prints...")
+          
+        case let .data(cardDataSource):
+          String(localized: "\(cardDataSource.total) Results")
+        }
+      }
+      
+      var value: CardDataSource {
+        switch self {
+        case let .data(value):
+          return value
+          
+        case let .initial(value):
+          return value
+        }
+      }
+      
+      var isInitial: Bool {
+        switch self {
+        case .initial:
+          return true
+          
+        case .data:
+          return false
+        }
+      }
+    }
+  }
+  
   struct Description: Equatable, Sendable {
     let name: String
     let textElements: [[TextElement]]
@@ -32,12 +76,8 @@ public struct Content: Equatable {
   let rulingSelectionIcon: Image
   let relatedSelectionIcon: Image
   
-  var numberOfVariantsLabel: String {
-    String(localized: "\(variants.count) Results")
-  }
-  
   var setIconURL: URL?
-  var variants: IdentifiedArrayOf<Card>
+  var variantQuery: VariantQuery
   var displayableCardImage: DisplayableCardImage
   
   init(
@@ -64,7 +104,16 @@ public struct Content: Equatable {
     relatedSelectionIcon = Image(systemName: "ellipsis.circle")
     
     self.setIconURL = setIconURL
-    variants = IdentifiedArrayOf(uniqueElements: [card])
+    variantQuery = VariantQuery(
+      page: 1,
+      state: VariantQuery.State.initial(
+        CardDataSource(
+          cards: [card],
+          hasNextPage: false,
+          total: 1
+        )
+      )
+    )
     displayableCardImage = DisplayableCardImage(card)
   }
   
