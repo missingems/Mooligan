@@ -38,7 +38,7 @@ import ScryfallKit
           await send(
             .updateVariants(
               _existingVariants ??
-              .init(
+              CardDataSource(
                 cards: result.data,
                 hasNextPage: result.hasMore ?? false,
                 total: result.totalCards ?? 0
