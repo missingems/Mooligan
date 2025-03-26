@@ -118,8 +118,8 @@ struct CardDetailView: View {
             isInitial: content.variantQuery.state.isInitial
           ) { action in
             switch action {
-            case .didSelectCard:
-              break
+            case let .didSelectCard(card):
+              store.send(.didSelectVariant(card: card))
               
             case let .didShowCardAtIndex(index):
               store.send(.didShowVariant(index: index))

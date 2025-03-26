@@ -121,7 +121,13 @@ import ScryfallKit
             }
             
           case let .showCardDetail(value):
-            break
+            switch value {
+            case let .didSelectVariant(card):
+              break
+              
+            default:
+              break
+            }
           }
           
         case .popFrom(id: let id):
