@@ -3,6 +3,7 @@ import CardDetail
 import ComposableArchitecture
 import Foundation
 import DesignComponents
+import Networking
 import Query
 import SwiftUI
 
@@ -41,6 +42,9 @@ struct RootView: View {
                 
               case let .showCardDetail(value):
                 CardDetail.RootView(store: value)
+                
+              case let .showVariantGallery(value):
+                VariantGalleryView(cardDataSource: CardDataSource(cards: [value], hasNextPage: false, total: 0))
               }
             }
           case .game:

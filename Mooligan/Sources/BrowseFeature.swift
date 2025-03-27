@@ -7,6 +7,7 @@ import ScryfallKit
 @Reducer enum Path {
   case showCardDetail(CardDetail.CardDetailFeature)
   case showSetDetail(Query.Feature)
+  case showVariantGallery(CardDetail.VariantGalleryFeature)
 }
 
 @Reducer struct Feature {
@@ -128,6 +129,9 @@ import ScryfallKit
             default:
               break
             }
+            
+          case .showVariantGallery(_):
+            break
           }
           
         case .popFrom(id: let id):

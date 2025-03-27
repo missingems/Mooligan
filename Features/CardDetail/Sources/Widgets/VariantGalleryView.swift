@@ -9,10 +9,10 @@ import DesignComponents
 import SwiftUI
 import Networking
 
-struct VariantGalleryView: View {
-  var cardDataSource: CardDataSource
+public struct VariantGalleryView: View {
+  public var cardDataSource: CardDataSource
   
-  var body: some View {
+  public var body: some View {
     ScrollView(.horizontal) {
       LazyHStack {
         ForEach(cardDataSource.cardDetails, id: \.card.id) { detail in
@@ -31,5 +31,9 @@ struct VariantGalleryView: View {
       layoutConfiguration: .init(rotation: .portrait, maxWidth: 320),
       priceVisibility: .hidden
     )
+  }
+  
+  public init(cardDataSource: CardDataSource) {
+    self.cardDataSource = cardDataSource
   }
 }
