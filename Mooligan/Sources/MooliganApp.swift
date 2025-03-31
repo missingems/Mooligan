@@ -42,14 +42,21 @@ struct RootView: View {
                 
               case let .showSetDetail(value):
                 Query.RootView(store: value)
+                
+              case let .showVariantGalleryFeature(value):
+                CardDetail.VariantGalleryView(store: value)
               }
             }
+            
           case .game:
             Text(info.title)
+            
           case .search:
             Text(info.title)
+            
           case .collection:
             Text(info.title)
+            
           case .settings:
             Text(info.title)
           }

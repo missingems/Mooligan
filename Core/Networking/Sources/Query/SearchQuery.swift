@@ -1,6 +1,6 @@
 import ScryfallKit
 
-public struct Query: Equatable, Hashable {
+public struct SearchQuery: Equatable, Hashable {
   public var name: String {
     didSet {
       page = 1

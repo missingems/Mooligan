@@ -8,10 +8,10 @@ import SwiftUI
 import NukeUI
 
 struct QueryView: View {
-  @Bindable private var store: StoreOf<Feature>
+  @Bindable private var store: StoreOf<QueryFeature>
   private let gridItems: [GridItem]
   
-  init(store: StoreOf<Feature>) {
+  init(store: StoreOf<QueryFeature>) {
     self.store = store
     gridItems = [GridItem](
       repeating: GridItem(

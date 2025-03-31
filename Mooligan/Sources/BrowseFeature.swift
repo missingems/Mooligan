@@ -5,8 +5,9 @@ import Query
 import ScryfallKit
 
 @Reducer enum Path {
-  case showCardDetail(CardDetail.CardDetailFeature)
-  case showSetDetail(Query.Feature)
+  case showCardDetail(CardDetailFeature)
+  case showSetDetail(QueryFeature)
+  case showVariantGalleryFeature(VariantGalleryFeature)
 }
 
 @Reducer struct Feature {
@@ -76,7 +77,7 @@ import ScryfallKit
           
           state.path.append(
             .showSetDetail(
-              Query.Feature.State(
+              Query.QueryFeature.State(
                 mode: .placeholder,
                 queryType: .querySet(
                   value,
@@ -123,11 +124,14 @@ import ScryfallKit
           case let .showCardDetail(value):
             switch value {
             case let .didSelectVariant(card):
-              break
+              state.path.append(.showVariantGalleryFeature(VariantGalleryFeature.State(selectedCard: card)))
               
             default:
               break
             }
+            
+          case .showVariantGalleryFeature:
+            break
           }
           
         case .popFrom(id: let id):

@@ -6,7 +6,7 @@ import SwiftUI
 import Networking
 
 @Reducer
-public struct Feature {
+public struct QueryFeature {
   @Dependency(\.cardQueryRequestClient) var client
   
   @ObservableState
@@ -51,7 +51,7 @@ public struct Feature {
     var dataSource: CardDataSource?
     let availableSortModes: [SortMode]
     let availableSortOrders: [SortDirection]
-    var query: Query
+    var query: SearchQuery
     var scrollPosition: ScrollPosition
     var viewWidth: CGFloat?
     var itemWidth: CGFloat?
@@ -96,7 +96,7 @@ public struct Feature {
     case didSelectShowInfo
     case didSelectShowSortOptions
     case loadMoreCardsIfNeeded(displayingIndex: Int)
-    case updateCards(CardDataSource?, Query, State.Mode)
+    case updateCards(CardDataSource?, SearchQuery, State.Mode)
     case scrollToTop
     case viewAppeared
   }
