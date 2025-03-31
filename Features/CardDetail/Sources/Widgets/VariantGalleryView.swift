@@ -5,24 +5,26 @@
 //  Created by Jun on 22/3/25.
 //
 
+import ComposableArchitecture
 import DesignComponents
 import SwiftUI
 import Networking
 
 public struct VariantGalleryView: View {
-  public var cardDataSource: CardDataSource
+  public let store: StoreOf<VariantGalleryFeature>
   
   public var body: some View {
-    ScrollView(.horizontal) {
-      LazyHStack {
-        ForEach(cardDataSource.cardDetails, id: \.card.id) { detail in
-          content(card: detail)
-            .containerRelativeFrame(.horizontal)
-        }
-      }
-      .scrollTargetLayout()
-    }
-    .scrollTargetBehavior(.viewAligned)
+//    ScrollView(.horizontal) {
+//      LazyHStack {
+//        ForEach(cardDataSource.cardDetails, id: \.card.id) { detail in
+//          content(card: detail)
+//            .containerRelativeFrame(.horizontal)
+//        }
+//      }
+//      .scrollTargetLayout()
+//    }
+//    .scrollTargetBehavior(.viewAligned)
+    Text("Test")
   }
   
   @ViewBuilder func content(card: CardInfo) -> some View {
@@ -33,7 +35,7 @@ public struct VariantGalleryView: View {
     )
   }
   
-  public init(cardDataSource: CardDataSource) {
-    self.cardDataSource = cardDataSource
+  public init(store: StoreOf<VariantGalleryFeature>) {
+    self.store = store
   }
 }

@@ -37,14 +37,11 @@ struct RootView: View {
                 .navigationTitle(info.title)
             } destination: { store in
               switch store.case {
-              case let .showSetDetail(value):
-                Query.RootView(store: value)
-                
               case let .showCardDetail(value):
                 CardDetail.RootView(store: value)
                 
-              case let .showVariantGallery(value):
-                VariantGalleryView(cardDataSource: CardDataSource(cards: [value], hasNextPage: false, total: 0))
+              case let .showSetDetail(value):
+                Query.RootView(store: value)
               }
             }
           case .game:
