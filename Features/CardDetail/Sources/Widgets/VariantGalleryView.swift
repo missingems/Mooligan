@@ -24,7 +24,7 @@ public struct VariantGalleryView: View {
 //      .scrollTargetLayout()
 //    }
 //    .scrollTargetBehavior(.viewAligned)
-    Text("Test")
+    Text(store.selectedCard.name)
   }
   
   @ViewBuilder func content(card: CardInfo) -> some View {

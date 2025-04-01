@@ -10,6 +10,7 @@ import DesignComponents
 import Foundation
 import Networking
 import ScryfallKit
+import SwiftUI
 
 @Reducer public struct VariantGalleryFeature {
   public var body: some ReducerOf<Self> {
@@ -27,9 +28,11 @@ import ScryfallKit
 public extension VariantGalleryFeature {
   @ObservableState struct State: Equatable {
     let selectedCard: Card
+    let namespaceID: Namespace.ID
     
-    public init(selectedCard: Card) {
+    public init(selectedCard: Card, namespaceID: Namespace.ID) {
       self.selectedCard = selectedCard
+      self.namespaceID = namespaceID
     }
   }
   

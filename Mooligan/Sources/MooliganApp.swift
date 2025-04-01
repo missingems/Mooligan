@@ -24,6 +24,7 @@ struct MooliganApp: App {
 
 struct RootView: View {
   @Bindable var store: StoreOf<Feature>
+  @Namespace var zoomAnimation
   
   var body: some View {
     TabView {
