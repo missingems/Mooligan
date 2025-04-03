@@ -39,13 +39,13 @@ struct RootView: View {
             } destination: { store in
               switch store.case {
               case let .showCardDetail(value):
-                CardDetail.RootView(store: value)
+                CardDetail.RootView(store: value, zoomNamespace: zoomAnimation)
                 
               case let .showSetDetail(value):
                 Query.RootView(store: value)
                 
               case let .showVariantGalleryFeature(value):
-                CardDetail.VariantGalleryView(store: value)
+                CardDetail.VariantGalleryView(store: value).navigationTransition(.zoom(sourceID: value.state.id, in: zoomAnimation))
               }
             }
             

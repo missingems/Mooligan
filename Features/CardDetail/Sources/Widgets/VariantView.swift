@@ -15,6 +15,7 @@ struct VariantView: View {
   let cards: CardDataSource
   var isInitial: Bool
   let send: (Action) -> Void
+  let zoomNamespace: Namespace.ID
   
   var body: some View {
     Divider().safeAreaPadding(.leading, nil)
@@ -64,6 +65,7 @@ struct VariantView: View {
                     usd: cardInfo.card.prices.usd
                   )
                 )
+                .matchedTransitionSource(id: cardInfo.card.id, in: zoomNamespace)
                 .frame(maxWidth: 170.0)
               }
             )
@@ -87,33 +89,14 @@ struct VariantView: View {
     subtitle: String,
     cards: CardDataSource,
     isInitial: Bool,
+    zoomNamespace: Namespace.ID,
     send: @escaping (Action) -> Void
   ) {
     self.title = title
     self.subtitle = subtitle
     self.cards = cards
     self.isInitial = isInitial
+    self.zoomNamespace = zoomNamespace
     self.send = send
-  }
-}
-
-#Preview {
-  ScrollView {
-    VStack {
-      VariantView(
-        title: "Prints",
-        subtitle: "Fetching results...",
-        cards: CardDataSource(
-          cards: MockCardDetailRequestClient.generateMockCards(number: 10),
-          hasNextPage: false,
-          total: 1
-        ),
-        isInitial: true
-      ) { action in
-        print(action)
-      }
-      
-      Spacer()
-    }
   }
 }
