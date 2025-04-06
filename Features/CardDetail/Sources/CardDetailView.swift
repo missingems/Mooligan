@@ -38,6 +38,10 @@ struct CardDetailView: View {
             )
           )
           .zIndex(1)
+          .matchedTransitionSource(id: content.card.id, in: zoomNamespace)
+          .onTapGesture {
+            store.send(.didSelectVariant(card: content.card))
+          }
         }
         
         CardDetailTableView(descriptions: store.content?.getDescriptions() ?? [])
