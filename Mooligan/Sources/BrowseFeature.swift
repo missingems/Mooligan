@@ -7,7 +7,8 @@ import ScryfallKit
 @Reducer enum Path {
   case showCardDetail(CardDetailFeature)
   case showSetDetail(QueryFeature)
-  case showVariantGalleryFeature(VariantGalleryFeature)
+  case showVariantGalleryFeatureFromVariantGrid(VariantGalleryFeature)
+  case showVariantGalleryFeatureFromMainImage(VariantGalleryFeature)
 }
 
 @Reducer struct Feature {
@@ -124,13 +125,20 @@ import ScryfallKit
           case let .showCardDetail(value):
             switch value {
             case let .didSelectVariant(card):
-              state.path.append(.showVariantGalleryFeature(VariantGalleryFeature.State(selectedCard: card)))
+              state.path.append(
+                .showVariantGalleryFeatureFromVariantGrid(VariantGalleryFeature.State(selectedCard: card, id: card.id.uuidString))
+              )
+              
+            case let .didSelectCardDetailImage(card, id):
+              state.path.append(
+                .showVariantGalleryFeatureFromMainImage(VariantGalleryFeature.State(selectedCard: card, id: id))
+              )
               
             default:
               break
             }
             
-          case .showVariantGalleryFeature:
+          case .showVariantGalleryFeatureFromVariantGrid, .showVariantGalleryFeatureFromMainImage:
             break
           }
           

@@ -65,7 +65,7 @@ struct VariantView: View {
                     usd: cardInfo.card.prices.usd
                   )
                 )
-                .matchedTransitionSource(id: cardInfo.card.id, in: zoomNamespace)
+                .matchedTransitionSource(id: cardInfo.card.id.uuidString, in: zoomNamespace)
                 .frame(maxWidth: 170.0)
               }
             )

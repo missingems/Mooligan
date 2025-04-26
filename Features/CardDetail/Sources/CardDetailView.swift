@@ -20,28 +20,30 @@ struct CardDetailView: View {
             maxWidth: cardImageWidth.rounded()
           )
           
-          CardView(
-            displayableCard: content.displayableCardImage,
-            layoutConfiguration: configuration,
-            callToActionHorizontalOffset: 21.0,
-            priceVisibility: .hidden
-          ) { action in
-            store.send(.descriptionCallToActionTapped, animation: .bouncy)
-          }
-          .shadow(color: DesignComponentsAsset.shadow.swiftUIColor, radius: 8, x: 0, y: 5)
-          .padding(
-            EdgeInsets(
-              top: 13,
-              leading: 0,
-              bottom: 21,
-              trailing: 0
+          Button {
+            store.send(.didSelectCardDetailImage(card: content.card, id: content.card.id.uuidString + ";main"))
+          } label: {
+            CardView(
+              displayableCard: content.displayableCardImage,
+              layoutConfiguration: configuration,
+              callToActionHorizontalOffset: 21.0,
+              priceVisibility: .hidden
+            ) { action in
+              store.send(.descriptionCallToActionTapped, animation: .bouncy)
+            }
+            .shadow(color: DesignComponentsAsset.shadow.swiftUIColor, radius: 8, x: 0, y: 5)
+            .padding(
+              EdgeInsets(
+                top: 13,
+                leading: 0,
+                bottom: 21,
+                trailing: 0
+              )
             )
-          )
-          .zIndex(1)
-          .matchedTransitionSource(id: content.card.id, in: zoomNamespace)
-          .onTapGesture {
-            store.send(.didSelectVariant(card: content.card))
+            .zIndex(1)
+            .matchedTransitionSource(id: content.card.id.uuidString + ";main", in: zoomNamespace)
           }
+          .buttonStyle(.sinkableButtonStyle)
         }
         
         CardDetailTableView(descriptions: store.content?.getDescriptions() ?? [])

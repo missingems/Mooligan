@@ -10,6 +10,9 @@ import ScryfallKit
   public var body: some ReducerOf<Self> {
     Reduce { state, action in
       switch action {
+      case let .didSelectCardDetailImage(card, id):
+        return .none
+        
       case .didSelectVariant:
         return .none
         
@@ -183,6 +186,7 @@ public extension CardDetailFeature {
   }
   
   @CasePathable indirect enum Action: Equatable {
+    case didSelectCardDetailImage(card: Card, id: String)
     case didSelectVariant(card: Card)
     case dismissRulingsTapped
     case fetchAdditionalInformation(card: Card)
