@@ -63,7 +63,8 @@ public struct CardRemoteImageView: View {
       },
       action: { newValue in
         cornerRadius = 5 / 100 * (isLandscape ? newValue.height : newValue.width)
-      })
+      }
+    )
     .clipShape(
       RoundedRectangle(cornerRadius: cornerRadius ?? 0)
     )
