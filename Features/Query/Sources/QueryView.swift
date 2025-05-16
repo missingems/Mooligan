@@ -90,7 +90,8 @@ struct QueryView: View {
           priceVisibility: .display(
             usdFoil: cardInfo.card.getPrice(for: .usdFoil),
             usd: cardInfo.card.getPrice(for: .usd)
-          )
+          ),
+          zoomNamespace: nil
         )
       }
       .disabled(store.mode.isScrollable == false)

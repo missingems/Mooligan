@@ -31,7 +31,8 @@ public struct VariantGalleryView: View {
     CardView(
       displayableCard: card.displayableCardImage,
       layoutConfiguration: .init(rotation: .portrait, maxWidth: 320),
-      priceVisibility: .hidden
+      priceVisibility: .hidden,
+      zoomNamespace: nil
     )
   }
   

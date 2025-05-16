@@ -27,7 +27,8 @@ struct CardDetailView: View {
               displayableCard: content.displayableCardImage,
               layoutConfiguration: configuration,
               callToActionHorizontalOffset: 21.0,
-              priceVisibility: .hidden
+              priceVisibility: .hidden,
+              zoomNamespace: zoomNamespace
             ) { action in
               store.send(.descriptionCallToActionTapped, animation: .bouncy)
             }
@@ -41,7 +42,6 @@ struct CardDetailView: View {
               )
             )
             .zIndex(1)
-            .matchedTransitionSource(id: content.card.id.uuidString + ";main", in: zoomNamespace)
           }
           .buttonStyle(.sinkableButtonStyle)
         }
