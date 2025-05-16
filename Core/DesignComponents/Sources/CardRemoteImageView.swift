@@ -10,12 +10,14 @@ public struct CardRemoteImageView: View {
   private let size: CGSize
   private let isLandscape: Bool
   private let zoomNamespace: Namespace.ID?
+  private let id: String
   
   public init(
     url: URL,
     isLandscape: Bool = false,
     isTransformed: Bool = false,
     size: CGSize,
+    id: String,
     zoomNamespace: Namespace.ID?
   ) {
     self.isLandscape = isLandscape
@@ -38,6 +40,7 @@ public struct CardRemoteImageView: View {
     self.transformers = transformers
     self.size = size
     self.zoomNamespace = zoomNamespace
+    self.id = id
   }
   
   public var body: some View {
@@ -59,9 +62,6 @@ public struct CardRemoteImageView: View {
       }
       .modifier(ConditionalFrameModifier(size: size))
     }
-    .ifLet(zoomNamespace) { view, zoomNamespace in
-      view.matchedTransitionSource(id: url, in: zoomNamespace)
-    }
     .onGeometryChange(
       for: CGSize.self,
       of: { proxy in
@@ -81,5 +81,8 @@ public struct CardRemoteImageView: View {
           lineWidth: 1 / UIScreen.main.nativeScale
         )
     )
+    .ifLet(zoomNamespace) { view, zoomNamespace in
+      view.matchedTransitionSource(id: id, in: zoomNamespace)
+    }
   }
 }

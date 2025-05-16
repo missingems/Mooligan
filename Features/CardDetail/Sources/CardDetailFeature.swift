@@ -47,7 +47,8 @@ import ScryfallKit
               CardDataSource(
                 cards: result.data,
                 hasNextPage: result.hasMore ?? false,
-                total: result.totalCards ?? 0
+                total: result.totalCards ?? 0,
+                cardPrefixIdentifier: "variant://"
               ),
               page: page
             )
@@ -187,7 +188,7 @@ public extension CardDetailFeature {
   
   @CasePathable indirect enum Action: Equatable {
     case didSelectCardDetailImage(card: Card, id: String)
-    case didSelectVariant(card: Card)
+    case didSelectVariant(card: Card, id: String)
     case dismissRulingsTapped
     case fetchAdditionalInformation(card: Card)
     case descriptionCallToActionTapped

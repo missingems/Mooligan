@@ -132,7 +132,8 @@ public struct QueryFeature {
                 CardDataSource(
                   cards: result.data,
                   hasNextPage: result.hasMore ?? false,
-                  total: result.totalCards ?? 0
+                  total: result.totalCards ?? 0,
+                  cardPrefixIdentifier: nil
                 ),
                 query,
                 .data
@@ -198,34 +199,48 @@ public struct QueryFeature {
         return .none
         
       case .viewAppeared:
-        return .concatenate([
-          .run { [state] send in
-            if state.mode.isPlaceholder {
-              switch state.queryType {
-              case let .querySet(set, _):
-                let mocks = MockCardDetailRequestClient.generateMockCards(number: min(10, set.cardCount))
-                let dataSource = CardDataSource(cards: mocks, hasNextPage: false, total: set.cardCount)
-                await send(
-                  .updateCards(
-                    dataSource,
-                    state.query,
-                    .placeholder
+        return .concatenate(
+          [
+            .run { [state] send in
+              if state.mode.isPlaceholder {
+                switch state.queryType {
+                case let .querySet(set, _):
+                  let mocks = MockCardDetailRequestClient.generateMockCards(number: min(10, set.cardCount))
+                  let dataSource = CardDataSource(
+                    cards: mocks,
+                    hasNextPage: false,
+                    total: set.cardCount,
+                    cardPrefixIdentifier: nil
                   )
+                  
+                  await send(
+                    .updateCards(
+                      dataSource,
+                      state.query,
+                      .placeholder
+                    )
+                  )
+                  
+                case .search:
+                  fatalError("Unimplemented")
+                }
+              }
+            },
+            .run { [state] send in
+              if state.mode.isPlaceholder {
+                let result = try await client.queryCards(state.query)
+                let dataSource = CardDataSource(
+                  cards: result.data,
+                  hasNextPage: result.hasMore ?? false,
+                  total: result.totalCards ?? 0,
+                  cardPrefixIdentifier: nil
                 )
                 
-              case .search:
-                fatalError("Unimplemented")
+                await send(.updateCards(dataSource, state.query, .data))
               }
             }
-          },
-          .run { [state] send in
-            if state.mode.isPlaceholder {
-              let result = try await client.queryCards(state.query)
-              let dataSource = CardDataSource(cards: result.data, hasNextPage: result.hasMore ?? false, total: result.totalCards ?? 0)
-              await send(.updateCards(dataSource, state.query, .data))
-            }
-          }
-        ])
+          ]
+        )
       }
     }
   }

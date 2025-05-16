@@ -12,6 +12,7 @@ import Networking
 
 public struct VariantGalleryView: View {
   public let store: StoreOf<VariantGalleryFeature>
+  private let zoomNamespace: Namespace.ID?
   
   public var body: some View {
 //    ScrollView(.horizontal) {
@@ -32,11 +33,12 @@ public struct VariantGalleryView: View {
       displayableCard: card.displayableCardImage,
       layoutConfiguration: .init(rotation: .portrait, maxWidth: 320),
       priceVisibility: .hidden,
-      zoomNamespace: nil
+      zoomNamespace: zoomNamespace
     )
   }
   
-  public init(store: StoreOf<VariantGalleryFeature>) {
+  public init(store: StoreOf<VariantGalleryFeature>, zoomNamespace: Namespace.ID?) {
     self.store = store
+    self.zoomNamespace = zoomNamespace
   }
 }

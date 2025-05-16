@@ -21,7 +21,12 @@ struct CardDetailView: View {
           )
           
           Button {
-            store.send(.didSelectCardDetailImage(card: content.card, id: content.card.id.uuidString + ";main"))
+            store.send(
+              .didSelectCardDetailImage(
+                card: content.card,
+                id: content.displayableCardImage.id
+              )
+            )
           } label: {
             CardView(
               displayableCard: content.displayableCardImage,
@@ -126,8 +131,13 @@ struct CardDetailView: View {
             zoomNamespace: zoomNamespace
           ) { action in
             switch action {
-            case let .didSelectCard(card):
-              store.send(.didSelectVariant(card: card))
+            case let .didSelectCard(card, id):
+              store.send(
+                .didSelectVariant(
+                  card: card,
+                  id: id
+                )
+              )
               
             case let .didShowCardAtIndex(index):
               store.send(.didShowVariant(index: index))
@@ -163,7 +173,7 @@ struct CardDetailView: View {
       }
     }
     .onGeometryChange(for: CGFloat.self, of: { proxy in
-      return proxy.size.width
+      proxy.size.width
     }, action: { newValue in
       maxWidth = newValue
     })

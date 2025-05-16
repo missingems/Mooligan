@@ -75,12 +75,13 @@ public struct CardView: View {
           )
           .frame(width: layoutConfiguration.size.width, height: layoutConfiguration.size.height, alignment: .center)
           
-        case let .single(displayingImageURL, _):
+        case let .single(displayingImageURL, id):
           CardRemoteImageView(
             url: displayingImageURL,
             isLandscape: layoutConfiguration.rotation == .landscape,
             isTransformed: false,
             size: layoutConfiguration.size,
+            id: id,
             zoomNamespace: zoomNamespace
           )
           .frame(width: layoutConfiguration.size.width, height: layoutConfiguration.size.height, alignment: .center)
@@ -96,7 +97,7 @@ public struct CardView: View {
     frontImageURL: URL,
     backImageURL: URL,
     callToActionIconName: String,
-    id: UUID,
+    id: String,
     zoomNamespace: Namespace.ID?
   ) -> some View {
     CardRemoteImageView(
@@ -104,6 +105,7 @@ public struct CardView: View {
       isLandscape: layoutConfiguration.rotation == .landscape,
       isTransformed: true,
       size: layoutConfiguration.size,
+      id: id,
       zoomNamespace: zoomNamespace
     )
     .opacity(direction == .back ? 1 : 0)
@@ -118,6 +120,7 @@ public struct CardView: View {
       isLandscape: layoutConfiguration.rotation == .landscape,
       isTransformed: false,
       size: layoutConfiguration.size,
+      id: id,
       zoomNamespace: zoomNamespace
     )
     .opacity(direction == .front ? 1 : 0)
@@ -155,7 +158,7 @@ public struct CardView: View {
     direction: MagicCardFaceDirection,
     displayingImageURL: URL,
     callToActionIconName: String,
-    id: UUID,
+    id: String,
     zoomNamespace: Namespace.ID?
   ) -> some View {
     CardRemoteImageView(
@@ -163,6 +166,7 @@ public struct CardView: View {
       isLandscape: layoutConfiguration.rotation == .landscape,
       isTransformed: false,
       size: layoutConfiguration.size,
+      id: id,
       zoomNamespace: zoomNamespace
     )
     .rotationEffect(.degrees(direction == .front ? 0 : 180))

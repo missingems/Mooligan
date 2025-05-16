@@ -24,7 +24,7 @@ struct MooliganApp: App {
 
 struct RootView: View {
   @Bindable var store: StoreOf<Feature>
-  @Namespace var zoomAnimation
+  @Namespace var zoomNamespace
   
   var body: some View {
     TabView {
@@ -39,16 +39,20 @@ struct RootView: View {
             } destination: { store in
               switch store.case {
               case let .showCardDetail(value):
-                CardDetail.RootView(store: value, zoomNamespace: zoomAnimation)
+                CardDetail.RootView(store: value, zoomNamespace: zoomNamespace)
                 
               case let .showSetDetail(value):
                 Query.RootView(store: value)
                 
               case let .showVariantGalleryFeatureFromMainImage(value):
-                CardDetail.VariantGalleryView(store: value).navigationTransition(.zoom(sourceID: value.state.id, in: zoomAnimation))
+                CardDetail
+                  .VariantGalleryView(store: value, zoomNamespace: zoomNamespace)
+                  .navigationTransition(.zoom(sourceID: value.state.id, in: zoomNamespace))
                 
               case let .showVariantGalleryFeatureFromVariantGrid(value):
-                CardDetail.VariantGalleryView(store: value).navigationTransition(.zoom(sourceID: value.state.id, in: zoomAnimation))
+                CardDetail
+                  .VariantGalleryView(store: value, zoomNamespace: zoomNamespace)
+                  .navigationTransition(.zoom(sourceID: value.state.id, in: zoomNamespace))
               }
             }
             

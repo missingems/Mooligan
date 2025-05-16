@@ -110,11 +110,12 @@ public struct Content: Equatable {
         CardDataSource(
           cards: [card],
           hasNextPage: false,
-          total: 1
+          total: 1,
+          cardPrefixIdentifier: "variant://"
         )
       )
     )
-    displayableCardImage = DisplayableCardImage(card)
+    displayableCardImage = DisplayableCardImage(card, prefixIdentifier: nil)
   }
   
   func getColorIdentity() -> [String] {
