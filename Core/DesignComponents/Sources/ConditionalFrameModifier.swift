@@ -27,3 +27,17 @@ public extension View {
     }
   }
 }
+
+public extension View {
+  @ViewBuilder
+  func ifLet<Content: View, AnyValue>(
+    _ value: AnyValue?,
+    transform: (Self, AnyValue) -> Content
+  ) -> some View {
+    if let value {
+      transform(self, value)
+    } else {
+      self
+    }
+  }
+}
