@@ -41,8 +41,8 @@ public struct CardView: View {
   private let callToActionHorizontalOffset: CGFloat
   private let displayableCard: DisplayableCardImage
   private let accessoryInfo: AccessoryInfo
+  private let zoomNamespace: Namespace.ID?
   private let send: ((Action) -> Void)?
-  private let namespace: Namespace.ID?
   @State private var localDisplayableCard: DisplayableCardImage?
   
   public var body: some View {
@@ -56,70 +56,33 @@ public struct CardView: View {
           callToActionIconName,
           id
         ):
-          CardRemoteImageView(
-            url: backImageURL,
-            isLandscape: layoutConfiguration.rotation == .landscape,
-            isTransformed: true,
-            size: layoutConfiguration.size
+          transformableCardView(
+            direction: direction,
+            frontImageURL: frontImageURL,
+            backImageURL: backImageURL,
+            callToActionIconName: callToActionIconName,
+            id: id,
+            zoomNamespace: zoomNamespace
           )
-          .opacity(direction == .back ? 1 : 0)
-          .rotation3DEffect(.degrees(direction == .back ? 180 : 0), axis: (x: 0, y: 1, z: 0))
-          .zIndex(direction == .back ? 2 : 1)
-          .transaction { transaction in
-            transaction.animation = .bouncy
-          }
-          
-          CardRemoteImageView(
-            url: frontImageURL,
-            isLandscape: layoutConfiguration.rotation == .landscape,
-            isTransformed: false,
-            size: layoutConfiguration.size
-          )
-          .opacity(direction == .front ? 1 : 0)
-          .rotation3DEffect(.degrees(direction == .front ? 0 : 180), axis: (x: 0, y: 1, z: 0))
-          .zIndex(direction == .front ? 2 : 1)
-          .transaction { transaction in
-            transaction.animation = .bouncy
-          }
-          
-          Button {
-            if let send {
-              send(.toggledFaceDirection)
-            } else {
-              localDisplayableCard = .transformable(
-                direction: direction.toggled(),
-                frontImageURL: frontImageURL,
-                backImageURL: backImageURL,
-                callToActionIconName: callToActionIconName,
-                id: id
-              )
-            }
-          } label: {
-            Image(systemName: callToActionIconName).fontWeight(.semibold)
-          }
-          .tint(DesignComponentsAsset.accentColor.swiftUIColor)
-          .frame(width: 44.0, height: 44.0)
-          .background(.thinMaterial)
-          .clipShape(Circle())
-          .overlay(Circle().strokeBorder(.separator, lineWidth: 1 / UIScreen.main.nativeScale))
-          .offset(x: callToActionHorizontalOffset, y: -13)
-          .zIndex(3)
           
         case let .flippable(direction, displayingImageURL, callToActionIconName, id):
           flippableCardView(
             direction: direction,
             displayingImageURL: displayingImageURL,
             callToActionIconName: callToActionIconName,
-            id: id
+            id: id,
+            zoomNamespace: zoomNamespace
           )
           .frame(width: layoutConfiguration.size.width, height: layoutConfiguration.size.height, alignment: .center)
           
-        case let .single(displayingImageURL, _):
+        case let .single(displayingImageURL, id):
           CardRemoteImageView(
             url: displayingImageURL,
             isLandscape: layoutConfiguration.rotation == .landscape,
             isTransformed: false,
-            size: layoutConfiguration.size
+            size: layoutConfiguration.size,
+            id: id,
+            zoomNamespace: zoomNamespace
           )
           .frame(width: layoutConfiguration.size.width, height: layoutConfiguration.size.height, alignment: .center)
         }
@@ -129,17 +92,82 @@ public struct CardView: View {
     }
   }
   
+  @ViewBuilder private func transformableCardView(
+    direction: MagicCardFaceDirection,
+    frontImageURL: URL,
+    backImageURL: URL,
+    callToActionIconName: String,
+    id: String,
+    zoomNamespace: Namespace.ID?
+  ) -> some View {
+    CardRemoteImageView(
+      url: backImageURL,
+      isLandscape: layoutConfiguration.rotation == .landscape,
+      isTransformed: true,
+      size: layoutConfiguration.size,
+      id: id,
+      zoomNamespace: zoomNamespace
+    )
+    .opacity(direction == .back ? 1 : 0)
+    .rotation3DEffect(.degrees(direction == .back ? 180 : 0), axis: (x: 0, y: 1, z: 0))
+    .zIndex(direction == .back ? 2 : 1)
+    .transaction { transaction in
+      transaction.animation = .bouncy
+    }
+    
+    CardRemoteImageView(
+      url: frontImageURL,
+      isLandscape: layoutConfiguration.rotation == .landscape,
+      isTransformed: false,
+      size: layoutConfiguration.size,
+      id: id,
+      zoomNamespace: zoomNamespace
+    )
+    .opacity(direction == .front ? 1 : 0)
+    .rotation3DEffect(.degrees(direction == .front ? 0 : 180), axis: (x: 0, y: 1, z: 0))
+    .zIndex(direction == .front ? 2 : 1)
+    .transaction { transaction in
+      transaction.animation = .bouncy
+    }
+    
+    Button {
+      if let send {
+        send(.toggledFaceDirection)
+      } else {
+        localDisplayableCard = .transformable(
+          direction: direction.toggled(),
+          frontImageURL: frontImageURL,
+          backImageURL: backImageURL,
+          callToActionIconName: callToActionIconName,
+          id: id
+        )
+      }
+    } label: {
+      Image(systemName: callToActionIconName).fontWeight(.semibold)
+    }
+    .tint(DesignComponentsAsset.accentColor.swiftUIColor)
+    .frame(width: 44.0, height: 44.0)
+    .background(.thinMaterial)
+    .clipShape(Circle())
+    .overlay(Circle().strokeBorder(.separator, lineWidth: 1 / UIScreen.main.nativeScale))
+    .offset(x: callToActionHorizontalOffset, y: -13)
+    .zIndex(3)
+  }
+  
   @ViewBuilder private func flippableCardView(
     direction: MagicCardFaceDirection,
     displayingImageURL: URL,
     callToActionIconName: String,
-    id: UUID
+    id: String,
+    zoomNamespace: Namespace.ID?
   ) -> some View {
     CardRemoteImageView(
       url: displayingImageURL,
       isLandscape: layoutConfiguration.rotation == .landscape,
       isTransformed: false,
-      size: layoutConfiguration.size
+      size: layoutConfiguration.size,
+      id: id,
+      zoomNamespace: zoomNamespace
     )
     .rotationEffect(.degrees(direction == .front ? 0 : 180))
     .zIndex(2)
@@ -231,7 +259,7 @@ public struct CardView: View {
     layoutConfiguration: LayoutConfiguration,
     callToActionHorizontalOffset: CGFloat = 5.0,
     priceVisibility: AccessoryInfo,
-    namespace: Namespace.ID? = nil,
+    zoomNamespace: Namespace.ID?,
     send: ((Action) -> Void)? = nil
   ) {
     self.displayableCard = displayableCard
@@ -243,8 +271,8 @@ public struct CardView: View {
     
     self.layoutConfiguration = layoutConfiguration
     self.callToActionHorizontalOffset = callToActionHorizontalOffset
+    self.zoomNamespace = zoomNamespace
     self.send = send
-    self.namespace = namespace
   }
   
   public init?(
@@ -252,7 +280,7 @@ public struct CardView: View {
     layoutConfiguration: LayoutConfiguration,
     callToActionHorizontalOffset: CGFloat = 5.0,
     priceVisibility: AccessoryInfo,
-    namespace: Namespace.ID? = nil,
+    zoomNamespace: Namespace.ID?,
     send: ((Action) -> Void)? = nil
   ) {
     guard let displayableCard else {
@@ -269,6 +297,6 @@ public struct CardView: View {
     self.layoutConfiguration = layoutConfiguration
     self.callToActionHorizontalOffset = callToActionHorizontalOffset
     self.send = send
-    self.namespace = namespace
+    self.zoomNamespace = zoomNamespace
   }
 }

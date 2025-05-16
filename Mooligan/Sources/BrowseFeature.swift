@@ -3,10 +3,14 @@ import ComposableArchitecture
 import CardDetail
 import Query
 import ScryfallKit
+import Networking
+import Foundation
 
 @Reducer enum Path {
-  case showCardDetail(CardDetail.CardDetailFeature)
-  case showSetDetail(Query.Feature)
+  case showCardDetail(CardDetailFeature)
+  case showSetDetail(QueryFeature)
+  case showVariantGalleryFeatureFromVariantGrid(VariantGalleryFeature)
+  case showVariantGalleryFeatureFromMainImage(VariantGalleryFeature)
 }
 
 @Reducer struct Feature {
@@ -76,11 +80,11 @@ import ScryfallKit
           
           state.path.append(
             .showSetDetail(
-              Query.Feature.State(
+              Query.QueryFeature.State(
                 mode: .placeholder,
                 queryType: .querySet(
                   value,
-                  .init(setCode: value.code, page: 1, sortMode: .name, sortDirection: .auto)
+                  SearchQuery(setCode: value.code, page: 1, sortMode: .name, sortDirection: .auto)
                 )
               )
             )
@@ -121,6 +125,26 @@ import ScryfallKit
             }
             
           case let .showCardDetail(value):
+            switch value {
+            case let .didSelectVariant(card, id):
+              state.path.append(
+                .showVariantGalleryFeatureFromVariantGrid(
+                  VariantGalleryFeature.State(selectedCard: card, id: id)
+                )
+              )
+              
+            case let .didSelectCardDetailImage(card, id):
+              state.path.append(
+                .showVariantGalleryFeatureFromMainImage(
+                  VariantGalleryFeature.State(selectedCard: card, id: id)
+                )
+              )
+              
+            default:
+              break
+            }
+            
+          case .showVariantGalleryFeatureFromVariantGrid, .showVariantGalleryFeatureFromMainImage:
             break
           }
           

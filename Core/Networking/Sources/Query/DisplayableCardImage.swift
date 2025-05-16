@@ -7,17 +7,17 @@ public enum DisplayableCardImage: Equatable {
     frontImageURL: URL,
     backImageURL: URL,
     callToActionIconName: String,
-    id: UUID
+    id: String
   )
   
   case flippable(
     direction: MagicCardFaceDirection,
     displayingImageURL: URL,
     callToActionIconName: String,
-    id: UUID
+    id: String
   )
   
-  case single(displayingImageURL: URL, id: UUID)
+  case single(displayingImageURL: URL, id: String)
   
   public var faceDirection: MagicCardFaceDirection {
     switch self {
@@ -32,7 +32,7 @@ public enum DisplayableCardImage: Equatable {
     }
   }
   
-  public var id: UUID {
+  public var id: String {
     switch self {
     case let .transformable(_, _, _, _, id):
       return id
@@ -45,7 +45,7 @@ public enum DisplayableCardImage: Equatable {
     }
   }
   
-  public init(_ card: Card) {
+  public init(_ card: Card, prefixIdentifier: String?) {
     if card.isTransformable,
        let frontImageURL = card.getImageURL(type: .normal, getSecondFace: false),
        let backImageURL = card.getImageURL(type: .normal, getSecondFace: true),
@@ -55,7 +55,7 @@ public enum DisplayableCardImage: Equatable {
         frontImageURL: frontImageURL,
         backImageURL: backImageURL,
         callToActionIconName: callToActionIconName,
-        id: card.id
+        id: "\(prefixIdentifier ?? "")\(card.id.uuidString)"
       )
     } else if
       card.isFlippable,
@@ -65,10 +65,13 @@ public enum DisplayableCardImage: Equatable {
         direction: .front,
         displayingImageURL: imageURL,
         callToActionIconName: callToActionIconName,
-        id: card.id
+        id: "\(prefixIdentifier ?? "")\(card.id.uuidString)"
       )
     } else if let imageURL = card.getImageURL(type: .normal) {
-      self = .single(displayingImageURL: imageURL, id: card.id)
+      self = .single(
+        displayingImageURL: imageURL,
+        id: "\(prefixIdentifier ?? "")\(card.id.uuidString)"
+      )
     } else {
       fatalError("Impossible state: ImageURL cannot be nil.")
     }

@@ -6,7 +6,7 @@ import SwiftUI
 
 struct VariantView: View {
   enum Action: Equatable {
-    case didSelectCard(Card)
+    case didSelectCard(Card, id: String)
     case didShowCardAtIndex(Int)
   }
   
@@ -15,6 +15,7 @@ struct VariantView: View {
   let cards: CardDataSource
   var isInitial: Bool
   let send: (Action) -> Void
+  let zoomNamespace: Namespace.ID
   
   var body: some View {
     Divider().safeAreaPadding(.leading, nil)
@@ -50,7 +51,7 @@ struct VariantView: View {
             
             Button(
               action: {
-                send(.didSelectCard(cardInfo.card))
+                send(.didSelectCard(cardInfo.card, id: cardInfo.displayableCardImage.id))
               }, label: {
                 CardView(
                   displayableCard: cardInfo.displayableCardImage,
@@ -62,7 +63,8 @@ struct VariantView: View {
                     cardInfo.card.setName,
                     usdFoil: cardInfo.card.prices.usdFoil,
                     usd: cardInfo.card.prices.usd
-                  )
+                  ),
+                  zoomNamespace: zoomNamespace
                 )
                 .frame(maxWidth: 170.0)
               }
@@ -87,33 +89,14 @@ struct VariantView: View {
     subtitle: String,
     cards: CardDataSource,
     isInitial: Bool,
+    zoomNamespace: Namespace.ID,
     send: @escaping (Action) -> Void
   ) {
     self.title = title
     self.subtitle = subtitle
     self.cards = cards
     self.isInitial = isInitial
+    self.zoomNamespace = zoomNamespace
     self.send = send
-  }
-}
-
-#Preview {
-  ScrollView {
-    VStack {
-      VariantView(
-        title: "Prints",
-        subtitle: "Fetching results...",
-        cards: CardDataSource(
-          cards: MockCardDetailRequestClient.generateMockCards(number: 10),
-          hasNextPage: false,
-          total: 1
-        ),
-        isInitial: true
-      ) { action in
-        print(action)
-      }
-      
-      Spacer()
-    }
   }
 }

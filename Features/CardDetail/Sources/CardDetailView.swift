@@ -7,6 +7,7 @@ import SwiftUI
 struct CardDetailView: View {
   @Bindable var store: StoreOf<CardDetailFeature>
   @State private var maxWidth: CGFloat?
+  let zoomNamespace: Namespace.ID
   
   var body: some View {
     ScrollView(.vertical) {
@@ -19,24 +20,35 @@ struct CardDetailView: View {
             maxWidth: cardImageWidth.rounded()
           )
           
-          CardView(
-            displayableCard: content.displayableCardImage,
-            layoutConfiguration: configuration,
-            callToActionHorizontalOffset: 21.0,
-            priceVisibility: .hidden
-          ) { action in
-            store.send(.descriptionCallToActionTapped, animation: .bouncy)
-          }
-          .shadow(color: DesignComponentsAsset.shadow.swiftUIColor, radius: 8, x: 0, y: 5)
-          .padding(
-            EdgeInsets(
-              top: 13,
-              leading: 0,
-              bottom: 21,
-              trailing: 0
+          Button {
+            store.send(
+              .didSelectCardDetailImage(
+                card: content.card,
+                id: content.displayableCardImage.id
+              )
             )
-          )
-          .zIndex(1)
+          } label: {
+            CardView(
+              displayableCard: content.displayableCardImage,
+              layoutConfiguration: configuration,
+              callToActionHorizontalOffset: 21.0,
+              priceVisibility: .hidden,
+              zoomNamespace: zoomNamespace
+            ) { action in
+              store.send(.descriptionCallToActionTapped, animation: .bouncy)
+            }
+            .shadow(color: DesignComponentsAsset.shadow.swiftUIColor, radius: 8, x: 0, y: 5)
+            .padding(
+              EdgeInsets(
+                top: 13,
+                leading: 0,
+                bottom: 21,
+                trailing: 0
+              )
+            )
+            .zIndex(1)
+          }
+          .buttonStyle(.sinkableButtonStyle)
         }
         
         CardDetailTableView(descriptions: store.content?.getDescriptions() ?? [])
@@ -115,11 +127,17 @@ struct CardDetailView: View {
             title: content.variantQuery.state.title,
             subtitle: content.variantQuery.state.subtitle,
             cards: content.variantQuery.state.value,
-            isInitial: content.variantQuery.state.isInitial
+            isInitial: content.variantQuery.state.isInitial,
+            zoomNamespace: zoomNamespace
           ) { action in
             switch action {
-            case .didSelectCard:
-              break
+            case let .didSelectCard(card, id):
+              store.send(
+                .didSelectVariant(
+                  card: card,
+                  id: id
+                )
+              )
               
             case let .didShowCardAtIndex(index):
               store.send(.didShowVariant(index: index))
@@ -155,7 +173,7 @@ struct CardDetailView: View {
       }
     }
     .onGeometryChange(for: CGFloat.self, of: { proxy in
-      return proxy.size.width
+      proxy.size.width
     }, action: { newValue in
       maxWidth = newValue
     })

@@ -6,7 +6,7 @@ import SwiftUI
 import Networking
 
 @Reducer
-public struct Feature {
+public struct QueryFeature {
   @Dependency(\.cardQueryRequestClient) var client
   
   @ObservableState
@@ -51,7 +51,7 @@ public struct Feature {
     var dataSource: CardDataSource?
     let availableSortModes: [SortMode]
     let availableSortOrders: [SortDirection]
-    var query: Query
+    var query: SearchQuery
     var scrollPosition: ScrollPosition
     var viewWidth: CGFloat?
     var itemWidth: CGFloat?
@@ -96,7 +96,7 @@ public struct Feature {
     case didSelectShowInfo
     case didSelectShowSortOptions
     case loadMoreCardsIfNeeded(displayingIndex: Int)
-    case updateCards(CardDataSource?, Query, State.Mode)
+    case updateCards(CardDataSource?, SearchQuery, State.Mode)
     case scrollToTop
     case viewAppeared
   }
@@ -132,7 +132,8 @@ public struct Feature {
                 CardDataSource(
                   cards: result.data,
                   hasNextPage: result.hasMore ?? false,
-                  total: result.totalCards ?? 0
+                  total: result.totalCards ?? 0,
+                  cardPrefixIdentifier: nil
                 ),
                 query,
                 .data
@@ -198,34 +199,48 @@ public struct Feature {
         return .none
         
       case .viewAppeared:
-        return .concatenate([
-          .run { [state] send in
-            if state.mode.isPlaceholder {
-              switch state.queryType {
-              case let .querySet(set, _):
-                let mocks = MockCardDetailRequestClient.generateMockCards(number: min(10, set.cardCount))
-                let dataSource = CardDataSource(cards: mocks, hasNextPage: false, total: set.cardCount)
-                await send(
-                  .updateCards(
-                    dataSource,
-                    state.query,
-                    .placeholder
+        return .concatenate(
+          [
+            .run { [state] send in
+              if state.mode.isPlaceholder {
+                switch state.queryType {
+                case let .querySet(set, _):
+                  let mocks = MockCardDetailRequestClient.generateMockCards(number: min(10, set.cardCount))
+                  let dataSource = CardDataSource(
+                    cards: mocks,
+                    hasNextPage: false,
+                    total: set.cardCount,
+                    cardPrefixIdentifier: nil
                   )
+                  
+                  await send(
+                    .updateCards(
+                      dataSource,
+                      state.query,
+                      .placeholder
+                    )
+                  )
+                  
+                case .search:
+                  fatalError("Unimplemented")
+                }
+              }
+            },
+            .run { [state] send in
+              if state.mode.isPlaceholder {
+                let result = try await client.queryCards(state.query)
+                let dataSource = CardDataSource(
+                  cards: result.data,
+                  hasNextPage: result.hasMore ?? false,
+                  total: result.totalCards ?? 0,
+                  cardPrefixIdentifier: nil
                 )
                 
-              case .search:
-                fatalError("Unimplemented")
+                await send(.updateCards(dataSource, state.query, .data))
               }
             }
-          },
-          .run { [state] send in
-            if state.mode.isPlaceholder {
-              let result = try await client.queryCards(state.query)
-              let dataSource = CardDataSource(cards: result.data, hasNextPage: result.hasMore ?? false, total: result.totalCards ?? 0)
-              await send(.updateCards(dataSource, state.query, .data))
-            }
-          }
-        ])
+          ]
+        )
       }
     }
   }

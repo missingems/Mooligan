@@ -3,6 +3,7 @@ import CardDetail
 import ComposableArchitecture
 import Foundation
 import DesignComponents
+import Networking
 import Query
 import SwiftUI
 
@@ -23,6 +24,7 @@ struct MooliganApp: App {
 
 struct RootView: View {
   @Bindable var store: StoreOf<Feature>
+  @Namespace var zoomNamespace
   
   var body: some View {
     TabView {
@@ -36,19 +38,33 @@ struct RootView: View {
                 .navigationTitle(info.title)
             } destination: { store in
               switch store.case {
+              case let .showCardDetail(value):
+                CardDetail.RootView(store: value, zoomNamespace: zoomNamespace)
+                
               case let .showSetDetail(value):
                 Query.RootView(store: value)
                 
-              case let .showCardDetail(value):
-                CardDetail.RootView(store: value)
+              case let .showVariantGalleryFeatureFromMainImage(value):
+                CardDetail
+                  .VariantGalleryView(store: value, zoomNamespace: zoomNamespace)
+                  .navigationTransition(.zoom(sourceID: value.state.id, in: zoomNamespace))
+                
+              case let .showVariantGalleryFeatureFromVariantGrid(value):
+                CardDetail
+                  .VariantGalleryView(store: value, zoomNamespace: zoomNamespace)
+                  .navigationTransition(.zoom(sourceID: value.state.id, in: zoomNamespace))
               }
             }
+            
           case .game:
             Text(info.title)
+            
           case .search:
             Text(info.title)
+            
           case .collection:
             Text(info.title)
+            
           case .settings:
             Text(info.title)
           }

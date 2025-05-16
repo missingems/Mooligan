@@ -10,6 +10,12 @@ import ScryfallKit
   public var body: some ReducerOf<Self> {
     Reduce { state, action in
       switch action {
+      case let .didSelectCardDetailImage(card, id):
+        return .none
+        
+      case .didSelectVariant:
+        return .none
+        
       case let .didShowVariant(index):
         guard
           let content = state.content,
@@ -38,10 +44,11 @@ import ScryfallKit
           await send(
             .updateVariants(
               _existingVariants ??
-              .init(
+              CardDataSource(
                 cards: result.data,
                 hasNextPage: result.hasMore ?? false,
-                total: result.totalCards ?? 0
+                total: result.totalCards ?? 0,
+                cardPrefixIdentifier: "variant://"
               ),
               page: page
             )
@@ -180,6 +187,8 @@ public extension CardDetailFeature {
   }
   
   @CasePathable indirect enum Action: Equatable {
+    case didSelectCardDetailImage(card: Card, id: String)
+    case didSelectVariant(card: Card, id: String)
     case dismissRulingsTapped
     case fetchAdditionalInformation(card: Card)
     case descriptionCallToActionTapped

@@ -3,46 +3,22 @@ import NukeUI
 import Shimmer
 import SwiftUI
 
-public struct ConditionalFrameModifier: ViewModifier {
-  public let size: CGSize
-  
-  public func body(content: Content) -> some View {
-    if size.width > 0, size.height > 0 {
-      content.frame(width: size.width, height: size.height, alignment: .center)
-    }
-  }
-  
-  public init(size: CGSize) {
-    self.size = size
-  }
-}
-
-public extension View {
-  @ViewBuilder
-  func conditionalModifier<Content: View>(
-    _ condition: Bool,
-    transform: (Self) -> Content
-  ) -> some View {
-    if condition {
-      transform(self)
-    } else {
-      self
-    }
-  }
-}
-
 public struct CardRemoteImageView: View {
   public let url: URL
   @State private var cornerRadius: CGFloat?
   private let transformers: [ImageProcessing]
   private let size: CGSize
   private let isLandscape: Bool
+  private let zoomNamespace: Namespace.ID?
+  private let id: String
   
   public init(
     url: URL,
     isLandscape: Bool = false,
     isTransformed: Bool = false,
-    size: CGSize
+    size: CGSize,
+    id: String,
+    zoomNamespace: Namespace.ID?
   ) {
     self.isLandscape = isLandscape
     self.url = url
@@ -50,15 +26,21 @@ public struct CardRemoteImageView: View {
     var transformers: [ImageProcessing] = []
     
     if isLandscape {
-      transformers.append(RotationImageProcessor(degrees: 90))
+      transformers.append(
+        RotationImageProcessor(degrees: 90)
+      )
     }
     
     if isTransformed {
-      transformers.append(FlipImageProcessor())
+      transformers.append(
+        FlipImageProcessor()
+      )
     }
     
     self.transformers = transformers
     self.size = size
+    self.zoomNamespace = zoomNamespace
+    self.id = id
   }
   
   public var body: some View {
@@ -80,15 +62,27 @@ public struct CardRemoteImageView: View {
       }
       .modifier(ConditionalFrameModifier(size: size))
     }
-    .onGeometryChange(for: CGSize.self, of: { proxy in
-      return proxy.size
-    }, action: { newValue in
-      cornerRadius = 5 / 100 * (isLandscape ? newValue.height : newValue.width)
-    })
-    .clipShape(RoundedRectangle(cornerRadius: cornerRadius ?? 0))
+    .onGeometryChange(
+      for: CGSize.self,
+      of: { proxy in
+        proxy.size
+      },
+      action: { newValue in
+        cornerRadius = 5 / 100 * (isLandscape ? newValue.height : newValue.width)
+      }
+    )
+    .clipShape(
+      RoundedRectangle(cornerRadius: cornerRadius ?? 0)
+    )
     .overlay(
       RoundedRectangle(cornerRadius: cornerRadius ?? 0)
-        .strokeBorder(.separator, lineWidth: 1 / UIScreen.main.nativeScale)
+        .strokeBorder(
+          .separator,
+          lineWidth: 1 / UIScreen.main.nativeScale
+        )
     )
+    .ifLet(zoomNamespace) { view, zoomNamespace in
+      view.matchedTransitionSource(id: id, in: zoomNamespace)
+    }
   }
 }
