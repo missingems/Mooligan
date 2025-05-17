@@ -15,17 +15,16 @@ public struct VariantGalleryView: View {
   private let zoomNamespace: Namespace.ID?
   
   public var body: some View {
-//    ScrollView(.horizontal) {
-//      LazyHStack {
-//        ForEach(cardDataSource.cardDetails, id: \.card.id) { detail in
-//          content(card: detail)
-//            .containerRelativeFrame(.horizontal)
-//        }
-//      }
-//      .scrollTargetLayout()
-//    }
-//    .scrollTargetBehavior(.viewAligned)
-    Text(store.selectedCard.name)
+    ScrollView(.horizontal) {
+      LazyHStack {
+        ForEach(store.cardDataSource.cardDetails, id: \.card.id) { detail in
+          content(card: detail)
+            .containerRelativeFrame(.horizontal)
+        }
+      }
+      .scrollTargetLayout()
+    }
+    .scrollTargetBehavior(.viewAligned)
   }
   
   @ViewBuilder func content(card: CardInfo) -> some View {

@@ -27,10 +27,12 @@ import SwiftUI
 
 public extension VariantGalleryFeature {
   @ObservableState struct State: Equatable {
+    let cardDataSource: CardDataSource
     let selectedCard: Card
     public let id: String
     
-    public init(selectedCard: Card, id: String) {
+    public init(cardDataSource: CardDataSource, selectedCard: Card, id: String) {
+      self.cardDataSource = cardDataSource
       self.selectedCard = selectedCard
       self.id = id
     }
