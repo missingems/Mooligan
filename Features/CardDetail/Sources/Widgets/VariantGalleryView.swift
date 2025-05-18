@@ -1,17 +1,10 @@
-//
-//  VariantGalleryView.swift
-//  CardDetail
-//
-//  Created by Jun on 22/3/25.
-//
-
 import ComposableArchitecture
 import DesignComponents
 import SwiftUI
 import Networking
 
 public struct VariantGalleryView: View {
-  public let store: StoreOf<VariantGalleryFeature>
+  @Bindable private var store: StoreOf<VariantGalleryFeature>
   private let zoomNamespace: Namespace.ID?
   
   public var body: some View {
@@ -24,6 +17,7 @@ public struct VariantGalleryView: View {
       }
       .scrollTargetLayout()
     }
+    .scrollPosition($store.scrollPosition)
     .scrollTargetBehavior(.viewAligned)
   }
   
