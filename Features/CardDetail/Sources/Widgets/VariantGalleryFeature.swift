@@ -1,10 +1,3 @@
-//
-//  VariantGalleryFeature.swift
-//  CardDetail
-//
-//  Created by Jun on 26/3/25.
-//
-
 import ComposableArchitecture
 import DesignComponents
 import Foundation
@@ -14,9 +7,14 @@ import SwiftUI
 
 @Reducer public struct VariantGalleryFeature {
   public var body: some ReducerOf<Self> {
+    BindingReducer()
+    
     Reduce { state, action in
       switch action {
       case .viewAppeared:
+        return .none
+        
+      case .binding(_):
         return .none
       }
     }
@@ -40,7 +38,8 @@ public extension VariantGalleryFeature {
     }
   }
   
-  enum Action: Equatable {
+  enum Action: Equatable, BindableAction {
+    case binding(BindingAction<State>)
     case viewAppeared
   }
 }
