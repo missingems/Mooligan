@@ -35,6 +35,7 @@ public extension VariantGalleryFeature {
       self.selectedCard = selectedCard
       self.id = id
       self.scrollPosition = .init(id: selectedCard.id)
+      
     }
   }
   
