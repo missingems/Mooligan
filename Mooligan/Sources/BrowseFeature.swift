@@ -126,17 +126,17 @@ import Foundation
             
           case let .showCardDetail(value):
             switch value {
-            case let .didSelectVariant(card, id):
+            case let .didSelectVariant(cardDataSource, card, id):
               state.path.append(
                 .showVariantGalleryFeatureFromVariantGrid(
-                  VariantGalleryFeature.State(selectedCard: card, id: id)
+                  VariantGalleryFeature.State(cardDataSource: cardDataSource, selectedCard: card, id: id)
                 )
               )
               
-            case let .didSelectCardDetailImage(card, id):
+            case let .didSelectCardDetailImage(cardDataSource, card, id):
               state.path.append(
                 .showVariantGalleryFeatureFromMainImage(
-                  VariantGalleryFeature.State(selectedCard: card, id: id)
+                  VariantGalleryFeature.State(cardDataSource: cardDataSource, selectedCard: card, id: id)
                 )
               )
               

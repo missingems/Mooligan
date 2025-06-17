@@ -21,12 +21,15 @@ struct CardDetailView: View {
           )
           
           Button {
-            store.send(
-              .didSelectCardDetailImage(
-                card: content.card,
-                id: content.displayableCardImage.id
+            if let variantCardDataSource = store.content?.variantQuery.state.value {
+              store.send(
+                .didSelectCardDetailImage(
+                  cardDataSource: variantCardDataSource,
+                  card: content.card,
+                  id: content.displayableCardImage.id
+                )
               )
-            )
+            }
           } label: {
             CardView(
               displayableCard: content.displayableCardImage,
@@ -122,7 +125,7 @@ struct CardDetailView: View {
           )
         }
         
-        if let content = store.content {
+        if let content = store.content, let variantCardDataSource = store.content?.variantQuery.state.value {
           VariantView(
             title: content.variantQuery.state.title,
             subtitle: content.variantQuery.state.subtitle,
@@ -134,6 +137,7 @@ struct CardDetailView: View {
             case let .didSelectCard(card, id):
               store.send(
                 .didSelectVariant(
+                  cardDataSource: variantCardDataSource,
                   card: card,
                   id: id
                 )
