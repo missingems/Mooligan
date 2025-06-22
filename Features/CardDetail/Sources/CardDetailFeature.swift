@@ -8,11 +8,10 @@ import ScryfallKit
   @Dependency(\.cardDetailRequestClient) private var client
   
   public var body: some ReducerOf<Self> {
-    Reduce { state, action in
+    Reduce {
+      state,
+      action in
       switch action {
-      case .didSelectCardDetailImage:
-        return .none
-        
       case .didSelectVariant:
         return .none
         
@@ -47,8 +46,7 @@ import ScryfallKit
               CardDataSource(
                 cards: result.data,
                 hasNextPage: result.hasMore ?? false,
-                total: result.totalCards ?? 0,
-                cardPrefixIdentifier: "variant://"
+                total: result.totalCards ?? 0
               ),
               page: page
             )
@@ -96,7 +94,7 @@ import ScryfallKit
         default:
           fatalError("descriptionCallToActionTapped isn't available to single face card.")
         }
-
+        
         return .none
         
       case let .updateSetIconURL(value):
@@ -131,17 +129,14 @@ import ScryfallKit
         }
         
         return .run { send in
-          let content: Content
-          
-          switch queryType {
-          case .search:
-            content = Content(card: card, setIconURL: nil)
-            
-          case let .querySet(value, _):
-            content = Content(card: card, setIconURL: URL(string: value.iconSvgUri))
-          }
-          
-          await send(.updateContent(content))
+          await send(
+            .updateContent(
+              Content(
+                card: card,
+                queryType: queryType
+              )
+            )
+          )
         }
         
       case let .updateContent(value):
@@ -187,8 +182,7 @@ public extension CardDetailFeature {
   }
   
   @CasePathable indirect enum Action: Equatable {
-    case didSelectCardDetailImage(cardDataSource: CardDataSource, card: Card, id: String)
-    case didSelectVariant(cardDataSource: CardDataSource, card: Card, id: String)
+    case didSelectVariant(card: Card, queryType: QueryType)
     case dismissRulingsTapped
     case fetchAdditionalInformation(card: Card)
     case descriptionCallToActionTapped

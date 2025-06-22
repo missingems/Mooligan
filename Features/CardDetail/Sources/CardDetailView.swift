@@ -20,38 +20,25 @@ struct CardDetailView: View {
             maxWidth: cardImageWidth.rounded()
           )
           
-          Button {
-            if let variantCardDataSource = store.content?.variantQuery.state.value {
-              store.send(
-                .didSelectCardDetailImage(
-                  cardDataSource: variantCardDataSource,
-                  card: content.card,
-                  id: content.displayableCardImage.id
-                )
-              )
-            }
-          } label: {
-            CardView(
-              displayableCard: content.displayableCardImage,
-              layoutConfiguration: configuration,
-              callToActionHorizontalOffset: 21.0,
-              priceVisibility: .hidden,
-              zoomNamespace: zoomNamespace
-            ) { action in
-              store.send(.descriptionCallToActionTapped, animation: .bouncy)
-            }
-            .shadow(color: DesignComponentsAsset.shadow.swiftUIColor, radius: 8, x: 0, y: 5)
-            .padding(
-              EdgeInsets(
-                top: 13,
-                leading: 0,
-                bottom: 21,
-                trailing: 0
-              )
-            )
-            .zIndex(1)
+          CardView(
+            displayableCard: content.displayableCardImage,
+            layoutConfiguration: configuration,
+            callToActionHorizontalOffset: 21.0,
+            priceVisibility: .hidden,
+            zoomNamespace: zoomNamespace
+          ) { action in
+            store.send(.descriptionCallToActionTapped, animation: .bouncy)
           }
-          .buttonStyle(.sinkableButtonStyle)
+          .shadow(color: DesignComponentsAsset.shadow.swiftUIColor, radius: 8, x: 0, y: 5)
+          .padding(
+            EdgeInsets(
+              top: 13,
+              leading: 0,
+              bottom: 21,
+              trailing: 0
+            )
+          )
+          .zIndex(1)
         }
         
         CardDetailTableView(descriptions: store.content?.getDescriptions() ?? [])
@@ -125,7 +112,7 @@ struct CardDetailView: View {
           )
         }
         
-        if let content = store.content, let variantCardDataSource = store.content?.variantQuery.state.value {
+        if let content = store.content {
           VariantView(
             title: content.variantQuery.state.title,
             subtitle: content.variantQuery.state.subtitle,
@@ -134,12 +121,11 @@ struct CardDetailView: View {
             zoomNamespace: zoomNamespace
           ) { action in
             switch action {
-            case let .didSelectCard(card, id):
+            case let .didSelectCard(card):
               store.send(
                 .didSelectVariant(
-                  cardDataSource: variantCardDataSource,
                   card: card,
-                  id: id
+                  queryType: content.queryType
                 )
               )
               

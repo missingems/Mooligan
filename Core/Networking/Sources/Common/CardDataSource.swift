@@ -6,18 +6,14 @@ public struct CardDataSource: Equatable {
   public var cardDetails: [CardInfo]
   public var hasNextPage: Bool
   public var total: Int
-  public let cardPrefixIdentifier: String?
   
   public init(
     cards: [Card],
     hasNextPage: Bool,
-    total: Int,
-    cardPrefixIdentifier: String?
+    total: Int
   ) {
-    self.cardPrefixIdentifier = cardPrefixIdentifier
-    
     self.cardDetails = cards.map { card in
-      CardInfo(card: card, prefixIdentifier: cardPrefixIdentifier)
+      CardInfo(card: card)
     }
     
     self.hasNextPage = hasNextPage
@@ -27,7 +23,7 @@ public struct CardDataSource: Equatable {
   public mutating func append(cards: [Card]) {
     cardDetails.append(
       contentsOf: cards.map { card in
-        CardInfo(card: card, prefixIdentifier: cardPrefixIdentifier)
+        CardInfo(card: card)
       }
     )
   }
@@ -37,8 +33,8 @@ public struct CardInfo: Equatable {
   public let card: Card
   public let displayableCardImage: DisplayableCardImage
   
-  public init(card: Card, prefixIdentifier: String?) {
+  public init(card: Card) {
     self.card = card
-    self.displayableCardImage = DisplayableCardImage(card, prefixIdentifier: prefixIdentifier)
+    self.displayableCardImage = DisplayableCardImage(card)
   }
 }

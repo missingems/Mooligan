@@ -6,7 +6,7 @@ import SwiftUI
 
 struct VariantView: View {
   enum Action: Equatable {
-    case didSelectCard(Card, id: String)
+    case didSelectCard(Card)
     case didShowCardAtIndex(Int)
   }
   
@@ -51,7 +51,7 @@ struct VariantView: View {
             
             Button(
               action: {
-                send(.didSelectCard(cardInfo.card, id: cardInfo.displayableCardImage.id))
+                send(.didSelectCard(cardInfo.card))
               }, label: {
                 CardView(
                   displayableCard: cardInfo.displayableCardImage,

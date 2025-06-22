@@ -117,34 +117,35 @@ public struct QueryFeature {
       case .binding(\.query):
         state.isShowingSortOptions = false
         
-        return .concatenate([
-          .run { [state] send in
-            await send(
-              .updateCards(state.dataSource, state.query, .loading),
-              animation: .default
-            )
-          },
-          .run { [query = state.query] send in
-            let result = try await client.queryCards(query)
-            
-            await send(
-              .updateCards(
-                CardDataSource(
-                  cards: result.data,
-                  hasNextPage: result.hasMore ?? false,
-                  total: result.totalCards ?? 0,
-                  cardPrefixIdentifier: nil
+        return .concatenate(
+          [
+            .run { [state] send in
+              await send(
+                .updateCards(state.dataSource, state.query, .loading),
+                animation: .default
+              )
+            },
+            .run { [query = state.query] send in
+              let result = try await client.queryCards(query)
+              
+              await send(
+                .updateCards(
+                  CardDataSource(
+                    cards: result.data,
+                    hasNextPage: result.hasMore ?? false,
+                    total: result.totalCards ?? 0
+                  ),
+                  query,
+                  .data
                 ),
-                query,
-                .data
-              ),
-              animation: .smooth
-            )
-          },
-          .run { send in
-            await send(.scrollToTop, animation: .default)
-          },
-        ])
+                animation: .smooth
+              )
+            },
+            .run { send in
+              await send(.scrollToTop, animation: .default)
+            },
+          ]
+        )
         .cancellable(
           id: "query",
           cancelInFlight: true
@@ -205,17 +206,15 @@ public struct QueryFeature {
               if state.mode.isPlaceholder {
                 switch state.queryType {
                 case let .querySet(set, _):
-                  let mocks = MockCardDetailRequestClient.generateMockCards(number: min(10, set.cardCount))
-                  let dataSource = CardDataSource(
-                    cards: mocks,
-                    hasNextPage: false,
-                    total: set.cardCount,
-                    cardPrefixIdentifier: nil
-                  )
-                  
                   await send(
                     .updateCards(
-                      dataSource,
+                      CardDataSource(
+                        cards: MockCardDetailRequestClient.generateMockCards(
+                          number: min(10, set.cardCount)
+                        ),
+                        hasNextPage: false,
+                        total: set.cardCount,
+                      ),
                       state.query,
                       .placeholder
                     )
@@ -229,14 +228,18 @@ public struct QueryFeature {
             .run { [state] send in
               if state.mode.isPlaceholder {
                 let result = try await client.queryCards(state.query)
-                let dataSource = CardDataSource(
-                  cards: result.data,
-                  hasNextPage: result.hasMore ?? false,
-                  total: result.totalCards ?? 0,
-                  cardPrefixIdentifier: nil
-                )
                 
-                await send(.updateCards(dataSource, state.query, .data))
+                await send(
+                  .updateCards(
+                    CardDataSource(
+                      cards: result.data,
+                      hasNextPage: result.hasMore ?? false,
+                      total: result.totalCards ?? 0
+                    ),
+                    state.query,
+                    .data
+                  )
+                )
               }
             }
           ]

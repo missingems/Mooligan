@@ -45,7 +45,7 @@ public enum DisplayableCardImage: Equatable {
     }
   }
   
-  public init(_ card: Card, prefixIdentifier: String?) {
+  public init(_ card: Card) {
     if card.isTransformable,
        let frontImageURL = card.getImageURL(type: .normal, getSecondFace: false),
        let backImageURL = card.getImageURL(type: .normal, getSecondFace: true),
@@ -55,7 +55,7 @@ public enum DisplayableCardImage: Equatable {
         frontImageURL: frontImageURL,
         backImageURL: backImageURL,
         callToActionIconName: callToActionIconName,
-        id: "\(prefixIdentifier ?? "")\(card.id.uuidString)"
+        id: card.id.uuidString
       )
     } else if
       card.isFlippable,
@@ -65,12 +65,12 @@ public enum DisplayableCardImage: Equatable {
         direction: .front,
         displayingImageURL: imageURL,
         callToActionIconName: callToActionIconName,
-        id: "\(prefixIdentifier ?? "")\(card.id.uuidString)"
+        id: card.id.uuidString
       )
     } else if let imageURL = card.getImageURL(type: .normal) {
       self = .single(
         displayingImageURL: imageURL,
-        id: "\(prefixIdentifier ?? "")\(card.id.uuidString)"
+        id: card.id.uuidString
       )
     } else {
       fatalError("Impossible state: ImageURL cannot be nil.")
