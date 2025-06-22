@@ -98,7 +98,7 @@ private enum Widget: Hashable, Identifiable, View {
     }
   }
   
-  nonisolated(unsafe) var id: Self {
+  nonisolated var id: Self {
     return self
   }
 }
