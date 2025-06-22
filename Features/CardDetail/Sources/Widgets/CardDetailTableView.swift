@@ -131,7 +131,7 @@ extension CardDetailTableView {
     case typelines(typeline1: String?, typeline2: String?)
     case typeline(String?)
     
-    nonisolated(unsafe) var id: Self {
+    nonisolated var id: Self {
       return self
     }
   }

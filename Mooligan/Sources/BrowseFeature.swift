@@ -51,7 +51,7 @@ import Foundation
       }
     }
     
-    nonisolated(unsafe) var id: Self {
+    nonisolated var id: Self {
       return self
     }
   }
@@ -95,7 +95,7 @@ import Foundation
         
       case let .path(value):
         switch value {
-        case .element(id: let id, action: let action):
+        case let .element(_, action):
           switch action {
           case let .showSetDetail(value):
             switch value {
@@ -111,7 +111,7 @@ import Foundation
             case let .didSelectCard(card, queryType):
               state.path.append(.showCardDetail(CardDetailFeature.State(card: card, queryType: queryType)))
               
-            case .loadMoreCardsIfNeeded(displayingIndex: let displayingIndex):
+            case .loadMoreCardsIfNeeded:
               break
               
             case .updateCards(_, _, _):
@@ -148,10 +148,10 @@ import Foundation
             break
           }
           
-        case .popFrom(id: let id):
+        case .popFrom:
           break
           
-        case .push(id: let id, state: let state):
+        case .push:
           break
         }
         
