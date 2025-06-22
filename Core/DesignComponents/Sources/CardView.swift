@@ -111,9 +111,7 @@ public struct CardView: View {
     .opacity(direction == .back ? 1 : 0)
     .rotation3DEffect(.degrees(direction == .back ? 180 : 0), axis: (x: 0, y: 1, z: 0))
     .zIndex(direction == .back ? 2 : 1)
-    .transaction { transaction in
-      transaction.animation = .bouncy
-    }
+    .animation(.bouncy, value: direction)
     
     CardRemoteImageView(
       url: frontImageURL,
@@ -126,9 +124,7 @@ public struct CardView: View {
     .opacity(direction == .front ? 1 : 0)
     .rotation3DEffect(.degrees(direction == .front ? 0 : 180), axis: (x: 0, y: 1, z: 0))
     .zIndex(direction == .front ? 2 : 1)
-    .transaction { transaction in
-      transaction.animation = .bouncy
-    }
+    .animation(.bouncy, value: direction)
     
     Button {
       if let send {
@@ -171,9 +167,7 @@ public struct CardView: View {
     )
     .rotationEffect(.degrees(direction == .front ? 0 : 180))
     .zIndex(2)
-    .transaction { transaction in
-      transaction.animation = .bouncy
-    }
+    .animation(.bouncy, value: direction)
     
     Button {
       if let send {
