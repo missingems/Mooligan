@@ -21,19 +21,10 @@
     {
       "identity" : "scryfallkit",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/missingems/ScryfallKit",
+      "location" : "https://github.com/JacobHearst/ScryfallKit",
       "state" : {
-        "branch" : "main",
-        "revision" : "cd2e10a2c64c0f83b290ad0b93fc78580aeb39a7"
-      }
-    },
-    {
-      "identity" : "sticker",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/bpisano/sticker",
-      "state" : {
-        "revision" : "61032eade1a883786b7004ee0fc5870e2e0295ed",
-        "version" : "1.2.1"
+        "revision" : "594c804ff2bd4a30fbfff8ff52fbd37fff6bdd88",
+        "version" : "5.15.0"
       }
     },
     {
@@ -77,8 +68,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/pointfreeco/swift-composable-architecture",
       "state" : {
-        "revision" : "2ebda6ae2b155a5c3d75aff5f6d25c024bc91311",
-        "version" : "1.17.1"
+        "revision" : "6574de2396319a58e86e2178577268cb4aeccc30",
+        "version" : "1.20.2"
       }
     },
     {
@@ -122,8 +113,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/pointfreeco/swift-navigation",
       "state" : {
-        "revision" : "16a27ab7ae0abfefbbcba73581b3e2380b47a579",
-        "version" : "2.2.2"
+        "revision" : "ae208d1a5cf33aee1d43734ea780a09ada6e2a21",
+        "version" : "2.3.1"
       }
     },
     {
@@ -167,8 +158,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/nikstar/VariableBlur",
       "state" : {
-        "revision" : "41698eecb3373550b2100dbcd308d886501d7033",
-        "version" : "1.2.0"
+        "revision" : "c8dc0ada195dfd47354cec5994c2dd434aa6c146",
+        "version" : "1.2.1"
       }
     },
     {
