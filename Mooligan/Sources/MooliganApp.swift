@@ -43,16 +43,6 @@ struct RootView: View {
                 
               case let .showSetDetail(value):
                 Query.RootView(store: value)
-                
-              case let .showVariantGalleryFeatureFromMainImage(value):
-                CardDetail
-                  .VariantGalleryView(store: value, zoomNamespace: zoomNamespace)
-                  .navigationTransition(.zoom(sourceID: value.state.id, in: zoomNamespace))
-                
-              case let .showVariantGalleryFeatureFromVariantGrid(value):
-                CardDetail
-                  .VariantGalleryView(store: value, zoomNamespace: zoomNamespace)
-                  .navigationTransition(.zoom(sourceID: value.state.id, in: zoomNamespace))
               }
             }
             

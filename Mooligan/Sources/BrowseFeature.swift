@@ -9,8 +9,6 @@ import Foundation
 @Reducer enum Path {
   case showCardDetail(CardDetailFeature)
   case showSetDetail(QueryFeature)
-  case showVariantGalleryFeatureFromVariantGrid(VariantGalleryFeature)
-  case showVariantGalleryFeatureFromMainImage(VariantGalleryFeature)
 }
 
 @Reducer struct Feature {
@@ -126,26 +124,14 @@ import Foundation
             
           case let .showCardDetail(value):
             switch value {
-            case let .didSelectVariant(cardDataSource, card, id):
+            case let .didSelectVariant(card, queryType):
               state.path.append(
-                .showVariantGalleryFeatureFromVariantGrid(
-                  VariantGalleryFeature.State(cardDataSource: cardDataSource, selectedCard: card, id: id)
-                )
-              )
-              
-            case let .didSelectCardDetailImage(cardDataSource, card, id):
-              state.path.append(
-                .showVariantGalleryFeatureFromMainImage(
-                  VariantGalleryFeature.State(cardDataSource: cardDataSource, selectedCard: card, id: id)
-                )
+                .showCardDetail(CardDetailFeature.State(card: card, queryType: queryType))
               )
               
             default:
               break
             }
-            
-          case .showVariantGalleryFeatureFromVariantGrid, .showVariantGalleryFeatureFromMainImage:
-            break
           }
           
         case .popFrom:

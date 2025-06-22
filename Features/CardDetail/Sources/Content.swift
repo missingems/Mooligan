@@ -75,17 +75,17 @@ public struct Content: Equatable {
   let artistSelectionIcon: Image
   let rulingSelectionIcon: Image
   let relatedSelectionIcon: Image
-  
+  let queryType: QueryType
   var setIconURL: URL?
   var variantQuery: VariantQuery
   var displayableCardImage: DisplayableCardImage
   
   init(
     card: Card,
-    setIconURL: URL?
+    queryType: QueryType
   ) {
     self.card = card
-    
+    self.queryType = queryType
     illstrautedLabel = String(localized: "Artist")
     viewRulingsLabel = String(localized: "Rulings")
     legalityLabel = String(localized: "Legality")
@@ -103,19 +103,26 @@ public struct Content: Equatable {
     rulingSelectionIcon = Image(systemName: "text.book.closed.fill")
     relatedSelectionIcon = Image(systemName: "ellipsis.circle")
     
-    self.setIconURL = setIconURL
+    switch queryType {
+    case .search:
+      setIconURL = nil
+      
+    case let .querySet(value, _):
+      setIconURL = URL(string: value.iconSvgUri)
+    }
+    
     variantQuery = VariantQuery(
       page: 1,
       state: VariantQuery.State.initial(
         CardDataSource(
           cards: [card],
           hasNextPage: false,
-          total: 1,
-          cardPrefixIdentifier: "variant://"
+          total: 1
         )
       )
     )
-    displayableCardImage = DisplayableCardImage(card, prefixIdentifier: nil)
+    
+    displayableCardImage = DisplayableCardImage(card)
   }
   
   func getColorIdentity() -> [String] {
