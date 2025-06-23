@@ -7,7 +7,6 @@ import SwiftUI
 struct CardDetailView: View {
   @Bindable var store: StoreOf<CardDetailFeature>
   @State private var maxWidth: CGFloat?
-  let zoomNamespace: Namespace.ID
   
   var body: some View {
     ScrollView(.vertical) {
@@ -24,8 +23,7 @@ struct CardDetailView: View {
             displayableCard: content.displayableCardImage,
             layoutConfiguration: configuration,
             callToActionHorizontalOffset: 21.0,
-            priceVisibility: .hidden,
-            zoomNamespace: zoomNamespace
+            priceVisibility: .hidden
           ) { action in
             store.send(.descriptionCallToActionTapped, animation: .bouncy)
           }
@@ -117,8 +115,7 @@ struct CardDetailView: View {
             title: content.variantQuery.state.title,
             subtitle: content.variantQuery.state.subtitle,
             cards: content.variantQuery.state.value,
-            isInitial: content.variantQuery.state.isInitial,
-            zoomNamespace: zoomNamespace
+            isInitial: content.variantQuery.state.isInitial
           ) { action in
             switch action {
             case let .didSelectCard(card):
