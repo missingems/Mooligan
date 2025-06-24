@@ -5,14 +5,12 @@ import SwiftUI
 
 public struct RootView: View {
   private let store: StoreOf<CardDetailFeature>
-  private let zoomNamespace: Namespace.ID
   
   public var body: some View {
-    CardDetailView(store: store, zoomNamespace: zoomNamespace)
+    CardDetailView(store: store)
   }
   
-  public init(store: StoreOf<CardDetailFeature>, zoomNamespace: Namespace.ID) {
+  public init(store: StoreOf<CardDetailFeature>) {
     self.store = store
-    self.zoomNamespace = zoomNamespace
   }
 }

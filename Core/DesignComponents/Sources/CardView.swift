@@ -41,7 +41,6 @@ public struct CardView: View {
   private let callToActionHorizontalOffset: CGFloat
   private let displayableCard: DisplayableCardImage
   private let accessoryInfo: AccessoryInfo
-  private let zoomNamespace: Namespace.ID?
   private let send: ((Action) -> Void)?
   @State private var localDisplayableCard: DisplayableCardImage?
   
@@ -61,8 +60,7 @@ public struct CardView: View {
             frontImageURL: frontImageURL,
             backImageURL: backImageURL,
             callToActionIconName: callToActionIconName,
-            id: id,
-            zoomNamespace: zoomNamespace
+            id: id
           )
           
         case let .flippable(direction, displayingImageURL, callToActionIconName, id):
@@ -70,8 +68,7 @@ public struct CardView: View {
             direction: direction,
             displayingImageURL: displayingImageURL,
             callToActionIconName: callToActionIconName,
-            id: id,
-            zoomNamespace: zoomNamespace
+            id: id
           )
           .frame(width: layoutConfiguration.size.width, height: layoutConfiguration.size.height, alignment: .center)
           
@@ -81,8 +78,7 @@ public struct CardView: View {
             isLandscape: layoutConfiguration.rotation == .landscape,
             isTransformed: false,
             size: layoutConfiguration.size,
-            id: id,
-            zoomNamespace: zoomNamespace
+            id: id
           )
           .frame(width: layoutConfiguration.size.width, height: layoutConfiguration.size.height, alignment: .center)
         }
@@ -97,38 +93,31 @@ public struct CardView: View {
     frontImageURL: URL,
     backImageURL: URL,
     callToActionIconName: String,
-    id: String,
-    zoomNamespace: Namespace.ID?
+    id: String
   ) -> some View {
     CardRemoteImageView(
       url: backImageURL,
       isLandscape: layoutConfiguration.rotation == .landscape,
       isTransformed: true,
       size: layoutConfiguration.size,
-      id: id,
-      zoomNamespace: zoomNamespace
+      id: id
     )
     .opacity(direction == .back ? 1 : 0)
     .rotation3DEffect(.degrees(direction == .back ? 180 : 0), axis: (x: 0, y: 1, z: 0))
     .zIndex(direction == .back ? 2 : 1)
-    .transaction { transaction in
-      transaction.animation = .bouncy
-    }
+    .animation(.bouncy, value: direction)
     
     CardRemoteImageView(
       url: frontImageURL,
       isLandscape: layoutConfiguration.rotation == .landscape,
       isTransformed: false,
       size: layoutConfiguration.size,
-      id: id,
-      zoomNamespace: zoomNamespace
+      id: id
     )
     .opacity(direction == .front ? 1 : 0)
     .rotation3DEffect(.degrees(direction == .front ? 0 : 180), axis: (x: 0, y: 1, z: 0))
     .zIndex(direction == .front ? 2 : 1)
-    .transaction { transaction in
-      transaction.animation = .bouncy
-    }
+    .animation(.bouncy, value: direction)
     
     Button {
       if let send {
@@ -158,22 +147,18 @@ public struct CardView: View {
     direction: MagicCardFaceDirection,
     displayingImageURL: URL,
     callToActionIconName: String,
-    id: String,
-    zoomNamespace: Namespace.ID?
+    id: String
   ) -> some View {
     CardRemoteImageView(
       url: displayingImageURL,
       isLandscape: layoutConfiguration.rotation == .landscape,
       isTransformed: false,
       size: layoutConfiguration.size,
-      id: id,
-      zoomNamespace: zoomNamespace
+      id: id
     )
     .rotationEffect(.degrees(direction == .front ? 0 : 180))
     .zIndex(2)
-    .transaction { transaction in
-      transaction.animation = .bouncy
-    }
+    .animation(.bouncy, value: direction)
     
     Button {
       if let send {
@@ -259,7 +244,6 @@ public struct CardView: View {
     layoutConfiguration: LayoutConfiguration,
     callToActionHorizontalOffset: CGFloat = 5.0,
     priceVisibility: AccessoryInfo,
-    zoomNamespace: Namespace.ID?,
     send: ((Action) -> Void)? = nil
   ) {
     self.displayableCard = displayableCard
@@ -271,7 +255,6 @@ public struct CardView: View {
     
     self.layoutConfiguration = layoutConfiguration
     self.callToActionHorizontalOffset = callToActionHorizontalOffset
-    self.zoomNamespace = zoomNamespace
     self.send = send
   }
   
@@ -280,7 +263,6 @@ public struct CardView: View {
     layoutConfiguration: LayoutConfiguration,
     callToActionHorizontalOffset: CGFloat = 5.0,
     priceVisibility: AccessoryInfo,
-    zoomNamespace: Namespace.ID?,
     send: ((Action) -> Void)? = nil
   ) {
     guard let displayableCard else {
@@ -297,6 +279,5 @@ public struct CardView: View {
     self.layoutConfiguration = layoutConfiguration
     self.callToActionHorizontalOffset = callToActionHorizontalOffset
     self.send = send
-    self.zoomNamespace = zoomNamespace
   }
 }

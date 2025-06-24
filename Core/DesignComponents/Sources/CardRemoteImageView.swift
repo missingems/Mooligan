@@ -9,7 +9,6 @@ public struct CardRemoteImageView: View {
   private let transformers: [ImageProcessing]
   private let size: CGSize
   private let isLandscape: Bool
-  private let zoomNamespace: Namespace.ID?
   private let id: String
   
   public init(
@@ -17,8 +16,7 @@ public struct CardRemoteImageView: View {
     isLandscape: Bool = false,
     isTransformed: Bool = false,
     size: CGSize,
-    id: String,
-    zoomNamespace: Namespace.ID?
+    id: String
   ) {
     self.isLandscape = isLandscape
     self.url = url
@@ -39,7 +37,6 @@ public struct CardRemoteImageView: View {
     
     self.transformers = transformers
     self.size = size
-    self.zoomNamespace = zoomNamespace
     self.id = id
   }
   
@@ -81,8 +78,5 @@ public struct CardRemoteImageView: View {
           lineWidth: 1 / UIScreen.main.nativeScale
         )
     )
-    .ifLet(zoomNamespace) { view, zoomNamespace in
-      view.matchedTransitionSource(id: id, in: zoomNamespace)
-    }
   }
 }
