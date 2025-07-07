@@ -111,7 +111,7 @@ struct CardDetailView: View {
         }
         
         if let content = store.content {
-          VariantView(
+          HorizontalCardScrollView(
             title: content.variantQuery.state.title,
             subtitle: content.variantQuery.state.subtitle,
             cards: content.variantQuery.state.value,
