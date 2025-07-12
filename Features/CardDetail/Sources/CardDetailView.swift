@@ -112,10 +112,10 @@ struct CardDetailView: View {
         
         if let content = store.content {
           HorizontalCardScrollView(
-            title: content.variantQuery.state.title,
-            subtitle: content.variantQuery.state.subtitle,
-            cards: content.variantQuery.state.value,
-            isInitial: content.variantQuery.state.isInitial
+            title: content.variants.title,
+            subtitle: content.variants.subtitle,
+            cards: content.variants.state.value,
+            isInitial: content.variants.state.isInitial
           ) { action in
             switch action {
             case let .didSelectCard(card):

@@ -8,9 +8,7 @@ import ScryfallKit
   @Dependency(\.cardDetailRequestClient) private var client
   
   public var body: some ReducerOf<Self> {
-    Reduce {
-      state,
-      action in
+    Reduce { state, action in
       switch action {
       case .didSelectVariant:
         return .none
@@ -18,14 +16,14 @@ import ScryfallKit
       case let .didShowVariant(index):
         guard
           let content = state.content,
-          content.variantQuery.state.value.hasNextPage == true,
-          index == content.variantQuery.state.value.cardDetails.count - 1
+          content.variants.state.value.hasNextPage == true,
+          index == content.variants.state.value.cardDetails.count - 1
         else {
           return .none
         }
         
         return .run { send in
-          await send(.fetchVariants(card: content.card, page: content.variantQuery.page + 1))
+          await send(.fetchVariants(card: content.card, page: content.variants.page + 1))
         }
         
       case .dismissRulingsTapped:
@@ -33,7 +31,7 @@ import ScryfallKit
         return .none
         
       case let .fetchVariants(card, page):
-        return .run { [existingVariants = state.content?.variantQuery.state.value] send in
+        return .run { [existingVariants = state.content?.variants.state.value] send in
           let result = try await client.getVariants(of: card, page: page)
           var _existingVariants = existingVariants
           _existingVariants?.append(cards: result.data.filter { $0.id != card.id })
@@ -102,10 +100,13 @@ import ScryfallKit
         return .none
         
       case let .updateVariants(value, page):
-        state.content?.variantQuery = Content.VariantQuery(
-          page: page,
-          state: Content.VariantQuery.State.data(value)
-        )
+        if var content = state.content {
+          state.content?.variants = content.variants.updating(
+            page: page,
+            state: .data(value)
+          )
+        }
+        
         return .none
         
       case let .viewAppeared(action):
