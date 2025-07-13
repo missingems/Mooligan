@@ -58,26 +58,38 @@ import ScryfallKit
           effects.append(
             .run { send in
               try await send(.updateSetIconURL(URL(string: client.getSet(of: card).iconSvgUri)))
-            }.cancellable(id: "getSet: \(card.id.uuidString)", cancelInFlight: true)
+            }.cancellable(id: "updateSetIconURL: \(card.id.uuidString)", cancelInFlight: true)
           )
         }
         
         effects.append(
           .run { send in
             await send(.fetchVariants(card: card, page: 1))
-          }.cancellable(id: "getVariants: \(card.id.uuidString)", cancelInFlight: true)
+          }.cancellable(id: "fetchVariants: \(card.id.uuidString)", cancelInFlight: true)
         )
         
         effects.append(
           .run { send in
             await send(.fetchRelatedTokens(card: card))
-          }.cancellable(id: "getRelatedTokens: \(card.id.uuidString)", cancelInFlight: true)
+          }.cancellable(id: "fetchRelatedTokens: \(card.id.uuidString)", cancelInFlight: true)
         )
         
         effects.append(
           .run { send in
             await send(.fetchRelatedComboPieces(card: card))
-          }.cancellable(id: "getRelatedComboPieces: \(card.id.uuidString)", cancelInFlight: true)
+          }.cancellable(id: "fetchRelatedComboPieces: \(card.id.uuidString)", cancelInFlight: true)
+        )
+        
+        effects.append(
+          .run { send in
+            await send(.fetchRelatedMeldPieces(card: card))
+          }.cancellable(id: "fetchRelatedMeldPieces: \(card.id.uuidString)", cancelInFlight: true)
+        )
+        
+        effects.append(
+          .run { send in
+            await send(.fetchRelatedMeldResult(card: card))
+          }.cancellable(id: "fetchRelatedMeldResult: \(card.id.uuidString)", cancelInFlight: true)
         )
         
         return .concatenate(effects)
