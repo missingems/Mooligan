@@ -34,7 +34,8 @@ public struct Content: Equatable {
   let queryType: QueryType
   var setIconURL: URL?
   var variants: SubContent
-  var relatedCards: SubContent
+  var relatedTokens: SubContent?
+  var relatedComboPieces: SubContent?
   var displayableCardImage: DisplayableCardImage
   
   init(
@@ -75,10 +76,15 @@ public struct Content: Equatable {
       subtitleSuffix: String(localized: "Results")
     )
     
-    relatedCards = SubContent(
-      page: 1,
+    relatedTokens = SubContent(
       state: .initial(nil),
-      title: String(localized: "Related Cards"),
+      title: String(localized: "Tokens"),
+      subtitleSuffix: String(localized: "Results")
+    )
+    
+    relatedComboPieces = SubContent(
+      state: .initial(nil),
+      title: String(localized: "Combo Pieces"),
       subtitleSuffix: String(localized: "Results")
     )
     
@@ -135,7 +141,7 @@ extension Content {
     case initial(Card?)
     case data(CardDataSource)
     
-    var value: CardDataSource {
+    var value: CardDataSource? {
       switch self {
       case let .data(value):
         return value
@@ -144,7 +150,7 @@ extension Content {
         return if let value {
           CardDataSource(cards: [value], hasNextPage: false, total: 1)
         } else {
-          CardDataSource(cards: [], hasNextPage: false, total: 0)
+          nil
         }
       }
     }
@@ -163,16 +169,16 @@ extension Content {
 
 extension Content {
   struct SubContent: Equatable {
-    var page: Int = 1
+    var page: Int
     var state: State
     let title: String
     private let subtitleSuffix: String
     
     var subtitle: String {
-      String(localized: "\(state.value.cardDetails.count) \(subtitleSuffix)")
+      String(localized: "\(state.value?.cardDetails.count ?? 0) \(subtitleSuffix)")
     }
     
-    init(page: Int, state: State, title: String, subtitleSuffix: String) {
+    init(page: Int = 1, state: State, title: String, subtitleSuffix: String) {
       self.page = page
       self.state = state
       self.title = title
@@ -180,7 +186,6 @@ extension Content {
     }
     
     mutating func updating(page: Int, state: State) -> Self {
-      self.page = page
       self.state = state
       return self
     }

@@ -78,6 +78,10 @@ public extension Card {
 }
 
 public struct MockCardDetailRequestClient: MagicCardDetailRequestClient {
+  public func getRelatedCardsIfNeeded(of card: ScryfallKit.Card, for type: ScryfallKit.Card.RelatedCard.Component) async throws -> CardDataSource? {
+    return nil
+  }
+  
   public static func generateMockCards(number: Int) -> [Card] {
     var cards: [Card] = []
     for _ in 0..<number {
