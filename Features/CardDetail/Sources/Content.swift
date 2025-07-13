@@ -36,6 +36,8 @@ public struct Content: Equatable {
   var variants: SubContent
   var relatedTokens: SubContent?
   var relatedComboPieces: SubContent?
+  var relatedMeldPieces: SubContent?
+  var relatedMeldResult: SubContent?
   var displayableCardImage: DisplayableCardImage
   
   init(
@@ -85,6 +87,18 @@ public struct Content: Equatable {
     relatedComboPieces = SubContent(
       state: .initial(nil),
       title: String(localized: "Combo Pieces"),
+      subtitleSuffix: String(localized: "Results")
+    )
+    
+    relatedMeldPieces = SubContent(
+      state: .initial(nil),
+      title: String(localized: "Meld Pieces"),
+      subtitleSuffix: String(localized: "Results")
+    )
+    
+    relatedMeldResult = SubContent(
+      state: .initial(nil),
+      title: String(localized: "Meld Result"),
       subtitleSuffix: String(localized: "Results")
     )
     

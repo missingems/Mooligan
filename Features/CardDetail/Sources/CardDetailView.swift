@@ -162,6 +162,42 @@ struct CardDetailView: View {
             }
           }
           
+          if let relatedMeldPiecesSection = content.relatedMeldPieces,
+             let state = relatedMeldPiecesSection.state.value {
+            HorizontalCardScrollView(
+              title: relatedMeldPiecesSection.title,
+              subtitle: relatedMeldPiecesSection.subtitle,
+              cards: state,
+              isInitial: relatedMeldPiecesSection.state.isInitial
+            ) { action in
+              switch action {
+              case let .didSelectCard(card):
+                print(card)
+                
+              case let .didShowCardAtIndex(index):
+                print(index)
+              }
+            }
+          }
+          
+          if let relatedMeldResultSection = content.relatedMeldResult,
+             let state = relatedMeldResultSection.state.value {
+            HorizontalCardScrollView(
+              title: relatedMeldResultSection.title,
+              subtitle: relatedMeldResultSection.subtitle,
+              cards: state,
+              isInitial: relatedMeldResultSection.state.isInitial
+            ) { action in
+              switch action {
+              case let .didSelectCard(card):
+                print(card)
+                
+              case let .didShowCardAtIndex(index):
+                print(index)
+              }
+            }
+          }
+          
           SelectionView(
             items: [
               SelectionView.Item(
