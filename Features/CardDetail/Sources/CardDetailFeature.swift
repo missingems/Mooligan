@@ -143,6 +143,30 @@ import ScryfallKit
           }
         }
         
+      case let .fetchRelatedMeldPieces(card):
+        return .run { send in
+          let dataSource = try await client.getRelatedCardsIfNeeded(
+            of: card,
+            for: .meldPart
+          )
+          
+          if let dataSource {
+            await send(.updateMeldPieces(dataSource))
+          }
+        }
+        
+      case let .fetchRelatedMeldResult(card):
+        return .run { send in
+          let dataSource = try await client.getRelatedCardsIfNeeded(
+            of: card,
+            for: .meldResult
+          )
+          
+          if let dataSource {
+            await send(.updateMeldResult(dataSource))
+          }
+        }
+        
       case let .updateSetIconURL(value):
         state.content?.setIconURL = value
         return .none
@@ -150,6 +174,26 @@ import ScryfallKit
       case let .updateVariants(value, page):
         if var content = state.content {
           state.content?.variants = content.variants.updating(page: page, state: .data(value))
+        }
+        
+        return .none
+        
+      case let .updateMeldPieces(value):
+        if var content = state.content {
+          state.content?.relatedMeldPieces = content.relatedMeldPieces?.updating(
+            page: 1,
+            state: .data(value)
+          )
+        }
+        
+        return .none
+        
+      case let .updateMeldResult(value):
+        if var content = state.content {
+          state.content?.relatedMeldResult = content.relatedMeldResult?.updating(
+            page: 1,
+            state: .data(value)
+          )
         }
         
         return .none
@@ -256,10 +300,14 @@ public extension CardDetailFeature {
     case updateVariants(CardDataSource, page: Int)
     case updateRelatedTokens(CardDataSource)
     case updateComboPieces(CardDataSource)
+    case updateMeldPieces(CardDataSource)
+    case updateMeldResult(CardDataSource)
     case didShowVariant(index: Int)
     case fetchVariants(card: Card, page: Int)
     case fetchRelatedTokens(card: Card)
     case fetchRelatedComboPieces(card: Card)
+    case fetchRelatedMeldPieces(card: Card)
+    case fetchRelatedMeldResult(card: Card)
     case viewAppeared(initialAction: Action)
     case viewRulingsTapped
     case setupContentIfNeeded(card: Card, queryType: QueryType)
