@@ -8,9 +8,7 @@ import ScryfallKit
   @Dependency(\.cardDetailRequestClient) private var client
   
   public var body: some ReducerOf<Self> {
-    Reduce {
-      state,
-      action in
+    Reduce { state, action in
       switch action {
       case .didSelectVariant:
         return .none
@@ -18,14 +16,14 @@ import ScryfallKit
       case let .didShowVariant(index):
         guard
           let content = state.content,
-          content.variantQuery.state.value.hasNextPage == true,
-          index == content.variantQuery.state.value.cardDetails.count - 1
+          content.variants.state.value?.hasNextPage == true,
+          index == content.variants.state.value?.cardDetails.count ?? 0 - 1
         else {
           return .none
         }
         
         return .run { send in
-          await send(.fetchVariants(card: content.card, page: content.variantQuery.page + 1))
+          await send(.fetchVariants(card: content.card, page: content.variants.page + 1))
         }
         
       case .dismissRulingsTapped:
@@ -33,7 +31,7 @@ import ScryfallKit
         return .none
         
       case let .fetchVariants(card, page):
-        return .run { [existingVariants = state.content?.variantQuery.state.value] send in
+        return .run { [existingVariants = state.content?.variants.state.value] send in
           let result = try await client.getVariants(of: card, page: page)
           var _existingVariants = existingVariants
           _existingVariants?.append(cards: result.data.filter { $0.id != card.id })
@@ -60,17 +58,41 @@ import ScryfallKit
           effects.append(
             .run { send in
               try await send(.updateSetIconURL(URL(string: client.getSet(of: card).iconSvgUri)))
-            }.cancellable(id: "getSet: \(card.id.uuidString)", cancelInFlight: true)
+            }.cancellable(id: "updateSetIconURL: \(card.id.uuidString)", cancelInFlight: true)
           )
         }
         
         effects.append(
           .run { send in
             await send(.fetchVariants(card: card, page: 1))
-          }.cancellable(id: "getVariants: \(card.id.uuidString)", cancelInFlight: true)
+          }.cancellable(id: "fetchVariants: \(card.id.uuidString)", cancelInFlight: true)
         )
         
-        return .merge(effects)
+        effects.append(
+          .run { send in
+            await send(.fetchRelatedTokens(card: card))
+          }.cancellable(id: "fetchRelatedTokens: \(card.id.uuidString)", cancelInFlight: true)
+        )
+        
+        effects.append(
+          .run { send in
+            await send(.fetchRelatedComboPieces(card: card))
+          }.cancellable(id: "fetchRelatedComboPieces: \(card.id.uuidString)", cancelInFlight: true)
+        )
+        
+        effects.append(
+          .run { send in
+            await send(.fetchRelatedMeldPieces(card: card))
+          }.cancellable(id: "fetchRelatedMeldPieces: \(card.id.uuidString)", cancelInFlight: true)
+        )
+        
+        effects.append(
+          .run { send in
+            await send(.fetchRelatedMeldResult(card: card))
+          }.cancellable(id: "fetchRelatedMeldResult: \(card.id.uuidString)", cancelInFlight: true)
+        )
+        
+        return .concatenate(effects)
         
       case .descriptionCallToActionTapped:
         switch state.content?.displayableCardImage {
@@ -97,15 +119,83 @@ import ScryfallKit
         
         return .none
         
+      case let .fetchRelatedTokens(card):
+        return .run { send in
+          let dataSource = try await client.getRelatedCardsIfNeeded(
+            of: card,
+            for: .token
+          )
+          
+          if let dataSource {
+            await send(.updateRelatedTokens(dataSource))
+          }
+        }
+        
+      case let .fetchRelatedComboPieces(card):
+        return .run { send in
+          let dataSource = try await client.getRelatedCardsIfNeeded(
+            of: card,
+            for: .comboPiece
+          )
+          
+          if let dataSource {
+            await send(.updateComboPieces(dataSource))
+          }
+        }
+        
+      case let .fetchRelatedMeldPieces(card):
+        return .run { send in
+          let dataSource = try await client.getRelatedCardsIfNeeded(
+            of: card,
+            for: .meldPart
+          )
+          
+          if let dataSource {
+            await send(.updateMeldPieces(dataSource))
+          }
+        }
+        
+      case let .fetchRelatedMeldResult(card):
+        return .run { send in
+          let dataSource = try await client.getRelatedCardsIfNeeded(
+            of: card,
+            for: .meldResult
+          )
+          
+          if let dataSource {
+            await send(.updateMeldResult(dataSource))
+          }
+        }
+        
       case let .updateSetIconURL(value):
         state.content?.setIconURL = value
         return .none
         
       case let .updateVariants(value, page):
-        state.content?.variantQuery = Content.VariantQuery(
-          page: page,
-          state: Content.VariantQuery.State.data(value)
-        )
+        if var content = state.content {
+          state.content?.variants = content.variants.updating(page: page, state: .data(value))
+        }
+        
+        return .none
+        
+      case let .updateMeldPieces(value):
+        if var content = state.content {
+          state.content?.relatedMeldPieces = content.relatedMeldPieces?.updating(
+            page: 1,
+            state: .data(value)
+          )
+        }
+        
+        return .none
+        
+      case let .updateMeldResult(value):
+        if var content = state.content {
+          state.content?.relatedMeldResult = content.relatedMeldResult?.updating(
+            page: 1,
+            state: .data(value)
+          )
+        }
+        
         return .none
         
       case let .viewAppeared(action):
@@ -138,6 +228,26 @@ import ScryfallKit
             )
           )
         }
+        
+      case let .updateRelatedTokens(value):
+        if var content = state.content {
+          state.content?.relatedTokens = content.relatedTokens?.updating(
+            page: 1,
+            state: .data(value)
+          )
+        }
+        
+        return .none
+        
+      case let .updateComboPieces(value):
+        if var content = state.content {
+          state.content?.relatedComboPieces = content.relatedComboPieces?.updating(
+            page: 1,
+            state: .data(value)
+          )
+        }
+        
+        return .none
         
       case let .updateContent(value):
         state.content = value
@@ -188,8 +298,16 @@ public extension CardDetailFeature {
     case descriptionCallToActionTapped
     case updateSetIconURL(URL?)
     case updateVariants(CardDataSource, page: Int)
+    case updateRelatedTokens(CardDataSource)
+    case updateComboPieces(CardDataSource)
+    case updateMeldPieces(CardDataSource)
+    case updateMeldResult(CardDataSource)
     case didShowVariant(index: Int)
     case fetchVariants(card: Card, page: Int)
+    case fetchRelatedTokens(card: Card)
+    case fetchRelatedComboPieces(card: Card)
+    case fetchRelatedMeldPieces(card: Card)
+    case fetchRelatedMeldResult(card: Card)
     case viewAppeared(initialAction: Action)
     case viewRulingsTapped
     case setupContentIfNeeded(card: Card, queryType: QueryType)

@@ -6,50 +6,6 @@ import ScryfallKit
 import SwiftUI
 
 public struct Content: Equatable {
-  struct VariantQuery: Equatable {
-    var page: Int = 1
-    var state: State
-    
-    enum State: Equatable {
-      case initial(CardDataSource)
-      case data(CardDataSource)
-      
-      var title: String {
-        String(localized: "Prints")
-      }
-      
-      var subtitle: String {
-        return switch self {
-        case .initial:
-          String(localized: "Fetching more prints...")
-          
-        case let .data(cardDataSource):
-          String(localized: "\(cardDataSource.total) Results")
-        }
-      }
-      
-      var value: CardDataSource {
-        switch self {
-        case let .data(value):
-          return value
-          
-        case let .initial(value):
-          return value
-        }
-      }
-      
-      var isInitial: Bool {
-        switch self {
-        case .initial:
-          return true
-          
-        case .data:
-          return false
-        }
-      }
-    }
-  }
-  
   struct Description: Equatable, Sendable {
     let name: String
     let textElements: [[TextElement]]
@@ -77,7 +33,11 @@ public struct Content: Equatable {
   let relatedSelectionIcon: Image
   let queryType: QueryType
   var setIconURL: URL?
-  var variantQuery: VariantQuery
+  var variants: SubContent
+  var relatedTokens: SubContent?
+  var relatedComboPieces: SubContent?
+  var relatedMeldPieces: SubContent?
+  var relatedMeldResult: SubContent?
   var displayableCardImage: DisplayableCardImage
   
   init(
@@ -111,15 +71,35 @@ public struct Content: Equatable {
       setIconURL = URL(string: value.iconSvgUri)
     }
     
-    variantQuery = VariantQuery(
+    variants = SubContent(
       page: 1,
-      state: VariantQuery.State.initial(
-        CardDataSource(
-          cards: [card],
-          hasNextPage: false,
-          total: 1
-        )
-      )
+      state: .initial(card),
+      title: String(localized: "Prints"),
+      subtitleSuffix: String(localized: "Results")
+    )
+    
+    relatedTokens = SubContent(
+      state: .initial(nil),
+      title: String(localized: "Tokens"),
+      subtitleSuffix: String(localized: "Results")
+    )
+    
+    relatedComboPieces = SubContent(
+      state: .initial(nil),
+      title: String(localized: "Combo Pieces"),
+      subtitleSuffix: String(localized: "Results")
+    )
+    
+    relatedMeldPieces = SubContent(
+      state: .initial(nil),
+      title: String(localized: "Meld Pieces"),
+      subtitleSuffix: String(localized: "Results")
+    )
+    
+    relatedMeldResult = SubContent(
+      state: .initial(nil),
+      title: String(localized: "Meld Result"),
+      subtitleSuffix: String(localized: "Results")
     )
     
     displayableCardImage = DisplayableCardImage(card)
@@ -167,5 +147,61 @@ public struct Content: Equatable {
     ] : [
       makeDescription(faceDirection: displayableCardImage.faceDirection, card: card)
     ]
+  }
+}
+
+extension Content {
+  enum State: Equatable {
+    case initial(Card?)
+    case data(CardDataSource)
+    
+    var value: CardDataSource? {
+      switch self {
+      case let .data(value):
+        return value
+        
+      case let .initial(value):
+        return if let value {
+          CardDataSource(cards: [value], hasNextPage: false, total: 1)
+        } else {
+          nil
+        }
+      }
+    }
+    
+    var isInitial: Bool {
+      switch self {
+      case .initial:
+        return true
+        
+      case .data:
+        return false
+      }
+    }
+  }
+}
+
+extension Content {
+  struct SubContent: Equatable {
+    var page: Int
+    var state: State
+    let title: String
+    private let subtitleSuffix: String
+    
+    var subtitle: String {
+      String(localized: "\(state.value?.cardDetails.count ?? 0) \(subtitleSuffix)")
+    }
+    
+    init(page: Int = 1, state: State, title: String, subtitleSuffix: String) {
+      self.page = page
+      self.state = state
+      self.title = title
+      self.subtitleSuffix = subtitleSuffix
+    }
+    
+    mutating func updating(page: Int, state: State) -> Self {
+      self.state = state
+      return self
+    }
   }
 }

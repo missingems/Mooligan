@@ -117,8 +117,8 @@ extension Card {
   }
   
   public func getGathererURLString() -> String? {
-    if let id = multiverseIds?.first {
-      "https://gatherer.wizards.com/Pages/Card/Details.aspx?multiverseid=\(id)"
+    if let url = relatedUris["gatherer"] {
+      url
     } else {
       nil
     }

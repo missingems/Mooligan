@@ -4,6 +4,7 @@ import ScryfallKit
 public protocol MagicCardDetailRequestClient: Sendable {
   func getRulings(of card: Card) async throws -> [MagicCardRuling]
   func getVariants(of card: Card, page: Int) async throws -> ObjectList<Card>
+  func getRelatedCardsIfNeeded(of card: Card, for type: Card.RelatedCard.Component) async throws -> CardDataSource?
   func getSet(of card: Card) async throws -> MTGSet
 }
 
@@ -22,6 +23,43 @@ extension ScryfallClient: MagicCardDetailRequestClient {
           TextElementParser.parse(String($0))
         }
       )
+    }
+  }
+  
+  public func getRelatedCardsIfNeeded(
+    of card: Card,
+    for type: Card.RelatedCard.Component
+  ) async throws -> CardDataSource? {
+    guard
+      let tokenParts = card.allParts?.filter({ $0.component == type }),
+      tokenParts.isEmpty == false
+    else {
+      return nil
+    }
+    
+    return try await withThrowingTaskGroup { [weak self, queryCard = card] group in
+      guard let self else {
+        return nil
+      }
+      
+      for part in tokenParts {
+        group.addTask {
+          try await self.getCard(
+            identifier: .scryfallID(id: part.id.uuidString)
+          )
+        }
+      }
+      
+      var results: [Card] = []
+      for try await card in group where card.oracleId != queryCard.oracleId && card.games.contains(.arena) == false {
+        results.append(card)
+      }
+      
+      if results.isEmpty == false {
+        return CardDataSource(cards: results, hasNextPage: false, total: results.count)
+      } else {
+        return nil
+      }
     }
   }
   

@@ -11,37 +11,37 @@ struct CardDetailView: View {
   var body: some View {
     ScrollView(.vertical) {
       VStack(spacing: 0) {
-        if let maxWidth, maxWidth > 0, let content = store.content {
-          let cardImageWidth = content.card.isLandscape ? 2.5 / 3.0 * maxWidth : 2.0 / 3.0 * maxWidth
-          
-          let configuration = CardView.LayoutConfiguration(
-            rotation: content.card.isLandscape ? .landscape : .portrait,
-            maxWidth: cardImageWidth.rounded()
-          )
-          
-          CardView(
-            displayableCard: content.displayableCardImage,
-            layoutConfiguration: configuration,
-            callToActionHorizontalOffset: 21.0,
-            priceVisibility: .hidden
-          ) { action in
-            store.send(.descriptionCallToActionTapped, animation: .bouncy)
-          }
-          .shadow(color: DesignComponentsAsset.shadow.swiftUIColor, radius: 8, x: 0, y: 5)
-          .padding(
-            EdgeInsets(
-              top: 13,
-              leading: 0,
-              bottom: 21,
-              trailing: 0
-            )
-          )
-          .zIndex(1)
-        }
-        
-        CardDetailTableView(descriptions: store.content?.getDescriptions() ?? [])
-        
         if let content = store.content {
+          if let maxWidth, maxWidth > 0 {
+            let cardImageWidth = content.card.isLandscape ? 2.5 / 3.0 * maxWidth : 2.0 / 3.0 * maxWidth
+            
+            let configuration = CardView.LayoutConfiguration(
+              rotation: content.card.isLandscape ? .landscape : .portrait,
+              maxWidth: cardImageWidth.rounded()
+            )
+            
+            CardView(
+              displayableCard: content.displayableCardImage,
+              layoutConfiguration: configuration,
+              callToActionHorizontalOffset: 21.0,
+              priceVisibility: .hidden
+            ) { action in
+              store.send(.descriptionCallToActionTapped, animation: .bouncy)
+            }
+            .shadow(color: DesignComponentsAsset.shadow.swiftUIColor, radius: 8, x: 0, y: 5)
+            .padding(
+              EdgeInsets(
+                top: 13,
+                leading: 0,
+                bottom: 21,
+                trailing: 0
+              )
+            )
+            .zIndex(1)
+          }
+          
+          CardDetailTableView(descriptions: store.content?.getDescriptions() ?? [])
+          
           InformationView(
             title: content.infoLabel,
             power: content.getPower(),
@@ -54,51 +54,46 @@ struct CardDetailView: View {
             setCode: content.card.set,
             setIconURL: content.setIconURL
           )
-        }
-        
-        if let content = store.content,
-            let label = content.card.layout.callToActionLabel,
-            let icon = content.card.layout.callToActionIconName {
-          Button {
-            store.send(.descriptionCallToActionTapped, animation: .bouncy)
-          } label: {
-            Label {
-              Text(label)
-                .font(.body)
-                .fontWeight(.semibold)
-            } icon: {
-              Image(systemName: icon)
-                .fontWeight(.semibold)
+          
+          if let label = content.card.layout.callToActionLabel,
+             let icon = content.card.layout.callToActionIconName {
+            Button {
+              store.send(.descriptionCallToActionTapped, animation: .bouncy)
+            } label: {
+              Label {
+                Text(label)
+                  .font(.body)
+                  .fontWeight(.semibold)
+              } icon: {
+                Image(systemName: icon)
+                  .fontWeight(.semibold)
+              }
+              .foregroundStyle(DesignComponentsAsset.invertedPrimary.swiftUIColor)
+              .frame(maxWidth: .infinity, minHeight: 34)
+              .padding(.vertical, 5.0)
+              .background(
+                DesignComponentsAsset.accentColor.swiftUIColor
+              )
+              .clipShape(RoundedRectangle(cornerRadius: 13))
+              .overlay(
+                RoundedRectangle(cornerRadius: 13)
+                  .strokeBorder(.separator, lineWidth: 1 / UIScreen.main.nativeScale)
+              )
             }
-            .foregroundStyle(DesignComponentsAsset.invertedPrimary.swiftUIColor)
-            .frame(maxWidth: .infinity, minHeight: 34)
-            .padding(.vertical, 5.0)
-            .background(
-              DesignComponentsAsset.accentColor.swiftUIColor
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 13))
-            .overlay(
-              RoundedRectangle(cornerRadius: 13)
-                .strokeBorder(.separator, lineWidth: 1 / UIScreen.main.nativeScale)
-            )
+            .buttonStyle(.sinkableButtonStyle)
+            .safeAreaPadding(.horizontal, nil)
           }
-          .buttonStyle(.sinkableButtonStyle)
-          .safeAreaPadding(.horizontal, nil)
-        }
-        
-        if store.content?.card.isTransformable == true || store.content?.card.isFlippable == true {
-          Spacer(minLength: 13.0)
-        }
-        
-        if let content = store.content {
+          
+          if content.card.isTransformable || content.card.isFlippable {
+            Spacer(minLength: 13.0)
+          }
+          
           LegalityView(
             title: content.legalityLabel,
             displayReleaseDate: content.card.releasedAt,
             legalities: content.card.legalities.all
           )
-        }
-        
-        if let content = store.content {
+          
           PriceView(
             title: content.priceLabel,
             subtitle: content.priceSubtitleLabel,
@@ -108,31 +103,101 @@ struct CardDetailView: View {
             tixLabel: content.tixLabel,
             purchaseVendor: PurchaseVendor(purchaseURIs: content.card.purchaseUris)
           )
-        }
-        
-        if let content = store.content {
-          VariantView(
-            title: content.variantQuery.state.title,
-            subtitle: content.variantQuery.state.subtitle,
-            cards: content.variantQuery.state.value,
-            isInitial: content.variantQuery.state.isInitial
-          ) { action in
-            switch action {
-            case let .didSelectCard(card):
-              store.send(
-                .didSelectVariant(
-                  card: card,
-                  queryType: content.queryType
+          
+          if let state = content.variants.state.value {
+            HorizontalCardScrollView(
+              title: content.variants.title,
+              subtitle: content.variants.subtitle,
+              cards: state,
+              isInitial: content.variants.state.isInitial
+            ) { action in
+              switch action {
+              case let .didSelectCard(card):
+                store.send(
+                  .didSelectVariant(
+                    card: card,
+                    queryType: content.queryType
+                  )
                 )
-              )
-              
-            case let .didShowCardAtIndex(index):
-              store.send(.didShowVariant(index: index))
+                
+              case let .didShowCardAtIndex(index):
+                store.send(.didShowVariant(index: index))
+              }
             }
           }
-        }
-        
-        if let content = store.content {
+          
+          if let relatedTokensSection = content.relatedTokens,
+             let state = relatedTokensSection.state.value {
+            HorizontalCardScrollView(
+              title: relatedTokensSection.title,
+              subtitle: relatedTokensSection.subtitle,
+              cards: state,
+              isInitial: relatedTokensSection.state.isInitial
+            ) { action in
+              switch action {
+              case let .didSelectCard(card):
+                print(card)
+                
+              case let .didShowCardAtIndex(index):
+                print(index)
+              }
+            }
+          }
+          
+          if let relatedComboPiecesSection = content.relatedComboPieces,
+             let state = relatedComboPiecesSection.state.value {
+            HorizontalCardScrollView(
+              title: relatedComboPiecesSection.title,
+              subtitle: relatedComboPiecesSection.subtitle,
+              cards: state,
+              isInitial: relatedComboPiecesSection.state.isInitial
+            ) { action in
+              switch action {
+              case let .didSelectCard(card):
+                print(card)
+                
+              case let .didShowCardAtIndex(index):
+                print(index)
+              }
+            }
+          }
+          
+          if let relatedMeldPiecesSection = content.relatedMeldPieces,
+             let state = relatedMeldPiecesSection.state.value {
+            HorizontalCardScrollView(
+              title: relatedMeldPiecesSection.title,
+              subtitle: relatedMeldPiecesSection.subtitle,
+              cards: state,
+              isInitial: relatedMeldPiecesSection.state.isInitial
+            ) { action in
+              switch action {
+              case let .didSelectCard(card):
+                print(card)
+                
+              case let .didShowCardAtIndex(index):
+                print(index)
+              }
+            }
+          }
+          
+          if let relatedMeldResultSection = content.relatedMeldResult,
+             let state = relatedMeldResultSection.state.value {
+            HorizontalCardScrollView(
+              title: relatedMeldResultSection.title,
+              subtitle: relatedMeldResultSection.subtitle,
+              cards: state,
+              isInitial: relatedMeldResultSection.state.isInitial
+            ) { action in
+              switch action {
+              case let .didSelectCard(card):
+                print(card)
+                
+              case let .didShowCardAtIndex(index):
+                print(index)
+              }
+            }
+          }
+          
           SelectionView(
             items: [
               SelectionView.Item(

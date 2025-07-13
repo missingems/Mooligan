@@ -4,7 +4,7 @@ import Networking
 import ScryfallKit
 import SwiftUI
 
-struct VariantView: View {
+struct HorizontalCardScrollView: View {
   enum Action: Equatable {
     case didSelectCard(Card)
     case didShowCardAtIndex(Int)
