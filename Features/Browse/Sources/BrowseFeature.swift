@@ -57,6 +57,7 @@ public extension BrowseFeature {
     var sets: IdentifiedArrayOf<MTGSet>
     var query = ""
     var queryPlaceholder = String(localized: "Enter set name...")
+    var sections: IdentifiedArrayOf<Folder<MTGSet>> = []
     
     public init(
       selectedSet: MTGSet?,
