@@ -2,6 +2,14 @@ import Foundation
 import ScryfallKit
 
 public struct MockGameSetRequestClient: GameSetRequestClient {
+  public func searchSets(containing name: String) async throws -> [ScryfallKit.MTGSet] {
+    []
+  }
+  
+  public func getSets(queryType: GameSetQueryType) async throws -> [ScryfallKit.MTGSet] {
+    []
+  }
+  
   public static let mockSets: [MTGSet] = [
     MTGSet(
       id: UUID(uuidString: "E62111F8-C36C-495A-93FC-0C247A3E6E5F")!,
