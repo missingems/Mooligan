@@ -67,6 +67,7 @@ import Foundation
   
   var body: some ReducerOf<Self> {
     Scope(state: \.sets, action: \.sets) {
+      BindingReducer()
       Browse.BrowseFeature()
     }
     

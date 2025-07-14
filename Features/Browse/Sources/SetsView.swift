@@ -4,7 +4,7 @@ import SwiftUI
 import Networking
 
 struct SetsView: View {
-  private var store: StoreOf<BrowseFeature>
+  @Bindable private var store: StoreOf<BrowseFeature>
   
   var body: some View {
     List(Array(zip(store.sets, store.sets.indices)), id: \.0.id) { value in
@@ -15,6 +15,7 @@ struct SetsView: View {
         viewModel: SetRow.ViewModel(
           set: set,
           selectedSet: nil,
+          highlightedText: store.query,
           index: index
         )
       ) {
@@ -24,6 +25,17 @@ struct SetsView: View {
       .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
       .safeAreaPadding(.horizontal, nil)
     }
+    .searchable(
+      text: .init(get: {
+        store.query
+      }, set: { value in
+        if store.query != value {
+          store.query = value
+        }
+      }),
+      placement: .navigationBarDrawer(displayMode: .always),
+      prompt: store.queryPlaceholder
+    )
     .listStyle(.plain)
     .task {
       store.send(.viewAppeared)

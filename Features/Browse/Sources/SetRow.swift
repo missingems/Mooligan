@@ -23,7 +23,7 @@ struct SetRow: View {
           IconLazyImage(viewModel.iconUrl).frame(width: 34, height: 34, alignment: .center)
           
           VStack(alignment: .leading, spacing: 3.0) {
-            Text(viewModel.title).multilineTextAlignment(.leading)
+            Text(viewModel.attributedTitle).multilineTextAlignment(.leading)
             
             HStack(spacing: 5.0) {
               PillText(viewModel.id).font(.caption).monospaced()

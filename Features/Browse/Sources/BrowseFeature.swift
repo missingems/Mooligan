@@ -9,6 +9,14 @@ import ScryfallKit
   public var body: some ReducerOf<Self> {
     Reduce { state, action in
       switch action {
+      case .binding(\.query):
+        return .run { [state] send in
+          await send(.searchSets(state.query))
+        }.cancellable(id: "searchSets", cancelInFlight: true)
+        
+      case .binding:
+        return .none
+        
       case let .didSelectSet(value):
         state.selectedSet = value
         return .none
@@ -18,10 +26,16 @@ import ScryfallKit
           try await send(.updateSets(client.getAllSets()))
         }
         
+      case let .searchSets(query):
+        return .run { send in
+          let sets = try await client.getSets(queryType: .name(query))
+          await send(.updateSets(sets), animation: .default)
+        }
+        
       case .viewAppeared:
         return if state.sets.isEmpty {
           .run { send in
-            await send(.fetchSets)
+            await send(.fetchSets(.all))
           }
         } else {
           .none
@@ -41,6 +55,8 @@ public extension BrowseFeature {
   @ObservableState struct State: Equatable {
     var selectedSet: MTGSet?
     var sets: IdentifiedArrayOf<MTGSet>
+    var query = ""
+    var queryPlaceholder = String(localized: "Enter set name...")
     
     public init(
       selectedSet: MTGSet?,
@@ -51,9 +67,11 @@ public extension BrowseFeature {
     }
   }
   
-  enum Action: Equatable {
+  enum Action: Equatable, BindableAction {
+    case binding(BindingAction<State>)
     case didSelectSet(MTGSet)
-    case fetchSets
+    case fetchSets(GameSetQueryType)
+    case searchSets(String)
     case viewAppeared
     case updateSets([MTGSet])
   }
