@@ -44,14 +44,13 @@ extension ScryfallClient: GameSetRequestClient {
     } else {
       let value = try await getSets().data.folded().filter { _value in
         let parentContainName = _value.model.name.range(of: name, options: .caseInsensitive) != nil
-        let childContainsName = _value.folders.sorted(by: { $0.model.date > $1.model.date })
+        let childContainsName = _value.folders.sorted(by: { $0.model.date > $1.model.date && $0.model.name > $1.model.name })
           .flatMap { $0.flattened() }.contains { $0.name.range(of: name, options: .caseInsensitive) != nil }
         
         return parentContainName || childContainsName
       }
       
       return value
-        .sorted(by: { $0.model.date > $1.model.date })
         .flatMap { $0.flattened() }
     }
   }
@@ -84,7 +83,7 @@ private extension Array where Element == MTGSet {
     for folder in foldersByCode.values {
       if let parentCode = folder.model.parentSetCode, let parentFolder = foldersByCode[parentCode] {
         parentFolder.folders.append(folder)
-        parentFolder.folders = parentFolder.folders.sorted(by: { $0.model.date > $1.model.date })
+        parentFolder.folders = parentFolder.folders.sorted(by: { $0.model.date > $1.model.date && $0.model.name > $1.model.name })
       } else {
         rootFolders.append(folder)
       }

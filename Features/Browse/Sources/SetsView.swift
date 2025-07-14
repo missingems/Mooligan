@@ -15,6 +15,7 @@ struct SetsView: View {
         viewModel: SetRow.ViewModel(
           set: set,
           selectedSet: nil,
+          highlightedText: store.query,
           index: index
         )
       ) {
