@@ -15,7 +15,7 @@ struct MooliganApp: App {
   
   var body: some Scene {
     WindowGroup {
-      RootView(store: Store(initialState: Feature.State(sets: .init(selectedSet: nil, sets: []))) {
+      RootView(store: Store(initialState: Feature.State(sets: .init(selectedSet: nil))) {
         Feature()
       })
     }

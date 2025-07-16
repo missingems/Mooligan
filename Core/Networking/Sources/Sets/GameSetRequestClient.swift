@@ -4,14 +4,12 @@ import ScryfallKit
 
 
 public protocol GameSetRequestClient: Sendable {
-  func getAllSets() async throws -> [MTGSet]
-  func getSets(queryType: GameSetQueryType) async throws -> [MTGSet]
-  func searchSets(containing name: String) async throws -> [MTGSet]
+  func getSets(queryType: GameSetQueryType) async throws -> ([ScryfallClient.SetsSection], [MTGSet])
 }
 
 public enum GameSetQueryType: Equatable {
   case all
-  case name(String)
+  case name(String, [MTGSet])
 }
 
 public enum GameSetRequestClientKey: DependencyKey {
@@ -28,49 +26,75 @@ public extension DependencyValues {
 }
 
 extension ScryfallClient: GameSetRequestClient {
-  public func getSets(queryType: GameSetQueryType) async throws -> [MTGSet] {
-    return switch queryType {
-    case .all:
-      try await getAllSets()
-      
-    case let .name(string):
-      try await searchSets(containing: string)
+  public struct SetsSection: Equatable, Identifiable {
+    public var id: Date {
+      return self.date
     }
+    public let date: Date
+    public let sets: [MTGSet]
   }
   
-  public func searchSets(containing name: String) async throws -> [MTGSet] {
-    if name.isEmpty {
-      return try await getAllSets()
-    } else {
-      let value = try await getSets().data.folded().filter { _value in
+  public func getSets(queryType: GameSetQueryType) async throws -> ([ScryfallClient.SetsSection], [MTGSet]) {
+    switch queryType {
+    case .all:
+      let sets = try await getSets().data
+      let foldeded = sets.filter { !$0.digital }.folded()
+      
+      let grouped = Dictionary(grouping: foldeded) { folder in
+        return folder.model.date
+      }
+      
+      let sortedGroups = grouped.keys.sorted(by: >).map { date in
+        return SetsSection(date: date, sets: grouped[date]!
+          .flatMap { $0.flattened() })
+      }
+      
+      return (sortedGroups, sets)
+      
+    case let .name(name, existingSets):
+      let sets: [MTGSet]
+      
+      if existingSets.isEmpty == false {
+        sets = existingSets
+      } else {
+        sets = try await getSets().data
+      }
+      
+      let foldeded = sets.filter { !$0.digital }.folded()
+      
+      let date = Date()
+      
+      var filteredSets = sets.filter { !$0.digital }.folded().filter { _value in
         let parentContainName = _value.model.name.range(of: name, options: .caseInsensitive) != nil
-        let childContainsName = _value.folders.sorted(by: { $0.model.date > $1.model.date && $0.model.name > $1.model.name })
-          .flatMap { $0.flattened() }.contains { $0.name.range(of: name, options: .caseInsensitive) != nil }
+        
+        let childContainsName = _value.folders.flatMap {
+          $0.flattened()
+        }.contains {
+          $0.name.range(of: name, options: .caseInsensitive) != nil
+        }
         
         return parentContainName || childContainsName
       }
       
-      return value
-        .flatMap { $0.flattened() }
+      if filteredSets.isEmpty {
+        filteredSets = sets.folded()
+      }
+      
+      let grouped = Dictionary(grouping: filteredSets) { folder in
+        return folder.model.date
+      }
+      
+      let sortedGroups = grouped.keys.sorted(by: >).map { date in
+        return SetsSection(date: date, sets: grouped[date]!
+          .flatMap { $0.flattened() })
+      }
+      print("Date diff: ", Date().timeIntervalSince(date))
+      return (sortedGroups, sets)
     }
-  }
-  
-  public func getAllSets() async throws -> [MTGSet] {
-    return try await getSets().data.filter { !$0.digital }.flattened()
   }
 }
 
 private extension Array where Element == MTGSet {
-  func filteredByName(_ name: String) async -> [MTGSet] {
-    return []
-  }
-  
-  func flattened() async -> [MTGSet] {
-    return folded()
-      .sorted(by: { $0.model.date > $1.model.date })
-      .flatMap { $0.flattened() }
-  }
-  
   func folded() -> [Folder<MTGSet>] {
     var foldersByCode = [String: Folder<MTGSet>]()
     var rootFolders = [Folder<MTGSet>]()
@@ -90,6 +114,7 @@ private extension Array where Element == MTGSet {
     }
     
     return rootFolders
+      .sorted(by: { $0.model.date > $1.model.date })
   }
 }
 
