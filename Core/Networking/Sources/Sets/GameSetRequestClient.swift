@@ -44,9 +44,12 @@ extension ScryfallClient: GameSetRequestClient {
         return folder.model.date
       }
       
-      let sortedGroups = grouped.keys.sorted(by: >).map { date in
-        return SetsSection(date: date, sets: grouped[date]!
-          .flatMap { $0.flattened() })
+      let sortedGroups = grouped.keys.sorted(by: >).compactMap { date in
+        if let sets = grouped[date] {
+          return SetsSection(date: date, sets: sets.flatMap { $0.flattened() })
+        } else {
+          return nil
+        }
       }
       
       return (sortedGroups, sets)
@@ -59,10 +62,6 @@ extension ScryfallClient: GameSetRequestClient {
       } else {
         sets = try await getSets().data
       }
-      
-      let foldeded = sets.filter { !$0.digital }.folded()
-      
-      let date = Date()
       
       var filteredSets = sets.filter { !$0.digital }.folded().filter { _value in
         let parentContainName = _value.model.name.range(of: name, options: .caseInsensitive) != nil
@@ -84,11 +83,14 @@ extension ScryfallClient: GameSetRequestClient {
         return folder.model.date
       }
       
-      let sortedGroups = grouped.keys.sorted(by: >).map { date in
-        return SetsSection(date: date, sets: grouped[date]!
-          .flatMap { $0.flattened() })
+      let sortedGroups = grouped.keys.sorted(by: >).compactMap { date in
+        if let sets = grouped[date] {
+          return SetsSection(date: date, sets: sets.flatMap { $0.flattened() })
+        } else {
+          return nil
+        }
       }
-      print("Date diff: ", Date().timeIntervalSince(date))
+      
       return (sortedGroups, sets)
     }
   }
@@ -107,14 +109,12 @@ private extension Array where Element == MTGSet {
     for folder in foldersByCode.values {
       if let parentCode = folder.model.parentSetCode, let parentFolder = foldersByCode[parentCode] {
         parentFolder.folders.append(folder)
-        parentFolder.folders = parentFolder.folders.sorted(by: { $0.model.date > $1.model.date && $0.model.name > $1.model.name })
       } else {
         rootFolders.append(folder)
       }
     }
     
     return rootFolders
-      .sorted(by: { $0.model.date > $1.model.date })
   }
 }
 
