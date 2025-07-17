@@ -83,3 +83,37 @@ public extension BrowseFeature {
     case updateSetSections(sections: [ScryfallClient.SetsSection], flattened: [MTGSet])
   }
 }
+
+public extension BrowseFeature.State {
+  enum Mode: Equatable {
+    case placeholder
+    case data
+    case loading
+    
+    var isPlaceholder: Bool {
+      switch self {
+      case .placeholder:
+        return true
+        
+      case .data:
+        return false
+        
+      case .loading:
+        return false
+      }
+    }
+    
+    var isScrollable: Bool {
+      switch self {
+      case .placeholder:
+        return false
+        
+      case .data:
+        return true
+        
+      case .loading:
+        return false
+      }
+    }
+  }
+}
