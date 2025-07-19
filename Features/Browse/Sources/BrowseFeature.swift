@@ -42,7 +42,7 @@ import ScryfallKit
         }.cancellable(id: "searchSets", cancelInFlight: true)
         
       case .viewAppeared:
-        return if state.mode.data.isEmpty == true {
+        return if state.mode.isPlaceholder == true {
           .run { send in
             await send(.fetchSets(.all))
           }
@@ -64,7 +64,7 @@ import ScryfallKit
 public extension BrowseFeature {
   @ObservableState struct State: Equatable {
     var sets: [MTGSet] = []
-    var mode: Mode = .placeholder([])
+    var mode: Mode = .placeholder(.init(uniqueElements: MockGameSetRequestClient.mocksSetSections))
     var selectedSet: MTGSet?
     var query = ""
     var queryPlaceholder = String(localized: "Enter set name...")

@@ -14,15 +14,12 @@ import Foundation
 @Reducer struct Feature {
   enum TabInfo: Equatable, CaseIterable, Identifiable {
     case sets
-    case search
     case game
     case collection
     case settings
     
     var title: String {
       switch self {
-      case .search:
-        return String(localized: "Search")
       case .sets:
         return String(localized: "Sets")
       case .game:
@@ -36,8 +33,6 @@ import Foundation
     
     var systemIconName: String {
       switch self {
-      case .search:
-        return "magnifyingglass.circle"
       case .sets:
         return "text.page"
       case .game:

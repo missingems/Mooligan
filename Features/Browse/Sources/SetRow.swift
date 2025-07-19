@@ -35,7 +35,7 @@ struct SetRow: View {
         }
         .padding(
           EdgeInsets(
-            top: 8,
+            top: 11,
             leading: 13,
             bottom: 11,
             trailing: 13

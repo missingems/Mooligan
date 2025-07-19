@@ -106,6 +106,9 @@ struct SetsView: View {
       }
       .listStyle(.plain)
       .listSectionSeparator(.hidden)
+      .redacted(reason: store.mode.isPlaceholder ? .placeholder : [])
+      .scrollDisabled(store.mode.isPlaceholder)
+      .allowsHitTesting(store.mode.isPlaceholder == false)
       .searchable(
         text: Binding(get: {
           store.query
