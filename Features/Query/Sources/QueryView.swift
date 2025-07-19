@@ -66,7 +66,6 @@ struct QueryView: View {
     .navigationBarTitleDisplayMode(.inline)
     .navigationTitle(store.title)
     .toolbar { toolbar }
-    .background { Color(.secondarySystemBackground).ignoresSafeArea() }
     .task { store.send(.viewAppeared) }
   }
   

@@ -10,8 +10,8 @@ import ScryfallKit
     Reduce { state, action in
       switch action {
       case .binding(\.query):
-        return .run { [state] send in
-          await send(.searchSets(state.query))
+        return .run { [query = state.query, sets = state.sets] send in
+          await send(.searchSets(.name(query, sets)))
         }.debounce(id: "queryDebounce", for: .milliseconds(300), scheduler: DispatchQueue.main)
         
       case .binding:
@@ -21,19 +21,9 @@ import ScryfallKit
         state.selectedSet = value
         return .none
         
-      case .fetchSets:
-        return .run { send in
-          let value = try await client.getSets(queryType: .all)
-          
-          await send(
-            .updateSetSections(sections: value.0, flattened: value.1),
-            animation: .default
-          )
-        }.cancellable(id: "fetchSets", cancelInFlight: true)
-        
       case let .searchSets(query):
-        return .run { [sets = state.sets] send in
-          let value = try await client.getSets(queryType: .name(query, sets))
+        return .run { send in
+          let value = try await client.getSets(queryType: query)
           
           await send(
             .updateSetSections(sections: value.0, flattened: value.1),
@@ -42,9 +32,9 @@ import ScryfallKit
         }.cancellable(id: "searchSets", cancelInFlight: true)
         
       case .viewAppeared:
-        return if state.mode.isPlaceholder == true {
+        return if state.mode.isPlaceholder {
           .run { send in
-            await send(.fetchSets(.all))
+            await send(.searchSets(.all))
           }
         } else {
           .none
@@ -79,8 +69,7 @@ public extension BrowseFeature {
   enum Action: Equatable, BindableAction {
     case binding(BindingAction<State>)
     case didSelectSet(MTGSet)
-    case fetchSets(GameSetQueryType)
-    case searchSets(String)
+    case searchSets(GameSetQueryType)
     case viewAppeared
     case updateSetSections(sections: [ScryfallClient.SetsSection], flattened: [MTGSet])
   }

@@ -36,7 +36,6 @@ extension ScryfallClient: GameSetRequestClient {
     switch queryType {
     case .all:
       let sets = try await getSets().data
-      let date = Date()
       
       let foldeded = sets.filter {
         !$0.digital

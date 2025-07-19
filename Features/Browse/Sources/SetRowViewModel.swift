@@ -37,8 +37,9 @@ extension SetRow {
         var attributedTitle = AttributedString(set.name)
         
         if let attributedRange = attributedTitle.range(of: highlight, options: .caseInsensitive) {
-          attributedTitle[attributedRange].backgroundColor = .yellow
+          attributedTitle[attributedRange].backgroundColor = .yellow.opacity(0.8)
           attributedTitle[attributedRange].font = .body.bold()
+          attributedTitle[attributedRange].foregroundColor = .black
         }
         
         self.attributedTitle = attributedTitle
