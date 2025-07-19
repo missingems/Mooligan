@@ -109,17 +109,6 @@ struct SetsView: View {
       .redacted(reason: store.mode.isPlaceholder ? .placeholder : [])
       .scrollDisabled(store.mode.isPlaceholder)
       .allowsHitTesting(store.mode.isPlaceholder == false)
-      .searchable(
-        text: Binding(get: {
-          store.query
-        }, set: { value in
-          if store.query != value {
-            store.query = value
-          }
-        }),
-        placement: .navigationBarDrawer(displayMode: .always),
-        prompt: store.queryPlaceholder
-      )
       .task {
         store.send(.viewAppeared)
       }
