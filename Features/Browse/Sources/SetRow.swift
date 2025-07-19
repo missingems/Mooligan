@@ -5,8 +5,8 @@ struct SetRow: View {
   private let viewModel: ViewModel
   private var onSelect: () -> ()
   
-  var topCornerRadii: CGFloat { viewModel.isFirst ? 13.0 : 2 }
-  var bottomCornerRadii: CGFloat { viewModel.isLast ? 13.0 : 2 }
+  var topCornerRadii: CGFloat { viewModel.isFirst ? 21 : 0 }
+  var bottomCornerRadii: CGFloat { viewModel.isLast ? 21 : 0 }
   
   var body: some View {
     Button(
@@ -15,14 +15,6 @@ struct SetRow: View {
       },
       label: {
         HStack(spacing: 13) {
-          if viewModel.shouldShowIndentIndicator {
-            Image(systemName: viewModel.childIndicatorImageName)
-              .fontWeight(.medium)
-              .imageScale(.small)
-              .foregroundStyle(.tertiary)
-              .frame(width: 34, height: 34)
-          }
-          
           IconLazyImage(viewModel.iconUrl).frame(width: 34, height: 34, alignment: .center)
           
           VStack(alignment: .leading, spacing: 3.0) {

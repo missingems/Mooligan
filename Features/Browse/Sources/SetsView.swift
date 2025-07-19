@@ -49,19 +49,35 @@ struct SetsView: View {
             let isFirstOfSection = index == 0
             let isLastOfSection = index == value.sets.count - 1
             
+            var hasSeparator: Bool {
+              if isFirstOfSection, isLastOfSection {
+                return false
+              }
+              
+              if isFirstOfSection, set.parentSetCode == nil {
+                return false
+              }
+              
+              if set.parentSetCode == nil {
+                return false
+              } else {
+                return true
+              }
+            }
+            
             var insets: EdgeInsets {
               if isFirstOfSection, isLastOfSection {
                 return EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)
               }
               
               if isFirstOfSection, set.parentSetCode == nil {
-                return EdgeInsets(top: 0, leading: 0, bottom: 1, trailing: 0)
+                return EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)
               }
               
               if set.parentSetCode == nil {
-                return EdgeInsets(top: 8, leading: 0, bottom: 1, trailing: 0)
+                return EdgeInsets(top: 8, leading: 0, bottom: 0, trailing: 0)
               } else {
-                return EdgeInsets(top: 0, leading: 0, bottom: 1, trailing: 0)
+                return EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)
               }
             }
             
@@ -71,16 +87,21 @@ struct SetsView: View {
               index: index
             )
             
-            SetRow(viewModel: viewModel) {
-              store.send(.didSelectSet(set))
+            ZStack(alignment: .top) {
+              if hasSeparator {
+                Divider().padding(.leading, 60.0)
+              }
+              
+              SetRow(viewModel: viewModel) {
+                store.send(.didSelectSet(set))
+              }
             }
-            .listSectionSpacing(13.0)
             .listRowSeparator(.hidden)
             .listRowInsets(insets)
             .safeAreaPadding(.horizontal, nil)
           }
         } header: {
-          Text(value.displayDate)
+          Text(value.displayDate).padding(.vertical, 5.0)
         }
       }
       .listStyle(.plain)
