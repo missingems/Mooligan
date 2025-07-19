@@ -36,7 +36,18 @@ extension ScryfallClient: GameSetRequestClient {
     switch queryType {
     case .all:
       let sets = try await getSets().data
-      let foldeded = sets.filter { !$0.digital }.folded()
+      let date = Date()
+      
+      let foldeded = sets.filter {
+        !$0.digital
+      }.folded().filter {
+        $0.model.cardCount != 0 || $0.folders.flatMap {
+          $0.flattened()
+        }
+        .contains {
+          $0.cardCount != 0
+        }
+      }
       
       let grouped = Dictionary(grouping: foldeded) { folder in
         return folder.model.date
@@ -64,7 +75,7 @@ extension ScryfallClient: GameSetRequestClient {
         sets = try await getSets().data
       }
       
-      var filteredSets = sets.filter { !$0.digital }.folded().filter { _value in
+      var filteredSets = sets.filter { !$0.digital }.folded().filter { $0.model.cardCount != 0 }.filter { _value in
         let parentContainName = _value.model.name.range(of: name, options: .caseInsensitive) != nil
         
         let childContainsName = _value.folders.flatMap {
