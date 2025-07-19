@@ -56,7 +56,7 @@ extension ScryfallClient: GameSetRequestClient {
         if let sets = grouped[date] {
           return SetsSection(
             displayDate: date.formatted(date: .abbreviated, time: .omitted),
-            sets: sets.flatMap { $0.flattened() }
+            sets: sets.sorted { $0.model.name > $1.model.name }.flatMap { $0.flattened() }
           )
         } else {
           return nil
@@ -74,7 +74,18 @@ extension ScryfallClient: GameSetRequestClient {
         sets = try await getSets().data
       }
       
-      var filteredSets = sets.filter { !$0.digital }.folded().filter { $0.model.cardCount != 0 }.filter { _value in
+      let foldeded = sets.filter {
+        !$0.digital
+      }.folded().filter {
+        $0.model.cardCount != 0 || $0.folders.flatMap {
+          $0.flattened()
+        }
+        .contains {
+          $0.cardCount != 0
+        }
+      }
+      
+      var filteredSets = foldeded.filter { _value in
         let parentContainName = _value.model.name.range(of: name, options: .caseInsensitive) != nil
         
         let childContainsName = _value.folders.flatMap {
@@ -87,7 +98,7 @@ extension ScryfallClient: GameSetRequestClient {
       }
       
       if filteredSets.isEmpty {
-        filteredSets = sets.folded()
+        filteredSets = foldeded
       }
       
       let grouped = Dictionary(grouping: filteredSets) { folder in
@@ -98,7 +109,7 @@ extension ScryfallClient: GameSetRequestClient {
         if let sets = grouped[date] {
           return SetsSection(
             displayDate: date.formatted(date: .abbreviated, time: .omitted),
-            sets: sets.flatMap { $0.flattened() }
+            sets: sets.sorted { $0.model.name > $1.model.name }.flatMap { $0.flattened() }
           )
         } else {
           return nil
