@@ -27,10 +27,8 @@ public extension DependencyValues {
 
 extension ScryfallClient: GameSetRequestClient {
   public struct SetsSection: Equatable, Identifiable {
-    public var id: Date {
-      return self.date
-    }
-    public let date: Date
+    public var id = UUID()
+    public let displayDate: String
     public let sets: [MTGSet]
   }
   
@@ -38,7 +36,17 @@ extension ScryfallClient: GameSetRequestClient {
     switch queryType {
     case .all:
       let sets = try await getSets().data
-      let foldeded = sets.filter { !$0.digital }.folded()
+      
+      let foldeded = sets.filter {
+        !$0.digital
+      }.folded().filter {
+        $0.model.cardCount != 0 || $0.folders.flatMap {
+          $0.flattened()
+        }
+        .contains {
+          $0.cardCount != 0
+        }
+      }
       
       let grouped = Dictionary(grouping: foldeded) { folder in
         return folder.model.date
@@ -46,7 +54,10 @@ extension ScryfallClient: GameSetRequestClient {
       
       let sortedGroups = grouped.keys.sorted(by: >).compactMap { date in
         if let sets = grouped[date] {
-          return SetsSection(date: date, sets: sets.flatMap { $0.flattened() })
+          return SetsSection(
+            displayDate: date.formatted(date: .abbreviated, time: .omitted),
+            sets: sets.flatMap { $0.flattened() }
+          )
         } else {
           return nil
         }
@@ -63,7 +74,7 @@ extension ScryfallClient: GameSetRequestClient {
         sets = try await getSets().data
       }
       
-      var filteredSets = sets.filter { !$0.digital }.folded().filter { _value in
+      var filteredSets = sets.filter { !$0.digital }.folded().filter { $0.model.cardCount != 0 }.filter { _value in
         let parentContainName = _value.model.name.range(of: name, options: .caseInsensitive) != nil
         
         let childContainsName = _value.folders.flatMap {
@@ -85,7 +96,10 @@ extension ScryfallClient: GameSetRequestClient {
       
       let sortedGroups = grouped.keys.sorted(by: >).compactMap { date in
         if let sets = grouped[date] {
-          return SetsSection(date: date, sets: sets.flatMap { $0.flattened() })
+          return SetsSection(
+            displayDate: date.formatted(date: .abbreviated, time: .omitted),
+            sets: sets.flatMap { $0.flattened() }
+          )
         } else {
           return nil
         }

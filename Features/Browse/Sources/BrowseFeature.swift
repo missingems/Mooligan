@@ -10,8 +10,8 @@ import ScryfallKit
     Reduce { state, action in
       switch action {
       case .binding(\.query):
-        return .run { [state] send in
-          await send(.searchSets(state.query))
+        return .run { [query = state.query, sets = state.sets] send in
+          await send(.searchSets(.name(query, sets)))
         }.debounce(id: "queryDebounce", for: .milliseconds(300), scheduler: DispatchQueue.main)
         
       case .binding:
@@ -21,19 +21,9 @@ import ScryfallKit
         state.selectedSet = value
         return .none
         
-      case .fetchSets:
-        return .run { send in
-          let value = try await client.getSets(queryType: .all)
-          
-          await send(
-            .updateSetSections(sections: value.0, flattened: value.1),
-            animation: .default
-          )
-        }.cancellable(id: "fetchSets", cancelInFlight: true)
-        
       case let .searchSets(query):
-        return .run { [sets = state.sets] send in
-          let value = try await client.getSets(queryType: .name(query, sets))
+        return .run { send in
+          let value = try await client.getSets(queryType: query)
           
           await send(
             .updateSetSections(sections: value.0, flattened: value.1),
@@ -42,9 +32,9 @@ import ScryfallKit
         }.cancellable(id: "searchSets", cancelInFlight: true)
         
       case .viewAppeared:
-        return if state.sections.isEmpty {
+        return if state.mode.isPlaceholder {
           .run { send in
-            await send(.fetchSets(.all))
+            await send(.searchSets(.all))
           }
         } else {
           .none
@@ -52,7 +42,7 @@ import ScryfallKit
         
       case let .updateSetSections(folder, flattened):
         state.sets = flattened
-        state.sections = IdentifiedArrayOf(uniqueElements: folder)
+        state.mode = .data(IdentifiedArrayOf(uniqueElements: folder))
         return .none
       }
     }
@@ -63,13 +53,15 @@ import ScryfallKit
 
 public extension BrowseFeature {
   @ObservableState struct State: Equatable {
-    var selectedSet: MTGSet?
     var sets: [MTGSet] = []
+    var mode: Mode = .placeholder(.init(uniqueElements: MockGameSetRequestClient.mocksSetSections))
+    var selectedSet: MTGSet?
     var query = ""
     var queryPlaceholder = String(localized: "Enter set name...")
-    var sections: IdentifiedArrayOf<ScryfallClient.SetsSection> = []
     
-    public init(selectedSet: MTGSet?) {
+    public init(
+      selectedSet: MTGSet?
+    ) {
       self.selectedSet = selectedSet
     }
   }
@@ -77,9 +69,45 @@ public extension BrowseFeature {
   enum Action: Equatable, BindableAction {
     case binding(BindingAction<State>)
     case didSelectSet(MTGSet)
-    case fetchSets(GameSetQueryType)
-    case searchSets(String)
+    case searchSets(GameSetQueryType)
     case viewAppeared
     case updateSetSections(sections: [ScryfallClient.SetsSection], flattened: [MTGSet])
+  }
+}
+
+public extension BrowseFeature.State {
+  enum Mode: Equatable {
+    case placeholder(IdentifiedArrayOf<ScryfallClient.SetsSection>)
+    case data(IdentifiedArrayOf<ScryfallClient.SetsSection>)
+    
+    var isPlaceholder: Bool {
+      switch self {
+      case .placeholder:
+        return true
+        
+      case .data:
+        return false
+      }
+    }
+    
+    var isScrollable: Bool {
+      switch self {
+      case .placeholder:
+        return false
+        
+      case .data:
+        return true
+      }
+    }
+    
+    var data: IdentifiedArrayOf<ScryfallClient.SetsSection> {
+      switch self {
+      case let .placeholder(value):
+        return value
+        
+      case let .data(value):
+        return value
+      }
+    }
   }
 }

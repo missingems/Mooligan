@@ -48,9 +48,6 @@ struct RootView: View {
           case .game:
             Text(info.title)
             
-          case .search:
-            Text(info.title)
-            
           case .collection:
             Text(info.title)
             

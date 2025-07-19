@@ -5,6 +5,9 @@ struct SetRow: View {
   private let viewModel: ViewModel
   private var onSelect: () -> ()
   
+  var topCornerRadii: CGFloat { viewModel.isFirst ? 21 : 0 }
+  var bottomCornerRadii: CGFloat { viewModel.isLast ? 21 : 0 }
+  
   var body: some View {
     Button(
       action: {
@@ -12,14 +15,6 @@ struct SetRow: View {
       },
       label: {
         HStack(spacing: 13) {
-          if viewModel.shouldShowIndentIndicator {
-            Image(systemName: viewModel.childIndicatorImageName)
-              .fontWeight(.medium)
-              .imageScale(.small)
-              .foregroundStyle(.tertiary)
-              .frame(width: 34, height: 34)
-          }
-          
           IconLazyImage(viewModel.iconUrl).frame(width: 34, height: 34, alignment: .center)
           
           VStack(alignment: .leading, spacing: 3.0) {
@@ -40,14 +35,23 @@ struct SetRow: View {
         }
         .padding(
           EdgeInsets(
-            top: viewModel.shouldSetBackground ? 8 : 11,
+            top: 11,
             leading: 13,
-            bottom: viewModel.shouldSetBackground ? 11 : 13,
+            bottom: 11,
             trailing: 13
           )
         )
-        .background { viewModel.shouldSetBackground ? Color(.tertiarySystemFill) : Color.clear }
-        .clipShape(RoundedRectangle(cornerRadius: 13.0))
+        .background { Color(.tertiarySystemFill) }
+        .clipShape(
+          UnevenRoundedRectangle(
+            cornerRadii: RectangleCornerRadii(
+              topLeading: topCornerRadii,
+              bottomLeading: bottomCornerRadii,
+              bottomTrailing: bottomCornerRadii,
+              topTrailing: topCornerRadii
+            )
+          )
+        )
       }
     )
     .buttonStyle(.sinkableButtonStyle)
@@ -57,5 +61,4 @@ struct SetRow: View {
     self.viewModel = viewModel
     self.onSelect = onSelect
   }
-  
 }
