@@ -42,7 +42,7 @@ import ScryfallKit
         }.cancellable(id: "searchSets", cancelInFlight: true)
         
       case .viewAppeared:
-        return if state.sections.isEmpty {
+        return if state.mode.data.isEmpty == true {
           .run { send in
             await send(.fetchSets(.all))
           }
@@ -52,7 +52,7 @@ import ScryfallKit
         
       case let .updateSetSections(folder, flattened):
         state.sets = flattened
-        state.sections = IdentifiedArrayOf(uniqueElements: folder)
+        state.mode = .data(IdentifiedArrayOf(uniqueElements: folder))
         return .none
       }
     }
@@ -63,13 +63,15 @@ import ScryfallKit
 
 public extension BrowseFeature {
   @ObservableState struct State: Equatable {
-    var selectedSet: MTGSet?
     var sets: [MTGSet] = []
+    var mode: Mode = .placeholder([])
+    var selectedSet: MTGSet?
     var query = ""
     var queryPlaceholder = String(localized: "Enter set name...")
-    var sections: IdentifiedArrayOf<ScryfallClient.SetsSection> = []
     
-    public init(selectedSet: MTGSet?) {
+    public init(
+      selectedSet: MTGSet?
+    ) {
       self.selectedSet = selectedSet
     }
   }
@@ -86,9 +88,8 @@ public extension BrowseFeature {
 
 public extension BrowseFeature.State {
   enum Mode: Equatable {
-    case placeholder
-    case data
-    case loading
+    case placeholder(IdentifiedArrayOf<ScryfallClient.SetsSection>)
+    case data(IdentifiedArrayOf<ScryfallClient.SetsSection>)
     
     var isPlaceholder: Bool {
       switch self {
@@ -96,9 +97,6 @@ public extension BrowseFeature.State {
         return true
         
       case .data:
-        return false
-        
-      case .loading:
         return false
       }
     }
@@ -110,9 +108,16 @@ public extension BrowseFeature.State {
         
       case .data:
         return true
+      }
+    }
+    
+    var data: IdentifiedArrayOf<ScryfallClient.SetsSection> {
+      switch self {
+      case let .placeholder(value):
+        return value
         
-      case .loading:
-        return false
+      case let .data(value):
+        return value
       }
     }
   }

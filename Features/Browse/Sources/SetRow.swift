@@ -5,6 +5,9 @@ struct SetRow: View {
   private let viewModel: ViewModel
   private var onSelect: () -> ()
   
+  var topCornerRadii: CGFloat { viewModel.isFirst ? 13.0 : 2 }
+  var bottomCornerRadii: CGFloat { viewModel.isLast ? 13.0 : 2 }
+  
   var body: some View {
     Button(
       action: {
@@ -40,14 +43,23 @@ struct SetRow: View {
         }
         .padding(
           EdgeInsets(
-            top: viewModel.shouldSetBackground ? 8 : 11,
+            top: 8,
             leading: 13,
-            bottom: viewModel.shouldSetBackground ? 11 : 13,
+            bottom: 11,
             trailing: 13
           )
         )
-        .background { viewModel.shouldSetBackground ? Color(.tertiarySystemFill) : Color.clear }
-        .clipShape(RoundedRectangle(cornerRadius: 13.0))
+        .background { Color(.tertiarySystemFill) }
+        .clipShape(
+          UnevenRoundedRectangle(
+            cornerRadii: RectangleCornerRadii(
+              topLeading: topCornerRadii,
+              bottomLeading: bottomCornerRadii,
+              bottomTrailing: bottomCornerRadii,
+              topTrailing: topCornerRadii
+            )
+          )
+        )
       }
     )
     .buttonStyle(.sinkableButtonStyle)
@@ -57,5 +69,4 @@ struct SetRow: View {
     self.viewModel = viewModel
     self.onSelect = onSelect
   }
-  
 }

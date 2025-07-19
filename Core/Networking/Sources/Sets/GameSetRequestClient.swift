@@ -27,10 +27,8 @@ public extension DependencyValues {
 
 extension ScryfallClient: GameSetRequestClient {
   public struct SetsSection: Equatable, Identifiable {
-    public var id: Date {
-      return self.date
-    }
-    public let date: Date
+    public var id = UUID()
+    public let displayDate: String
     public let sets: [MTGSet]
   }
   
@@ -46,7 +44,10 @@ extension ScryfallClient: GameSetRequestClient {
       
       let sortedGroups = grouped.keys.sorted(by: >).compactMap { date in
         if let sets = grouped[date] {
-          return SetsSection(date: date, sets: sets.flatMap { $0.flattened() })
+          return SetsSection(
+            displayDate: date.formatted(date: .abbreviated, time: .omitted),
+            sets: sets.flatMap { $0.flattened() }
+          )
         } else {
           return nil
         }
@@ -85,7 +86,10 @@ extension ScryfallClient: GameSetRequestClient {
       
       let sortedGroups = grouped.keys.sorted(by: >).compactMap { date in
         if let sets = grouped[date] {
-          return SetsSection(date: date, sets: sets.flatMap { $0.flattened() })
+          return SetsSection(
+            displayDate: date.formatted(date: .abbreviated, time: .omitted),
+            sets: sets.flatMap { $0.flattened() }
+          )
         } else {
           return nil
         }
