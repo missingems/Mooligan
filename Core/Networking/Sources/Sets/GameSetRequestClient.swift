@@ -2,7 +2,6 @@ import ComposableArchitecture
 import Foundation
 import ScryfallKit
 
-
 public protocol GameSetRequestClient: Sendable {
   func getSets(queryType: GameSetQueryType) async throws -> ([ScryfallClient.SetsSection], [MTGSet])
 }
@@ -37,7 +36,7 @@ extension ScryfallClient: GameSetRequestClient {
     case .all:
       let sets = try await getSets().data
       
-      let foldeded = sets.filter {
+      let folded = sets.filter {
         $0.digital == false
       }.folded().filter {
         $0.model.cardCount != 0 || $0.folders.flatMap {
@@ -48,7 +47,7 @@ extension ScryfallClient: GameSetRequestClient {
         }
       }
       
-      let grouped = Dictionary(grouping: foldeded) { folder in
+      let grouped = Dictionary(grouping: folded) { folder in
         return folder.model.date
       }
       
@@ -56,7 +55,7 @@ extension ScryfallClient: GameSetRequestClient {
         if let sets = grouped[date] {
           return SetsSection(
             displayDate: date.formatted(date: .abbreviated, time: .omitted),
-            sets: sets.sorted { $0.model.name > $1.model.name }.flatMap { $0.flattened() }
+            sets: sets.sorted { $0.model.cardCount > $1.model.cardCount }.flatMap { $0.flattened() }
           )
         } else {
           return nil
@@ -109,7 +108,7 @@ extension ScryfallClient: GameSetRequestClient {
         if let sets = grouped[date] {
           return SetsSection(
             displayDate: date.formatted(date: .abbreviated, time: .omitted),
-            sets: sets.sorted { $0.model.name > $1.model.name }.flatMap { $0.flattened() }
+            sets: sets.sorted { $0.model.cardCount < $1.model.cardCount }.flatMap { $0.flattened() }
           )
         } else {
           return nil
@@ -123,17 +122,13 @@ extension ScryfallClient: GameSetRequestClient {
 
 private extension Array where Element == MTGSet {
   func folded() -> [Folder<MTGSet>] {
-    var foldersByCode = [String: Folder<MTGSet>]()
+    let foldersByCode = Dictionary(uniqueKeysWithValues: self.map { ($0.code, Folder(model: $0)) })
     var rootFolders = [Folder<MTGSet>]()
-    
-    for folderInfo in self {
-      let folder = Folder(model: folderInfo)
-      foldersByCode[folderInfo.code] = folder
-    }
     
     for folder in foldersByCode.values {
       if let parentCode = folder.model.parentSetCode, let parentFolder = foldersByCode[parentCode] {
         parentFolder.folders.append(folder)
+        parentFolder.folders = parentFolder.folders.sorted { $0.model.name > $1.model.name }
       } else {
         rootFolders.append(folder)
       }
