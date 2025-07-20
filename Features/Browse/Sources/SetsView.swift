@@ -101,7 +101,21 @@ struct SetsView: View {
             .safeAreaPadding(.horizontal, nil)
           }
         } header: {
-          Text(value.displayDate).padding(.vertical, 5.0)
+          HStack {
+            Text(value.displayDate)
+            
+            Spacer()
+            
+            if value.isUpcomingSet {
+              PillText(
+                String(localized: "UPCOMING"),
+                background: Color(.tertiarySystemFill)
+              )
+              .font(.caption)
+              .monospaced()
+              .foregroundColor(.primary)
+            }
+          }
         }
       }
       .listStyle(.plain)
