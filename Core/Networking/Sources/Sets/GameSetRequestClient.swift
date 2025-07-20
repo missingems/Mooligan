@@ -38,7 +38,7 @@ extension ScryfallClient: GameSetRequestClient {
       let sets = try await getSets().data
       
       let foldeded = sets.filter {
-        !$0.digital
+        $0.digital == false
       }.folded().filter {
         $0.model.cardCount != 0 || $0.folders.flatMap {
           $0.flattened()
@@ -75,7 +75,7 @@ extension ScryfallClient: GameSetRequestClient {
       }
       
       let foldeded = sets.filter {
-        !$0.digital
+        $0.digital == false
       }.folded().filter {
         $0.model.cardCount != 0 || $0.folders.flatMap {
           $0.flattened()
