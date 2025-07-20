@@ -81,18 +81,18 @@ struct SetsView: View {
               }
             }
             
-            let viewModel = Self.viewModel(
-              sets: value.sets,
-              highlightedText: store.query,
-              index: index
-            )
-            
             ZStack(alignment: .top) {
               if hasSeparator {
                 Divider().padding(.leading, 60.0)
               }
               
-              SetRow(viewModel: viewModel) {
+              SetRow(
+                viewModel: Self.viewModel(
+                  sets: value.sets,
+                  highlightedText: store.query,
+                  index: index
+                )
+              ) {
                 store.send(.didSelectSet(set))
               }
             }
@@ -112,9 +112,11 @@ struct SetsView: View {
       .refreshable {
         await store.send(.searchSets(.all)).finish()
       }
-      .searchable(text: Binding(get: {
-        store.query
-      }, set: { store.query = $0 }), placement: .navigationBarDrawer, prompt: store.queryPlaceholder)
+      .searchable(
+        text: $store.query,
+        placement: .navigationBarDrawer,
+        prompt: store.queryPlaceholder
+      )
       .task {
         store.send(.viewAppeared)
       }
