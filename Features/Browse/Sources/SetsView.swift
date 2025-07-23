@@ -127,8 +127,14 @@ struct SetsView: View {
         await store.send(.searchSets(.all)).finish()
       }
       .searchable(
-        text: $store.query,
-        placement: .navigationBarDrawer,
+        text: Binding(get: {
+          store.query
+        }, set: { newValue in
+          if store.query != newValue {
+            store.query = newValue
+          }
+        }),
+        placement: .navigationBarDrawer(displayMode: .always),
         prompt: store.queryPlaceholder
       )
       .task {

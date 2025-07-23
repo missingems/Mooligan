@@ -49,7 +49,13 @@ struct QueryView: View {
       .opacity(store.mode == .loading ? 1 : 0)
     })
     .searchable(
-      text: $store.query.name,
+      text: Binding(get: {
+        store.query.name
+      }, set: { newValue in
+        if store.query.name != newValue {
+          store.query.name = newValue
+        }
+      }),
       placement: .navigationBarDrawer(displayMode: .always),
       prompt: store.searchPrompt
     )
