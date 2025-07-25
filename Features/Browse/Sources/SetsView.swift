@@ -126,6 +126,7 @@ struct SetsView: View {
       .refreshable {
         await store.send(.searchSets(.all)).finish()
       }
+      .contentMargins(.bottom, 13, for: .scrollContent)
       .searchable(
         text: Binding(get: {
           store.query

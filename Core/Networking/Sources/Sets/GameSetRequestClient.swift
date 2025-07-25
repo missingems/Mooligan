@@ -57,7 +57,7 @@ extension ScryfallClient: GameSetRequestClient {
           return SetsSection(
             isUpcomingSet: Date.now < date,
             displayDate: date.formatted(date: .abbreviated, time: .omitted),
-            sets: sets.sorted { $0.model.cardCount > $1.model.cardCount }.flatMap { $0.flattened() }
+            sets: sets.sorted { $0.model.cardCount > $1.model.cardCount }.flatMap { $0.flattened() }.filter { $0.cardCount != 0 }
           )
         } else {
           return nil

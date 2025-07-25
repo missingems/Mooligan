@@ -38,7 +38,7 @@ public struct Content: Equatable {
   var relatedComboPieces: SubContent?
   var relatedMeldPieces: SubContent?
   var relatedMeldResult: SubContent?
-  var displayableCardImage: DisplayableCardImage
+  var displayableCardImage: DisplayableCardImage?
   
   init(
     card: Card,
@@ -111,27 +111,27 @@ public struct Content: Equatable {
   }
   
   func getPower() -> String? {
-    let face = card.getCardFace(for: displayableCardImage.faceDirection)
+    let face = card.getCardFace(for: displayableCardImage?.faceDirection)
     return face?.power ?? card.power
   }
   
   func getToughtness() -> String? {
-    let face = card.getCardFace(for: displayableCardImage.faceDirection)
+    let face = card.getCardFace(for: displayableCardImage?.faceDirection)
     return face?.toughness ?? card.toughness
   }
   
   func getLoyalty() -> String? {
-    let face = card.getCardFace(for: displayableCardImage.faceDirection)
+    let face = card.getCardFace(for: displayableCardImage?.faceDirection)
     return face?.loyalty ?? card.loyalty
   }
   
   func getArtistName() -> String? {
-    let face = card.getCardFace(for: displayableCardImage.faceDirection)
+    let face = card.getCardFace(for: displayableCardImage?.faceDirection)
     return face?.artist ?? card.artist
   }
   
   func getDescriptions() -> [Description] {
-    func makeDescription(faceDirection: MagicCardFaceDirection, card: Card) -> Description {
+    func makeDescription(faceDirection: MagicCardFaceDirection?, card: Card) -> Description {
       Description(
         name: card.name(faceDirection: faceDirection),
         textElements: card.text(faceDirection: faceDirection),
@@ -145,7 +145,7 @@ public struct Content: Equatable {
       makeDescription(faceDirection: .front, card: card),
       makeDescription(faceDirection: .back, card: card)
     ] : [
-      makeDescription(faceDirection: displayableCardImage.faceDirection, card: card)
+      makeDescription(faceDirection: displayableCardImage?.faceDirection, card: card)
     ]
   }
 }

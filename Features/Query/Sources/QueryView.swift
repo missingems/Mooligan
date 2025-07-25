@@ -56,14 +56,13 @@ struct QueryView: View {
           store.query.name = newValue
         }
       }),
-      placement: .automatic,
+      placement: .navigationBarDrawer(displayMode: .always),
       prompt: store.searchPrompt
     )
-    .contentMargins(.bottom, 13.0, for: .scrollContent)
+    .contentMargins(.vertical, EdgeInsets(top: 8.0, leading: 0, bottom: 13.0, trailing: 0), for: .scrollContent)
     .scrollDisabled(store.mode.isScrollable == false)
     .scrollPosition($store.scrollPosition)
     .scrollBounceBehavior(.basedOnSize)
-    .navigationBarTitleDisplayMode(.inline)
     .navigationTitle(store.title)
     .toolbar { toolbar }
     .task { store.send(.viewAppeared) }
@@ -127,8 +126,7 @@ struct QueryView: View {
         ProgressView()
           .opacity((store.mode == .loading || store.mode == .placeholder) ? 1 : 0)
         
-        Image(systemName: "arrow.up.arrow.down.circle.fill")
-          .font(.title3)
+        Image(systemName: "arrow.up.arrow.down")
           .opacity((store.mode == .loading || store.mode == .placeholder) ? 0 : 1)
       }
     }
@@ -138,7 +136,7 @@ struct QueryView: View {
   }
   
   @ViewBuilder private func infoView(query: QueryType) -> some View {
-    Button("Info", systemImage: "info.circle.fill") {
+    Button("Info", systemImage: "info") {
       store.send(.didSelectShowInfo)
     }
     .popover(isPresented: $store.isShowingInfo, attachmentAnchor: .rect(.bounds)) {

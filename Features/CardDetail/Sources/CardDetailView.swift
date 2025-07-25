@@ -240,7 +240,7 @@ struct CardDetailView: View {
               image.resizable().blur(radius: 34, opaque: true)
             }
           }
-          .opacity((content.displayableCardImage.faceDirection == .front) ? 1 : 0)
+          .opacity((content.displayableCardImage?.faceDirection == .front) ? 1 : 0)
           
           LazyImage(
             url: content.card.getImageURL(type: .artCrop, getSecondFace: true),
@@ -250,7 +250,7 @@ struct CardDetailView: View {
               image.resizable().blur(radius: 89, opaque: true)
             }
           }
-          .opacity((content.displayableCardImage.faceDirection == .back) ? 1 : 0)
+          .opacity((content.displayableCardImage?.faceDirection == .back) ? 1 : 0)
           
           Color(asset: DesignComponentsAsset.backgroundPlaceholder)
         }
