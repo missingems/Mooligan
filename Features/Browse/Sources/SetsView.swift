@@ -134,9 +134,9 @@ struct SetsView: View {
             store.query = newValue
           }
         }),
-        placement: .navigationBarDrawer(displayMode: .always),
         prompt: store.queryPlaceholder
       )
+      .searchToolbarBehavior(.minimize)
       .task {
         store.send(.viewAppeared)
       }

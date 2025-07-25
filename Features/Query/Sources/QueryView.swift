@@ -56,7 +56,7 @@ struct QueryView: View {
           store.query.name = newValue
         }
       }),
-      placement: .navigationBarDrawer(displayMode: .always),
+      placement: .automatic,
       prompt: store.searchPrompt
     )
     .contentMargins(.bottom, 13.0, for: .scrollContent)
@@ -129,11 +129,6 @@ struct QueryView: View {
         
         Image(systemName: "arrow.up.arrow.down.circle.fill")
           .font(.title3)
-          .symbolRenderingMode(.palette)
-          .foregroundStyle(
-            DesignComponentsAsset.accentColor.swiftUIColor,
-            Color(.tertiarySystemFill)
-          )
           .opacity((store.mode == .loading || store.mode == .placeholder) ? 0 : 1)
       }
     }
@@ -146,7 +141,6 @@ struct QueryView: View {
     Button("Info", systemImage: "info.circle.fill") {
       store.send(.didSelectShowInfo)
     }
-    .buttonStyle(HierarchicalToolbarButton())
     .popover(isPresented: $store.isShowingInfo, attachmentAnchor: .rect(.bounds)) {
       VStack(spacing: 0) {
         ForEach(Array(zip(store.queryType.sections, store.queryType.sections.indices)), id: \.0.id) { section in
