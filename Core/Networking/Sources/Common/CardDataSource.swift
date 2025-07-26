@@ -31,7 +31,7 @@ public struct CardDataSource: Equatable {
 
 public struct CardInfo: Equatable {
   public let card: Card
-  public let displayableCardImage: DisplayableCardImage
+  public let displayableCardImage: DisplayableCardImage?
   
   public init(card: Card) {
     self.card = card

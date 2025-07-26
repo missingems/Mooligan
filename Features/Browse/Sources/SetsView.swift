@@ -81,27 +81,43 @@ struct SetsView: View {
               }
             }
             
-            let viewModel = Self.viewModel(
-              sets: value.sets,
-              highlightedText: store.query,
-              index: index
-            )
-            
             ZStack(alignment: .top) {
               if hasSeparator {
                 Divider().padding(.leading, 60.0)
               }
               
-              SetRow(viewModel: viewModel) {
+              SetRow(
+                viewModel: Self.viewModel(
+                  sets: value.sets,
+                  highlightedText: store.query,
+                  index: index
+                )
+              ) {
                 store.send(.didSelectSet(set))
               }
+              .shimmering(active: store.mode.isPlaceholder)
             }
             .listRowSeparator(.hidden)
             .listRowInsets(insets)
             .safeAreaPadding(.horizontal, nil)
           }
         } header: {
-          Text(value.displayDate).padding(.vertical, 5.0)
+          HStack {
+            Text(value.displayDate)
+            
+            Spacer()
+            
+            if value.isUpcomingSet {
+              PillText(
+                String(localized: "UPCOMING"),
+                background: Color(.tertiarySystemFill)
+              )
+              .font(.caption)
+              .monospaced()
+              .foregroundColor(.primary)
+            }
+          }
+          .shimmering(active: store.mode.isPlaceholder)
         }
       }
       .listStyle(.plain)
@@ -112,9 +128,18 @@ struct SetsView: View {
       .refreshable {
         await store.send(.searchSets(.all)).finish()
       }
-      .searchable(text: Binding(get: {
-        store.query
-      }, set: { store.query = $0 }), placement: .navigationBarDrawer, prompt: store.queryPlaceholder)
+      .contentMargins(.bottom, 13, for: .scrollContent)
+      .searchable(
+        text: Binding(get: {
+          store.query
+        }, set: { newValue in
+          if store.query != newValue {
+            store.query = newValue
+          }
+        }),
+        prompt: store.queryPlaceholder
+      )
+      .searchToolbarBehavior(.minimize)
       .task {
         store.send(.viewAppeared)
       }

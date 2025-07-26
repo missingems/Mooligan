@@ -45,7 +45,7 @@ public enum DisplayableCardImage: Equatable {
     }
   }
   
-  public init(_ card: Card) {
+  public init?(_ card: Card) {
     if card.isTransformable,
        let frontImageURL = card.getImageURL(type: .normal, getSecondFace: false),
        let backImageURL = card.getImageURL(type: .normal, getSecondFace: true),
@@ -73,7 +73,7 @@ public enum DisplayableCardImage: Equatable {
         id: card.id.uuidString
       )
     } else {
-      fatalError("Impossible state: ImageURL cannot be nil.")
+      return nil
     }
   }
 }

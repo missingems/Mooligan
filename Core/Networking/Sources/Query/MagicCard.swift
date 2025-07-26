@@ -25,7 +25,7 @@ public extension Card {
     layout == .split || layout == .battle
   }
   
-  func manaCost(faceDirection: MagicCardFaceDirection) -> [String] {
+  func manaCost(faceDirection: MagicCardFaceDirection?) -> [String] {
     var manaCost: String?
     
     if let face = getCardFace(for: faceDirection) {
@@ -48,7 +48,7 @@ public extension Card {
       .compactMap { String(manaCost[$0.range]) }
   }
   
-  func name(faceDirection: MagicCardFaceDirection) -> String {
+  func name(faceDirection: MagicCardFaceDirection?) -> String {
     guard let face = getCardFace(for: faceDirection) else {
       return isPhyrexian ? name : printedName ?? name
     }
@@ -56,7 +56,7 @@ public extension Card {
     return isPhyrexian ? face.name : face.printedName ?? face.name
   }
   
-  func flavorText(faceDirection: MagicCardFaceDirection) -> String? {
+  func flavorText(faceDirection: MagicCardFaceDirection?) -> String? {
     guard let face = getCardFace(for: faceDirection) else {
       return flavorText
     }
@@ -64,7 +64,7 @@ public extension Card {
     return face.flavorText
   }
   
-  private func getDisplayText(faceDirection: MagicCardFaceDirection) -> String? {
+  private func getDisplayText(faceDirection: MagicCardFaceDirection?) -> String? {
     var text: String?
     
     if let face = getCardFace(for: faceDirection) {
@@ -86,7 +86,7 @@ public extension Card {
     return text
   }
   
-  func text(faceDirection: MagicCardFaceDirection) -> [[TextElement]] {
+  func text(faceDirection: MagicCardFaceDirection?) -> [[TextElement]] {
     return getDisplayText(
       faceDirection: faceDirection
     )?.split(
@@ -96,7 +96,7 @@ public extension Card {
     } ?? []
   }
   
-  func typeline(faceDirection: MagicCardFaceDirection) -> String? {
+  func typeline(faceDirection: MagicCardFaceDirection?) -> String? {
     guard let face = getCardFace(for: faceDirection) else {
       return isPhyrexian ? typeLine : printedTypeLine ?? typeLine
     }
@@ -106,13 +106,16 @@ public extension Card {
 }
 
 extension Card {
-  public func getCardFace(for direction: MagicCardFaceDirection) -> Face? {
+  public func getCardFace(for direction: MagicCardFaceDirection?) -> Face? {
     switch direction {
     case .front:
       cardFaces?.first
       
     case .back:
       cardFaces?.last
+      
+    default:
+      nil
     }
   }
   

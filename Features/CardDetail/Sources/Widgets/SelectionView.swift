@@ -24,7 +24,7 @@ struct SelectionView: View {
         }
       }
       .background(Color(.systemFill))
-      .clipShape(RoundedRectangle(cornerRadius: 13.0))
+      .clipShape(RoundedRectangle(cornerRadius: 21))
     }
     .safeAreaPadding(.horizontal, nil)
     .padding(.vertical, 13.0)

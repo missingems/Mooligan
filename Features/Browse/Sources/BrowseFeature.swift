@@ -12,7 +12,8 @@ import ScryfallKit
       case .binding(\.query):
         return .run { [query = state.query, sets = state.sets] send in
           await send(.searchSets(.name(query, sets)))
-        }.debounce(id: "queryDebounce", for: .milliseconds(300), scheduler: DispatchQueue.main)
+        }
+        .debounce(id: "queryDebounce", for: .milliseconds(300), scheduler: DispatchQueue.main)
         
       case .binding:
         return .none

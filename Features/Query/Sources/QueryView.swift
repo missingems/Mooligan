@@ -3,7 +3,6 @@ import DesignComponents
 import Foundation
 import Featurist
 import Networking
-import Shimmer
 import SwiftUI
 import NukeUI
 
@@ -49,21 +48,20 @@ struct QueryView: View {
       .opacity(store.mode == .loading ? 1 : 0)
     })
     .searchable(
-      text: .init(get: {
+      text: Binding(get: {
         store.query.name
-      }, set: { value in
-        if store.query.name != value {
-          store.query.name = value
+      }, set: { newValue in
+        if store.query.name != newValue {
+          store.query.name = newValue
         }
       }),
       placement: .navigationBarDrawer(displayMode: .always),
       prompt: store.searchPrompt
     )
-    .contentMargins(.bottom, 13.0, for: .scrollContent)
+    .contentMargins(.vertical, EdgeInsets(top: 8.0, leading: 0, bottom: 13.0, trailing: 0), for: .scrollContent)
     .scrollDisabled(store.mode.isScrollable == false)
     .scrollPosition($store.scrollPosition)
     .scrollBounceBehavior(.basedOnSize)
-    .navigationBarTitleDisplayMode(.inline)
     .navigationTitle(store.title)
     .toolbar { toolbar }
     .task { store.send(.viewAppeared) }
@@ -127,13 +125,7 @@ struct QueryView: View {
         ProgressView()
           .opacity((store.mode == .loading || store.mode == .placeholder) ? 1 : 0)
         
-        Image(systemName: "arrow.up.arrow.down.circle.fill")
-          .font(.title3)
-          .symbolRenderingMode(.palette)
-          .foregroundStyle(
-            DesignComponentsAsset.accentColor.swiftUIColor,
-            Color(.tertiarySystemFill)
-          )
+        Image(systemName: "arrow.up.arrow.down")
           .opacity((store.mode == .loading || store.mode == .placeholder) ? 0 : 1)
       }
     }
@@ -143,10 +135,9 @@ struct QueryView: View {
   }
   
   @ViewBuilder private func infoView(query: QueryType) -> some View {
-    Button("Info", systemImage: "info.circle.fill") {
+    Button("Info", systemImage: "info") {
       store.send(.didSelectShowInfo)
     }
-    .buttonStyle(HierarchicalToolbarButton())
     .popover(isPresented: $store.isShowingInfo, attachmentAnchor: .rect(.bounds)) {
       VStack(spacing: 0) {
         ForEach(Array(zip(store.queryType.sections, store.queryType.sections.indices)), id: \.0.id) { section in

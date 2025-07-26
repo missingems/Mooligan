@@ -7,10 +7,10 @@ public struct MockGameSetRequestClient: GameSetRequestClient {
   }
   
   public static let mocksSetSections: [ScryfallKit.ScryfallClient.SetsSection] = [
-    .init(displayDate: "Latest", sets: Array(mockSets.prefix(2))),
-    .init(displayDate: "Older", sets: Array(mockSets.suffix(3))),
-    .init(displayDate: "Older", sets: Array(mockSets.suffix(3))),
-    .init(displayDate: "Older", sets: Array(mockSets.suffix(3))),
+    .init(isUpcomingSet: true, displayDate: "Latest", sets: Array(mockSets.prefix(2))),
+    .init(isUpcomingSet: true, displayDate: "Older", sets: Array(mockSets.suffix(3))),
+    .init(isUpcomingSet: false, displayDate: "Older", sets: Array(mockSets.suffix(3))),
+    .init(isUpcomingSet: false, displayDate: "Older", sets: Array(mockSets.suffix(3))),
   ]
   
   public static let mockSets: [MTGSet] = [
