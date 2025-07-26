@@ -32,93 +32,50 @@ extension ScryfallClient: GameSetRequestClient {
     public let sets: [MTGSet]
   }
   
+  private static func filteredAndFoldedSets(from sets: [MTGSet]) -> [Folder<MTGSet>] {
+    return sets.filter { !$0.digital }
+      .folded()
+      .filter {
+        $0.model.cardCount != 0 || $0.folders.flatMap { $0.flattened() }.contains { $0.cardCount != 0 }
+      }
+  }
+  
+  private static func makeSections(from folders: [Folder<MTGSet>]) -> [SetsSection] {
+    let grouped = Dictionary(grouping: folders) { $0.model.date }
+    return grouped.keys.sorted(by: >).compactMap { date in
+      grouped[date].map { sets in
+        SetsSection(
+          isUpcomingSet: Date.now < date,
+          displayDate: date.formatted(date: .abbreviated, time: .omitted),
+          sets: sets.sorted { $0.model.cardCount > $1.model.cardCount }
+            .flatMap { $0.flattened() }
+            .filter { $0.cardCount != 0 }
+        )
+      }
+    }
+  }
+  
   public func getSets(queryType: GameSetQueryType) async throws -> ([ScryfallClient.SetsSection], [MTGSet]) {
     switch queryType {
     case .all:
       let sets = try await getSets().data
-      
-      let folded = sets.filter {
-        $0.digital == false
-      }.folded().filter {
-        $0.model.cardCount != 0 || $0.folders.flatMap {
-          $0.flattened()
-        }
-        .contains {
-          $0.cardCount != 0
-        }
-      }
-      
-      let grouped = Dictionary(grouping: folded) { folder in
-        return folder.model.date
-      }
-      
-      let sortedGroups = grouped.keys.sorted(by: >).compactMap { date in
-        if let sets = grouped[date] {
-          return SetsSection(
-            isUpcomingSet: Date.now < date,
-            displayDate: date.formatted(date: .abbreviated, time: .omitted),
-            sets: sets.sorted { $0.model.cardCount > $1.model.cardCount }.flatMap { $0.flattened() }.filter { $0.cardCount != 0 }
-          )
-        } else {
-          return nil
-        }
-      }
-      
-      return (sortedGroups, sets)
+      return (Self.makeSections(from: Self.filteredAndFoldedSets(from: sets)), sets)
       
     case let .name(name, existingSets):
-      let sets: [MTGSet]
-      
-      if existingSets.isEmpty == false {
-        sets = existingSets
-      } else {
-        sets = try await getSets().data
-      }
-      
-      let foldeded = sets.filter {
-        $0.digital == false
-      }.folded().filter {
-        $0.model.cardCount != 0 || $0.folders.flatMap {
-          $0.flattened()
-        }
-        .contains {
-          $0.cardCount != 0
-        }
-      }
-      
-      var filteredSets = foldeded.filter { _value in
-        let parentContainName = _value.model.name.range(of: name, options: .caseInsensitive) != nil
-        
-        let childContainsName = _value.folders.flatMap {
-          $0.flattened()
-        }.contains {
-          $0.name.range(of: name, options: .caseInsensitive) != nil
-        }
-        
-        return parentContainName || childContainsName
+      let sets: [MTGSet] = existingSets.isEmpty ? try await getSets().data : existingSets
+      let folded = Self.filteredAndFoldedSets(from: sets)
+      var filteredSets = folded.filter { folder in
+        let parentContainsName = folder.model.name.range(of: name, options: .caseInsensitive) != nil
+        let childContainsName = folder.folders.flatMap { $0.flattened() }
+          .contains { $0.name.range(of: name, options: .caseInsensitive) != nil }
+        return parentContainsName || childContainsName
       }
       
       if filteredSets.isEmpty {
-        filteredSets = foldeded
+        filteredSets = folded
       }
       
-      let grouped = Dictionary(grouping: filteredSets) { folder in
-        return folder.model.date
-      }
-      
-      let sortedGroups = grouped.keys.sorted(by: >).compactMap { date in
-        if let sets = grouped[date] {
-          return SetsSection(
-            isUpcomingSet: Date.now < date,
-            displayDate: date.formatted(date: .abbreviated, time: .omitted),
-            sets: sets.sorted { $0.model.cardCount > $1.model.cardCount }.flatMap { $0.flattened() }
-          )
-        } else {
-          return nil
-        }
-      }
-      
-      return (sortedGroups, sets)
+      return (Self.makeSections(from: filteredSets), sets)
     }
   }
 }
