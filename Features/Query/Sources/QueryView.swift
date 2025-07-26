@@ -3,7 +3,6 @@ import DesignComponents
 import Foundation
 import Featurist
 import Networking
-import Shimmer
 import SwiftUI
 import NukeUI
 

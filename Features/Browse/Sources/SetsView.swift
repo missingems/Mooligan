@@ -95,6 +95,7 @@ struct SetsView: View {
               ) {
                 store.send(.didSelectSet(set))
               }
+              .shimmering(active: store.mode.isPlaceholder)
             }
             .listRowSeparator(.hidden)
             .listRowInsets(insets)
@@ -116,6 +117,7 @@ struct SetsView: View {
               .foregroundColor(.primary)
             }
           }
+          .shimmering(active: store.mode.isPlaceholder)
         }
       }
       .listStyle(.plain)
