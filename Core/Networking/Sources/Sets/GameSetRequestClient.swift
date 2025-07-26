@@ -62,8 +62,9 @@ extension ScryfallClient: GameSetRequestClient {
       return (Self.makeSections(from: Self.filteredAndFoldedSets(from: sets)), sets)
       
     case let .name(name, existingSets):
-      let sets: [MTGSet] = existingSets.isEmpty ? try await getSets().data : existingSets
+      let sets = existingSets.isEmpty ? try await getSets().data : existingSets
       let folded = Self.filteredAndFoldedSets(from: sets)
+      
       var filteredSets = folded.filter { folder in
         let parentContainsName = folder.model.name.range(of: name, options: .caseInsensitive) != nil
         let childContainsName = folder.folders.flatMap { $0.flattened() }
@@ -82,11 +83,17 @@ extension ScryfallClient: GameSetRequestClient {
 
 private extension Array where Element == MTGSet {
   func folded() -> [Folder<MTGSet>] {
-    let foldersByCode = Dictionary(uniqueKeysWithValues: self.map { ($0.code, Folder(model: $0)) })
-    var rootFolders = [Folder<MTGSet>]()
+    let foldersByCode = Dictionary(uniqueKeysWithValues: map {
+      ($0.code, Folder(model: $0)) }
+    )
+    
+    var rootFolders: [Folder<MTGSet>] = []
     
     for folder in foldersByCode.values {
-      if let parentCode = folder.model.parentSetCode, let parentFolder = foldersByCode[parentCode] {
+      if
+        let parentCode = folder.model.parentSetCode,
+        let parentFolder = foldersByCode[parentCode]
+      {
         parentFolder.folders.append(folder)
         parentFolder.folders = parentFolder.folders.sorted { $0.model.name > $1.model.name }
       } else {
