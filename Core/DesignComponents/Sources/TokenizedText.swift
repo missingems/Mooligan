@@ -17,47 +17,37 @@ public struct TokenizedText: View {
   }
   
   private func build(elements: [TextElement]) -> some View {
-    var text: Text?
-    
-    elements.forEach { element in
+    let combinedText = elements.map { element -> Text in
       switch element {
       case let .text(value, isItalic, isKeyword):
         if isKeyword && isItalic {
-          if text == nil {
-            text = Text("[\(value)](https://google.com)").font(Font.system(size: self.font.pointSize, design: .serif)).underline().italic().foregroundStyle(.secondary)
-          } else if let _text = text {
-            text = _text + Text("[\(value)](https://google.com)").font(Font.system(size: self.font.pointSize, design: .serif)).underline().italic().foregroundStyle(.secondary)
-          }
+          return Text("[\(value)](https://google.com)")
+            .font(.system(size: font.pointSize, design: .serif))
+            .underline()
+            .italic()
+            .foregroundStyle(.secondary)
         } else if isKeyword {
-          if text == nil {
-            text = Text("[\(value)](https://google.com)").font(Font.system(size: self.font.pointSize)).underline()
-          } else if let _text = text {
-            text = _text + Text("[\(value)](https://google.com)").font(Font.system(size: self.font.pointSize)).underline()
-          }
+          return Text("[\(value)](https://google.com)")
+            .font(.system(size: font.pointSize))
+            .underline()
         } else if isItalic {
-          if text == nil {
-            text = Text(LocalizedStringKey(value)).font(Font.system(size: self.font.pointSize, design: .serif).italic()).foregroundStyle(.secondary)
-          } else if let _text = text {
-            text = _text + Text(LocalizedStringKey(value)).font(Font.system(size: self.font.pointSize, design: .serif).italic()).foregroundStyle(.secondary)
-          }
+          return Text(LocalizedStringKey(value))
+            .font(.system(size: font.pointSize, design: .serif).italic())
+            .foregroundStyle(.secondary)
         } else {
-          if text == nil {
-            text = Text(LocalizedStringKey(value)).font(Font.system(size: self.font.pointSize))
-          } else if let _text = text {
-            text = _text + Text(LocalizedStringKey(value)).font(Font.system(size: self.font.pointSize))
-          }
+          return Text(LocalizedStringKey(value))
+            .font(.system(size: font.pointSize))
         }
         
       case let .token(value):
-        if text == nil {
-          text = getCustomImage(image: "{\(value.replacingOccurrences(of: "/", with: ":"))}", newSize: CGSize(width: font.pointSize, height: font.pointSize)).font(Font.system(size: self.font.pointSize))
-        } else if let _text = text {
-          text = _text + getCustomImage(image: "{\(value.replacingOccurrences(of: "/", with: ":"))}", newSize: CGSize(width: font.pointSize, height: font.pointSize)).font(Font.system(size: self.font.pointSize))
-        }
+        return getCustomImage(
+          image: "{\(value.replacingOccurrences(of: "/", with: ":"))}",
+          newSize: CGSize(width: font.pointSize, height: font.pointSize)
+        ).font(.system(size: font.pointSize))
       }
-    }
+    }.reduce(Text(""), +)
     
-    return (text ?? Text("")).fixedSize(horizontal: false, vertical: true)
+    return combinedText.fixedSize(horizontal: false, vertical: true)
   }
   
   private func getCustomImage(image: String, newSize: CGSize) -> Text {
