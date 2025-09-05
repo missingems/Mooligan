@@ -41,7 +41,7 @@ struct SetRow: View {
             trailing: 13
           )
         )
-        .background { Color(.tertiarySystemFill) }
+        .background { Color(uiColor: .secondarySystemGroupedBackground) }
         .clipShape(
           UnevenRoundedRectangle(
             cornerRadii: RectangleCornerRadii(

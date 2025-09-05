@@ -42,21 +42,19 @@ struct QueryView: View {
       .placeholder(store.mode.isPlaceholder)
     }
     .searchable(text: $store.query.name, placement: .navigationBarDrawer(displayMode: .always))
-
-//    .contentMargins(.vertical, EdgeInsets(top: 8.0, leading: 0, bottom: 13.0, trailing: 0), for: .scrollContent)
-//    .scrollDisabled(store.mode.isScrollable == false)
-//    .scrollPosition($store.scrollPosition)
-//    .scrollBounceBehavior(.basedOnSize)
+    .contentMargins(.vertical, EdgeInsets(top: 8.0, leading: 0, bottom: 13.0, trailing: 0), for: .scrollContent)
+    .scrollDisabled(store.mode.isScrollable == false)
+    .scrollPosition($store.scrollPosition)
+    .scrollBounceBehavior(.basedOnSize)
     .navigationTitle(store.title)
-    .navigationBarTitleDisplayMode(.inline)
     .toolbar { toolbar }
+    .overlay(content: {
+      ProgressView {
+        Text("Loading...")
+      }
+      .opacity(store.mode == .loading ? 1 : 0)
+    })
     .task { store.send(.viewAppeared) }
-//    .overlay(content: {
-//      ProgressView {
-//        Text("Loading...")
-//      }
-//      .opacity(store.mode == .loading ? 1 : 0)
-//    })
   }
   
   @ViewBuilder private func contentScrollView(dataSource: CardDataSource, contentWidth: CGFloat) -> some View {

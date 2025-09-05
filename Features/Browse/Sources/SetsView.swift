@@ -82,10 +82,6 @@ struct SetsView: View {
             }
             
             ZStack(alignment: .top) {
-              if hasSeparator {
-                Divider().padding(.leading, 60.0)
-              }
-              
               SetRow(
                 viewModel: Self.viewModel(
                   sets: value.sets,
@@ -96,28 +92,18 @@ struct SetsView: View {
                 store.send(.didSelectSet(set))
               }
               .shimmering(active: store.mode.isPlaceholder)
+              
+              if hasSeparator {
+                Divider().padding(.leading, 60.0)
+              }
             }
             .listRowSeparator(.hidden)
+            .listRowBackground(Color(uiColor: .clear))
             .listRowInsets(insets)
             .safeAreaPadding(.horizontal, nil)
           }
         } header: {
-          HStack {
-            Text(value.displayDate)
-            
-            Spacer()
-            
-            if value.isUpcomingSet {
-              PillText(
-                String(localized: "UPCOMING"),
-                background: Color(.tertiarySystemFill)
-              )
-              .font(.caption)
-              .monospaced()
-              .foregroundColor(.primary)
-            }
-          }
-          .shimmering(active: store.mode.isPlaceholder)
+          Text(value.displayDate)
         }
       }
       .listStyle(.plain)
@@ -125,6 +111,7 @@ struct SetsView: View {
       .redacted(reason: store.mode.isPlaceholder ? .placeholder : [])
       .scrollDisabled(store.mode.isPlaceholder)
       .allowsHitTesting(store.mode.isPlaceholder == false)
+      .background(Color(.systemGroupedBackground))
       .refreshable {
         await store.send(.searchSets(.all)).finish()
       }
@@ -137,9 +124,9 @@ struct SetsView: View {
             store.query = newValue
           }
         }),
+        placement: .navigationBarDrawer(displayMode: .always),
         prompt: store.queryPlaceholder
       )
-      .searchToolbarBehavior(.minimize)
       .task {
         store.send(.viewAppeared)
       }
