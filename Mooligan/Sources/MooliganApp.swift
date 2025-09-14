@@ -50,13 +50,11 @@ struct RootView: View {
             
           case .collection:
             Text(info.title)
-            
-          case .settings:
-            Text(info.title)
           }
         }
       }
     }
+    .toolbarVisibility(.visible, for: .tabBar)
     .tint(DesignComponentsAsset.accentColor.swiftUIColor)
   }
 }

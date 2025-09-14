@@ -103,7 +103,7 @@ struct SetsView: View {
             .safeAreaPadding(.horizontal, nil)
           }
         } header: {
-          Text(value.displayDate)
+          Text(value.displayDate.uppercased()).font(.caption).fontWeight(.semibold)
         }
       }
       .listStyle(.plain)
@@ -111,10 +111,6 @@ struct SetsView: View {
       .redacted(reason: store.mode.isPlaceholder ? .placeholder : [])
       .scrollDisabled(store.mode.isPlaceholder)
       .allowsHitTesting(store.mode.isPlaceholder == false)
-      .background(Color(.systemGroupedBackground))
-      .refreshable {
-        await store.send(.searchSets(.all)).finish()
-      }
       .contentMargins(.bottom, 13, for: .scrollContent)
       .searchable(
         text: Binding(get: {
@@ -127,6 +123,9 @@ struct SetsView: View {
         placement: .navigationBarDrawer(displayMode: .always),
         prompt: store.queryPlaceholder
       )
+      .refreshable {
+        await store.send(.searchSets(.all)).finish()
+      }
       .task {
         store.send(.viewAppeared)
       }

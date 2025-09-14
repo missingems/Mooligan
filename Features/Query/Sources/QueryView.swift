@@ -41,12 +41,14 @@ struct QueryView: View {
       .safeAreaPadding(.horizontal, nil)
       .placeholder(store.mode.isPlaceholder)
     }
+    .background { Color(.secondarySystemBackground).ignoresSafeArea() }
     .searchable(text: $store.query.name, placement: .navigationBarDrawer(displayMode: .always))
-    .contentMargins(.vertical, EdgeInsets(top: 8.0, leading: 0, bottom: 13.0, trailing: 0), for: .scrollContent)
+    .contentMargins(.vertical, EdgeInsets(top: 3.0, leading: 0, bottom: 13.0, trailing: 0), for: .scrollContent)
     .scrollDisabled(store.mode.isScrollable == false)
     .scrollPosition($store.scrollPosition)
     .scrollBounceBehavior(.basedOnSize)
     .navigationTitle(store.title)
+    .navigationBarTitleDisplayMode(.inline)
     .toolbar { toolbar }
     .overlay(content: {
       ProgressView {
@@ -91,9 +93,12 @@ struct QueryView: View {
   }
   
   @ToolbarContentBuilder private var toolbar: some ToolbarContent {
-    ToolbarItemGroup(placement: .primaryAction) {
-      sortView
+    ToolbarItem(id: "info", placement: .principal) {
       infoView(query: store.queryType)
+    }
+    
+    ToolbarItem(id: "sort", placement: .topBarTrailing) {
+      sortView
     }
   }
   
@@ -115,7 +120,7 @@ struct QueryView: View {
         ProgressView()
           .opacity((store.mode == .loading || store.mode == .placeholder) ? 1 : 0)
         
-        Image(systemName: "arrow.up.arrow.down")
+        Image(systemName: "ellipsis")
           .opacity((store.mode == .loading || store.mode == .placeholder) ? 0 : 1)
       }
     }
@@ -125,28 +130,68 @@ struct QueryView: View {
   }
   
   @ViewBuilder private func infoView(query: QueryType) -> some View {
-    Button("Info", systemImage: "info") {
-      store.send(.didSelectShowInfo)
-    }
-    .popover(isPresented: $store.isShowingInfo, attachmentAnchor: .rect(.bounds)) {
-      VStack(spacing: 0) {
-        ForEach(Array(zip(store.queryType.sections, store.queryType.sections.indices)), id: \.0.id) { section in
-          VStack(spacing: 0) {
-            section.0.body
-              .padding(.vertical, 11.0)
-              .safeAreaPadding(.horizontal, nil)
-            
-            if section.1 != store.queryType.sections.count - 1 {
-              Divider().safeAreaPadding(.leading, nil)
-            }
-          }
+    
+    Menu {
+      Picker("SORT BY", selection: $store.query.sortMode) {
+        ForEach(store.availableSortModes) { value in
+          Text(value.description)
         }
       }
-      .presentationCompactAdaptation(.popover)
-      .presentationBackground {
-        Color.clear
+      
+      Picker("SORT ORDER", selection: $store.query.sortDirection) {
+        ForEach(store.availableSortOrders) { value in
+          Text(value.description)
+        }
+      }
+    } label: {
+      switch store.queryType {
+      case let .querySet(set, _):
+        HStack(spacing: 5.0) {
+          Text(store.title).font(.headline)
+          Image(systemName: "chevron.down.circle.fill").font(.caption).foregroundStyle(.secondary)
+        }
+        
+      case .search:
+        Text("")
       }
     }
+    .pickerStyle(.inline)
+    .labelsVisibility(.visible)
+    .disabled(store.mode == .loading || store.mode == .placeholder)
+    
+    
+    
+//    Button {
+//      store.send(.didSelectShowInfo)
+//    } label: {
+//      switch store.queryType {
+//      case let .querySet(set, _):
+//        HStack(spacing: 5.0) {
+//          Text(store.title).font(.headline)
+//          Image(systemName: "chevron.down.circle.fill").font(.caption).foregroundStyle(.secondary)
+//        }
+//        
+//      case .search:
+//        Text("")
+//      }
+//    }
+//    .buttonStyle(.plain) // Prevents button from expanding
+//    .popover(isPresented: $store.isShowingInfo, attachmentAnchor: .rect(.bounds)) {
+//      VStack(spacing: 0) {
+//        ForEach(Array(zip(store.queryType.sections, store.queryType.sections.indices)), id: \.0.id) { section in
+//          VStack(spacing: 0) {
+//            section.0.body
+//              .padding(.vertical, 11.0)
+//              .safeAreaPadding(.horizontal, nil)
+//            
+//            if section.1 != store.queryType.sections.count - 1 {
+//              Divider().safeAreaPadding(.leading, nil)
+//            }
+//          }
+//        }
+//      }
+//      .presentationCompactAdaptation(.popover)
+//    }
   }
 }
 

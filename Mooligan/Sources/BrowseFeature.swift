@@ -16,7 +16,6 @@ import Foundation
     case sets
     case game
     case collection
-    case settings
     
     var title: String {
       switch self {
@@ -26,8 +25,6 @@ import Foundation
         return String(localized: "Game")
       case .collection:
         return String(localized: "Collection")
-      case .settings:
-        return String(localized: "Settings")
       }
     }
     
@@ -39,8 +36,6 @@ import Foundation
         return "dice"
       case .collection:
         return "folder"
-      case .settings:
-        return "gearshape"
       }
     }
     

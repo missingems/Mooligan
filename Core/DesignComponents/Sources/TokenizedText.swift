@@ -16,36 +16,62 @@ public struct TokenizedText: View {
     self.paragraphSpacing = paragraphSpacing
   }
   
+  
   private func build(elements: [TextElement]) -> some View {
-    let combinedText = elements.map { element -> Text in
+    // Pre-calculate font configurations to avoid repeated system calls
+    let baseFont = Font.system(size: font.pointSize)
+    let serifFont = Font.system(size: font.pointSize, design: .serif)
+    let italicSerifFont = serifFont.italic()
+    
+    // Use array with initial capacity to avoid reallocation
+    var textComponents: [Text] = []
+    textComponents.reserveCapacity(elements.count)
+    
+    // Single pass through elements
+    for element in elements {
+      let textComponent: Text
+      
       switch element {
       case let .text(value, isItalic, isKeyword):
-        if isKeyword && isItalic {
-          return Text("[\(value)](https://google.com)")
-            .font(.system(size: font.pointSize, design: .serif))
+        switch (isKeyword, isItalic) {
+        case (true, true):
+          textComponent = Text("[\(value)](https://google.com)")
+            .font(italicSerifFont)
             .underline()
-            .italic()
             .foregroundStyle(.secondary)
-        } else if isKeyword {
-          return Text("[\(value)](https://google.com)")
-            .font(.system(size: font.pointSize))
+          
+        case (true, false):
+          textComponent = Text("[\(value)](https://google.com)")
+            .font(baseFont)
             .underline()
-        } else if isItalic {
-          return Text(LocalizedStringKey(value))
-            .font(.system(size: font.pointSize, design: .serif).italic())
+          
+        case (false, true):
+          textComponent = Text(LocalizedStringKey(value))
+            .font(italicSerifFont)
             .foregroundStyle(.secondary)
-        } else {
-          return Text(LocalizedStringKey(value))
-            .font(.system(size: font.pointSize))
+          
+        case (false, false):
+          textComponent = Text(LocalizedStringKey(value))
+            .font(baseFont)
         }
         
       case let .token(value):
-        return getCustomImage(
-          image: "{\(value.replacingOccurrences(of: "/", with: ":"))}",
-          newSize: CGSize(width: font.pointSize, height: font.pointSize)
-        ).font(.system(size: font.pointSize))
+        // Cache the processed token string if tokens repeat frequently
+        let processedToken = value.replacingOccurrences(of: "/", with: ":")
+        textComponent = getCustomImage(
+          image: "{\(processedToken)}",
+          newSize: CGSize(width: font.pointSize / 1.25, height: font.pointSize / 1.25)
+        )
+        .font(baseFont)
       }
-    }.reduce(Text(""), +)
+      
+      textComponents.append(textComponent)
+    }
+    
+    // More efficient reduction using reduce(into:) which mutates in-place
+    let combinedText = textComponents.reduce(into: Text("")) { result, text in
+      result = result + text
+    }
     
     return combinedText.fixedSize(horizontal: false, vertical: true)
   }
@@ -53,7 +79,7 @@ public struct TokenizedText: View {
   private func getCustomImage(image: String, newSize: CGSize) -> Text {
     if let image = UIImage(named: image, in: DesignComponentsResources.bundle, with: nil),
        let newImage = convertImageToNewFrame(image: image, newFrameSize: newSize) {
-      return Text(Image(uiImage: newImage).resizable()).baselineOffset(-3)
+      return Text(Image(uiImage: newImage).resizable())
     } else {
       return Text("")
     }
