@@ -21,7 +21,7 @@ struct SetRow: View {
             Text(viewModel.attributedTitle).multilineTextAlignment(.leading)
             
             HStack(spacing: 5.0) {
-              PillText(viewModel.id).font(.caption).monospaced()
+              PillText(viewModel.id).font(.caption)
               Text(viewModel.numberOfCardsLabel).font(.caption).foregroundColor(.secondary)
             }
           }

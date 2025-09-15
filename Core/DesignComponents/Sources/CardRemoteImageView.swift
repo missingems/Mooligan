@@ -5,6 +5,7 @@ import SwiftUI
 
 public struct CardRemoteImageView: View {
   public let url: URL
+  @Environment(\.displayScale) private var displayScale
   @State private var cornerRadius: CGFloat?
   private let transformers: [ImageProcessing]
   private let size: CGSize
@@ -75,7 +76,7 @@ public struct CardRemoteImageView: View {
       RoundedRectangle(cornerRadius: cornerRadius ?? 0)
         .strokeBorder(
           .separator,
-          lineWidth: 1 / UIScreen.main.nativeScale
+          lineWidth: 1 / displayScale
         )
     )
   }

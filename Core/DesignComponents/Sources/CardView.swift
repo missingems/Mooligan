@@ -44,6 +44,9 @@ public struct CardView: View {
   private let send: ((Action) -> Void)?
   @State private var localDisplayableCard: DisplayableCardImage?
   
+  @Environment(\.displayScale) private var displayScale
+  private var strokeScale: CGFloat { max(displayScale, 1) }
+  
   public var body: some View {
     VStack(spacing: 5) {
       ZStack(alignment: .trailing) {
@@ -138,7 +141,7 @@ public struct CardView: View {
     .frame(width: 44.0, height: 44.0)
     .background(.thinMaterial)
     .clipShape(Circle())
-    .overlay(Circle().strokeBorder(.separator, lineWidth: 1 / UIScreen.main.nativeScale))
+    .overlay(Circle().strokeBorder(.separator, lineWidth: 1 / strokeScale))
     .offset(x: callToActionHorizontalOffset, y: -13)
     .zIndex(3)
   }
@@ -178,7 +181,7 @@ public struct CardView: View {
     .frame(width: 44.0, height: 44.0)
     .background(.thinMaterial)
     .clipShape(Circle())
-    .overlay(Circle().strokeBorder(.separator, lineWidth: 1 / UIScreen.main.nativeScale))
+    .overlay(Circle().strokeBorder(.separator, lineWidth: 1 / strokeScale))
     .offset(x: callToActionHorizontalOffset, y: -13)
     .zIndex(3)
   }

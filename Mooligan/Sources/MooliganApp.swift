@@ -45,18 +45,17 @@ struct RootView: View {
               }
             }
             
-          case .game:
-            Text(info.title)
-            
           case .collection:
-            Text(info.title)
-            
-          case .settings:
             Text(info.title)
           }
         }
       }
+      
+      Tab(role: .search) {
+        Text("Search")
+      }
     }
+    .toolbarVisibility(.visible, for: .tabBar)
     .tint(DesignComponentsAsset.accentColor.swiftUIColor)
   }
 }

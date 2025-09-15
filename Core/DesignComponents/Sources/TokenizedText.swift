@@ -16,54 +16,66 @@ public struct TokenizedText: View {
     self.paragraphSpacing = paragraphSpacing
   }
   
+  
   private func build(elements: [TextElement]) -> some View {
-    var text: Text?
+    let baseFont = Font.system(size: font.pointSize)
+    let serifFont = Font.system(size: font.pointSize, design: .serif)
+    let italicSerifFont = serifFont.italic()
     
-    elements.forEach { element in
+    var textComponents: [Text] = []
+    textComponents.reserveCapacity(elements.count)
+    
+    for element in elements {
+      let textComponent: Text
+      
       switch element {
       case let .text(value, isItalic, isKeyword):
-        if isKeyword && isItalic {
-          if text == nil {
-            text = Text("[\(value)](https://google.com)").font(Font.system(size: self.font.pointSize, design: .serif)).underline().italic().foregroundStyle(.secondary)
-          } else if let _text = text {
-            text = _text + Text("[\(value)](https://google.com)").font(Font.system(size: self.font.pointSize, design: .serif)).underline().italic().foregroundStyle(.secondary)
-          }
-        } else if isKeyword {
-          if text == nil {
-            text = Text("[\(value)](https://google.com)").font(Font.system(size: self.font.pointSize)).underline()
-          } else if let _text = text {
-            text = _text + Text("[\(value)](https://google.com)").font(Font.system(size: self.font.pointSize)).underline()
-          }
-        } else if isItalic {
-          if text == nil {
-            text = Text(LocalizedStringKey(value)).font(Font.system(size: self.font.pointSize, design: .serif).italic()).foregroundStyle(.secondary)
-          } else if let _text = text {
-            text = _text + Text(LocalizedStringKey(value)).font(Font.system(size: self.font.pointSize, design: .serif).italic()).foregroundStyle(.secondary)
-          }
-        } else {
-          if text == nil {
-            text = Text(LocalizedStringKey(value)).font(Font.system(size: self.font.pointSize))
-          } else if let _text = text {
-            text = _text + Text(LocalizedStringKey(value)).font(Font.system(size: self.font.pointSize))
-          }
+        switch (isKeyword, isItalic) {
+        case (true, true):
+          textComponent = Text("[\(value)](https://google.com)")
+            .font(italicSerifFont)
+            .underline()
+            .foregroundStyle(.secondary)
+          
+        case (true, false):
+          textComponent = Text("[\(value)](https://google.com)")
+            .font(baseFont)
+            .underline()
+          
+        case (false, true):
+          textComponent = Text(LocalizedStringKey(value))
+            .font(italicSerifFont)
+            .foregroundStyle(.secondary)
+          
+        case (false, false):
+          textComponent = Text(LocalizedStringKey(value))
+            .font(baseFont)
         }
         
       case let .token(value):
-        if text == nil {
-          text = getCustomImage(image: "{\(value.replacingOccurrences(of: "/", with: ":"))}", newSize: CGSize(width: font.pointSize, height: font.pointSize)).font(Font.system(size: self.font.pointSize))
-        } else if let _text = text {
-          text = _text + getCustomImage(image: "{\(value.replacingOccurrences(of: "/", with: ":"))}", newSize: CGSize(width: font.pointSize, height: font.pointSize)).font(Font.system(size: self.font.pointSize))
-        }
+        let processedToken = value.replacingOccurrences(of: "/", with: ":")
+        textComponent = getCustomImage(
+          image: "{\(processedToken)}",
+          newSize: CGSize(width: font.pointSize / 1.25, height: font.pointSize / 1.25)
+        )
+        .font(baseFont)
       }
+      
+      textComponents.append(textComponent)
     }
     
-    return (text ?? Text("")).fixedSize(horizontal: false, vertical: true)
+    // More efficient reduction using reduce(into:) which mutates in-place
+    let combinedText = textComponents.reduce(Text("")) { partial, next in
+      Text("\(partial)\(next)")
+    }
+    
+    return combinedText.fixedSize(horizontal: false, vertical: true)
   }
   
   private func getCustomImage(image: String, newSize: CGSize) -> Text {
     if let image = UIImage(named: image, in: DesignComponentsResources.bundle, with: nil),
        let newImage = convertImageToNewFrame(image: image, newFrameSize: newSize) {
-      return Text(Image(uiImage: newImage).resizable()).baselineOffset(-3)
+      return Text(Image(uiImage: newImage).resizable())
     } else {
       return Text("")
     }

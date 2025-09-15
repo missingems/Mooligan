@@ -6,6 +6,8 @@ import SwiftUI
 struct InformationView: View {
   private let title: String
   private let widgets: [Widget]
+  @Environment(\.displayScale) private var displayScale
+  private var strokeScale: CGFloat { max(displayScale, 1) }
   
   var body: some View {
     Divider().safeAreaPadding(.leading, nil)
@@ -68,39 +70,58 @@ struct InformationView: View {
   }
 }
 
-private enum Widget: Hashable, Identifiable, View {
-  case powerToughness(power: String, toughness: String)
-  case loyalty(counters: String)
-  case manaValue(String)
-  case collectorNumber(String)
-  case colorIdentity([String])
-  case set(code: String, rarity: Card.Rarity, iconURL: URL?)
-  
+private struct Widget: Identifiable, View {
+  // Nested kind to preserve associated data
+  enum Kind: Hashable {
+    case powerToughness(power: String, toughness: String)
+    case loyalty(counters: String)
+    case manaValue(String)
+    case collectorNumber(String)
+    case colorIdentity([String])
+    case set(code: String, rarity: Card.Rarity, iconURL: URL?)
+  }
+
+  // Environment for display scale (to replace deprecated UIScreen.main.nativeScale usage)
+  @Environment(\.displayScale) private var displayScale
+  private var strokeScale: CGFloat { max(displayScale, 1) }
+
+  // Stored kind
+  private let kind: Kind
+
+  // Identifiable conformance
+  typealias ID = Kind
+  nonisolated var id: Kind { kind }
+
+  // View body
   var body: some View {
-    switch self {
+    switch kind {
     case let .powerToughness(power, toughness):
       powerToughnessView(power: power, toughness: toughness)
-      
+
     case let .set(code, rarity, iconURL):
       setCodeView(code, rarity: rarity, iconURL: iconURL)
-      
+
     case let .colorIdentity(manaIdentity):
       manaIdentityView(manaIdentity)
-      
+
     case let .collectorNumber(number):
       collectionNumberView(number)
-      
+
     case let .loyalty(counters):
       loyaltyWidgetView(counters)
-      
+
     case let .manaValue(value):
       manaValueView(value)
     }
   }
-  
-  nonisolated var id: Self {
-    return self
-  }
+
+  // Factory helpers to preserve previous enum-like construction syntax
+  static func powerToughness(power: String, toughness: String) -> Widget { .init(kind: .powerToughness(power: power, toughness: toughness)) }
+  static func loyalty(counters: String) -> Widget { .init(kind: .loyalty(counters: counters)) }
+  static func manaValue(_ value: String) -> Widget { .init(kind: .manaValue(value)) }
+  static func collectorNumber(_ value: String) -> Widget { .init(kind: .collectorNumber(value)) }
+  static func colorIdentity(_ value: [String]) -> Widget { .init(kind: .colorIdentity(value)) }
+  static func set(code: String, rarity: Card.Rarity, iconURL: URL?) -> Widget { .init(kind: .set(code: code, rarity: rarity, iconURL: iconURL)) }
 }
 
 private extension Widget {
@@ -117,11 +138,11 @@ private extension Widget {
             .aspectRatio(contentMode: .fit)
             .frame(width: 15)
             .foregroundStyle(.primary)
-          
+
           Text("\(power)/\(toughness)")
             .font(.body)
             .fontDesign(.serif)
-          
+
           Image("toughness", bundle: DesignComponentsResources.bundle)
             .resizable()
             .renderingMode(.template)
@@ -129,7 +150,7 @@ private extension Widget {
             .frame(width: 15)
             .foregroundStyle(.primary)
         }
-        
+
         Text(String(localized: "Power\nToughness"))
           .font(.caption)
           .foregroundStyle(.secondary)
@@ -138,14 +159,14 @@ private extension Widget {
       }
     }
   }
-  
+
   @ViewBuilder private func manaIdentityView(_ identity: [String]) -> some View {
     if identity.isEmpty == false {
       VStack(alignment: .center, spacing: 3.0) {
         Self.wrappedContent {
           ManaView(identity: identity, size: CGSize(width: 21, height: 21))?.offset(y: -1)
         }
-        
+
         Text(String(localized: "Color\nIdentity"))
           .font(.caption)
           .foregroundStyle(.secondary)
@@ -154,7 +175,7 @@ private extension Widget {
       }
     }
   }
-  
+
   @ViewBuilder private func loyaltyWidgetView(_ counters: String?) -> some View {
     if let counters {
       VStack(alignment: .center, spacing: 3.0) {
@@ -166,7 +187,7 @@ private extension Widget {
               .aspectRatio(contentMode: .fit)
               .frame(width: 50)
               .tint(.accentColor)
-            
+
             Text(counters)
               .font(.body)
               .fontWeight(.medium)
@@ -175,7 +196,7 @@ private extension Widget {
               .colorInvert()
           }
         }
-        
+
         Text(String(localized: "Loyalty\nCounters"))
           .font(.caption)
           .foregroundStyle(.secondary)
@@ -184,14 +205,14 @@ private extension Widget {
       }
     }
   }
-  
+
   @ViewBuilder private func collectionNumberView(_ collectorNumber: String?) -> some View {
     if let collectorNumber {
       VStack(alignment: .center, spacing: 3.0) {
         Self.wrappedContent {
           Text("#\(collectorNumber)".uppercased()).font(.body).fontDesign(.serif)
         }
-        
+
         Text(String(localized: "Collector\nNumber"))
           .font(.caption)
           .foregroundStyle(.secondary)
@@ -200,14 +221,14 @@ private extension Widget {
       }
     }
   }
-  
+
   @ViewBuilder private func setCodeView(
     _ code: String?,
     rarity: Card.Rarity,
     iconURL: URL?
   ) -> some View {
     let colors = rarity.colorNames?.map({ Color($0, bundle: DesignComponentsResources.bundle)})
-    
+
     if let code {
       VStack(alignment: .center, spacing: 3.0) {
         HStack(spacing: 5.0) {
@@ -224,14 +245,14 @@ private extension Widget {
               endPoint: .bottomTrailing
             )
             .overlay(
-              RoundedRectangle(cornerRadius: 13.0).strokeBorder(.black.opacity(0.31), lineWidth: 1 / UIScreen.main.nativeScale)
+              RoundedRectangle(cornerRadius: 13.0).strokeBorder(.black.opacity(0.31), lineWidth: 1 / strokeScale)
             )
           } else {
             Color(.systemFill)
           }
         }
         .clipShape(RoundedRectangle(cornerRadius: 13.0))
-        
+
         Text("\(rarity.rawValue.capitalized)\n ")
           .font(.caption)
           .foregroundStyle(.secondary)
@@ -240,7 +261,7 @@ private extension Widget {
       }
     }
   }
-  
+
   @ViewBuilder private func manaValueView(_ manaValue: String?) -> some View {
     if let manaValue {
       VStack(alignment: .center, spacing: 3.0) {
@@ -249,7 +270,7 @@ private extension Widget {
             .font(.body)
             .fontDesign(.monospaced)
         }
-        
+
         Text(String(localized: "Mana\nValue"))
           .font(.caption)
           .foregroundStyle(.secondary)
@@ -271,3 +292,4 @@ extension Widget {
     .clipShape(RoundedRectangle(cornerRadius: 13.0))
   }
 }
+

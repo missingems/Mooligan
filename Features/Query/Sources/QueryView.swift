@@ -41,29 +41,21 @@ struct QueryView: View {
       .safeAreaPadding(.horizontal, nil)
       .placeholder(store.mode.isPlaceholder)
     }
+    .background { Color(.secondarySystemBackground).ignoresSafeArea() }
+    .searchable(text: $store.query.name, placement: .navigationBarDrawer(displayMode: .always))
+    .contentMargins(.vertical, EdgeInsets(top: 3.0, leading: 0, bottom: 13.0, trailing: 0), for: .scrollContent)
+    .scrollDisabled(store.mode.isScrollable == false)
+    .scrollPosition($store.scrollPosition)
+    .scrollBounceBehavior(.basedOnSize)
+    .navigationTitle(store.title)
+    .navigationBarTitleDisplayMode(.inline)
+    .toolbar { toolbar }
     .overlay(content: {
       ProgressView {
         Text("Loading...")
       }
       .opacity(store.mode == .loading ? 1 : 0)
     })
-    .searchable(
-      text: Binding(get: {
-        store.query.name
-      }, set: { newValue in
-        if store.query.name != newValue {
-          store.query.name = newValue
-        }
-      }),
-      placement: .navigationBarDrawer(displayMode: .always),
-      prompt: store.searchPrompt
-    )
-    .contentMargins(.vertical, EdgeInsets(top: 8.0, leading: 0, bottom: 13.0, trailing: 0), for: .scrollContent)
-    .scrollDisabled(store.mode.isScrollable == false)
-    .scrollPosition($store.scrollPosition)
-    .scrollBounceBehavior(.basedOnSize)
-    .navigationTitle(store.title)
-    .toolbar { toolbar }
     .task { store.send(.viewAppeared) }
   }
   
@@ -101,9 +93,12 @@ struct QueryView: View {
   }
   
   @ToolbarContentBuilder private var toolbar: some ToolbarContent {
-    ToolbarItemGroup(placement: .primaryAction) {
-      sortView
+    ToolbarItem(id: "info", placement: .principal) {
       infoView(query: store.queryType)
+    }
+    
+    ToolbarItem(id: "sort", placement: .topBarTrailing) {
+      sortView
     }
   }
   
@@ -125,7 +120,7 @@ struct QueryView: View {
         ProgressView()
           .opacity((store.mode == .loading || store.mode == .placeholder) ? 1 : 0)
         
-        Image(systemName: "arrow.up.arrow.down")
+        Image(systemName: "ellipsis")
           .opacity((store.mode == .loading || store.mode == .placeholder) ? 0 : 1)
       }
     }
@@ -135,9 +130,21 @@ struct QueryView: View {
   }
   
   @ViewBuilder private func infoView(query: QueryType) -> some View {
-    Button("Info", systemImage: "info") {
+    Button {
       store.send(.didSelectShowInfo)
+    } label: {
+      switch store.queryType {
+      case .querySet:
+        HStack(spacing: 5.0) {
+          Text(store.title).font(.headline)
+          Image(systemName: "chevron.down.circle.fill").font(.caption).foregroundStyle(.secondary)
+        }
+        
+      case .search:
+        Text("")
+      }
     }
+    .buttonStyle(.plain)
     .popover(isPresented: $store.isShowingInfo, attachmentAnchor: .rect(.bounds)) {
       VStack(spacing: 0) {
         ForEach(Array(zip(store.queryType.sections, store.queryType.sections.indices)), id: \.0.id) { section in
@@ -152,10 +159,8 @@ struct QueryView: View {
           }
         }
       }
+      .padding(.vertical, 11)
       .presentationCompactAdaptation(.popover)
-      .presentationBackground {
-        Color.clear
-      }
     }
   }
 }

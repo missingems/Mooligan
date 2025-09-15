@@ -80,6 +80,7 @@ extension PriceView {
   }
   
   private struct Model: View {
+    @Environment(\.displayScale) private var displayScale
     let action: Action
     let currencySymbol: String
     let isDisabled: Bool
@@ -146,7 +147,7 @@ extension PriceView {
                 .blur(radius: 5)
                 .overlay(
                   RoundedRectangle(cornerRadius: 8)
-                    .strokeBorder(.separator, lineWidth: 1 / UIScreen.main.nativeScale)
+                    .strokeBorder(.separator, lineWidth: 1 / displayScale)
                 )
               } else {
                 Color(.systemFill)

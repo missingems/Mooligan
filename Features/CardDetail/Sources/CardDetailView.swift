@@ -7,6 +7,7 @@ import SwiftUI
 struct CardDetailView: View {
   @Bindable var store: StoreOf<CardDetailFeature>
   @State private var maxWidth: CGFloat?
+  @Environment(\.displayScale) private var displayScale
   
   var body: some View {
     ScrollView(.vertical) {
@@ -77,7 +78,7 @@ struct CardDetailView: View {
               .clipShape(RoundedRectangle(cornerRadius: 13))
               .overlay(
                 RoundedRectangle(cornerRadius: 13)
-                  .strokeBorder(.separator, lineWidth: 1 / UIScreen.main.nativeScale)
+                  .strokeBorder(.separator, lineWidth: 1 / displayScale)
               )
             }
             .buttonStyle(.sinkableButtonStyle)
