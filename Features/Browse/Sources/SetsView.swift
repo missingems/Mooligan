@@ -103,7 +103,7 @@ struct SetsView: View {
             .safeAreaPadding(.horizontal, nil)
           }
         } header: {
-          Text(value.displayDate.uppercased()).font(.caption).fontWeight(.semibold)
+          Text(value.displayDate.uppercased()).font(.caption).fontWeight(.semibold).padding(.horizontal, nil)
         }
       }
       .listStyle(.plain)

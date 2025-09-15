@@ -5,6 +5,7 @@ public struct PillText: View {
   private let insets: EdgeInsets
   private let background: Color
   private let isFoil: Bool
+  @Environment(\.displayScale) private var displayScale
   
   public init(
     _ label: String,
@@ -41,7 +42,7 @@ public struct PillText: View {
           .blur(radius: 5)
           .overlay(
             RoundedRectangle(cornerRadius: 8)
-              .strokeBorder(.separator, lineWidth: 1 / UIScreen.main.nativeScale)
+              .strokeBorder(.separator, lineWidth: 1 / displayScale)
           )
         } else {
           background

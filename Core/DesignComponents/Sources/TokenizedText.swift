@@ -18,16 +18,13 @@ public struct TokenizedText: View {
   
   
   private func build(elements: [TextElement]) -> some View {
-    // Pre-calculate font configurations to avoid repeated system calls
     let baseFont = Font.system(size: font.pointSize)
     let serifFont = Font.system(size: font.pointSize, design: .serif)
     let italicSerifFont = serifFont.italic()
     
-    // Use array with initial capacity to avoid reallocation
     var textComponents: [Text] = []
     textComponents.reserveCapacity(elements.count)
     
-    // Single pass through elements
     for element in elements {
       let textComponent: Text
       
@@ -56,7 +53,6 @@ public struct TokenizedText: View {
         }
         
       case let .token(value):
-        // Cache the processed token string if tokens repeat frequently
         let processedToken = value.replacingOccurrences(of: "/", with: ":")
         textComponent = getCustomImage(
           image: "{\(processedToken)}",
@@ -69,8 +65,8 @@ public struct TokenizedText: View {
     }
     
     // More efficient reduction using reduce(into:) which mutates in-place
-    let combinedText = textComponents.reduce(into: Text("")) { result, text in
-      result = result + text
+    let combinedText = textComponents.reduce(Text("")) { partial, next in
+      Text("\(partial)\(next)")
     }
     
     return combinedText.fixedSize(horizontal: false, vertical: true)

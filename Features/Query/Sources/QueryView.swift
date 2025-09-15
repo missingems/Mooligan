@@ -130,22 +130,11 @@ struct QueryView: View {
   }
   
   @ViewBuilder private func infoView(query: QueryType) -> some View {
-    
-    Menu {
-      Picker("SORT BY", selection: $store.query.sortMode) {
-        ForEach(store.availableSortModes) { value in
-          Text(value.description)
-        }
-      }
-      
-      Picker("SORT ORDER", selection: $store.query.sortDirection) {
-        ForEach(store.availableSortOrders) { value in
-          Text(value.description)
-        }
-      }
+    Button {
+      store.send(.didSelectShowInfo)
     } label: {
       switch store.queryType {
-      case let .querySet(set, _):
+      case .querySet:
         HStack(spacing: 5.0) {
           Text(store.title).font(.headline)
           Image(systemName: "chevron.down.circle.fill").font(.caption).foregroundStyle(.secondary)
@@ -155,43 +144,24 @@ struct QueryView: View {
         Text("")
       }
     }
-    .pickerStyle(.inline)
-    .labelsVisibility(.visible)
-    .disabled(store.mode == .loading || store.mode == .placeholder)
-    
-    
-    
-//    Button {
-//      store.send(.didSelectShowInfo)
-//    } label: {
-//      switch store.queryType {
-//      case let .querySet(set, _):
-//        HStack(spacing: 5.0) {
-//          Text(store.title).font(.headline)
-//          Image(systemName: "chevron.down.circle.fill").font(.caption).foregroundStyle(.secondary)
-//        }
-//        
-//      case .search:
-//        Text("")
-//      }
-//    }
-//    .buttonStyle(.plain) // Prevents button from expanding
-//    .popover(isPresented: $store.isShowingInfo, attachmentAnchor: .rect(.bounds)) {
-//      VStack(spacing: 0) {
-//        ForEach(Array(zip(store.queryType.sections, store.queryType.sections.indices)), id: \.0.id) { section in
-//          VStack(spacing: 0) {
-//            section.0.body
-//              .padding(.vertical, 11.0)
-//              .safeAreaPadding(.horizontal, nil)
-//            
-//            if section.1 != store.queryType.sections.count - 1 {
-//              Divider().safeAreaPadding(.leading, nil)
-//            }
-//          }
-//        }
-//      }
-//      .presentationCompactAdaptation(.popover)
-//    }
+    .buttonStyle(.plain)
+    .popover(isPresented: $store.isShowingInfo, attachmentAnchor: .rect(.bounds)) {
+      VStack(spacing: 0) {
+        ForEach(Array(zip(store.queryType.sections, store.queryType.sections.indices)), id: \.0.id) { section in
+          VStack(spacing: 0) {
+            section.0.body
+              .padding(.vertical, 11.0)
+              .safeAreaPadding(.horizontal, nil)
+            
+            if section.1 != store.queryType.sections.count - 1 {
+              Divider().safeAreaPadding(.leading, nil)
+            }
+          }
+        }
+      }
+      .padding(.vertical, 11)
+      .presentationCompactAdaptation(.popover)
+    }
   }
 }
 

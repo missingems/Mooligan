@@ -45,13 +45,14 @@ struct RootView: View {
               }
             }
             
-          case .game:
-            Text(info.title)
-            
           case .collection:
             Text(info.title)
           }
         }
+      }
+      
+      Tab(role: .search) {
+        Text("Search")
       }
     }
     .toolbarVisibility(.visible, for: .tabBar)
