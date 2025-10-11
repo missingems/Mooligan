@@ -41,17 +41,20 @@ struct SetRow: View {
             trailing: 13
           )
         )
-        .background { Color(.tertiarySystemFill) }
-        .clipShape(
+        .background {
           UnevenRoundedRectangle(
-            cornerRadii: RectangleCornerRadii(
+            cornerRadii: .init(
               topLeading: topCornerRadii,
               bottomLeading: bottomCornerRadii,
               bottomTrailing: bottomCornerRadii,
               topTrailing: topCornerRadii
-            )
+            ),
+            style: .continuous
           )
-        )
+          .foregroundStyle(
+            Color(.systemBackground)
+          )
+        }
       }
     )
     .buttonStyle(.sinkableButtonStyle)

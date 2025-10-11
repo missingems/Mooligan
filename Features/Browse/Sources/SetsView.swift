@@ -98,31 +98,20 @@ struct SetsView: View {
               }
             }
             .listRowSeparator(.hidden)
-            .listRowBackground(Color(uiColor: .clear))
-            .listRowInsets(insets)
-            .safeAreaPadding(.horizontal, nil)
+            .listRowBackground(Color.clear)
+            .listRowVerticalInsets(top: insets.top, bottom: insets.bottom)
           }
         } header: {
-          Text(value.displayDate.uppercased()).font(.caption).fontWeight(.semibold).padding(.horizontal, nil)
+          Text(value.displayDate)
         }
       }
       .listStyle(.plain)
       .listSectionSeparator(.hidden)
+      .background { Color(.systemGroupedBackground).ignoresSafeArea() }
       .redacted(reason: store.mode.isPlaceholder ? .placeholder : [])
       .scrollDisabled(store.mode.isPlaceholder)
       .allowsHitTesting(store.mode.isPlaceholder == false)
-      .contentMargins(.bottom, 13, for: .scrollContent)
-      .searchable(
-        text: Binding(get: {
-          store.query
-        }, set: { newValue in
-          if store.query != newValue {
-            store.query = newValue
-          }
-        }),
-        placement: .navigationBarDrawer(displayMode: .always),
-        prompt: store.queryPlaceholder
-      )
+      .contentMargins(.top, 0, for: .scrollContent)
       .refreshable {
         await store.send(.searchSets(.all)).finish()
       }

@@ -35,6 +35,7 @@ struct RootView: View {
               Browse
                 .RootView(store: store.scope(state: \.sets, action: \.sets))
                 .navigationTitle(info.title)
+                .toolbarTitleDisplayMode(.inlineLarge)
             } destination: { store in
               switch store.case {
               case let .showCardDetail(value):
