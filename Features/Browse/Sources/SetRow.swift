@@ -2,6 +2,7 @@ import DesignComponents
 import SwiftUI
 
 struct SetRow: View {
+  @Environment(\.colorScheme) var colorScheme
   private let viewModel: ViewModel
   private var onSelect: () -> ()
   
@@ -21,7 +22,7 @@ struct SetRow: View {
             Text(viewModel.attributedTitle).multilineTextAlignment(.leading)
             
             HStack(spacing: 5.0) {
-              PillText(viewModel.id).font(.caption)
+              PillText(viewModel.id).font(.caption).fontWidth(.condensed)
               Text(viewModel.numberOfCardsLabel).font(.caption).foregroundColor(.secondary)
             }
           }
@@ -52,7 +53,7 @@ struct SetRow: View {
             style: .continuous
           )
           .foregroundStyle(
-            Color(.systemBackground)
+            colorScheme == .light ? Color(.systemBackground) : Color(.secondarySystemGroupedBackground)
           )
         }
       }
@@ -65,3 +66,4 @@ struct SetRow: View {
     self.onSelect = onSelect
   }
 }
+ 

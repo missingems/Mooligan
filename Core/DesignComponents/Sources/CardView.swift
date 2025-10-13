@@ -37,7 +37,7 @@ public struct CardView: View {
     }
   }
   
-  private let layoutConfiguration: LayoutConfiguration
+  private let layoutConfiguration: LayoutConfiguration?
   private let callToActionHorizontalOffset: CGFloat
   private let displayableCard: DisplayableCardImage
   private let accessoryInfo: AccessoryInfo
@@ -73,17 +73,17 @@ public struct CardView: View {
             callToActionIconName: callToActionIconName,
             id: id
           )
-          .frame(width: layoutConfiguration.size.width, height: layoutConfiguration.size.height, alignment: .center)
+//          .frame(width: layoutConfiguration.size.width, height: layoutConfiguration.size.height, alignment: .center)
           
         case let .single(displayingImageURL, id):
           CardRemoteImageView(
             url: displayingImageURL,
-            isLandscape: layoutConfiguration.rotation == .landscape,
+            isLandscape: layoutConfiguration?.rotation == .landscape,
             isTransformed: false,
-            size: layoutConfiguration.size,
+            size: layoutConfiguration?.size,
             id: id
           )
-          .frame(width: layoutConfiguration.size.width, height: layoutConfiguration.size.height, alignment: .center)
+//          .frame(width: layoutConfiguration.size.width, height: layoutConfiguration.size.height, alignment: .center)
         }
       }
       
@@ -100,9 +100,9 @@ public struct CardView: View {
   ) -> some View {
     CardRemoteImageView(
       url: backImageURL,
-      isLandscape: layoutConfiguration.rotation == .landscape,
+      isLandscape: layoutConfiguration?.rotation == .landscape,
       isTransformed: true,
-      size: layoutConfiguration.size,
+      size: layoutConfiguration?.size,
       id: id
     )
     .opacity(direction == .back ? 1 : 0)
@@ -112,9 +112,9 @@ public struct CardView: View {
     
     CardRemoteImageView(
       url: frontImageURL,
-      isLandscape: layoutConfiguration.rotation == .landscape,
+      isLandscape: layoutConfiguration?.rotation == .landscape,
       isTransformed: false,
-      size: layoutConfiguration.size,
+      size: layoutConfiguration?.size,
       id: id
     )
     .opacity(direction == .front ? 1 : 0)
@@ -139,8 +139,7 @@ public struct CardView: View {
     }
     .tint(DesignComponentsAsset.accentColor.swiftUIColor)
     .frame(width: 44.0, height: 44.0)
-    .background(.thinMaterial)
-    .clipShape(Circle())
+    .glassEffect()
     .overlay(Circle().strokeBorder(.separator, lineWidth: 1 / strokeScale))
     .offset(x: callToActionHorizontalOffset, y: -13)
     .zIndex(3)
@@ -154,9 +153,9 @@ public struct CardView: View {
   ) -> some View {
     CardRemoteImageView(
       url: displayingImageURL,
-      isLandscape: layoutConfiguration.rotation == .landscape,
+      isLandscape: layoutConfiguration?.rotation == .landscape,
       isTransformed: false,
-      size: layoutConfiguration.size,
+      size: layoutConfiguration?.size,
       id: id
     )
     .rotationEffect(.degrees(direction == .front ? 0 : 180))
@@ -179,7 +178,7 @@ public struct CardView: View {
     }
     .tint(DesignComponentsAsset.accentColor.swiftUIColor)
     .frame(width: 44.0, height: 44.0)
-    .background(.thinMaterial)
+    .glassEffect()
     .clipShape(Circle())
     .overlay(Circle().strokeBorder(.separator, lineWidth: 1 / strokeScale))
     .offset(x: callToActionHorizontalOffset, y: -13)
@@ -244,7 +243,7 @@ public struct CardView: View {
   
   public init(
     displayableCard: DisplayableCardImage,
-    layoutConfiguration: LayoutConfiguration,
+    layoutConfiguration: LayoutConfiguration? = nil,
     callToActionHorizontalOffset: CGFloat = 5.0,
     priceVisibility: AccessoryInfo,
     send: ((Action) -> Void)? = nil

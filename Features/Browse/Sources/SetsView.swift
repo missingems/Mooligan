@@ -103,6 +103,10 @@ struct SetsView: View {
           }
         } header: {
           Text(value.displayDate)
+            .padding(.horizontal, 13.0)
+            .padding(.vertical, 5.0)
+            .glassEffect()
+            .padding(.bottom, 3.0)
         }
       }
       .listStyle(.plain)
@@ -112,6 +116,7 @@ struct SetsView: View {
       .scrollDisabled(store.mode.isPlaceholder)
       .allowsHitTesting(store.mode.isPlaceholder == false)
       .contentMargins(.top, 0, for: .scrollContent)
+      .listSectionSpacing(13.0)
       .refreshable {
         await store.send(.searchSets(.all)).finish()
       }

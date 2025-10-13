@@ -87,13 +87,15 @@ public extension Card {
   }
   
   func text(faceDirection: MagicCardFaceDirection?) -> [[TextElement]] {
-    return getDisplayText(
+    let elements = getDisplayText(
       faceDirection: faceDirection
     )?.split(
       separator: "\n"
     ).map {
       TextElementParser.parse(String($0))
     } ?? []
+    
+    return elements
   }
   
   func typeline(faceDirection: MagicCardFaceDirection?) -> String? {

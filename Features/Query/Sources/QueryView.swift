@@ -14,7 +14,7 @@ struct QueryView: View {
     self.store = store
     gridItems = [GridItem](
       repeating: GridItem(
-        spacing: 8.0,
+        spacing: 5,
         alignment: .center
       ),
       count: Int(store.numberOfColumns)
@@ -23,26 +23,30 @@ struct QueryView: View {
   
   var body: some View {
     ScrollView(.vertical) {
-      LazyVGrid(columns: gridItems, spacing: 13) {
-        if let contentWidth = store.itemWidth, contentWidth > 0, let dataSource = store.dataSource {
-          contentScrollView(dataSource: dataSource, contentWidth: contentWidth)
-            .blur(radius: store.mode == .loading ? 8.0 : 0)
-            .scaleEffect(store.mode == .loading ? 0.97 : 1)
-            .opacity(store.mode == .loading ? 0.2 : 1)
+      LazyVGrid(columns: gridItems, spacing: 5) {
+        if let dataSource = store.dataSource {
+          contentScrollView(dataSource: dataSource)
         }
-      }
-      .onGeometryChange(for: CGFloat.self, of: { proxy in proxy.size.width }) { newValue in
-        guard store.viewWidth == nil, newValue > 0 else {
-          return
-        }
+//        if let contentWidth = store.itemWidth, contentWidth > 0, let dataSource = store.dataSource {
           
-        store.viewWidth = newValue
+//            .blur(radius: store.mode == .loading ? 8.0 : 0)
+//            .scaleEffect(store.mode == .loading ? 0.97 : 1)
+//            .opacity(store.mode == .loading ? 0.2 : 1)
+//        }
       }
-      .safeAreaPadding(.horizontal, nil)
-      .placeholder(store.mode.isPlaceholder)
+      .padding(.horizontal, 5.0)
+//      .padding(.horizontal, 0)
+//      .onGeometryChange(for: CGFloat.self, of: { proxy in proxy.size.width }) { newValue in
+//        guard store.viewWidth == nil, newValue > 0 else {
+//          return
+//        }
+//        
+//        store.viewWidth = newValue
+//      }
+//      .placeholder(store.mode.isPlaceholder)
     }
-    .background { Color(.secondarySystemBackground).ignoresSafeArea() }
-    .searchable(text: $store.query.name, placement: .navigationBarDrawer(displayMode: .always))
+    .background { Color(.systemGroupedBackground).ignoresSafeArea() }
+//    .searchable(text: $store.query.name, placement: .navigationBarDrawer(displayMode: .always))
     .contentMargins(.vertical, EdgeInsets(top: 3.0, leading: 0, bottom: 13.0, trailing: 0), for: .scrollContent)
     .scrollDisabled(store.mode.isScrollable == false)
     .scrollPosition($store.scrollPosition)
@@ -50,36 +54,27 @@ struct QueryView: View {
     .navigationTitle(store.title)
     .navigationBarTitleDisplayMode(.inline)
     .toolbar { toolbar }
-    .overlay(content: {
+    .overlay {
       ProgressView {
         Text("Loading...")
       }
       .opacity(store.mode == .loading ? 1 : 0)
-    })
+    }
     .task { store.send(.viewAppeared) }
   }
   
-  @ViewBuilder private func contentScrollView(dataSource: CardDataSource, contentWidth: CGFloat) -> some View {
+  @ViewBuilder private func contentScrollView(dataSource: CardDataSource) -> some View {
     ForEach(Array(zip(dataSource.cardDetails, dataSource.cardDetails.indices)), id: \.0.card.id) { value in
       let cardInfo = value.0
       let index = value.1
-      
-      let layout = CardView.LayoutConfiguration(
-        rotation: .portrait,
-        maxWidth: contentWidth
-      )
       
       Button {
         store.send(.didSelectCard(cardInfo.card, store.queryType))
       } label: {
         CardView(
-          displayableCard: cardInfo.displayableCardImage,
-          layoutConfiguration: layout,
+          displayableCard: cardInfo.displayableCardImage!,
           callToActionHorizontalOffset: 5.0,
-          priceVisibility: .display(
-            usdFoil: cardInfo.card.getPrice(for: .usdFoil),
-            usd: cardInfo.card.getPrice(for: .usd)
-          )
+          priceVisibility: .hidden
         )
       }
       .disabled(store.mode.isScrollable == false)
@@ -135,10 +130,10 @@ struct QueryView: View {
     } label: {
       switch store.queryType {
       case .querySet:
-        HStack(spacing: 5.0) {
-          Text(store.title).font(.headline)
-          Image(systemName: "chevron.down.circle.fill").font(.caption).foregroundStyle(.secondary)
-        }
+        Text(store.title).multilineTextAlignment(.center).font(.subheadline).fontWeight(.semibold).lineLimit(1)
+        .frame(minHeight: 44.0, alignment: .center)
+        .padding(.horizontal, 13.0)
+        .glassEffect()
         
       case .search:
         Text("")

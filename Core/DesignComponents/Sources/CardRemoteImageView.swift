@@ -8,7 +8,7 @@ public struct CardRemoteImageView: View {
   @Environment(\.displayScale) private var displayScale
   @State private var cornerRadius: CGFloat?
   private let transformers: [ImageProcessing]
-  private let size: CGSize
+  private let size: CGSize?
   private let isLandscape: Bool
   private let id: String
   
@@ -16,7 +16,7 @@ public struct CardRemoteImageView: View {
     url: URL,
     isLandscape: Bool = false,
     isTransformed: Bool = false,
-    size: CGSize,
+    size: CGSize? = nil,
     id: String
   ) {
     self.isLandscape = isLandscape
@@ -58,7 +58,7 @@ public struct CardRemoteImageView: View {
             .blur(radius: 34.0)
         }
       }
-      .modifier(ConditionalFrameModifier(size: size))
+      .aspectRatio(MagicCardImageRatio.widthToHeight.rawValue, contentMode: .fit)
     }
     .onGeometryChange(
       for: CGSize.self,
