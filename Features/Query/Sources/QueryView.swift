@@ -26,28 +26,18 @@ struct QueryView: View {
       LazyVGrid(columns: gridItems, spacing: 5) {
         if let dataSource = store.dataSource {
           contentScrollView(dataSource: dataSource)
+            .blur(radius: store.mode == .loading ? 8.0 : 0)
+            .scaleEffect(store.mode == .loading ? 0.97 : 1)
+            .opacity(store.mode == .loading ? 0.2 : 1)
         }
-//        if let contentWidth = store.itemWidth, contentWidth > 0, let dataSource = store.dataSource {
-          
-//            .blur(radius: store.mode == .loading ? 8.0 : 0)
-//            .scaleEffect(store.mode == .loading ? 0.97 : 1)
-//            .opacity(store.mode == .loading ? 0.2 : 1)
-//        }
       }
-      .padding(.horizontal, 5.0)
-//      .padding(.horizontal, 0)
-//      .onGeometryChange(for: CGFloat.self, of: { proxy in proxy.size.width }) { newValue in
-//        guard store.viewWidth == nil, newValue > 0 else {
-//          return
-//        }
-//        
-//        store.viewWidth = newValue
-//      }
-//      .placeholder(store.mode.isPlaceholder)
+      .padding(.horizontal, 8.0)
+      .placeholder(store.mode.isPlaceholder)
     }
-    .background { Color(.systemGroupedBackground).ignoresSafeArea() }
-//    .searchable(text: $store.query.name, placement: .navigationBarDrawer(displayMode: .always))
-    .contentMargins(.vertical, EdgeInsets(top: 3.0, leading: 0, bottom: 13.0, trailing: 0), for: .scrollContent)
+    .background {
+      Color(.systemGroupedBackground).ignoresSafeArea()
+    }
+    .contentMargins(.vertical, EdgeInsets(top: 8.0, leading: 0, bottom: 13.0, trailing: 0), for: .scrollContent)
     .scrollDisabled(store.mode.isScrollable == false)
     .scrollPosition($store.scrollPosition)
     .scrollBounceBehavior(.basedOnSize)
@@ -129,10 +119,13 @@ struct QueryView: View {
       store.send(.didSelectShowInfo)
     } label: {
       switch store.queryType {
-      case .querySet:
-        Text(store.title).multilineTextAlignment(.center).font(.subheadline).fontWeight(.semibold).lineLimit(1)
+      case let .querySet(set, _):
+        VStack(alignment: .center, spacing: 0) {
+          Text(store.title).multilineTextAlignment(.center).font(.subheadline).fontWeight(.semibold).lineLimit(1)
+          Text("\(set.cardCount) Cards").multilineTextAlignment(.center).font(.caption).fontWeight(.medium)
+        }
         .frame(minHeight: 44.0, alignment: .center)
-        .padding(.horizontal, 13.0)
+        .padding(.horizontal, 21.0)
         .glassEffect()
         
       case .search:
