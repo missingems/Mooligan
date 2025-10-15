@@ -44,6 +44,8 @@ struct QueryView: View {
     .navigationTitle(store.title)
     .navigationBarTitleDisplayMode(.inline)
     .toolbar { toolbar }
+    .searchable(text: $store.query.name, placement: .toolbar)
+    .searchToolbarBehavior(.minimize)
     .overlay {
       ProgressView {
         Text("Loading...")
@@ -81,10 +83,6 @@ struct QueryView: View {
     ToolbarItem(id: "info", placement: .principal) {
       infoView(query: store.queryType)
     }
-    
-    ToolbarItem(id: "sort", placement: .topBarTrailing) {
-      sortView
-    }
   }
   
   @ViewBuilder private var sortView: some View {
@@ -120,12 +118,12 @@ struct QueryView: View {
     } label: {
       switch store.queryType {
       case let .querySet(set, _):
-        VStack(alignment: .center, spacing: 0) {
-          Text(store.title).multilineTextAlignment(.center).font(.subheadline).fontWeight(.semibold).lineLimit(1)
-          Text("\(set.cardCount) Cards").multilineTextAlignment(.center).font(.caption).fontWeight(.medium)
+        HStack(spacing: 8.0) {
+          IconLazyImage(URL(string: set.iconSvgUri)).frame(width: 25, height: 25, alignment: .center)
+          Text(store.title).multilineTextAlignment(.leading).font(.headline).lineLimit(1)
         }
         .frame(minHeight: 44.0, alignment: .center)
-        .padding(.horizontal, 21.0)
+        .padding(EdgeInsets(top: 0, leading: 13.0, bottom: 0, trailing: 16))
         .glassEffect()
         
       case .search:

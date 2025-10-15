@@ -73,7 +73,6 @@ public struct CardView: View {
             callToActionIconName: callToActionIconName,
             id: id
           )
-//          .frame(width: layoutConfiguration.size.width, height: layoutConfiguration.size.height, alignment: .center)
           
         case let .single(displayingImageURL, id):
           CardRemoteImageView(
@@ -83,7 +82,6 @@ public struct CardView: View {
             size: layoutConfiguration?.size,
             id: id
           )
-//          .frame(width: layoutConfiguration.size.width, height: layoutConfiguration.size.height, alignment: .center)
         }
       }
       

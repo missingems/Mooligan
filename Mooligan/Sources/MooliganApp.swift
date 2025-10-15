@@ -46,17 +46,14 @@ struct RootView: View {
               }
             }
             
+            
           case .collection:
             Text(info.title)
           }
         }
       }
-      
-      Tab(role: .search) {
-        Text("Search")
-      }
     }
-    .toolbarVisibility(.visible, for: .tabBar)
+    .tabBarMinimizeBehavior(.onScrollDown)
     .tint(DesignComponentsAsset.accentColor.swiftUIColor)
   }
 }

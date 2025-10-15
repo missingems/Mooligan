@@ -111,6 +111,8 @@ struct SetsView: View {
       }
       .listStyle(.plain)
       .listSectionSeparator(.hidden)
+      .searchable(text: $store.query)
+      .searchToolbarBehavior(.minimize)
       .background { Color(.systemGroupedBackground).ignoresSafeArea() }
       .redacted(reason: store.mode.isPlaceholder ? .placeholder : [])
       .scrollDisabled(store.mode.isPlaceholder)
