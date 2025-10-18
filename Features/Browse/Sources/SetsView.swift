@@ -98,31 +98,27 @@ struct SetsView: View {
               }
             }
             .listRowSeparator(.hidden)
-            .listRowBackground(Color(uiColor: .clear))
-            .listRowInsets(insets)
-            .safeAreaPadding(.horizontal, nil)
+            .listRowBackground(Color.clear)
+            .listRowVerticalInsets(top: insets.top, bottom: insets.bottom)
           }
         } header: {
-          Text(value.displayDate.uppercased()).font(.caption).fontWeight(.semibold).padding(.horizontal, nil)
+          Text(value.displayDate)
+            .padding(.horizontal, 13.0)
+            .padding(.vertical, 5.0)
+            .glassEffect()
+            .padding(.bottom, 3.0)
         }
       }
       .listStyle(.plain)
       .listSectionSeparator(.hidden)
+      .searchable(text: $store.query)
+      .searchToolbarBehavior(.minimize)
+      .background { Color(.systemGroupedBackground).ignoresSafeArea() }
       .redacted(reason: store.mode.isPlaceholder ? .placeholder : [])
       .scrollDisabled(store.mode.isPlaceholder)
       .allowsHitTesting(store.mode.isPlaceholder == false)
-      .contentMargins(.bottom, 13, for: .scrollContent)
-      .searchable(
-        text: Binding(get: {
-          store.query
-        }, set: { newValue in
-          if store.query != newValue {
-            store.query = newValue
-          }
-        }),
-        placement: .navigationBarDrawer(displayMode: .always),
-        prompt: store.queryPlaceholder
-      )
+      .contentMargins(.top, 0, for: .scrollContent)
+      .listSectionSpacing(13.0)
       .refreshable {
         await store.send(.searchSets(.all)).finish()
       }

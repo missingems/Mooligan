@@ -35,6 +35,7 @@ struct RootView: View {
               Browse
                 .RootView(store: store.scope(state: \.sets, action: \.sets))
                 .navigationTitle(info.title)
+                .toolbarTitleDisplayMode(.inlineLarge)
             } destination: { store in
               switch store.case {
               case let .showCardDetail(value):
@@ -45,17 +46,14 @@ struct RootView: View {
               }
             }
             
+            
           case .collection:
             Text(info.title)
           }
         }
       }
-      
-      Tab(role: .search) {
-        Text("Search")
-      }
     }
-    .toolbarVisibility(.visible, for: .tabBar)
+    .tabBarMinimizeBehavior(.onScrollDown)
     .tint(DesignComponentsAsset.accentColor.swiftUIColor)
   }
 }

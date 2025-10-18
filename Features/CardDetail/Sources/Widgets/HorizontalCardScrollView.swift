@@ -54,19 +54,16 @@ struct HorizontalCardScrollView: View {
               }, label: {
                 CardView(
                   displayableCard: cardInfo.displayableCardImage,
-                  layoutConfiguration: CardView.LayoutConfiguration(
-                    rotation: .portrait,
-                    maxWidth: 170
-                  ),
                   priceVisibility: .displaySet(
                     cardInfo.card.setName,
                     usdFoil: cardInfo.card.prices.usdFoil,
                     usd: cardInfo.card.prices.usd
-                  )
+                  ),
+                  shouldShowShadow: false
                 )
-                .frame(maxWidth: 170.0)
               }
             )
+            .frame(width: 183)
             .buttonStyle(.sinkableButtonStyle)
             .task {
               send(.didShowCardAtIndex(index))

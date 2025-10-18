@@ -15,7 +15,7 @@ struct CardDetailView: View {
         if let content = store.content {
           if let maxWidth, maxWidth > 0 {
             let cardImageWidth = content.card.isLandscape ? 2.5 / 3.0 * maxWidth : 2.0 / 3.0 * maxWidth
-            
+
             let configuration = CardView.LayoutConfiguration(
               rotation: content.card.isLandscape ? .landscape : .portrait,
               maxWidth: cardImageWidth.rounded()
@@ -25,17 +25,17 @@ struct CardDetailView: View {
               displayableCard: content.displayableCardImage,
               layoutConfiguration: configuration,
               callToActionHorizontalOffset: 21.0,
-              priceVisibility: .hidden
+              priceVisibility: .hidden,
+              shouldShowShadow: true
             ) { action in
               store.send(.descriptionCallToActionTapped, animation: .bouncy)
             }
-            .shadow(color: DesignComponentsAsset.shadow.swiftUIColor, radius: 8, x: 0, y: 5)
             .padding(
               EdgeInsets(
                 top: 13,
-                leading: 0,
+                leading: 55,
                 bottom: 21,
-                trailing: 0
+                trailing: 55
               )
             )
             .zIndex(1)
@@ -238,7 +238,7 @@ struct CardDetailView: View {
             transaction: Transaction(animation: .smooth)
           ) { state in
             if let image = state.image {
-              image.resizable().blur(radius: 34, opaque: true)
+              image.resizable().blur(radius: 89, opaque: true)
             }
           }
           .opacity((content.displayableCardImage?.faceDirection == .front) ? 1 : 0)

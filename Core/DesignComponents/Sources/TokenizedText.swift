@@ -16,57 +16,37 @@ public struct TokenizedText: View {
     self.paragraphSpacing = paragraphSpacing
   }
   
-  
   private func build(elements: [TextElement]) -> some View {
-    let baseFont = Font.system(size: font.pointSize)
-    let serifFont = Font.system(size: font.pointSize, design: .serif)
-    let italicSerifFont = serifFont.italic()
-    
-    var textComponents: [Text] = []
-    textComponents.reserveCapacity(elements.count)
-    
-    for element in elements {
-      let textComponent: Text
-      
+    let combinedText = elements.map { element -> Text in
       switch element {
       case let .text(value, isItalic, isKeyword):
-        switch (isKeyword, isItalic) {
-        case (true, true):
-          textComponent = Text("[\(value)](https://google.com)")
-            .font(italicSerifFont)
+        if isKeyword && isItalic {
+          return Text("[\(value)](https://google.com)")
+            .font(.system(size: font.pointSize, design: .serif))
             .underline()
-            .foregroundStyle(.secondary)
-          
-        case (true, false):
-          textComponent = Text("[\(value)](https://google.com)")
-            .font(baseFont)
+            .italic()
+            .foregroundStyle(.primary.opacity(0.6))
+        } else if isKeyword {
+          return Text("[\(value)](https://google.com)")
+            .font(.system(size: font.pointSize))
             .underline()
-          
-        case (false, true):
-          textComponent = Text(LocalizedStringKey(value))
-            .font(italicSerifFont)
-            .foregroundStyle(.secondary)
-          
-        case (false, false):
-          textComponent = Text(LocalizedStringKey(value))
-            .font(baseFont)
+        } else if isItalic {
+          return Text(value)
+            .font(.system(size: font.pointSize, design: .serif).italic())
+            .foregroundStyle(.primary.opacity(0.6))
+        } else {
+          return Text(value)
+            .font(.system(size: font.pointSize))
         }
         
       case let .token(value):
-        let processedToken = value.replacingOccurrences(of: "/", with: ":")
-        textComponent = getCustomImage(
-          image: "{\(processedToken)}",
-          newSize: CGSize(width: font.pointSize / 1.25, height: font.pointSize / 1.25)
-        )
-        .font(baseFont)
+        return getCustomImage(
+          image: "{\(value.replacingOccurrences(of: "/", with: ":"))}",
+          newSize: CGSize(width: font.pointSize, height: font.pointSize)
+        ).font(.system(size: font.pointSize))
       }
-      
-      textComponents.append(textComponent)
-    }
-    
-    // More efficient reduction using reduce(into:) which mutates in-place
-    let combinedText = textComponents.reduce(Text("")) { partial, next in
-      Text("\(partial)\(next)")
+    }.reduce(into: Text("")) { acc, next in
+      acc = acc + next
     }
     
     return combinedText.fixedSize(horizontal: false, vertical: true)

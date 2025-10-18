@@ -14,7 +14,7 @@ struct QueryView: View {
     self.store = store
     gridItems = [GridItem](
       repeating: GridItem(
-        spacing: 8.0,
+        spacing: 8,
         alignment: .center
       ),
       count: Int(store.numberOfColumns)
@@ -23,64 +23,51 @@ struct QueryView: View {
   
   var body: some View {
     ScrollView(.vertical) {
-      LazyVGrid(columns: gridItems, spacing: 13) {
-        if let contentWidth = store.itemWidth, contentWidth > 0, let dataSource = store.dataSource {
-          contentScrollView(dataSource: dataSource, contentWidth: contentWidth)
+      LazyVGrid(columns: gridItems, spacing: 8) {
+        if let dataSource = store.dataSource {
+          contentScrollView(dataSource: dataSource)
             .blur(radius: store.mode == .loading ? 8.0 : 0)
             .scaleEffect(store.mode == .loading ? 0.97 : 1)
             .opacity(store.mode == .loading ? 0.2 : 1)
         }
       }
-      .onGeometryChange(for: CGFloat.self, of: { proxy in proxy.size.width }) { newValue in
-        guard store.viewWidth == nil, newValue > 0 else {
-          return
-        }
-          
-        store.viewWidth = newValue
-      }
-      .safeAreaPadding(.horizontal, nil)
+      .padding(.horizontal, 8.0)
       .placeholder(store.mode.isPlaceholder)
     }
-    .background { Color(.secondarySystemBackground).ignoresSafeArea() }
-    .searchable(text: $store.query.name, placement: .navigationBarDrawer(displayMode: .always))
-    .contentMargins(.vertical, EdgeInsets(top: 3.0, leading: 0, bottom: 13.0, trailing: 0), for: .scrollContent)
+    .background {
+      Color(.systemGroupedBackground).ignoresSafeArea()
+    }
+    .contentMargins(
+      .vertical,
+      EdgeInsets(top: 8.0, leading: 0, bottom: 13.0, trailing: 0),
+      for: .scrollContent
+    )
     .scrollDisabled(store.mode.isScrollable == false)
     .scrollPosition($store.scrollPosition)
     .scrollBounceBehavior(.basedOnSize)
     .navigationTitle(store.title)
     .navigationBarTitleDisplayMode(.inline)
     .toolbar { toolbar }
-    .overlay(content: {
+    .searchable(text: $store.query.name, placement: .toolbar)
+    .searchToolbarBehavior(.minimize)
+    .overlay {
       ProgressView {
         Text("Loading...")
       }
       .opacity(store.mode == .loading ? 1 : 0)
-    })
+    }
     .task { store.send(.viewAppeared) }
   }
   
-  @ViewBuilder private func contentScrollView(dataSource: CardDataSource, contentWidth: CGFloat) -> some View {
+  @ViewBuilder private func contentScrollView(dataSource: CardDataSource) -> some View {
     ForEach(Array(zip(dataSource.cardDetails, dataSource.cardDetails.indices)), id: \.0.card.id) { value in
       let cardInfo = value.0
       let index = value.1
       
-      let layout = CardView.LayoutConfiguration(
-        rotation: .portrait,
-        maxWidth: contentWidth
-      )
-      
       Button {
         store.send(.didSelectCard(cardInfo.card, store.queryType))
       } label: {
-        CardView(
-          displayableCard: cardInfo.displayableCardImage,
-          layoutConfiguration: layout,
-          callToActionHorizontalOffset: 5.0,
-          priceVisibility: .display(
-            usdFoil: cardInfo.card.getPrice(for: .usdFoil),
-            usd: cardInfo.card.getPrice(for: .usd)
-          )
-        )
+        CardView(displayableCard: cardInfo.displayableCardImage, layoutConfiguration: nil, callToActionHorizontalOffset: -3.0, priceVisibility: .hidden, shouldShowShadow: false, send: nil)
       }
       .disabled(store.mode.isScrollable == false)
       .buttonStyle(.sinkableButtonStyle)
@@ -95,10 +82,6 @@ struct QueryView: View {
   @ToolbarContentBuilder private var toolbar: some ToolbarContent {
     ToolbarItem(id: "info", placement: .principal) {
       infoView(query: store.queryType)
-    }
-    
-    ToolbarItem(id: "sort", placement: .topBarTrailing) {
-      sortView
     }
   }
   
@@ -134,11 +117,14 @@ struct QueryView: View {
       store.send(.didSelectShowInfo)
     } label: {
       switch store.queryType {
-      case .querySet:
-        HStack(spacing: 5.0) {
-          Text(store.title).font(.headline)
-          Image(systemName: "chevron.down.circle.fill").font(.caption).foregroundStyle(.secondary)
+      case let .querySet(set, _):
+        HStack(spacing: 8.0) {
+          IconLazyImage(URL(string: set.iconSvgUri)).frame(width: 25, height: 25, alignment: .center)
+          Text(store.title).multilineTextAlignment(.leading).font(.headline).lineLimit(1)
         }
+        .frame(minHeight: 44.0, alignment: .center)
+        .padding(EdgeInsets(top: 0, leading: 13.0, bottom: 0, trailing: 16))
+        .glassEffect(.regular.interactive())
         
       case .search:
         Text("")

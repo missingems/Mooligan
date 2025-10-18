@@ -43,7 +43,7 @@ public enum TextElementParser {
     if !currentText.isEmpty {
       elements.append(.text(currentText, isItalic: isItalic, isKeyword: isKeyword))
     }
-    
+     
     return elements
   }
 }

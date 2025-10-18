@@ -2,6 +2,7 @@ import DesignComponents
 import SwiftUI
 
 struct SetRow: View {
+  @Environment(\.colorScheme) var colorScheme
   private let viewModel: ViewModel
   private var onSelect: () -> ()
   
@@ -21,7 +22,7 @@ struct SetRow: View {
             Text(viewModel.attributedTitle).multilineTextAlignment(.leading)
             
             HStack(spacing: 5.0) {
-              PillText(viewModel.id).font(.caption)
+              PillText(viewModel.id).font(.caption).fontWidth(.condensed)
               Text(viewModel.numberOfCardsLabel).font(.caption).foregroundColor(.secondary)
             }
           }
@@ -41,17 +42,20 @@ struct SetRow: View {
             trailing: 13
           )
         )
-        .background { Color(.tertiarySystemFill) }
-        .clipShape(
+        .background {
           UnevenRoundedRectangle(
-            cornerRadii: RectangleCornerRadii(
+            cornerRadii: .init(
               topLeading: topCornerRadii,
               bottomLeading: bottomCornerRadii,
               bottomTrailing: bottomCornerRadii,
               topTrailing: topCornerRadii
-            )
+            ),
+            style: .continuous
           )
-        )
+          .foregroundStyle(
+            colorScheme == .light ? Color(.systemBackground) : Color(.secondarySystemGroupedBackground)
+          )
+        }
       }
     )
     .buttonStyle(.sinkableButtonStyle)
@@ -62,3 +66,4 @@ struct SetRow: View {
     self.onSelect = onSelect
   }
 }
+ 
