@@ -233,7 +233,10 @@ private extension Widget {
       VStack(alignment: .center, spacing: 3.0) {
         HStack(spacing: 5.0) {
           IconLazyImage(iconURL, tintColor: .primary).frame(width: 25, height: 25)
-          Text(code.uppercased()).font(.body).fontDesign(.serif)
+          Text(code.uppercased())
+            .font(.body)
+            .fontWidth(.condensed)
+            .fontWeight(.medium)
         }
         .frame(minWidth: 66, minHeight: 34)
         .padding(EdgeInsets(top: 5, leading: 11, bottom: 5, trailing: 11))

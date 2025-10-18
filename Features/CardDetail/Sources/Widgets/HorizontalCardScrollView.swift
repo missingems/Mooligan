@@ -54,17 +54,13 @@ struct HorizontalCardScrollView: View {
               }, label: {
                 CardView(
                   displayableCard: cardInfo.displayableCardImage,
-                  layoutConfiguration: CardView.LayoutConfiguration(
-                    rotation: .portrait,
-                    maxWidth: 170
-                  ),
                   priceVisibility: .displaySet(
                     cardInfo.card.setName,
                     usdFoil: cardInfo.card.prices.usdFoil,
                     usd: cardInfo.card.prices.usd
-                  )
+                  ),
+                  shouldShowShadow: false
                 )
-                .frame(maxWidth: 170.0)
               }
             )
             .buttonStyle(.sinkableButtonStyle)
@@ -74,6 +70,7 @@ struct HorizontalCardScrollView: View {
           }
         }
       }
+      .frame(maxHeight: 300)
       .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
       .padding(.top, 3.0)
       .scrollClipDisabled(true)

@@ -25,7 +25,7 @@ public struct TokenizedText: View {
             .font(.system(size: font.pointSize, design: .serif))
             .underline()
             .italic()
-            .foregroundStyle(.secondary)
+            .foregroundStyle(.primary.opacity(0.6))
         } else if isKeyword {
           return Text("[\(value)](https://google.com)")
             .font(.system(size: font.pointSize))
@@ -33,7 +33,7 @@ public struct TokenizedText: View {
         } else if isItalic {
           return Text(value)
             .font(.system(size: font.pointSize, design: .serif).italic())
-            .foregroundStyle(.secondary)
+            .foregroundStyle(.primary.opacity(0.6))
         } else {
           return Text(value)
             .font(.system(size: font.pointSize))

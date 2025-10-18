@@ -37,6 +37,7 @@ public struct CardView: View {
     }
   }
   
+  private let shouldShowShadow: Bool
   private let layoutConfiguration: LayoutConfiguration?
   private let callToActionHorizontalOffset: CGFloat
   private let displayableCard: DisplayableCardImage
@@ -82,6 +83,9 @@ public struct CardView: View {
             size: layoutConfiguration?.size,
             id: id
           )
+          .conditionalModifier(shouldShowShadow, transform: { view in
+            view.shadow(radius: 21, x: 0, y: 5)
+          })
         }
       }
       
@@ -103,6 +107,9 @@ public struct CardView: View {
       size: layoutConfiguration?.size,
       id: id
     )
+    .conditionalModifier(shouldShowShadow, transform: { view in
+      view.shadow(radius: 21, x: 0, y: 5)
+    })
     .opacity(direction == .back ? 1 : 0)
     .rotation3DEffect(.degrees(direction == .back ? 180 : 0), axis: (x: 0, y: 1, z: 0))
     .zIndex(direction == .back ? 2 : 1)
@@ -115,6 +122,9 @@ public struct CardView: View {
       size: layoutConfiguration?.size,
       id: id
     )
+    .conditionalModifier(shouldShowShadow, transform: { view in
+      view.shadow(radius: 21, x: 0, y: 5)
+    })
     .opacity(direction == .front ? 1 : 0)
     .rotation3DEffect(.degrees(direction == .front ? 0 : 180), axis: (x: 0, y: 1, z: 0))
     .zIndex(direction == .front ? 2 : 1)
@@ -137,8 +147,7 @@ public struct CardView: View {
     }
     .tint(DesignComponentsAsset.accentColor.swiftUIColor)
     .frame(width: 44.0, height: 44.0)
-    .glassEffect()
-    .overlay(Circle().strokeBorder(.separator, lineWidth: 1 / strokeScale))
+    .glassEffect(.regular.interactive(true))
     .offset(x: callToActionHorizontalOffset, y: -13)
     .zIndex(3)
   }
@@ -156,6 +165,9 @@ public struct CardView: View {
       size: layoutConfiguration?.size,
       id: id
     )
+    .conditionalModifier(shouldShowShadow, transform: { view in
+      view.shadow(radius: 21, x: 0, y: 5)
+    })
     .rotationEffect(.degrees(direction == .front ? 0 : 180))
     .zIndex(2)
     .animation(.bouncy, value: direction)
@@ -239,35 +251,15 @@ public struct CardView: View {
     }
   }
   
-  public init(
-    displayableCard: DisplayableCardImage,
+  public init?(
+    displayableCard: DisplayableCardImage?,
     layoutConfiguration: LayoutConfiguration? = nil,
     callToActionHorizontalOffset: CGFloat = 5.0,
     priceVisibility: AccessoryInfo,
+    shouldShowShadow: Bool = false,
     send: ((Action) -> Void)? = nil
   ) {
-    self.displayableCard = displayableCard
-    self.accessoryInfo = priceVisibility
-    
-    if send == nil {
-      localDisplayableCard = displayableCard
-    }
-    
-    self.layoutConfiguration = layoutConfiguration
-    self.callToActionHorizontalOffset = callToActionHorizontalOffset
-    self.send = send
-  }
-  
-  public init?(
-    displayableCard: DisplayableCardImage?,
-    layoutConfiguration: LayoutConfiguration,
-    callToActionHorizontalOffset: CGFloat = 5.0,
-    priceVisibility: AccessoryInfo,
-    send: ((Action) -> Void)? = nil
-  ) {
-    guard let displayableCard else {
-      return nil
-    }
+    guard let displayableCard else { return nil }
     
     self.displayableCard = displayableCard
     self.accessoryInfo = priceVisibility
@@ -278,6 +270,7 @@ public struct CardView: View {
     
     self.layoutConfiguration = layoutConfiguration
     self.callToActionHorizontalOffset = callToActionHorizontalOffset
+    self.shouldShowShadow = shouldShowShadow
     self.send = send
   }
 }

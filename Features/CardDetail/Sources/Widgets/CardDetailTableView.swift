@@ -7,7 +7,9 @@ struct CardDetailTableView: View {
   var body: some View {
     VStack(spacing: 0) {
       ForEach(sections.indices, id: \.self) { index in
-        Divider().safeAreaPadding(.leading, nil)
+        if index != 0 {
+          Divider().safeAreaPadding(.leading, nil)
+        }
         
         let section = sections[index]
         let isLast = index == sections.count - 1

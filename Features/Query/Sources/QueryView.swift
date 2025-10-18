@@ -14,7 +14,7 @@ struct QueryView: View {
     self.store = store
     gridItems = [GridItem](
       repeating: GridItem(
-        spacing: 5,
+        spacing: 8,
         alignment: .center
       ),
       count: Int(store.numberOfColumns)
@@ -23,7 +23,7 @@ struct QueryView: View {
   
   var body: some View {
     ScrollView(.vertical) {
-      LazyVGrid(columns: gridItems, spacing: 5) {
+      LazyVGrid(columns: gridItems, spacing: 8) {
         if let dataSource = store.dataSource {
           contentScrollView(dataSource: dataSource)
             .blur(radius: store.mode == .loading ? 8.0 : 0)
@@ -37,7 +37,11 @@ struct QueryView: View {
     .background {
       Color(.systemGroupedBackground).ignoresSafeArea()
     }
-    .contentMargins(.vertical, EdgeInsets(top: 8.0, leading: 0, bottom: 13.0, trailing: 0), for: .scrollContent)
+    .contentMargins(
+      .vertical,
+      EdgeInsets(top: 8.0, leading: 0, bottom: 13.0, trailing: 0),
+      for: .scrollContent
+    )
     .scrollDisabled(store.mode.isScrollable == false)
     .scrollPosition($store.scrollPosition)
     .scrollBounceBehavior(.basedOnSize)
@@ -63,11 +67,7 @@ struct QueryView: View {
       Button {
         store.send(.didSelectCard(cardInfo.card, store.queryType))
       } label: {
-        CardView(
-          displayableCard: cardInfo.displayableCardImage!,
-          callToActionHorizontalOffset: 5.0,
-          priceVisibility: .hidden
-        )
+        CardView(displayableCard: cardInfo.displayableCardImage, layoutConfiguration: nil, callToActionHorizontalOffset: -3.0, priceVisibility: .hidden, shouldShowShadow: false, send: nil)
       }
       .disabled(store.mode.isScrollable == false)
       .buttonStyle(.sinkableButtonStyle)
@@ -124,7 +124,7 @@ struct QueryView: View {
         }
         .frame(minHeight: 44.0, alignment: .center)
         .padding(EdgeInsets(top: 0, leading: 13.0, bottom: 0, trailing: 16))
-        .glassEffect()
+        .glassEffect(.regular.interactive())
         
       case .search:
         Text("")
