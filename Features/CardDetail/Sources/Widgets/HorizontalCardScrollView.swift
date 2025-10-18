@@ -61,6 +61,7 @@ struct HorizontalCardScrollView: View {
                   ),
                   shouldShowShadow: false
                 )
+                .frame(maxWidth: 183)
               }
             )
             .buttonStyle(.sinkableButtonStyle)
