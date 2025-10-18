@@ -90,6 +90,12 @@ public struct CardView: View {
       }
       
       accessoryView.padding(.horizontal, 5.0)
+      
+      if case .hidden = accessoryInfo {
+        
+      } else {
+        Spacer(minLength: 0)
+      }
     }
   }
   

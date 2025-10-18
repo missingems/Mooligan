@@ -60,6 +60,7 @@ public struct CardRemoteImageView: View {
       }
       .aspectRatio(MagicCardImageRatio.widthToHeight.rawValue, contentMode: .fit)
     }
+    .aspectRatio(MagicCardImageRatio.widthToHeight.rawValue, contentMode: .fit)
     .onGeometryChange(
       for: CGSize.self,
       of: { proxy in

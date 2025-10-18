@@ -61,9 +61,9 @@ struct HorizontalCardScrollView: View {
                   ),
                   shouldShowShadow: false
                 )
-                .frame(maxWidth: 183)
               }
             )
+            .frame(width: 183)
             .buttonStyle(.sinkableButtonStyle)
             .task {
               send(.didShowCardAtIndex(index))
@@ -71,7 +71,6 @@ struct HorizontalCardScrollView: View {
           }
         }
       }
-      .frame(maxHeight: 300)
       .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
       .padding(.top, 3.0)
       .scrollClipDisabled(true)
