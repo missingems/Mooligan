@@ -14,7 +14,7 @@ struct QueryView: View {
     self.store = store
     gridItems = [GridItem](
       repeating: GridItem(
-        spacing: 8,
+        spacing: 5.0,
         alignment: .center
       ),
       count: Int(store.numberOfColumns)
@@ -23,16 +23,22 @@ struct QueryView: View {
   
   var body: some View {
     ScrollView(.vertical) {
-      LazyVGrid(columns: gridItems, spacing: 8) {
-        if let dataSource = store.dataSource {
-          contentScrollView(dataSource: dataSource)
-            .blur(radius: store.mode == .loading ? 8.0 : 0)
-            .scaleEffect(store.mode == .loading ? 0.97 : 1)
-            .opacity(store.mode == .loading ? 0.2 : 1)
-        }
+      
+      LazyVGrid(columns: gridItems, spacing: 5.0, pinnedViews: .sectionHeaders) {
+          Section {
+          if let dataSource = store.dataSource {
+            contentScrollView(dataSource: dataSource)
+              .blur(radius: store.mode == .loading ? 8.0 : 0)
+              .scaleEffect(store.mode == .loading ? 0.97 : 1)
+              .opacity(store.mode == .loading ? 0.2 : 1)
+          }
+          } header: {
+            Text("Henlo")
+          }
+          
+        .padding(.horizontal, 8.0)
+        .placeholder(store.mode.isPlaceholder)
       }
-      .padding(.horizontal, 8.0)
-      .placeholder(store.mode.isPlaceholder)
     }
     .background {
       Color(.systemGroupedBackground).ignoresSafeArea()
