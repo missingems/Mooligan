@@ -100,7 +100,7 @@ struct QueryView: View {
       }
       .padding(EdgeInsets(top: 8, leading: 13, bottom: 8, trailing: 13))
     } didSelectItem: { value in
-      print(value)
+      store.send(.didSelectCardType(value))
     }
     .scrollIndicators(.hidden)
     .scrollClipDisabled()

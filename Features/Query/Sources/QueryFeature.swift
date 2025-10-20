@@ -143,7 +143,8 @@ public struct QueryFeature {
         return .none
         
       case let .didSelectCardType(cardType):
-        state.query.cardTypes.insert(cardType)
+        state.query.cardType = cardType
+        
         return .concatenate(
           [
             .run { [state] send in

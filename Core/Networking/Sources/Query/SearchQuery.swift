@@ -49,13 +49,9 @@ public struct SearchQuery: Equatable, Hashable {
     }
   }
   
-  public var cardTypes: Set<CardType> {
+  public var cardType: CardType {
     didSet {
       page = 1
-      
-      if cardTypes.contains(.all) {
-        cardTypes.removeAll()
-      }
     }
   }
   
@@ -75,14 +71,14 @@ public struct SearchQuery: Equatable, Hashable {
   
   public init(
     name: String = "",
-    cardTypes: Set<CardType> = [],
+    cardType: CardType = .all,
     setCode: String,
     page: Int,
     sortMode: SortMode,
     sortDirection: SortDirection
   ) {
     self.name = name
-    self.cardTypes = cardTypes
+    self.cardType = cardType
     self.page = page
     self.setCode = setCode
     self.sortMode = sortMode
@@ -97,7 +93,11 @@ public struct SearchQuery: Equatable, Hashable {
     }
     
     filters.append(.set(setCode))
-    filters.append(.compoundOr(cardTypes.map { .type($0.rawValue) }))
+    
+    if cardType != .all {
+      // By default, all means without any type filter.
+      filters.append(.compoundOr([.type(cardType.rawValue)]))
+    }
     
     return filters
   }
