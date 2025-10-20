@@ -44,18 +44,14 @@ public struct QueryFeature {
     }
     
     var mode: Mode
-    var queryType: QueryType
+    let queryType: QueryType
     let title: String
     var isShowingInfo: Bool
-    var isShowingSortOptions: Bool
     var dataSource: CardDataSource?
     let availableSortModes: [SortMode]
     let availableSortOrders: [SortDirection]
     var query: SearchQuery
     var scrollPosition: ScrollPosition
-    var viewWidth: CGFloat?
-    var itemWidth: CGFloat?
-    var popoverSize: CGSize?
     var numberOfColumns: Double = 2
     let searchPrompt: String
     public let id: UUID
@@ -81,7 +77,6 @@ public struct QueryFeature {
       availableSortModes = [.name, .usd, .cmc, .color, .rarity, .released]
       availableSortOrders = [.asc, .desc, .auto]
       isShowingInfo = false
-      isShowingSortOptions = false
       scrollPosition = ScrollPosition(edge: .top)
     }
     
@@ -93,8 +88,8 @@ public struct QueryFeature {
   public enum Action: Equatable, BindableAction {
     case binding(BindingAction<State>)
     case didSelectCard(Card, QueryType)
+    case didSelectCardType(SearchQuery.CardType)
     case didSelectShowInfo
-    case didSelectShowSortOptions
     case loadMoreCardsIfNeeded(displayingIndex: Int)
     case updateCards(CardDataSource?, SearchQuery, State.Mode)
     case scrollToTop
@@ -106,17 +101,7 @@ public struct QueryFeature {
     
     Reduce { state, action in
       switch action {
-      case .binding(\.viewWidth):
-        if let viewWidth = state.viewWidth {
-          state.itemWidth = (viewWidth - ((state.numberOfColumns - 1) * 8.0)) / state.numberOfColumns
-          state.popoverSize = CGSize(width: viewWidth - 68, height: (viewWidth - 21.0) * 1.618)
-        }
-        
-        return .none
-        
       case .binding(\.query):
-        state.isShowingSortOptions = false
-        
         return .concatenate(
           [
             .run { [state] send in
@@ -157,12 +142,44 @@ public struct QueryFeature {
       case .didSelectCard:
         return .none
         
+      case let .didSelectCardType(cardType):
+        state.query.cardTypes.insert(cardType)
+        return .concatenate(
+          [
+            .run { [state] send in
+              await send(
+                .updateCards(state.dataSource, state.query, .loading),
+                animation: .default
+              )
+            },
+            .run { [query = state.query] send in
+              let result = try await client.queryCards(query)
+              
+              await send(
+                .updateCards(
+                  CardDataSource(
+                    cards: result.data,
+                    hasNextPage: result.hasMore ?? false,
+                    total: result.totalCards ?? 0
+                  ),
+                  query,
+                  .data
+                ),
+                animation: .smooth
+              )
+            },
+            .run { send in
+              await send(.scrollToTop, animation: .default)
+            },
+          ]
+        )
+        .cancellable(
+          id: "query",
+          cancelInFlight: true
+        )
+        
       case .didSelectShowInfo:
         state.isShowingInfo = true
-        return .none
-        
-      case .didSelectShowSortOptions:
-        state.isShowingSortOptions = true
         return .none
         
       case let .loadMoreCardsIfNeeded(displayingIndex):

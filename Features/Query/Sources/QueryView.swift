@@ -23,29 +23,29 @@ struct QueryView: View {
   
   var body: some View {
     ScrollView(.vertical) {
-      
-      LazyVGrid(columns: gridItems, spacing: 5.0, pinnedViews: .sectionHeaders) {
+      if let dataSource = store.dataSource {
+        LazyVGrid(columns: gridItems, spacing: 5.0) {
           Section {
-          if let dataSource = store.dataSource {
             contentScrollView(dataSource: dataSource)
               .blur(radius: store.mode == .loading ? 8.0 : 0)
               .scaleEffect(store.mode == .loading ? 0.97 : 1)
               .opacity(store.mode == .loading ? 0.2 : 1)
-          }
           } header: {
-            Text("Henlo")
+            headerView(dataSource: SearchQuery.CardType.allCases)
+              .scrollIndicators(.hidden)
+              .scrollClipDisabled()
+              .padding(.bottom, 5.0)
           }
-          
-        .padding(.horizontal, 8.0)
-        .placeholder(store.mode.isPlaceholder)
+          .placeholder(store.mode.isPlaceholder)
+        }
       }
     }
     .background {
       Color(.systemGroupedBackground).ignoresSafeArea()
     }
     .contentMargins(
-      .vertical,
-      EdgeInsets(top: 8.0, leading: 0, bottom: 13.0, trailing: 0),
+      .all,
+      EdgeInsets(top: 0, leading: 8, bottom: 13.0, trailing: 8),
       for: .scrollContent
     )
     .scrollDisabled(store.mode.isScrollable == false)
@@ -83,6 +83,28 @@ struct QueryView: View {
         }
       }
     }
+  }
+  
+  @ViewBuilder private func headerView(dataSource: [SearchQuery.CardType]) -> some View {
+    HorizontalFilterToggleView(
+      dataSource: dataSource
+    ) { cardType in
+      Label {
+        Text(cardType.title).font(.subheadline).fontWeight(.medium)
+      } icon: {
+        cardType.image
+          .renderingMode(.template)
+          .resizable()
+          .scaledToFit()
+          .frame(width: 21, height: 21, alignment: .center)
+      }
+      .padding(EdgeInsets(top: 8, leading: 13, bottom: 8, trailing: 13))
+    } didSelectItem: { value in
+      print(value)
+    }
+    .scrollIndicators(.hidden)
+    .scrollClipDisabled()
+    .padding(.bottom, 5.0)
   }
   
   @ToolbarContentBuilder private var toolbar: some ToolbarContent {
@@ -189,3 +211,4 @@ private extension QueryType.Section {
     }
   }
 }
+

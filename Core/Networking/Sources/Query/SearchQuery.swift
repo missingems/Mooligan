@@ -1,6 +1,42 @@
 import ScryfallKit
 
 public struct SearchQuery: Equatable, Hashable {
+  public enum CardType: String, Equatable, CaseIterable, Identifiable, Hashable {
+    case all
+    case land
+    case artifact
+    case enchantment
+    case instant
+    case sorcery
+    case planeswalker
+    case creature
+    
+    public var title: String {
+      return switch self {
+      case .all:
+        "All"
+      case .land:
+        "Land"
+      case .artifact:
+        "Artifact"
+      case .enchantment:
+        "Enchantment"
+      case .instant:
+        "Instant"
+      case .sorcery:
+        "Sorcery"
+      case .planeswalker:
+        "Planeswalker"
+      case .creature:
+        "Creature"
+      }
+    }
+    
+    public var id: String {
+      return self.rawValue
+    }
+  }
+  
   public var name: String {
     didSet {
       page = 1
@@ -10,6 +46,16 @@ public struct SearchQuery: Equatable, Hashable {
   public var setCode: String {
     didSet {
       page = 1
+    }
+  }
+  
+  public var cardTypes: Set<CardType> {
+    didSet {
+      page = 1
+      
+      if cardTypes.contains(.all) {
+        cardTypes.removeAll()
+      }
     }
   }
   
@@ -29,12 +75,14 @@ public struct SearchQuery: Equatable, Hashable {
   
   public init(
     name: String = "",
+    cardTypes: Set<CardType> = [],
     setCode: String,
     page: Int,
     sortMode: SortMode,
     sortDirection: SortDirection
   ) {
     self.name = name
+    self.cardTypes = cardTypes
     self.page = page
     self.setCode = setCode
     self.sortMode = sortMode
@@ -49,6 +97,7 @@ public struct SearchQuery: Equatable, Hashable {
     }
     
     filters.append(.set(setCode))
+    filters.append(.compoundOr(cardTypes.map { .type($0.rawValue) }))
     
     return filters
   }

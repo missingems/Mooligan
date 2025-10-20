@@ -89,7 +89,7 @@ import Foundation
             case .didSelectShowInfo:
               break
               
-            case .didSelectShowSortOptions:
+            case .didSelectCardType:
               break
               
             case let .didSelectCard(card, queryType):
