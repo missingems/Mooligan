@@ -40,9 +40,6 @@ struct QueryView: View {
         }
       }
     }
-    .background {
-      Color(.systemGroupedBackground).ignoresSafeArea()
-    }
     .contentMargins(
       .all,
       EdgeInsets(top: 0, leading: 8, bottom: 13.0, trailing: 8),
@@ -73,7 +70,14 @@ struct QueryView: View {
       Button {
         store.send(.didSelectCard(cardInfo.card, store.queryType))
       } label: {
-        CardView(displayableCard: cardInfo.displayableCardImage, layoutConfiguration: nil, callToActionHorizontalOffset: -3.0, priceVisibility: .hidden, shouldShowShadow: false, send: nil)
+        CardView(
+          displayableCard: cardInfo.displayableCardImage,
+          layoutConfiguration: nil,
+          callToActionHorizontalOffset: -3.0,
+          priceVisibility: .hidden,
+          shouldShowShadow: false,
+          send: nil
+        )
       }
       .disabled(store.mode.isScrollable == false)
       .buttonStyle(.sinkableButtonStyle)
@@ -87,24 +91,42 @@ struct QueryView: View {
   
   @ViewBuilder private func headerView(dataSource: [SearchQuery.CardType]) -> some View {
     HorizontalFilterToggleView(
-      dataSource: dataSource
+      dataSource: dataSource,
+      selectedItem: $store.query.cardType
     ) { cardType in
-      Label {
-        Text(cardType.title).font(.subheadline).fontWeight(.medium)
-      } icon: {
+      HStack(spacing: 5.0) {
+        let iconWidt = cardType == .all ? 15.0 : 21.0
+        
         cardType.image
           .renderingMode(.template)
           .resizable()
           .scaledToFit()
-          .frame(width: 21, height: 21, alignment: .center)
+          .frame(width: iconWidt, height: 21, alignment: .center)
+        
+        if cardType == store.query.cardType {
+          Text(cardType.title)
+            .font(.subheadline)
+            .fontWeight(.medium)
+            .multilineTextAlignment(.leading)
+        }
       }
-      .padding(EdgeInsets(top: 8, leading: 13, bottom: 8, trailing: 13))
-    } didSelectItem: { value in
-      store.send(.didSelectCardType(value))
+      .padding(
+        cardType == store.query.cardType ? EdgeInsets(
+          top: 8,
+          leading: 34,
+          bottom: 8,
+          trailing: 34
+        ) : EdgeInsets(
+          top: 8,
+          leading: 13,
+          bottom: 8,
+          trailing: 13
+        ) 
+      )
     }
     .scrollIndicators(.hidden)
     .scrollClipDisabled()
-    .padding(.bottom, 5.0)
+    .padding(.vertical, 5.0)
   }
   
   @ToolbarContentBuilder private var toolbar: some ToolbarContent {

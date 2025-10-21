@@ -1,18 +1,18 @@
 import SwiftUI
 
-public struct HorizontalFilterToggleView<DataType, Content>: View where DataType: Identifiable, Content: View {
+public struct HorizontalFilterToggleView<DataType, Content>: View where DataType: Identifiable & Equatable, Content: View {
   var dataSource: [DataType]
-  var didSelectItem: (DataType) -> Void
+  @Binding var selectedItem: DataType
   @ViewBuilder let itemContentView: (DataType) -> Content
   
   public init(
     dataSource: [DataType],
-    itemContentView: @escaping (DataType) -> Content,
-    didSelectItem: @escaping (DataType) -> Void
+    selectedItem: Binding<DataType>,
+    itemContentView: @escaping (DataType) -> Content
   ) {
     self.dataSource = dataSource
     self.itemContentView = itemContentView
-    self.didSelectItem = didSelectItem
+    self._selectedItem = selectedItem
   }
   
   public var body: some View {
@@ -20,31 +20,17 @@ public struct HorizontalFilterToggleView<DataType, Content>: View where DataType
       HStack {
         ForEach(dataSource) { value in
           Button {
-            didSelectItem(value)
+            selectedItem = value
           } label: {
             itemContentView(value)
           }
-          .glassEffect(.regular.interactive())
+          .tint(value == selectedItem ? DesignComponentsAsset.invertedPrimary.swiftUIColor : .secondary)
+          .glassEffect(
+            value == selectedItem ? .regular.tint(Color.primary) : .regular
+          )
         }
+        .animation(.default, value: selectedItem)
       }
     }
   }
 }
-
-struct aaaa: Identifiable {
-  let title: String = "1"
-  
-  var id: String {
-    return "1"
-  }
-}
-
-#Preview {
-  HorizontalFilterToggleView(dataSource: [aaaa.init()]) { value in
-    Text(value.title)
-  } didSelectItem: { value in
-    print(value)
-  }
-  
-}
-

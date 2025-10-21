@@ -88,7 +88,6 @@ public struct QueryFeature {
   public enum Action: Equatable, BindableAction {
     case binding(BindingAction<State>)
     case didSelectCard(Card, QueryType)
-    case didSelectCardType(SearchQuery.CardType)
     case didSelectShowInfo
     case loadMoreCardsIfNeeded(displayingIndex: Int)
     case updateCards(CardDataSource?, SearchQuery, State.Mode)
@@ -141,43 +140,6 @@ public struct QueryFeature {
         
       case .didSelectCard:
         return .none
-        
-      case let .didSelectCardType(cardType):
-        state.query.cardType = cardType
-        
-        return .concatenate(
-          [
-            .run { [state] send in
-              await send(
-                .updateCards(state.dataSource, state.query, .loading),
-                animation: .default
-              )
-            },
-            .run { [query = state.query] send in
-              let result = try await client.queryCards(query)
-              
-              await send(
-                .updateCards(
-                  CardDataSource(
-                    cards: result.data,
-                    hasNextPage: result.hasMore ?? false,
-                    total: result.totalCards ?? 0
-                  ),
-                  query,
-                  .data
-                ),
-                animation: .smooth
-              )
-            },
-            .run { send in
-              await send(.scrollToTop, animation: .default)
-            },
-          ]
-        )
-        .cancellable(
-          id: "query",
-          cancelInFlight: true
-        )
         
       case .didSelectShowInfo:
         state.isShowingInfo = true

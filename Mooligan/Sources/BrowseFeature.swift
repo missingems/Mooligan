@@ -89,9 +89,6 @@ import Foundation
             case .didSelectShowInfo:
               break
               
-            case .didSelectCardType:
-              break
-              
             case let .didSelectCard(card, queryType):
               state.path.append(.showCardDetail(CardDetailFeature.State(card: card, queryType: queryType)))
               
