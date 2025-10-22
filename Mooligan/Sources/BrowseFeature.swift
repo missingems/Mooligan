@@ -68,7 +68,7 @@ import Foundation
                 mode: .placeholder,
                 queryType: .querySet(
                   value,
-                  SearchQuery(setCode: value.code, page: 1, sortMode: .name, sortDirection: .auto)
+                  SearchQuery(setCode: value.code, page: 1, sortMode: .name, sortDirection: .asc)
                 )
               )
             )

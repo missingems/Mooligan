@@ -31,10 +31,11 @@ struct QueryView: View {
               .scaleEffect(store.mode == .loading ? 0.97 : 1)
               .opacity(store.mode == .loading ? 0.2 : 1)
           } header: {
-            headerView(dataSource: SearchQuery.CardType.allCases)
-              .scrollIndicators(.hidden)
-              .scrollClipDisabled()
-              .padding(.bottom, 5.0)
+            HStack(spacing: 5.0) {
+              typesMenuItems
+              sortView
+            }
+            .padding(.bottom, 5.0)
           }
           .placeholder(store.mode.isPlaceholder)
         }
@@ -50,7 +51,11 @@ struct QueryView: View {
     .scrollBounceBehavior(.basedOnSize)
     .navigationTitle(store.title)
     .navigationBarTitleDisplayMode(.inline)
-    .toolbar { toolbar }
+    .toolbar {
+      ToolbarItem(id: "info", placement: .principal) {
+        infoView(query: store.queryType)
+      }
+    }
     .searchable(text: $store.query.name, placement: .toolbar)
     .searchToolbarBehavior(.minimize)
     .overlay {
@@ -89,49 +94,43 @@ struct QueryView: View {
     }
   }
   
-  @ViewBuilder private func headerView(dataSource: [SearchQuery.CardType]) -> some View {
-    HorizontalFilterToggleView(
-      dataSource: dataSource,
-      selectedItem: $store.query.cardType
-    ) { cardType in
-      HStack(spacing: 5.0) {
-        let iconWidt = cardType == .all ? 15.0 : 21.0
-        
-        cardType.image
+  @ViewBuilder private var typesMenuItems: some View {
+    Menu {
+      Picker("Types", selection: $store.query.cardType) {
+        ForEach(store.availableCardType) { value in
+          Label {
+            Text(value.title)
+          } icon: {
+            value.image
+              .renderingMode(.template)
+          }
+          .tag(value)
+        }
+      }
+    } label: {
+      Label {
+        Text(store.query.cardType.title)
+          .font(.subheadline)
+          .fontWeight(.medium)
+          .multilineTextAlignment(.leading)
+      } icon: {
+        store.query.cardType.image
           .renderingMode(.template)
           .resizable()
           .scaledToFit()
-          .frame(width: iconWidt, height: 21, alignment: .center)
-        
-        if cardType == store.query.cardType {
-          Text(cardType.title)
-            .font(.subheadline)
-            .fontWeight(.medium)
-            .multilineTextAlignment(.leading)
-        }
+          .frame(width: store.query.cardType == .all ? 15.0 : 21.0, height: 21, alignment: .center)
       }
+      .frame(maxWidth: .infinity)
       .padding(
-        cardType == store.query.cardType ? EdgeInsets(
+        EdgeInsets(
           top: 8,
-          leading: 34,
+          leading: 0,
           bottom: 8,
-          trailing: 34
-        ) : EdgeInsets(
-          top: 8,
-          leading: 13,
-          bottom: 8,
-          trailing: 13
-        ) 
+          trailing: 0
+        )
       )
-    }
-    .scrollIndicators(.hidden)
-    .scrollClipDisabled()
-    .padding(.vertical, 5.0)
-  }
-  
-  @ToolbarContentBuilder private var toolbar: some ToolbarContent {
-    ToolbarItem(id: "info", placement: .principal) {
-      infoView(query: store.queryType)
+      .background(Color(.systemFill))
+      .clipShape(RoundedRectangle(cornerRadius: 13.0))
     }
   }
   
@@ -149,13 +148,71 @@ struct QueryView: View {
         }
       }
     } label: {
-      ZStack {
-        ProgressView()
-          .opacity((store.mode == .loading || store.mode == .placeholder) ? 1 : 0)
-        
-        Image(systemName: "ellipsis")
-          .opacity((store.mode == .loading || store.mode == .placeholder) ? 0 : 1)
+      Label {
+        Text(store.query.sortMode.description)
+          .font(.subheadline)
+          .fontWeight(.medium)
+          .multilineTextAlignment(.leading)
+      } icon: {
+        switch store.query.sortDirection {
+        case .asc:
+          Image(systemName: "arrow.up").font(.system(size: 21))
+        case .desc:
+          Image(systemName: "arrow.down").font(.system(size: 21))
+        default:
+          Image(systemName: "wand.and.sparkles").font(.system(size: 21))
+        }
       }
+      .frame(maxWidth: .infinity)
+      .padding(
+        EdgeInsets(
+          top: 8,
+          leading: 0,
+          bottom: 8,
+          trailing: 0
+        )
+      )
+      .background(Color(.systemFill))
+      .clipShape(RoundedRectangle(cornerRadius: 13.0))
+    }
+    .pickerStyle(.inline)
+    .disabled(store.mode == .loading || store.mode == .placeholder)
+  }
+  
+  @ViewBuilder private var colorMenuItem: some View {
+    Menu {
+      Picker("SORT BY", selection: $store.query.sortMode) {
+        ForEach(store.availableSortModes) { value in
+          Text(value.description)
+        }
+      }
+    } label: {
+      Label {
+        Text(store.query.sortMode.description)
+          .font(.subheadline)
+          .fontWeight(.medium)
+          .multilineTextAlignment(.leading)
+      } icon: {
+        switch store.query.sortDirection {
+        case .asc:
+          Image(systemName: "arrow.up").font(.system(size: 21))
+        case .desc:
+          Image(systemName: "arrow.down").font(.system(size: 21))
+        default:
+          Image(systemName: "wand.and.sparkles").font(.system(size: 21))
+        }
+      }
+      .frame(maxWidth: .infinity)
+      .padding(
+        EdgeInsets(
+          top: 8,
+          leading: 0,
+          bottom: 8,
+          trailing: 0
+        )
+      )
+      .background(Color(.systemFill))
+      .clipShape(RoundedRectangle(cornerRadius: 13.0))
     }
     .pickerStyle(.inline)
     .labelsVisibility(.visible)
@@ -233,4 +290,5 @@ private extension QueryType.Section {
     }
   }
 }
+
 

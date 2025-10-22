@@ -12,7 +12,7 @@ extension SortMode: @retroactive Identifiable {
     case .set:
       return String(localized: "Set")
     case .released:
-      return String(localized: "Released Date")
+      return String(localized: "Date")
     case .rarity:
       return String(localized: "Rarity")
     case .color:

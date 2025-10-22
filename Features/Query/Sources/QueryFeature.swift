@@ -48,6 +48,7 @@ public struct QueryFeature {
     let title: String
     var isShowingInfo: Bool
     var dataSource: CardDataSource?
+    let availableCardType: [SearchQuery.CardType]
     let availableSortModes: [SortMode]
     let availableSortOrders: [SortDirection]
     var query: SearchQuery
@@ -74,8 +75,9 @@ public struct QueryFeature {
         fatalError()
       }
       
+      availableCardType = SearchQuery.CardType.allCases
       availableSortModes = [.name, .usd, .cmc, .color, .rarity, .released]
-      availableSortOrders = [.asc, .desc, .auto]
+      availableSortOrders = [.asc, .desc]
       isShowingInfo = false
       scrollPosition = ScrollPosition(edge: .top)
     }

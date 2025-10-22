@@ -1,7 +1,11 @@
 import ScryfallKit
 
 public struct SearchQuery: Equatable, Hashable {
-  public enum CardType: String, Equatable, CaseIterable, Identifiable, Hashable {
+  public enum CardType: String, CaseIterable, Hashable, Identifiable {
+    public var id: String {
+      return self.rawValue
+    }
+    
     case all
     case land
     case artifact
@@ -13,27 +17,15 @@ public struct SearchQuery: Equatable, Hashable {
     
     public var title: String {
       return switch self {
-      case .all:
-        "All"
-      case .land:
-        "Land"
-      case .artifact:
-        "Artifact"
-      case .enchantment:
-        "Enchantment"
-      case .instant:
-        "Instant"
-      case .sorcery:
-        "Sorcery"
-      case .planeswalker:
-        "Planeswalker"
-      case .creature:
-        "Creature"
+      case .all: "All"
+      case .land: "Land"
+      case .artifact: "Artifact"
+      case .enchantment: "Enchantment"
+      case .instant: "Instant"
+      case .sorcery: "Sorcery"
+      case .planeswalker: "Planeswalker"
+      case .creature: "Creature"
       }
-    }
-    
-    public var id: String {
-      return self.rawValue
     }
   }
   
@@ -56,6 +48,8 @@ public struct SearchQuery: Equatable, Hashable {
   }
   
   public var page: Int
+  
+  public var colorIdentity: [Card.Color] = []
   
   public var sortMode: SortMode {
     didSet {
