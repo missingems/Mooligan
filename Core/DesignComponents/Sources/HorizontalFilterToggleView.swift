@@ -1,67 +1,84 @@
 import SwiftUI
 
-public struct Section<
-  Label,
-  Content,
-  LabelView,
-  ContentView
->: View, Identifiable where Content: Identifiable & Equatable & Hashable, LabelView: View, ContentView: View {
-  private let label: Label
-  private let items: [Content]
-  @Binding private var selectedContent: Content
+struct ScalingMenuView: View {
+  @State private var isExpanded = false
   
-  private let labelBuilder: (Label) -> LabelView
-  private let contentBuilder: (Content) -> ContentView
-  
-  public var body: some View {
-    Menu {
-      Picker("Title", selection: $selectedContent) {
-        ForEach(items) { value in
-          contentBuilder(value).tag(value)
-        }
+  var body: some View {
+    Button("Menu") {
+      withAnimation(.spring(response: 0.5)) {
+        isExpanded.toggle()
       }
-    } label: {
-      labelBuilder(label)
     }
-  }
-  
-  public let id: UUID
-  
-  public init(
-    label: Label,
-    items: [Content],
-    selectedContent: Binding<Content>,
-    labelBuilder: @escaping (Label) -> LabelView,
-    contentBuilder: @escaping (Content) -> ContentView
-  ) {
-    self.label = label
-    self.items = items
-    self._selectedContent = selectedContent
-    self.labelBuilder = labelBuilder
-    self.contentBuilder = contentBuilder
-    id = UUID()
+    .padding()
+    .background(Color.blue)
+    .foregroundColor(.white)
+    .cornerRadius(10)
+    .overlay {
+      if isExpanded {
+        ExpandedMenuContent(isExpanded: $isExpanded)
+          .transition(.scale.combined(with: .opacity))
+      }
+    }
   }
 }
 
-public struct HorizontalFilterToggleView<
-  Label,
-  Content,
-  LabelView,
-  ContentView
->: View where Content: Identifiable & Equatable & Hashable, LabelView: View, ContentView: View {
-  var dataSource: [
-    Section<Label, Content, LabelView, ContentView>
-  ]
-
-  public init(dataSource: [Section<Label, Content, LabelView, ContentView>]) {
-    self.dataSource = dataSource
-  }
+struct ExpandedMenuContent: View {
+  @Binding var isExpanded: Bool
   
-  public var body: some View {
-    HStack {
-      ForEach(dataSource) { section in
-        section
+  var body: some View {
+    VStack {
+      // Your expanded content
+      Text("Expanded Menu")
+      Button("Close") {
+        withAnimation { isExpanded = false }
       }
     }
+    .frame(width: 300, height: 400)
+    .background(Color.blue)
+    .cornerRadius(20)
   }
+}
+
+// Your original code was correct!
+// Its position in the parent view was the problem.
+struct MorphingMenuView: View {
+  @State private var isExpanded = false
+  @Namespace private var animation
+  
+  var body: some View {
+    ZStack(alignment: .center) {
+      if !isExpanded {
+        // Collapsed button state
+        Button(action: { withAnimation(.spring(response: 0.6)) { isExpanded = true } }) {
+          Text("Menu")
+            .padding()
+            .foregroundColor(.white)
+        }
+        .matchedGeometryEffect(id: "menu", in: animation)
+      } else {
+        // Expanded content view
+        VStack(spacing: 20) {
+          HStack {
+            Text("Menu Content")
+              .font(.headline)
+            Spacer()
+            Button("Close") {
+              withAnimation(.spring(response: 0.6)) { isExpanded = false }
+            }
+          }
+          
+          Text("Item 1")
+          Text("Item 2")
+          Text("Item 3")
+        }
+        .matchedGeometryEffect(id: "menu", in: animation)
+      }
+    }
+    .background(Color.blue)
+    .cornerRadius(10)
+  }
+}
+
+#Preview {
+  MorphingMenuView()
 }
