@@ -32,6 +32,7 @@ struct QueryView: View {
               .opacity(store.mode == .loading ? 0.2 : 1)
           } header: {
             HStack(spacing: 5.0) {
+              colorTypeItems
               typesMenuItems
               sortView
             }
@@ -91,6 +92,44 @@ struct QueryView: View {
           store.send(.loadMoreCardsIfNeeded(displayingIndex: index))
         }
       }
+    }
+  }
+  
+  @ViewBuilder private var colorTypeItems: some View {
+    Button {
+      store.isShowingColorTypeOptions.toggle()
+    } label: {
+      switch store.queryType {
+      case let .querySet(set, _):
+        HStack(spacing: 8.0) {
+          IconLazyImage(URL(string: set.iconSvgUri)).frame(width: 25, height: 25, alignment: .center)
+          Text(store.title).multilineTextAlignment(.leading).font(.headline).lineLimit(1)
+        }
+        .frame(minHeight: 44.0, alignment: .center)
+        .padding(EdgeInsets(top: 0, leading: 13.0, bottom: 0, trailing: 16))
+        
+      case .search:
+        Text("")
+      }
+    }
+    .buttonStyle(.plain)
+    .popover(isPresented: $store.isShowingColorTypeOptions, attachmentAnchor: .rect(.bounds), arrowEdge: .top) {
+      VStack(spacing: 0) {
+        ForEach(Array(zip(store.queryType.sections, store.queryType.sections.indices)), id: \.0.id) { section in
+          VStack(spacing: 0) {
+            section.0.body
+              .padding(.vertical, 11.0)
+              .safeAreaPadding(.horizontal, nil)
+            
+            if section.1 != store.queryType.sections.count - 1 {
+              Divider().safeAreaPadding(.leading, nil)
+            }
+          }
+        }
+      }
+      .padding(.vertical, 11)
+      Text("hello")
+        .presentationCompactAdaptation(.popover)
     }
   }
   
@@ -154,14 +193,17 @@ struct QueryView: View {
           .fontWeight(.medium)
           .multilineTextAlignment(.leading)
       } icon: {
-        switch store.query.sortDirection {
-        case .asc:
-          Image(systemName: "arrow.up").font(.system(size: 21))
-        case .desc:
-          Image(systemName: "arrow.down").font(.system(size: 21))
-        default:
-          Image(systemName: "wand.and.sparkles").font(.system(size: 21))
+        Group {
+          switch store.query.sortDirection {
+          case .asc:
+            Image(systemName: "arrow.up").resizable()
+          case .desc:
+            Image(systemName: "arrow.down").resizable()
+          default:
+            Image(systemName: "wand.and.sparkles").resizable()
+          }
         }
+        .frame(width: 21.0, height: 21, alignment: .center)
       }
       .frame(maxWidth: .infinity)
       .padding(

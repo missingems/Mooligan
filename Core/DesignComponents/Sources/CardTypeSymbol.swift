@@ -1,10 +1,3 @@
-//
-//  CardTypeSymbol.swift
-//  DesignComponents
-//
-//  Created by Jun on 20/10/25.
-//
-
 import Networking
 import SwiftUI
 

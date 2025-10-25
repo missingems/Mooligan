@@ -47,7 +47,9 @@ public struct QueryFeature {
     let queryType: QueryType
     let title: String
     var isShowingInfo: Bool
+    var isShowingColorTypeOptions: Bool
     var dataSource: CardDataSource?
+    let availableColorTypeOptions: [Card.Color]
     let availableCardType: [SearchQuery.CardType]
     let availableSortModes: [SortMode]
     let availableSortOrders: [SortDirection]
@@ -80,6 +82,8 @@ public struct QueryFeature {
       availableSortOrders = [.asc, .desc]
       isShowingInfo = false
       scrollPosition = ScrollPosition(edge: .top)
+      isShowingColorTypeOptions = false
+      availableColorTypeOptions = Card.Color.allCases
     }
     
     func shouldLoadMore(at index: Int) -> Bool {
@@ -102,6 +106,9 @@ public struct QueryFeature {
     
     Reduce { state, action in
       switch action {
+      case .binding(\.isShowingColorTypeOptions):
+        return .none
+        
       case .binding(\.query):
         return .concatenate(
           [
