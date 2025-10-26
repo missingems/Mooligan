@@ -99,20 +99,26 @@ struct QueryView: View {
     Button {
       store.isShowingColorTypeOptions.toggle()
     } label: {
-      switch store.queryType {
-      case let .querySet(set, _):
-        HStack(spacing: 8.0) {
-          IconLazyImage(URL(string: set.iconSvgUri)).frame(width: 25, height: 25, alignment: .center)
-          Text(store.title).multilineTextAlignment(.leading).font(.headline).lineLimit(1)
+      HStack(spacing: -3) {
+        ForEach(store.availableColorTypeOptions, id: \.rawValue) { value in
+          value.image.resizable()
+            .aspectRatio(contentMode: .fit)
+            .frame(width: 19, height: 21)
+            .offset(x: 0, y: -0.5)
+            .background { Circle().fill(.black).offset(x: -0.75, y: 1) }
         }
-        .frame(minHeight: 44.0, alignment: .center)
-        .padding(EdgeInsets(top: 0, leading: 13.0, bottom: 0, trailing: 16))
-        
-      case .search:
-        Text("")
       }
+      .frame(maxWidth: .infinity)
+      .padding(
+        EdgeInsets(
+          top: 8,
+          leading: 0,
+          bottom: 8,
+          trailing: 0
+        )
+      )
+      .background(RoundedRectangle(cornerRadius: 13.0).fill(Color(.systemFill)))
     }
-    .buttonStyle(.plain)
     .popover(isPresented: $store.isShowingColorTypeOptions, attachmentAnchor: .rect(.bounds), arrowEdge: .top) {
       VStack(spacing: 0) {
         ForEach(Array(zip(store.queryType.sections, store.queryType.sections.indices)), id: \.0.id) { section in
