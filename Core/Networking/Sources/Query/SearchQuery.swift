@@ -49,7 +49,11 @@ public struct SearchQuery: Equatable, Hashable {
   
   public var page: Int
   
-  public var colorIdentity: [Card.Color] = []
+  public var colorIdentities: [Card.Color] = Card.Color.allCases {
+    didSet {
+      page = 1
+    }
+  }
   
   public var sortMode: SortMode {
     didSet {
@@ -91,6 +95,12 @@ public struct SearchQuery: Equatable, Hashable {
     if cardType != .all {
       // By default, all means without any type filter.
       filters.append(.compoundOr([.type(cardType.rawValue)]))
+    }
+    
+    if colorIdentities.isEmpty == false {
+      for identity in colorIdentities {
+        filters.append(.colors(identity.rawValue, .including))
+      }
     }
     
     return filters

@@ -100,7 +100,7 @@ struct QueryView: View {
       store.isShowingColorTypeOptions.toggle()
     } label: {
       HStack(spacing: -3) {
-        ForEach(store.availableColorTypeOptions, id: \.rawValue) { value in
+        ForEach(store.query.colorIdentities, id: \.rawValue) { value in
           value.image.resizable()
             .aspectRatio(contentMode: .fit)
             .frame(width: 19, height: 21)
@@ -120,22 +120,24 @@ struct QueryView: View {
       .background(RoundedRectangle(cornerRadius: 13.0).fill(Color(.systemFill)))
     }
     .popover(isPresented: $store.isShowingColorTypeOptions, attachmentAnchor: .rect(.bounds), arrowEdge: .top) {
-      VStack(spacing: 0) {
-        ForEach(Array(zip(store.queryType.sections, store.queryType.sections.indices)), id: \.0.id) { section in
-          VStack(spacing: 0) {
-            section.0.body
-              .padding(.vertical, 11.0)
-              .safeAreaPadding(.horizontal, nil)
-            
-            if section.1 != store.queryType.sections.count - 1 {
-              Divider().safeAreaPadding(.leading, nil)
-            }
-          }
+      LazyVGrid(
+        columns: [
+          GridItem(.fixed(60), spacing: 3.0, alignment: .center),
+          GridItem(.fixed(60), spacing: 3.0, alignment: .center),
+          GridItem(.fixed(60), spacing: 3.0, alignment: .center)
+        ],
+        alignment: .center,
+        spacing: 3.0
+      ) {
+        ForEach(store.availableColorTypeOptions, id: \.rawValue) { value in
+          value.image.resizable()
+            .aspectRatio(contentMode: .fit)
+            .frame(width: 19, height: 21)
+            .offset(x: 0, y: -0.5)
+            .background { Circle().fill(.black).offset(x: -0.75, y: 1) }
         }
       }
-      .padding(.vertical, 11)
-      Text("hello")
-        .presentationCompactAdaptation(.popover)
+      .presentationCompactAdaptation(.popover)
     }
   }
   
