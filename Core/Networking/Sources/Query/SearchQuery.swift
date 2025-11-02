@@ -49,8 +49,12 @@ public struct SearchQuery: Equatable, Hashable {
   
   public var page: Int
   
-  public var colorIdentities: [Card.Color] = Card.Color.allCases {
+  public var colorIdentities: Set<Card.Color> = [] {
     didSet {
+      if colorIdentities == Set(Card.Color.allCases) {
+        colorIdentities = []
+      }
+      
       page = 1
     }
   }

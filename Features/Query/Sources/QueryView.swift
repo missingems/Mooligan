@@ -100,7 +100,7 @@ struct QueryView: View {
       store.isShowingColorTypeOptions.toggle()
     } label: {
       HStack(spacing: -3) {
-        ForEach(store.query.colorIdentities, id: \.rawValue) { value in
+        ForEach(store.availableColorTypeOptions, id: \.rawValue) { value in
           value.image.resizable()
             .aspectRatio(contentMode: .fit)
             .frame(width: 19, height: 21)
