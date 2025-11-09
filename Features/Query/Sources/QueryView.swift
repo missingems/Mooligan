@@ -119,24 +119,22 @@ struct QueryView: View {
       )
       .background(RoundedRectangle(cornerRadius: 13.0).fill(Color(.systemFill)))
     }
-    .popover(isPresented: $store.isShowingColorTypeOptions, attachmentAnchor: .rect(.bounds), arrowEdge: .top) {
-      LazyVGrid(
-        columns: [
-          GridItem(.fixed(60), spacing: 3.0, alignment: .center),
-          GridItem(.fixed(60), spacing: 3.0, alignment: .center),
-          GridItem(.fixed(60), spacing: 3.0, alignment: .center)
-        ],
-        alignment: .center,
-        spacing: 3.0
-      ) {
-        ForEach(store.availableColorTypeOptions, id: \.rawValue) { value in
+    .popover(
+      isPresented: $store.isShowingColorTypeOptions,
+      attachmentAnchor: .rect(.bounds),
+      arrowEdge: .top
+    ) {
+      List(store.availableColorTypeOptions, id: \.rawValue, selection: $store.query.colorIdentities) { value in
+        HStack {
           value.image.resizable()
             .aspectRatio(contentMode: .fit)
             .frame(width: 19, height: 21)
             .offset(x: 0, y: -0.5)
             .background { Circle().fill(.black).offset(x: -0.75, y: 1) }
+          Text(value.rawValue)
         }
       }
+      .frame(width: 180, height: 180, alignment: .center)
       .presentationCompactAdaptation(.popover)
     }
   }
@@ -226,46 +224,6 @@ struct QueryView: View {
       .clipShape(RoundedRectangle(cornerRadius: 13.0))
     }
     .pickerStyle(.inline)
-    .disabled(store.mode == .loading || store.mode == .placeholder)
-  }
-  
-  @ViewBuilder private var colorMenuItem: some View {
-    Menu {
-      Picker("SORT BY", selection: $store.query.sortMode) {
-        ForEach(store.availableSortModes) { value in
-          Text(value.description)
-        }
-      }
-    } label: {
-      Label {
-        Text(store.query.sortMode.description)
-          .font(.subheadline)
-          .fontWeight(.medium)
-          .multilineTextAlignment(.leading)
-      } icon: {
-        switch store.query.sortDirection {
-        case .asc:
-          Image(systemName: "arrow.up").font(.system(size: 21))
-        case .desc:
-          Image(systemName: "arrow.down").font(.system(size: 21))
-        default:
-          Image(systemName: "wand.and.sparkles").font(.system(size: 21))
-        }
-      }
-      .frame(maxWidth: .infinity)
-      .padding(
-        EdgeInsets(
-          top: 8,
-          leading: 0,
-          bottom: 8,
-          trailing: 0
-        )
-      )
-      .background(Color(.systemFill))
-      .clipShape(RoundedRectangle(cornerRadius: 13.0))
-    }
-    .pickerStyle(.inline)
-    .labelsVisibility(.visible)
     .disabled(store.mode == .loading || store.mode == .placeholder)
   }
   
