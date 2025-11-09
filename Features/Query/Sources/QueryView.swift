@@ -100,7 +100,10 @@ struct QueryView: View {
       store.isShowingColorTypeOptions.toggle()
     } label: {
       HStack(spacing: -3) {
-        ForEach(store.availableColorTypeOptions, id: \.rawValue) { value in
+        ForEach(
+          store.query.colorIdentities.isEmpty ? store.availableColorTypeOptions : Array(store.query.colorIdentities),
+          id: \.rawValue
+        ) { value in
           value.image.resizable()
             .aspectRatio(contentMode: .fit)
             .frame(width: 19, height: 21)
@@ -118,23 +121,36 @@ struct QueryView: View {
         )
       )
       .background(RoundedRectangle(cornerRadius: 13.0).fill(Color(.systemFill)))
+      .animation(.default, value: store.query.colorIdentities)
     }
     .popover(
       isPresented: $store.isShowingColorTypeOptions,
       attachmentAnchor: .rect(.bounds),
       arrowEdge: .top
     ) {
-      List(store.availableColorTypeOptions, id: \.rawValue, selection: $store.query.colorIdentities) { value in
-        HStack {
-          value.image.resizable()
-            .aspectRatio(contentMode: .fit)
-            .frame(width: 19, height: 21)
-            .offset(x: 0, y: -0.5)
-            .background { Circle().fill(.black).offset(x: -0.75, y: 1) }
-          Text(value.rawValue)
+      VStack {
+        ForEach(store.availableColorTypeOptions, id: \.rawValue) { value in
+          VStack(alignment: .leading, spacing: 0) {
+            Button {
+              store.query.colorIdentities.toggleSelection(for: value)
+            } label: {
+              HStack {
+                value.image.resizable()
+                  .aspectRatio(contentMode: .fit)
+                  .frame(width: 19, height: 21)
+                  .offset(x: 0, y: -0.5)
+                  .background {
+                    Circle().fill(.black).offset(x: -0.75, y: 1)
+                  }
+                
+                Text(value.name)
+              }
+            }
+            .background(store.query.colorIdentities.contains(value) ? .blue : .clear)
+            .safeAreaPadding(.horizontal, nil)
+          }
         }
       }
-      .frame(width: 180, height: 180, alignment: .center)
       .presentationCompactAdaptation(.popover)
     }
   }
@@ -224,7 +240,6 @@ struct QueryView: View {
       .clipShape(RoundedRectangle(cornerRadius: 13.0))
     }
     .pickerStyle(.inline)
-    .disabled(store.mode == .loading || store.mode == .placeholder)
   }
   
   @ViewBuilder private func infoView(query: QueryType) -> some View {
@@ -292,11 +307,9 @@ private extension QueryType.Section {
         HStack {
           Text(title)
           Spacer(minLength: 55)
-          Text(code.uppercased()).foregroundStyle(.secondary).fontDesign(.monospaced)
+          Text(code.uppercased()).foregroundStyle(.secondary).fontWidth(.condensed)
         }
       }
     }
   }
 }
-
-

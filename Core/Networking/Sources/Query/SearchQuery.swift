@@ -51,10 +51,6 @@ public struct SearchQuery: Equatable, Hashable {
   
   public var colorIdentities: Set<Card.Color> = [] {
     didSet {
-      if colorIdentities == Set(Card.Color.allCases) {
-        colorIdentities = []
-      }
-      
       page = 1
     }
   }
@@ -102,8 +98,10 @@ public struct SearchQuery: Equatable, Hashable {
     }
     
     if colorIdentities.isEmpty == false {
-      for identity in colorIdentities {
-        filters.append(.colors(identity.rawValue, .including))
+      filters.append(.colorIdentity(colorIdentities.map(\.rawValue).joined()))
+      
+      if colorIdentities.contains(.C) == false {
+        filters.append(.colorIdentity(Card.Color.C.rawValue, .notEqual))
       }
     }
     
@@ -113,5 +111,15 @@ public struct SearchQuery: Equatable, Hashable {
   public mutating func next() -> Self {
     page += 1
     return self
+  }
+}
+
+public extension Set where Element == Card.Color {
+  mutating func toggleSelection(for element: Element) {
+    if self.contains(element) {
+      self.remove(element)
+    } else {
+      self.insert(element)
+    }
   }
 }
