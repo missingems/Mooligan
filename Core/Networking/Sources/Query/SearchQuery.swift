@@ -1,7 +1,7 @@
 import ScryfallKit
 
 public struct SearchQuery: Equatable, Hashable {
-  public enum CardType: String, CaseIterable, Hashable, Identifiable {
+  public enum CardType: String, CaseIterable, Hashable, Identifiable, Comparable {
     public var id: String {
       return self.rawValue
     }
@@ -26,6 +26,11 @@ public struct SearchQuery: Equatable, Hashable {
       case .planeswalker: "Planeswalker"
       case .creature: "Creature"
       }
+    }
+    
+    public static func < (lhs: CardType, rhs: CardType) -> Bool {
+      let order: [CardType] = CardType.allCases
+      return order.firstIndex(of: lhs)! < order.firstIndex(of: rhs)!
     }
   }
   

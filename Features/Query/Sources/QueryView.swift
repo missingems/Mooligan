@@ -30,6 +30,7 @@ struct QueryView: View {
               .blur(radius: store.mode == .loading ? 8.0 : 0)
               .scaleEffect(store.mode == .loading ? 0.97 : 1)
               .opacity(store.mode == .loading ? 0.2 : 1)
+              .placeholder(store.mode.isPlaceholder)
           } header: {
             HStack(spacing: 5.0) {
               colorTypeItems
@@ -39,7 +40,6 @@ struct QueryView: View {
             .animation(.default, value: store.query)
             .padding(.bottom, 5.0)
           }
-          .placeholder(store.mode.isPlaceholder)
         }
       }
     }
@@ -103,7 +103,7 @@ struct QueryView: View {
     } label: {
       HStack(spacing: -3) {
         ForEach(
-          store.query.colorIdentities.isEmpty ? store.availableColorTypeOptions : Array(store.query.colorIdentities),
+          store.query.colorIdentities.isEmpty ? store.availableColorTypeOptions : Array(store.query.colorIdentities).sorted(),
           id: \.rawValue
         ) { value in
           value.image.resizable()
@@ -168,7 +168,10 @@ struct QueryView: View {
       store.isShowingCardTypeOptions.toggle()
     } label: {
       HStack(spacing: 2) {
-        ForEach(Array(store.query.cardType), id: \.rawValue) { value in
+        ForEach(
+          Array(store.query.cardType).sorted(),
+          id: \.rawValue
+        ) { value in
           value.image
             .renderingMode(.template)
             .resizable()
