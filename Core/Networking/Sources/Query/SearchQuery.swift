@@ -41,8 +41,19 @@ public struct SearchQuery: Equatable, Hashable {
     }
   }
   
-  public var cardType: CardType {
+  public var cardType: Set<CardType> = [] {
     didSet {
+      if oldValue.intersection(cardType).contains(.all) == false, cardType.contains(.all) {
+        cardType = [.all]
+      } else {
+        cardType.remove(.all)
+      }
+      
+      if cardType.isEmpty {
+        cardType = [.all]
+      }
+      
+      
       page = 1
     }
   }
@@ -69,7 +80,7 @@ public struct SearchQuery: Equatable, Hashable {
   
   public init(
     name: String = "",
-    cardType: CardType = .all,
+    cardType: Set<CardType> = [.all],
     setCode: String,
     page: Int,
     sortMode: SortMode,
@@ -92,9 +103,8 @@ public struct SearchQuery: Equatable, Hashable {
     
     filters.append(.set(setCode))
     
-    if cardType != .all {
-      // By default, all means without any type filter.
-      filters.append(.compoundOr([.type(cardType.rawValue)]))
+    if cardType != [.all] {
+      filters.append(.compoundOr(cardType.map { .type($0.rawValue) }))
     }
     
     if colorIdentities.isEmpty == false {
@@ -115,6 +125,16 @@ public struct SearchQuery: Equatable, Hashable {
 }
 
 public extension Set where Element == Card.Color {
+  mutating func toggleSelection(for element: Element) {
+    if self.contains(element) {
+      self.remove(element)
+    } else {
+      self.insert(element)
+    }
+  }
+}
+
+public extension Set where Element == SearchQuery.CardType {
   mutating func toggleSelection(for element: Element) {
     if self.contains(element) {
       self.remove(element)
