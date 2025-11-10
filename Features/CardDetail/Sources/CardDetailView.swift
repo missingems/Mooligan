@@ -11,7 +11,7 @@ struct CardDetailView: View {
   
   var body: some View {
     ScrollView(.vertical) {
-      VStack(spacing: 0) {
+      LazyVStack(spacing: 0) {
         if let content = store.content {
           if let maxWidth, maxWidth > 0 {
             let cardImageWidth = content.card.isLandscape ? 2.5 / 3.0 * maxWidth : 2.0 / 3.0 * maxWidth

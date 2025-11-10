@@ -44,18 +44,19 @@ public struct QueryFeature {
     }
     
     var mode: Mode
-    var queryType: QueryType
+    let queryType: QueryType
     let title: String
     var isShowingInfo: Bool
     var isShowingSortOptions: Bool
+    var isShowingColorTypeOptions: Bool
+    var isShowingCardTypeOptions: Bool
     var dataSource: CardDataSource?
+    let availableColorTypeOptions: [Card.Color]
+    let availableCardType: [SearchQuery.CardType]
     let availableSortModes: [SortMode]
     let availableSortOrders: [SortDirection]
     var query: SearchQuery
     var scrollPosition: ScrollPosition
-    var viewWidth: CGFloat?
-    var itemWidth: CGFloat?
-    var popoverSize: CGSize?
     var numberOfColumns: Double = 2
     let searchPrompt: String
     public let id: UUID
@@ -78,11 +79,15 @@ public struct QueryFeature {
         fatalError()
       }
       
+      availableCardType = SearchQuery.CardType.allCases
       availableSortModes = [.name, .usd, .cmc, .color, .rarity, .released]
-      availableSortOrders = [.asc, .desc, .auto]
+      availableSortOrders = [.asc, .desc]
       isShowingInfo = false
-      isShowingSortOptions = false
       scrollPosition = ScrollPosition(edge: .top)
+      isShowingColorTypeOptions = false
+      isShowingCardTypeOptions = false
+      isShowingSortOptions = false
+      availableColorTypeOptions = Card.Color.allCases
     }
     
     func shouldLoadMore(at index: Int) -> Bool {
@@ -94,7 +99,6 @@ public struct QueryFeature {
     case binding(BindingAction<State>)
     case didSelectCard(Card, QueryType)
     case didSelectShowInfo
-    case didSelectShowSortOptions
     case loadMoreCardsIfNeeded(displayingIndex: Int)
     case updateCards(CardDataSource?, SearchQuery, State.Mode)
     case scrollToTop
@@ -106,17 +110,10 @@ public struct QueryFeature {
     
     Reduce { state, action in
       switch action {
-      case .binding(\.viewWidth):
-        if let viewWidth = state.viewWidth {
-          state.itemWidth = (viewWidth - ((state.numberOfColumns - 1) * 8.0)) / state.numberOfColumns
-          state.popoverSize = CGSize(width: viewWidth - 68, height: (viewWidth - 21.0) * 1.618)
-        }
-        
+      case .binding(\.isShowingColorTypeOptions):
         return .none
         
       case .binding(\.query):
-        state.isShowingSortOptions = false
-        
         return .concatenate(
           [
             .run { [state] send in
@@ -159,10 +156,6 @@ public struct QueryFeature {
         
       case .didSelectShowInfo:
         state.isShowingInfo = true
-        return .none
-        
-      case .didSelectShowSortOptions:
-        state.isShowingSortOptions = true
         return .none
         
       case let .loadMoreCardsIfNeeded(displayingIndex):
