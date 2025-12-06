@@ -14,7 +14,6 @@ let project = Project(
       dependencies: [
         .external(name: "NukeUI"),
         .external(name: "Shimmer"),
-        .external(name: "VariableBlur"),
         .external(name: "SVGView"),
         .project(target: "Networking", path: "../../Core/Networking"),
         .project(target: "Featurist", path: "../../Core/Featurist"),
