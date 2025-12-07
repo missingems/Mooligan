@@ -229,6 +229,7 @@ public struct CardView: View {
         Text(set)
           .font(.caption)
           .multilineTextAlignment(.center)
+          .lineLimit(1)
           .foregroundStyle(.secondary)
         
         HStack(spacing: 5) {
