@@ -90,7 +90,6 @@ public struct CardView: View {
       }
       
       accessoryView
-        .padding(.bottom, 8.0)
     }
   }
   

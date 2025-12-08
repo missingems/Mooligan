@@ -89,6 +89,7 @@ struct QueryView: View {
           shouldShowShadow: false,
           send: nil
         )
+        .padding(.bottom, 8.0)
       }
       .disabled(store.mode.isScrollable == false)
       .buttonStyle(.sinkableButtonStyle)
@@ -126,7 +127,7 @@ struct QueryView: View {
         )
       )
     }
-    .glassEffect()
+    .glassEffect(.regular.interactive())
     .popover(
       isPresented: $store.isShowingColorTypeOptions,
       attachmentAnchor: .rect(.bounds),
@@ -205,7 +206,7 @@ struct QueryView: View {
         )
       )
     }
-    .glassEffect()
+    .glassEffect(.regular.interactive())
     .popover(
       isPresented: $store.isShowingCardTypeOptions,
       attachmentAnchor: .rect(.bounds),
@@ -278,7 +279,7 @@ struct QueryView: View {
         )
       )
     }
-    .glassEffect()
+    .glassEffect(.regular.interactive())
     .popover(
       isPresented: $store.isShowingSortOptions,
       attachmentAnchor: .rect(.bounds),
