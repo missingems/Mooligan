@@ -82,7 +82,7 @@ struct QueryView: View {
           displayableCard: cardInfo.displayableCardImage,
           layoutConfiguration: nil,
           callToActionHorizontalOffset: -3.0,
-          priceVisibility: .hidden,
+          priceVisibility: .display(usdFoil: cardInfo.card.getPrice(for: .usdFoil), usd: cardInfo.card.getPrice(for: .usd)),
           shouldShowShadow: false,
           send: nil
         )
