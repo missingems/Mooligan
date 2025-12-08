@@ -24,7 +24,7 @@ struct QueryView: View {
   var body: some View {
     ScrollView(.vertical) {
       if let dataSource = store.dataSource {
-        LazyVGrid(columns: gridItems, spacing: 5.0) {
+        LazyVGrid(columns: gridItems, spacing: 5.0, pinnedViews: .sectionHeaders) {
           Section {
             contentScrollView(dataSource: dataSource)
               .blur(radius: store.mode == .loading ? 8.0 : 0)
@@ -82,7 +82,10 @@ struct QueryView: View {
           displayableCard: cardInfo.displayableCardImage,
           layoutConfiguration: nil,
           callToActionHorizontalOffset: -3.0,
-          priceVisibility: .display(usdFoil: cardInfo.card.getPrice(for: .usdFoil), usd: cardInfo.card.getPrice(for: .usd)),
+          priceVisibility: .display(
+            usdFoil: cardInfo.card.getPrice(for: .usdFoil),
+            usd: cardInfo.card.getPrice(for: .usd)
+          ),
           shouldShowShadow: false,
           send: nil
         )
@@ -122,8 +125,8 @@ struct QueryView: View {
           trailing: 8
         )
       )
-      .background(RoundedRectangle(cornerRadius: 13.0).fill(Color(.systemFill)))
     }
+    .glassEffect()
     .popover(
       isPresented: $store.isShowingColorTypeOptions,
       attachmentAnchor: .rect(.bounds),
@@ -201,9 +204,8 @@ struct QueryView: View {
           trailing: 8
         )
       )
-      .background(Color(.systemFill))
-      .clipShape(RoundedRectangle(cornerRadius: 13.0))
     }
+    .glassEffect()
     .popover(
       isPresented: $store.isShowingCardTypeOptions,
       attachmentAnchor: .rect(.bounds),
@@ -275,9 +277,8 @@ struct QueryView: View {
           trailing: 0
         )
       )
-      .background(Color(.systemFill))
-      .clipShape(RoundedRectangle(cornerRadius: 13.0))
     }
+    .glassEffect()
     .popover(
       isPresented: $store.isShowingSortOptions,
       attachmentAnchor: .rect(.bounds),

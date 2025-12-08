@@ -50,48 +50,47 @@ public struct CardView: View {
   
   public var body: some View {
     VStack(spacing: 5) {
-      ZStack(alignment: .leading) {
-        ZStack(alignment: .trailing) {
-          switch localDisplayableCard ?? displayableCard {
-          case let .transformable(
-            direction,
-            frontImageURL,
-            backImageURL,
-            callToActionIconName,
-            id
-          ):
-            transformableCardView(
-              direction: direction,
-              frontImageURL: frontImageURL,
-              backImageURL: backImageURL,
-              callToActionIconName: callToActionIconName,
-              id: id
-            )
-            
-          case let .flippable(direction, displayingImageURL, callToActionIconName, id):
-            flippableCardView(
-              direction: direction,
-              displayingImageURL: displayingImageURL,
-              callToActionIconName: callToActionIconName,
-              id: id
-            )
-            
-          case let .single(displayingImageURL, id):
-            CardRemoteImageView(
-              url: displayingImageURL,
-              isLandscape: layoutConfiguration?.rotation == .landscape,
-              isTransformed: false,
-              size: layoutConfiguration?.size,
-              id: id
-            )
-            .conditionalModifier(shouldShowShadow, transform: { view in
-              view.shadow(radius: 21, x: 0, y: 5)
-            })
-          }
+      ZStack(alignment: .trailing) {
+        switch localDisplayableCard ?? displayableCard {
+        case let .transformable(
+          direction,
+          frontImageURL,
+          backImageURL,
+          callToActionIconName,
+          id
+        ):
+          transformableCardView(
+            direction: direction,
+            frontImageURL: frontImageURL,
+            backImageURL: backImageURL,
+            callToActionIconName: callToActionIconName,
+            id: id
+          )
+          
+        case let .flippable(direction, displayingImageURL, callToActionIconName, id):
+          flippableCardView(
+            direction: direction,
+            displayingImageURL: displayingImageURL,
+            callToActionIconName: callToActionIconName,
+            id: id
+          )
+          
+        case let .single(displayingImageURL, id):
+          CardRemoteImageView(
+            url: displayingImageURL,
+            isLandscape: layoutConfiguration?.rotation == .landscape,
+            isTransformed: false,
+            size: layoutConfiguration?.size,
+            id: id
+          )
+          .conditionalModifier(shouldShowShadow, transform: { view in
+            view.shadow(radius: 21, x: 0, y: 5)
+          })
         }
-        
-        accessoryView.offset(x: 10)
       }
+      
+      accessoryView
+        .padding(.bottom, 8.0)
     }
   }
   
@@ -200,26 +199,26 @@ public struct CardView: View {
   @ViewBuilder private var accessoryView: some View {
     switch accessoryInfo {
     case let .display(usdFoilPrice, usdPrice):
-      PriceTag(displayPrice: usdPrice ?? "0.00")
-//      HStack(spacing: 5) {
-//        if let usdPrice {
-//          PillText("$\(usdPrice)")
-//        }
-//        
-//        if let usdFoilPrice {
-//          PillText("$\(usdFoilPrice)", isFoil: true)
-//            .foregroundStyle(.black.opacity(0.8))
-//        }
-//        
-//        if usdPrice == nil && usdFoilPrice == nil {
-//          PillText("$0.00").unavailable(true)
-//        }
-//      }
-//      .foregroundStyle(DesignComponentsAsset.accentColor.swiftUIColor)
-//      .font(.caption)
-//      .fontWeight(.medium)
-//      .monospaced()
-//      .frame(height: 21.0)
+      HStack(spacing: 5) {
+        if let usdPrice {
+          PillText("$\(usdPrice)")
+        }
+        
+        if let usdFoilPrice {
+          PillText("$\(usdFoilPrice)", isFoil: true)
+            .foregroundStyle(.black.opacity(0.8))
+        }
+        
+        if usdPrice == nil && usdFoilPrice == nil {
+          PillText("$0.00").unavailable(true)
+        }
+      }
+      .foregroundStyle(DesignComponentsAsset.accentColor.swiftUIColor)
+      .font(.caption)
+      .fontWeight(.medium)
+      .fontWidth(.compressed)
+      .monospaced()
+      .frame(height: 21.0)
       
     case let .displaySet(set, usdFoilPrice, usdPrice):
       VStack(alignment: .center, spacing: 5.0) {
@@ -278,3 +277,4 @@ public struct CardView: View {
     self.send = send
   }
 }
+
