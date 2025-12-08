@@ -88,8 +88,10 @@ public struct CardView: View {
           })
         }
       }
+      .zIndex(1)
       
       accessoryView
+        .zIndex(0)
     }
   }
   
