@@ -3,7 +3,7 @@ import SwiftUI
 import Networking
 import ScryfallKit
 
-@Reducer public struct BrowseFeature {
+@Reducer public struct BrowseFeature: Sendable {
   @Dependency(\.gameSetRequestClient) var client
   
   public var body: some ReducerOf<Self> {

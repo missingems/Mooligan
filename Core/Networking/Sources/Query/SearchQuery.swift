@@ -1,7 +1,7 @@
 import ScryfallKit
 
-public struct SearchQuery: Equatable, Hashable {
-  public enum CardType: String, CaseIterable, Hashable, Identifiable, Comparable {
+public struct SearchQuery: Equatable, Hashable, Sendable {
+  public enum CardType: String, CaseIterable, Hashable, Identifiable, Comparable, Sendable {
     public var id: String {
       return self.rawValue
     }

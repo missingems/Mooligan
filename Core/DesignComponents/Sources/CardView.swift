@@ -88,14 +88,10 @@ public struct CardView: View {
           })
         }
       }
+      .zIndex(1)
       
-      accessoryView.padding(.horizontal, 5.0)
-      
-      if case .hidden = accessoryInfo {
-        
-      } else {
-        Spacer(minLength: 0)
-      }
+      accessoryView
+        .zIndex(0)
     }
   }
   
@@ -221,6 +217,7 @@ public struct CardView: View {
       .foregroundStyle(DesignComponentsAsset.accentColor.swiftUIColor)
       .font(.caption)
       .fontWeight(.medium)
+      .fontWidth(.compressed)
       .monospaced()
       .frame(height: 21.0)
       
@@ -281,3 +278,4 @@ public struct CardView: View {
     self.send = send
   }
 }
+
