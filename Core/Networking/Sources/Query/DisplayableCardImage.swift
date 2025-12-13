@@ -1,7 +1,7 @@
 import Foundation
 import ScryfallKit
 
-public enum DisplayableCardImage: Equatable {
+public enum DisplayableCardImage: Equatable, Sendable {
   case transformable(
     direction: MagicCardFaceDirection,
     frontImageURL: URL,

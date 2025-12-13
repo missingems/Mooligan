@@ -6,7 +6,7 @@ public protocol GameSetRequestClient: Sendable {
   func getSets(queryType: GameSetQueryType) async throws -> ([ScryfallClient.SetsSection], [MTGSet])
 }
 
-public enum GameSetQueryType: Equatable {
+public enum GameSetQueryType: Equatable, Sendable {
   case all
   case name(String, [MTGSet])
 }

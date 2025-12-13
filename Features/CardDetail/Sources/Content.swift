@@ -5,7 +5,7 @@ import Networking
 import ScryfallKit
 import SwiftUI
 
-public struct Content: Equatable {
+public struct Content: Equatable, Sendable {
   struct Description: Equatable, Sendable {
     let name: String
     let textElements: [[TextElement]]

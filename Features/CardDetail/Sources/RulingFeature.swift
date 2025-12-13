@@ -3,7 +3,7 @@ import Foundation
 import Networking
 import ScryfallKit
 
-@Reducer public struct RulingFeature {
+@Reducer public struct RulingFeature: Sendable{
   @Dependency(\.cardDetailRequestClient) var client
   
   public var body: some ReducerOf<Self> {
@@ -50,7 +50,7 @@ public extension RulingFeature {
     }
   }
   
-  enum Action: Equatable {
+  enum Action: Equatable, Sendable {
     case dismissTapped
     case fetchRulings
     case updateRulings([MagicCardRuling])

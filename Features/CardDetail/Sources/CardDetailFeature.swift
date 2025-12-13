@@ -4,7 +4,7 @@ import Foundation
 import Networking
 import ScryfallKit
 
-@Reducer public struct CardDetailFeature {
+@Reducer public struct CardDetailFeature: Sendable {
   @Dependency(\.cardDetailRequestClient) private var client
   
   public var body: some ReducerOf<Self> {
@@ -291,7 +291,7 @@ public extension CardDetailFeature {
     }
   }
   
-  @CasePathable indirect enum Action: Equatable {
+  @CasePathable indirect enum Action: Equatable, Sendable {
     case didSelectVariant(card: Card, queryType: QueryType)
     case dismissRulingsTapped
     case fetchAdditionalInformation(card: Card)

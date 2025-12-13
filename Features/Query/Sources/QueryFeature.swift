@@ -6,12 +6,12 @@ import SwiftUI
 import Networking
 
 @Reducer
-public struct QueryFeature {
+public struct QueryFeature: Sendable {
   @Dependency(\.cardQueryRequestClient) var client
   
   @ObservableState
-  public struct State {
-    public enum Mode: Equatable {
+  public struct State : Sendable{
+    public enum Mode: Equatable, Sendable {
       case placeholder
       case data
       case loading

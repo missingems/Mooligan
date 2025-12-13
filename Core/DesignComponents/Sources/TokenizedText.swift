@@ -45,8 +45,8 @@ public struct TokenizedText: View {
           newSize: CGSize(width: font.pointSize, height: font.pointSize)
         ).font(.system(size: font.pointSize))
       }
-    }.reduce(into: Text("")) { acc, next in
-      acc = acc + next
+    }.reduce(Text("")) { acc, next in
+      Text("\(acc)\(next)")
     }
     
     return combinedText.fixedSize(horizontal: false, vertical: true)

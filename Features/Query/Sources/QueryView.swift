@@ -374,7 +374,7 @@ struct QueryView: View {
 }
 
 private extension QueryType.Section {
-  var body: some View {
+  @MainActor var body: some View {
     Group {
       switch self {
       case .titleDetail(let title, let detail):

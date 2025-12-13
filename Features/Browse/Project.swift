@@ -2,6 +2,11 @@ import ProjectDescription
 
 let project = Project(
   name: "Browse",
+  settings: .settings(
+    base: [
+      "SWIFT_VERSION": "6.2",
+    ]
+  ),
   targets: [
     .target(
       name: "BrowseRunner",

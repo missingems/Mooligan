@@ -2,7 +2,7 @@ import ComposableArchitecture
 import Foundation
 import ScryfallKit
 
-public struct CardDataSource: Equatable {
+public struct CardDataSource: Equatable, Sendable {
   public var cardDetails: [CardInfo]
   public var hasNextPage: Bool
   public var total: Int
@@ -29,7 +29,7 @@ public struct CardDataSource: Equatable {
   }
 }
 
-public struct CardInfo: Equatable {
+public struct CardInfo: Equatable, Sendable {
   public let card: Card
   public let displayableCardImage: DisplayableCardImage?
   

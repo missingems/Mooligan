@@ -1,6 +1,6 @@
 import ScryfallKit
 
-public enum QueryType: Equatable {
+@MainActor public enum QueryType: Equatable, Sendable {
   case search(SearchQuery)
   case querySet(MTGSet, SearchQuery)
 }
