@@ -19,6 +19,7 @@ let project = Project(
       dependencies: [
         .external(name: "ScryfallKit"),
         .project(target: "Featurist", path: "../../Core/Featurist"),
+        .project(target: "MTGJson", path: "../../Dependencies/MTGJson"),
       ]
     ),
     .target(
