@@ -33,8 +33,7 @@ struct QueryView: View {
               .placeholder(store.mode.isPlaceholder)
           } header: {
             GlassEffectContainer {
-            HStack(spacing: 5.0) {
-              
+              HStack(spacing: 5.0) {
                 colorTypeItems
                 typesMenuItems
                 sortView
@@ -408,3 +407,4 @@ private extension QueryType.Section {
     }
   }
 }
+
