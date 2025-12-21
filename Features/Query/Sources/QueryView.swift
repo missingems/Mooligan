@@ -32,10 +32,13 @@ struct QueryView: View {
               .opacity(store.mode == .loading ? 0.2 : 1)
               .placeholder(store.mode.isPlaceholder)
           } header: {
+            GlassEffectContainer {
             HStack(spacing: 5.0) {
-              colorTypeItems
-              typesMenuItems
-              sortView
+              
+                colorTypeItems
+                typesMenuItems
+                sortView
+              }
             }
             .animation(.default, value: store.query)
             .padding(.bottom, 5.0)
