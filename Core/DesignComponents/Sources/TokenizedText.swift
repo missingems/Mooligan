@@ -45,9 +45,7 @@ public struct TokenizedText: View {
           newSize: CGSize(width: font.pointSize, height: font.pointSize)
         ).font(.system(size: font.pointSize))
       }
-    }.reduce(Text("")) { acc, next in
-      Text("\(acc)\(next)")
-    }
+    }.balancedCombine()
     
     return combinedText.fixedSize(horizontal: false, vertical: true)
   }
@@ -75,5 +73,22 @@ public struct TokenizedText: View {
         build(elements: textElements[index])
       }
     }
+  }
+}
+
+extension Array where Element == Text {
+  func balancedCombine() -> Text {
+    guard !isEmpty else { return Text("") }
+    return combine(0..<count)
+  }
+  
+  private func combine(_ range: Range<Int>) -> Text {
+    if range.count == 1 { return self[range.lowerBound] }
+    
+    let mid = range.lowerBound + range.count / 2
+    let left = combine(range.lowerBound..<mid)
+    let right = combine(mid..<range.upperBound)
+    
+    return Text("\(left)\(right)")
   }
 }

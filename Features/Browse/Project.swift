@@ -28,7 +28,7 @@ let project = Project(
     .target(
       name: "Browse",
       destinations: .iOS,
-      product: .staticFramework,
+      product: .framework,
       bundleId: "com.missingems.Mooligan.Browse",
       infoPlist: .default,
       sources: ["Sources/**"],

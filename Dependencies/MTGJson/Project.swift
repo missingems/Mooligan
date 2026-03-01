@@ -14,9 +14,8 @@ let project = Project(
     .target(
       name: "MTGJson",
       destinations: .iOS,
-      product: .staticFramework,
+      product: .framework,
       bundleId: "com.missingems.MTGJson",
-      deploymentTargets: .iOS("16.0"),
       sources: ["MTGJson/Sources/**"],
       resources: ["MTGJson/Resources/**"],
       dependencies: [

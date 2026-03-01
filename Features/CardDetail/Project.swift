@@ -27,7 +27,7 @@ let project = Project(
     .target(
       name: "CardDetail",
       destinations: .iOS,
-      product: .staticFramework,
+      product: .framework,
       bundleId: "com.missingems.Mooligan.CardDetail",
       infoPlist: .default,
       sources: ["Sources/**"],
