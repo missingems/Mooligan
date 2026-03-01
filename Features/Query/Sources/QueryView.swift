@@ -22,58 +22,54 @@ struct QueryView: View {
   }
   
   var body: some View {
-    ScannerView()
-      .ignoresSafeArea()
-    
-//
-//    ScrollView(.vertical) {
-//      if let dataSource = store.dataSource {
-//        LazyVGrid(columns: gridItems, spacing: 5.0, pinnedViews: .sectionHeaders) {
-//          Section {
-//            contentScrollView(dataSource: dataSource)
-//              .blur(radius: store.mode == .loading ? 8.0 : 0)
-//              .scaleEffect(store.mode == .loading ? 0.97 : 1)
-//              .opacity(store.mode == .loading ? 0.2 : 1)
-//              .placeholder(store.mode.isPlaceholder)
-//          } header: {
-//            GlassEffectContainer {
-//              HStack(spacing: 5.0) {
-//                colorTypeItems
-//                typesMenuItems
-//                sortView
-//              }
-//            }
-//            .animation(.default, value: store.query)
-//            .padding(.bottom, 8)
-//          }
-//        }
-//      }
-//    }
-//    .contentMargins(
-//      .all,
-//      EdgeInsets(top: 0, leading: 16, bottom: 13.0, trailing: 16),
-//      for: .scrollContent
-//    )
-//    .scrollDisabled(store.mode.isScrollable == false)
-//    .scrollPosition($store.scrollPosition)
-//    .scrollBounceBehavior(.basedOnSize)
-//    .navigationTitle(store.title)
-//    .navigationBarTitleDisplayMode(.inline)
-//    .toolbar {
-//      ToolbarItem(id: "info", placement: .principal) {
-//        infoView(query: store.queryType)
-//      }
-//    }
-//    .searchable(text: $store.query.name, placement: .toolbar)
-//    .searchToolbarBehavior(.minimize)
-//    .overlay {
-//      ProgressView {
-//        Text("Loading...")
-//      }
-//      .opacity(store.mode == .loading ? 1 : 0)
-//    }
-//    .background(Color(.systemGroupedBackground))
-//    .task { store.send(.viewAppeared) }
+    ScrollView(.vertical) {
+      if let dataSource = store.dataSource {
+        LazyVGrid(columns: gridItems, spacing: 5.0, pinnedViews: .sectionHeaders) {
+          Section {
+            contentScrollView(dataSource: dataSource)
+              .blur(radius: store.mode == .loading ? 8.0 : 0)
+              .scaleEffect(store.mode == .loading ? 0.97 : 1)
+              .opacity(store.mode == .loading ? 0.2 : 1)
+              .placeholder(store.mode.isPlaceholder)
+          } header: {
+            GlassEffectContainer {
+              HStack(spacing: 5.0) {
+                colorTypeItems
+                typesMenuItems
+                sortView
+              }
+            }
+            .animation(.default, value: store.query)
+            .padding(.bottom, 8)
+          }
+        }
+      }
+    }
+    .contentMargins(
+      .all,
+      EdgeInsets(top: 0, leading: 16, bottom: 13.0, trailing: 16),
+      for: .scrollContent
+    )
+    .scrollDisabled(store.mode.isScrollable == false)
+    .scrollPosition($store.scrollPosition)
+    .scrollBounceBehavior(.basedOnSize)
+    .navigationTitle(store.title)
+    .navigationBarTitleDisplayMode(.inline)
+    .toolbar {
+      ToolbarItem(id: "info", placement: .principal) {
+        infoView(query: store.queryType)
+      }
+    }
+    .searchable(text: $store.query.name, placement: .toolbar)
+    .searchToolbarBehavior(.minimize)
+    .overlay {
+      ProgressView {
+        Text("Loading...")
+      }
+      .opacity(store.mode == .loading ? 1 : 0)
+    }
+    .background(Color(.systemGroupedBackground))
+    .task { store.send(.viewAppeared) }
   }
   
   @ViewBuilder private func contentScrollView(dataSource: CardDataSource) -> some View {
