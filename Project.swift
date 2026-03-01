@@ -19,6 +19,7 @@ let project = Project(
       infoPlist: .extendingDefault(
         with: [
           "UILaunchStoryboardName": "LaunchScreen.storyboard",
+          "NSCameraUsageDescription": .string("We need camera access to scan your cards.")
         ]
       ),
       sources: ["Mooligan/Sources/**"],
