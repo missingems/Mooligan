@@ -2,6 +2,11 @@ import ProjectDescription
 
 let project = Project(
   name: "MTGJson",
+  settings: .settings(
+    base: [
+      "SWIFT_VERSION": "6.2",
+    ]
+  ),
   targets: [
     .target(
       name: "MTGJson",
