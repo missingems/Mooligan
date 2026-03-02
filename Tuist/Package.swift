@@ -1,4 +1,4 @@
-// swift-tools-version: 5.9
+// swift-tools-version: 6.0
 @preconcurrency import PackageDescription
 
 #if TUIST
@@ -7,9 +7,7 @@
 let packageSettings = PackageSettings(
   // Customize the product types for specific package product
   // Default is .staticFramework
-  productTypes: [
-    "ComposableArchitecture": .framework,
-  ]
+  productTypes: ["ComposableArchitecture": .framework]
 )
 #endif
 
@@ -17,9 +15,10 @@ let package = Package(
   name: "Mooligan",
   dependencies: [
     .package(url: "https://github.com/JacobHearst/ScryfallKit", from: "5.15.0"),
-    .package(url: "https://github.com/pointfreeco/swift-composable-architecture", from: "1.23.1"),
-    .package(url: "https://github.com/kean/Nuke", from: "12.8.0"),
+    .package(url: "https://github.com/pointfreeco/swift-composable-architecture", from: "1.24.1"),
+    .package(url: "https://github.com/kean/Nuke", from: "12.9.0"),
     .package(url: "https://github.com/exyte/SVGView.git", from: "1.0.6"),
     .package(url: "https://github.com/markiv/SwiftUI-Shimmer", from: "1.5.1"),
+    .package(url: "https://github.com/apollographql/apollo-ios.git", .upToNextMajor(from: "2.0.6"))
   ]
 )

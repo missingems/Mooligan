@@ -1,7 +1,7 @@
 import ProjectDescription
 
 let project = Project(
-  name: "Featurist",
+  name: "MTGJson",
   settings: .settings(
     base: [
       "SWIFT_VERSION": "6.2",
@@ -12,15 +12,16 @@ let project = Project(
   ),
   targets: [
     .target(
-      name: "Featurist",
+      name: "MTGJson",
       destinations: .iOS,
       product: .framework,
-      bundleId: "com.missingems.Featurist",
-      sources: ["Featurist/Sources/**"],
-      resources: ["Featurist/Resources/**"],
+      bundleId: "com.missingems.MTGJson",
+      sources: ["MTGJson/Sources/**"],
+      resources: ["MTGJson/Resources/**"],
       dependencies: [
-        .external(name: "ComposableArchitecture")
+        .external(name: "Apollo")
       ]
-    ),
+    )
   ]
 )
+

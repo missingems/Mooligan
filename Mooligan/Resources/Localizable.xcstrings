@@ -1,6 +1,9 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "Collection" : {
+
+    },
     "Sets" : {
       "extractionState" : "manual",
       "localizations" : {

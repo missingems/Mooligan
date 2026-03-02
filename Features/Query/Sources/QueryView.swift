@@ -40,14 +40,14 @@ struct QueryView: View {
               }
             }
             .animation(.default, value: store.query)
-            .padding(.bottom, 5.0)
+            .padding(.bottom, 8)
           }
         }
       }
     }
     .contentMargins(
       .all,
-      EdgeInsets(top: 0, leading: 8, bottom: 13.0, trailing: 8),
+      EdgeInsets(top: 0, leading: 16, bottom: 13.0, trailing: 16),
       for: .scrollContent
     )
     .scrollDisabled(store.mode.isScrollable == false)
@@ -114,7 +114,7 @@ struct QueryView: View {
         ) { value in
           value.image.resizable()
             .aspectRatio(contentMode: .fit)
-            .frame(width: 19, height: 21)
+            .frame(width: 19, height: 28)
             .offset(x: 0, y: -0.5)
             .background { Circle().fill(.black).offset(x: -0.75, y: 1) }
         }
@@ -184,7 +184,7 @@ struct QueryView: View {
             .scaledToFit()
             .frame(
               width: 18,
-              height: 21,
+              height: 28,
               alignment: .center
             )
         }
@@ -264,7 +264,7 @@ struct QueryView: View {
             Image(systemName: "wand.and.sparkles").resizable().scaledToFit()
           }
         }
-        .frame(width: 15, height: 21, alignment: .center)
+        .frame(width: 15, height: 28, alignment: .center)
         
         Text(store.query.sortMode.description)
           .font(.subheadline)

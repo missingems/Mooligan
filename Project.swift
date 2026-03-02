@@ -5,6 +5,9 @@ let project = Project(
   settings: .settings(
     base: [
       "SWIFT_VERSION": "6.2",
+      "ENABLE_USER_SCRIPT_SANDBOXING": "YES",
+      "ENABLE_MODULE_VERIFIER": "YES",
+      "SWIFT_EMIT_LOC_STRINGS": "YES"
     ]
   ),
   targets: [
@@ -16,6 +19,7 @@ let project = Project(
       infoPlist: .extendingDefault(
         with: [
           "UILaunchStoryboardName": "LaunchScreen.storyboard",
+          "NSCameraUsageDescription": .string("We need camera access to scan your cards.")
         ]
       ),
       sources: ["Mooligan/Sources/**"],

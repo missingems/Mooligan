@@ -260,6 +260,7 @@ import ScryfallKit
         switch action {
         case .dismissTapped:
           state.showRulings = nil
+          break
           
         default:
           break
