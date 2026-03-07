@@ -93,8 +93,14 @@ class ScannerViewController: UIViewController, AVCaptureVideoDataOutputSampleBuf
   
   private func setupCamera() {
     captureSession.sessionPreset = .hd1920x1080
-    guard let backCamera = AVCaptureDevice.default(for: .video),
-          let input = try? AVCaptureDeviceInput(device: backCamera) else { return }
+    
+    guard
+      let backCamera = AVCaptureDevice.default(for: .video),
+      let input = try? AVCaptureDeviceInput(device: backCamera)
+    else {
+      return
+    }
+    
     if captureSession.canAddInput(input) { captureSession.addInput(input) }
     let videoOutput = AVCaptureVideoDataOutput()
     videoOutput.setSampleBufferDelegate(self, queue: videoDataOutputQueue)
@@ -104,7 +110,10 @@ class ScannerViewController: UIViewController, AVCaptureVideoDataOutputSampleBuf
     previewLayer.videoGravity = .resizeAspectFill
     previewLayer.frame = view.bounds
     view.layer.insertSublayer(previewLayer, at: 0)
-    DispatchQueue.global(qos: .background).async { self.captureSession.startRunning() }
+    
+    Task(priority: .background) { [weak self] in
+      self?.captureSession.startRunning()
+    }
   }
   
   nonisolated func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
@@ -200,7 +209,7 @@ class ScannerViewController: UIViewController, AVCaptureVideoDataOutputSampleBuf
     let height = CGFloat(flattenedCGImage.height)
     
     let setCodeHeight = height * 0.1
-    let titleRect = CGRect(x: 0, y: 0, width: width * 0.85, height: height * 0.14)
+    let titleRect = CGRect(x: 0, y: 0, width: width * 0.85, height: height * 0.4)
     let setCodeRect = CGRect(x: 0, y: height - setCodeHeight, width: width * 0.35, height: setCodeHeight)
     
     guard let rawTitleCGImage = flattenedCGImage.cropping(to: titleRect),
@@ -209,16 +218,13 @@ class ScannerViewController: UIViewController, AVCaptureVideoDataOutputSampleBuf
       return
     }
     
-    // 👉 PRE-PROCESS BOTH IMAGES FOR OCR
     let processedTitleCGImage = preprocessForOCR(cgImage: rawTitleCGImage)
     let processedSetCodeCGImage = preprocessForOCR(cgImage: rawSetCodeCGImage)
     
-    // Update the UI Previews to show the B&W/High-Contrast versions!
     self.titlePreviewView.image = UIImage(cgImage: processedTitleCGImage)
     self.setCodePreviewView.image = UIImage(cgImage: processedSetCodeCGImage)
     
     Task.detached { [weak self] in
-      // Send the processed, clean images to Vision
       self?.performOCR(on: processedTitleCGImage, isTitle: true)
       self?.performOCR(on: processedSetCodeCGImage, isTitle: false)
     }
