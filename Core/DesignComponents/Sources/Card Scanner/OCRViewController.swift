@@ -1,18 +1,16 @@
-#if canImport(UIKit)
 import UIKit
 import AVFoundation
 import Vision
 import CoreImage
-import UIKit
 
 final class OCRViewController: UIViewController {
   var didDetectCard: ((_ title: String, _ setCode: String) -> Void)?
+  
   private let captureSession = AVCaptureSession()
   private var previewLayer: AVCaptureVideoPreviewLayer!
   private let videoDataOutputQueue = DispatchQueue(label: "VideoDataOutput", qos: .userInitiated)
-  private var isProcessing = false
-  nonisolated private let ciContext = CIContext()
   private let boundingBoxLayer = CAShapeLayer()
+  private var captureDelegate: CaptureDelegate?
   
   override func viewDidLoad() {
     super.viewDidLoad()
@@ -20,17 +18,26 @@ final class OCRViewController: UIViewController {
     guard
       let backCamera = AVCaptureDevice.default(for: .video),
       let input = try? AVCaptureDeviceInput(device: backCamera)
-    else {
-      return
-    }
+    else { return }
     
     captureSession.sessionPreset = .hd4K3840x2160
+    
     if captureSession.canAddInput(input) {
       captureSession.addInput(input)
     }
     
+    let delegate = CaptureDelegate()
+    delegate.onDrawBox = { [weak self] corners in
+      self?.drawBox(corners)
+    }
+    delegate.onDetectCard = { [weak self] title, setCode in
+      self?.didDetectCard?(title, setCode)
+    }
+    self.captureDelegate = delegate
+    
     let videoOutput = AVCaptureVideoDataOutput()
-    videoOutput.setSampleBufferDelegate(self, queue: videoDataOutputQueue)
+    videoOutput.setSampleBufferDelegate(delegate, queue: videoDataOutputQueue)
+    
     if captureSession.canAddOutput(videoOutput) {
       captureSession.addOutput(videoOutput)
     }
@@ -47,13 +54,88 @@ final class OCRViewController: UIViewController {
   }
   
   override func viewDidAppear(_ animated: Bool) {
-    Task(priority: .background) { [weak self] in
+    super.viewDidAppear(animated)
+    videoDataOutputQueue.async { [weak self] in
       self?.captureSession.startRunning()
     }
   }
   
-  private func processOCR(on cardImage: CGImage?) throws {
+  // Accepts an Optional so we can clear the box if no card is seen
+  private func drawBox(_ corners: VNRectangleObserver.Corners?) {
+    boundingBoxLayer.path = nil
+    guard let corners = corners else { return }
+    
+    let converted = [
+      corners.topLeft,
+      corners.topRight,
+      corners.bottomRight,
+      corners.bottomLeft
+    ].map { point -> CGPoint in
+      previewLayer.layerPointConverted(
+        fromCaptureDevicePoint: CGPoint(
+          x: 1.0 - point.y,
+          y: 1.0 - point.x
+        )
+      )
+    }
+    
+    let path = UIBezierPath()
+    path.move(to: converted[0])
+    converted.dropFirst().forEach { path.addLine(to: $0) }
+    path.close()
+    
+    boundingBoxLayer.path = path.cgPath
+  }
+}
+
+// MARK: - CaptureDelegate
+
+private final class CaptureDelegate: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate, @unchecked Sendable {
+  var onDrawBox: (@Sendable (VNRectangleObserver.Corners?) -> Void)?
+  var onDetectCard: (@Sendable (String, String) -> Void)?
+  
+  private var isProcessing = false
+  private let ciContext = CIContext()
+  
+  private final class SendableImageBuffer: @unchecked Sendable {
+    let value: CVImageBuffer
+    init(_ value: CVImageBuffer) { self.value = value }
+  }
+  
+  func captureOutput(
+    _ output: AVCaptureOutput,
+    didOutput sampleBuffer: CMSampleBuffer,
+    from connection: AVCaptureConnection
+  ) {
+    guard !isProcessing else { return }
+    isProcessing = true
+    
+    // GUARANTEE: The lock is ALWAYS released, preventing deadlocks
+    defer { isProcessing = false }
+    
+    guard let imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
+    let sendableBuffer = SendableImageBuffer(imageBuffer)
+    
+    guard let observer = VNRectangleObserver(imageBuffer: imageBuffer) else { return }
+    
+    // Check for a card synchronously
+    guard let corners = observer.process() else {
+      DispatchQueue.main.async { [weak self] in self?.onDrawBox?(nil) }
+      return
+    }
+    
+    DispatchQueue.main.async { [weak self] in
+      self?.onDrawBox?(corners)
+    }
+    
+    processOCR(
+      on: extractAndFlattenCard(from: sendableBuffer.value, observation: corners)
+    )
+  }
+  
+  private func processOCR(on cardImage: CGImage?) {
     guard let cardImage else { return }
+    
     let width = CGFloat(cardImage.width)
     let height = CGFloat(cardImage.height)
     
@@ -63,10 +145,7 @@ final class OCRViewController: UIViewController {
     guard
       let titleImg = cardImage.cropping(to: titleRect),
       let setImg = cardImage.cropping(to: setRect)
-    else {
-      isProcessing = false
-      return
-    }
+    else { return }
     
     let titleReq = VNRecognizeTextRequest()
     titleReq.recognitionLevel = .accurate
@@ -74,31 +153,29 @@ final class OCRViewController: UIViewController {
     let setReq = VNRecognizeTextRequest()
     setReq.recognitionLevel = .accurate
     
-    let handlerTitle = VNImageRequestHandler(cgImage: titleImg, options: [:])
-    let handlerSet = VNImageRequestHandler(cgImage: setImg, options: [:])
-    
-    try handlerTitle.perform([titleReq])
-    try handlerSet.perform([setReq])
+    try? VNImageRequestHandler(cgImage: titleImg, options: [:]).perform([titleReq])
+    try? VNImageRequestHandler(cgImage: setImg, options: [:]).perform([setReq])
     
     let title = titleReq.results?.first?.topCandidates(1).first?.string ?? ""
-    let setRaw = setReq.results?.compactMap {
-      $0.topCandidates(1).first?.string
-    } ?? []
-    
+    let setRaw = setReq.results?.compactMap { $0.topCandidates(1).first?.string } ?? []
     let parsedSet = parseSet(setRaw)
     
-    if !title.isEmpty && !parsedSet.isEmpty {
-      didDetectCard?(title, parsedSet)
-    }
+    // --- DEBUGGING ---
+    // Check the Xcode console to see what the camera is actually reading!
+    print("🎯 Title: '\(title)' | Raw Set: \(setRaw) | Parsed Set: '\(parsedSet)'")
     
-    self.isProcessing = false
+    // Temporarily loosened to ensure results flow through to your SwiftUI View
+    guard !title.isEmpty else { return }
+    
+    let callback = onDetectCard
+    DispatchQueue.main.async {
+      // Passes the raw set string if parsing fails so you can still see it in UI
+      callback?(title, parsedSet.isEmpty ? setRaw.joined(separator: " ") : parsedSet)
+    }
   }
   
-  nonisolated private func parseSet(_ strings: [String]) -> String {
-    let words = strings.flatMap {
-      $0.components(separatedBy: .whitespacesAndNewlines)
-    }
-    
+  private func parseSet(_ strings: [String]) -> String {
+    let words = strings.flatMap { $0.components(separatedBy: .whitespacesAndNewlines) }
     var n = ""; var s = ""
     for word in words {
       let u = word.uppercased()
@@ -108,7 +185,10 @@ final class OCRViewController: UIViewController {
     return s.isEmpty ? "" : "\(s) #\(n)"
   }
   
-  nonisolated private func extractAndFlattenCard(from pixelBuffer: CVPixelBuffer?, observation: VNRectangleObserver.Corners) -> CGImage? {
+  private func extractAndFlattenCard(
+    from pixelBuffer: CVPixelBuffer?,
+    observation: VNRectangleObserver.Corners
+  ) -> CGImage? {
     guard let pixelBuffer else { return nil }
     
     let ciImage = CIImage(cvPixelBuffer: pixelBuffer).oriented(.right)
@@ -124,60 +204,8 @@ final class OCRViewController: UIViewController {
   }
 }
 
-extension OCRViewController: @preconcurrency AVCaptureVideoDataOutputSampleBufferDelegate {
-  func captureOutput(
-    _ output: AVCaptureOutput,
-    didOutput sampleBuffer: CMSampleBuffer,
-    from connection: AVCaptureConnection
-  ) {
-    let imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer)
-    
-    VNRectangleObserver(imageBuffer: imageBuffer)?.proccess { [weak self] corners in
-      self?.drawBox(corners)
-      
-      try? self?.processOCR(
-        on: self?.extractAndFlattenCard(
-          from: imageBuffer,
-          observation: corners
-        )
-      )
-    }
-  }
-}
-
-extension OCRViewController {
-  private func drawBox(_ observation: VNRectangleObserver.Corners) {
-    boundingBoxLayer.path = nil
-    
-    let converted = [
-      observation.topLeft,
-      observation.topRight,
-      observation.bottomRight,
-      observation.bottomLeft
-    ].map { point -> CGPoint in
-      previewLayer.layerPointConverted(
-        fromCaptureDevicePoint: CGPoint(
-          x: 1.0 - point.y,
-          y: 1.0 - point.x
-        )
-      )
-    }
-    
-    let path = UIBezierPath()
-    path.move(to: converted[0])
-    converted.dropFirst().forEach {
-      path.addLine(to: $0)
-    }
-    path.close()
-    
-    boundingBoxLayer.path = path.cgPath
-  }
-}
-
 fileprivate extension CGPoint {
   func scaled(_ size: CGSize) -> CGPoint {
-    return CGPoint(x: self.x * size.width, y: self.y * size.height)
+    CGPoint(x: x * size.width, y: y * size.height)
   }
 }
-
-#endif // canImport(UIKit)

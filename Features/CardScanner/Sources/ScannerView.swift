@@ -1,7 +1,11 @@
-//
-//  ScannerView.swift
-//  CardScanner
-//
-//  Created by Jun on 14/3/26.
-//
+import ComposableArchitecture
+import DesignComponents
+import SwiftUI
 
+public struct ScannerView: View {
+  @Bindable private var store: StoreOf<CardScannerFeature>
+  
+  public var body: some View {
+    OCRView(result: $store.scannedResult)
+  }
+}

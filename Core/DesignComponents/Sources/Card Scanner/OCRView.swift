@@ -1,25 +1,18 @@
+
 import SwiftUI
 
 public struct OCRView: View {
-  @Binding public var title: String
-  @Binding public var setCode: String
+  @Binding public var result: OCRCardScannedResult
   
   public init(
-    title: Binding<String>,
-    setCode: Binding<String>
+    result: Binding<OCRCardScannedResult>,
   ) {
-    self._title = title
-    self._setCode = setCode
+    self._result = result
   }
   
   public var body: some View {
-    #if canImport(UIKit)
     OCRViewControllerRepresentable { result in
-      self.title = result.title
-      self.setCode = result.setCode
+      self.result = result
     }
-    #else
-    Text("\(self) not available on this platform")
-    #endif
   }
 }

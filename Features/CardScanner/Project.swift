@@ -22,6 +22,7 @@ let project = Project(
       infoPlist: .extendingDefault(
         with: [
           "UILaunchStoryboardName": "LaunchScreen.storyboard",
+          "NSCameraUsageDescription": "Used to scan card titles and set codes.",
         ]
       ),
       sources: ["Runner/**"],

@@ -1,13 +1,17 @@
-#if canImport(UIKit)
 import SwiftUI
 
-struct OCRViewControllerRepresentable: UIViewControllerRepresentable {
-  struct ScannedResult: Equatable {
-    let title: String
-    let setCode: String
-  }
+public struct OCRCardScannedResult: Equatable, Sendable {
+  let title: String
+  let setCode: String
   
-  var onValidatedScan: (ScannedResult) -> Void
+  public init(title: String, setCode: String) {
+    self.title = title
+    self.setCode = setCode
+  }
+}
+
+struct OCRViewControllerRepresentable: UIViewControllerRepresentable {
+  var onValidatedScan: (OCRCardScannedResult) -> Void
   
   func makeCoordinator() -> Coordinator {
     Coordinator(onValidatedScan: onValidatedScan)
@@ -15,26 +19,32 @@ struct OCRViewControllerRepresentable: UIViewControllerRepresentable {
   
   func makeUIViewController(context: Context) -> OCRViewController {
     let controller = OCRViewController()
-    controller.didDetectCard = { value, a in
-      
+    
+    // ✅ Route the callback into your Coordinator's buffering system
+    controller.didDetectCard = { title, setCode in
+      context.coordinator.didDetectCard(title: title, setCode: setCode)
     }
+    
     return controller
   }
   
-  func updateUIViewController(_ uiViewController: OCRViewController, context: Context) {}
+  func updateUIViewController(_ uiViewController: OCRViewController, context: Context) {
+    // Keeps the coordinator up to date if the parent SwiftUI view redraws
+    context.coordinator.onValidatedScan = onValidatedScan
+  }
   
   final class Coordinator {
-    var onValidatedScan: (ScannedResult) -> Void
+    var onValidatedScan: (OCRCardScannedResult) -> Void
     
-    private var resultBuffer: [ScannedResult] = []
+    private var resultBuffer: [OCRCardScannedResult] = []
     private let requiredConsistency = 3
     
-    init(onValidatedScan: @escaping (ScannedResult) -> Void) {
+    init(onValidatedScan: @escaping (OCRCardScannedResult) -> Void) {
       self.onValidatedScan = onValidatedScan
     }
     
     func didDetectCard(title: String, setCode: String) {
-      let newResult = ScannedResult(title: title, setCode: setCode)
+      let newResult = OCRCardScannedResult(title: title, setCode: setCode)
       
       resultBuffer.append(newResult)
       
@@ -47,9 +57,8 @@ struct OCRViewControllerRepresentable: UIViewControllerRepresentable {
         resultBuffer.allSatisfy({ $0 == newResult })
       {
         onValidatedScan(newResult)
-        resultBuffer.removeAll()
+        resultBuffer.removeAll() // Clear the buffer after a successful scan
       }
     }
   }
 }
-#endif // canImport(UIKit)
