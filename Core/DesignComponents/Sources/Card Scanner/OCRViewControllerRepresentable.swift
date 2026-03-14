@@ -20,7 +20,6 @@ struct OCRViewControllerRepresentable: UIViewControllerRepresentable {
   func makeUIViewController(context: Context) -> OCRViewController {
     let controller = OCRViewController()
     
-    // ✅ Route the callback into your Coordinator's buffering system
     controller.didDetectCard = { title, setCode in
       context.coordinator.didDetectCard(title: title, setCode: setCode)
     }
@@ -29,7 +28,6 @@ struct OCRViewControllerRepresentable: UIViewControllerRepresentable {
   }
   
   func updateUIViewController(_ uiViewController: OCRViewController, context: Context) {
-    // Keeps the coordinator up to date if the parent SwiftUI view redraws
     context.coordinator.onValidatedScan = onValidatedScan
   }
   
@@ -57,7 +55,7 @@ struct OCRViewControllerRepresentable: UIViewControllerRepresentable {
         resultBuffer.allSatisfy({ $0 == newResult })
       {
         onValidatedScan(newResult)
-        resultBuffer.removeAll() // Clear the buffer after a successful scan
+        resultBuffer.removeAll()
       }
     }
   }

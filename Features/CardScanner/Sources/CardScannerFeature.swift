@@ -4,8 +4,13 @@ import Networking
 
 @Reducer public struct CardScannerFeature: Sendable {
   public var body: some ReducerOf<Self> {
+    BindingReducer()
+    
     Reduce { state, action in
       switch action {
+      case .binding(\.scannedResult):
+        print(state.scannedResult)
+        return .none
       case .binding:
         return .none
       case .scan:

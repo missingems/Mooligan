@@ -60,7 +60,6 @@ final class OCRViewController: UIViewController {
     }
   }
   
-  // Accepts an Optional so we can clear the box if no card is seen
   private func drawBox(_ corners: VNRectangleObserver.Corners?) {
     boundingBoxLayer.path = nil
     guard let corners = corners else { return }
@@ -110,7 +109,6 @@ private final class CaptureDelegate: NSObject, AVCaptureVideoDataOutputSampleBuf
     guard !isProcessing else { return }
     isProcessing = true
     
-    // GUARANTEE: The lock is ALWAYS released, preventing deadlocks
     defer { isProcessing = false }
     
     guard let imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
@@ -118,7 +116,6 @@ private final class CaptureDelegate: NSObject, AVCaptureVideoDataOutputSampleBuf
     
     guard let observer = VNRectangleObserver(imageBuffer: imageBuffer) else { return }
     
-    // Check for a card synchronously
     guard let corners = observer.process() else {
       DispatchQueue.main.async { [weak self] in self?.onDrawBox?(nil) }
       return
@@ -139,8 +136,8 @@ private final class CaptureDelegate: NSObject, AVCaptureVideoDataOutputSampleBuf
     let width = CGFloat(cardImage.width)
     let height = CGFloat(cardImage.height)
     
-    let titleRect = CGRect(x: 0, y: 0, width: width, height: height * 0.3)
-    let setRect = CGRect(x: 0, y: height * 0.85, width: width * 0.4, height: height * 0.15)
+    let titleRect = CGRect(x: 0, y: 0, width: width, height: height * 0.15)
+    let setRect = CGRect(x: 0, y: height * 0.92, width: width * 0.5, height: height * 0.08)
     
     guard
       let titleImg = cardImage.cropping(to: titleRect),
@@ -160,16 +157,10 @@ private final class CaptureDelegate: NSObject, AVCaptureVideoDataOutputSampleBuf
     let setRaw = setReq.results?.compactMap { $0.topCandidates(1).first?.string } ?? []
     let parsedSet = parseSet(setRaw)
     
-    // --- DEBUGGING ---
-    // Check the Xcode console to see what the camera is actually reading!
-    print("🎯 Title: '\(title)' | Raw Set: \(setRaw) | Parsed Set: '\(parsedSet)'")
-    
-    // Temporarily loosened to ensure results flow through to your SwiftUI View
     guard !title.isEmpty else { return }
     
     let callback = onDetectCard
     DispatchQueue.main.async {
-      // Passes the raw set string if parsing fails so you can still see it in UI
       callback?(title, parsedSet.isEmpty ? setRaw.joined(separator: " ") : parsedSet)
     }
   }
@@ -178,9 +169,14 @@ private final class CaptureDelegate: NSObject, AVCaptureVideoDataOutputSampleBuf
     let words = strings.flatMap { $0.components(separatedBy: .whitespacesAndNewlines) }
     var n = ""; var s = ""
     for word in words {
-      let u = word.uppercased()
-      if n.isEmpty, u.range(of: "^\\d{3,4}$", options: .regularExpression) != nil { n = u }
-      else if s.isEmpty, u.count == 3 { s = u }
+      let cleaned = word.trimmingCharacters(in: .punctuationCharacters)
+      let u = cleaned.uppercased()
+      
+      if n.isEmpty, u.range(of: "^\\d{3,4}$", options: .regularExpression) != nil {
+        n = u
+      } else if s.isEmpty, u.count == 3 {
+        s = u
+      }
     }
     return s.isEmpty ? "" : "\(s) #\(n)"
   }
