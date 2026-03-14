@@ -2,6 +2,9 @@ import ProjectDescription
 
 let project = Project(
   name: "CardScanner",
+  options: .options(
+    automaticSchemesOptions: .disabled
+  ),
   settings: .settings(
     base: [
       "SWIFT_VERSION": "6.2",
@@ -9,7 +12,8 @@ let project = Project(
       "ENABLE_MODULE_VERIFIER": "YES",
       "SWIFT_EMIT_LOC_STRINGS": "YES"
     ]
-  ),  targets: [
+  ),
+  targets: [
     .target(
       name: "CardScannerRunner",
       destinations: .iOS,
@@ -46,7 +50,53 @@ let project = Project(
       infoPlist: .default,
       sources: ["Tests/**"],
       resources: [],
-      dependencies: [.target(name: "CardScanner")]
+      dependencies: [.target(name: "CardScanner")],
+      settings: .settings(
+        base: [
+          "CODE_COVERAGE_ENABLED": "YES"
+        ]
+      )
     ),
+  ],
+  schemes: [
+    .scheme(
+      name: "CardScanner",
+      buildAction: .buildAction(targets: ["CardScanner"]),
+      testAction: .targets(
+        [
+          .testableTarget(
+            target: "CardScannerTests",
+            parallelization: .swiftTestingOnly,
+            isRandomExecutionOrdering: true
+          )
+        ],
+        options: .options(
+          coverage: true,
+          codeCoverageTargets: ["CardScanner"]
+        )
+      )
+    ),
+    .scheme(
+      name: "CardScannerRunner",
+      buildAction: .buildAction(targets: ["CardScannerRunner"]),
+      runAction: .runAction(executable: "CardScannerRunner")
+    ),
+    .scheme(
+      name: "CardScannerTests",
+      buildAction: .buildAction(targets: ["CardScannerTests"]),
+      testAction: .targets(
+        [
+          .testableTarget(
+            target: "CardScannerTests",
+            parallelization: .swiftTestingOnly,
+            isRandomExecutionOrdering: true
+          )
+        ],
+        options: .options(
+          coverage: true,
+          codeCoverageTargets: ["CardScanner"]
+        )
+      )
+    )
   ]
 )

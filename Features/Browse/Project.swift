@@ -2,6 +2,9 @@ import ProjectDescription
 
 let project = Project(
   name: "Browse",
+  options: .options(
+    automaticSchemesOptions: .disabled
+  ),
   settings: .settings(
     base: [
       "SWIFT_VERSION": "6.2",
@@ -43,12 +46,57 @@ let project = Project(
       name: "BrowseTests",
       destinations: .iOS,
       product: .unitTests,
-      bundleId: "com.missingems.Mooligan.Browse",
+      bundleId: "com.missingems.Mooligan.BrowseTests",
       infoPlist: .default,
       sources: ["Tests/**"],
       resources: [],
-      dependencies: [.target(name: "Browse")]
+      dependencies: [.target(name: "Browse")],
+      settings: .settings(
+        base: [
+          "CODE_COVERAGE_ENABLED": "YES"
+        ]
+      )
     ),
+  ],
+  schemes: [
+    .scheme(
+      name: "Browse",
+      buildAction: .buildAction(targets: ["Browse"]),
+      testAction: .targets(
+        [
+          .testableTarget(
+            target: "BrowseTests",
+            parallelization: .swiftTestingOnly,
+            isRandomExecutionOrdering: true
+          ),
+        ],
+        options: .options(
+          coverage: true,
+          codeCoverageTargets: ["Browse"]
+        )
+      )
+    ),
+    .scheme(
+      name: "BrowseRunner",
+      buildAction: .buildAction(targets: ["BrowseRunner"]),
+      runAction: .runAction(executable: "BrowseRunner")
+    ),
+    .scheme(
+      name: "BrowseTests",
+      buildAction: .buildAction(targets: ["BrowseTests"]),
+      testAction: .targets(
+        [
+          .testableTarget(
+            target: "BrowseTests",
+            parallelization: .swiftTestingOnly,
+            isRandomExecutionOrdering: true
+          )
+        ],
+        options: .options(
+          coverage: true,
+          codeCoverageTargets: ["Browse"]
+        )
+      )
+    )
   ]
 )
-
