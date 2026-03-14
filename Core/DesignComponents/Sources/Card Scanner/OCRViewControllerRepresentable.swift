@@ -1,15 +1,5 @@
 import SwiftUI
 
-public struct OCRCardScannedResult: Equatable, Sendable {
-  let title: String
-  let setCode: String
-  
-  public init(title: String, setCode: String) {
-    self.title = title
-    self.setCode = setCode
-  }
-}
-
 struct OCRViewControllerRepresentable: UIViewControllerRepresentable {
   var onValidatedScan: (OCRCardScannedResult) -> Void
   
@@ -20,8 +10,8 @@ struct OCRViewControllerRepresentable: UIViewControllerRepresentable {
   func makeUIViewController(context: Context) -> OCRViewController {
     let controller = OCRViewController()
     
-    controller.didDetectCard = { title, setCode in
-      context.coordinator.didDetectCard(title: title, setCode: setCode)
+    controller.didDetectResult = { result in
+      context.coordinator.didDetect(result: result)
     }
     
     return controller
@@ -41,10 +31,8 @@ struct OCRViewControllerRepresentable: UIViewControllerRepresentable {
       self.onValidatedScan = onValidatedScan
     }
     
-    func didDetectCard(title: String, setCode: String) {
-      let newResult = OCRCardScannedResult(title: title, setCode: setCode)
-      
-      resultBuffer.append(newResult)
+    func didDetect(result: OCRCardScannedResult) {
+      resultBuffer.append(result)
       
       if resultBuffer.count > requiredConsistency {
         resultBuffer.removeFirst()
@@ -52,9 +40,9 @@ struct OCRViewControllerRepresentable: UIViewControllerRepresentable {
       
       if
         resultBuffer.count == requiredConsistency,
-        resultBuffer.allSatisfy({ $0 == newResult })
+        resultBuffer.allSatisfy({ $0 == result })
       {
-        onValidatedScan(newResult)
+        onValidatedScan(result)
         resultBuffer.removeAll()
       }
     }
