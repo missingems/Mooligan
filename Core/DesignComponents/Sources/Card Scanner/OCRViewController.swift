@@ -55,9 +55,13 @@ final class OCRViewController: UIViewController {
   
   override func viewDidAppear(_ animated: Bool) {
     super.viewDidAppear(animated)
-    videoDataOutputQueue.async { [weak self] in
-      self?.captureSession.startRunning()
-    }
+    captureSession.commitConfiguration()
+    captureSession.startRunning()
+  }
+  
+  override func viewDidDisappear(_ animated: Bool) {
+    super.viewDidDisappear(animated)
+    captureSession.stopRunning()
   }
   
   private func drawBox(_ corners: VNRectangleObserver.Corners?) {
@@ -90,8 +94,8 @@ final class OCRViewController: UIViewController {
 // MARK: - CaptureDelegate
 
 private final class CaptureDelegate: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate, @unchecked Sendable {
-  var onDrawBox: (@Sendable (VNRectangleObserver.Corners?) -> Void)?
-  var onDetectCard: (@Sendable (String, String) -> Void)?
+  var onDrawBox: ((VNRectangleObserver.Corners?) -> Void)?
+  var onDetectCard: ((String, String) -> Void)?
   
   private var isProcessing = false
   private let ciContext = CIContext()

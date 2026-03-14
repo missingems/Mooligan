@@ -2,17 +2,17 @@
 import SwiftUI
 
 public struct OCRView: View {
-  @Binding public var result: OCRCardScannedResult
+  var onUpdate: (OCRCardScannedResult) -> Void
   
   public init(
-    result: Binding<OCRCardScannedResult>,
+    onUpdate: @escaping (OCRCardScannedResult) -> Void
   ) {
-    self._result = result
+    self.onUpdate = onUpdate
   }
   
   public var body: some View {
-    OCRViewControllerRepresentable { result in
-      self.result = result
-    }
+    OCRViewControllerRepresentable(
+      onValidatedScan: onUpdate
+    )
   }
 }

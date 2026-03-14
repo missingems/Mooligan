@@ -4,25 +4,32 @@ import Networking
 
 @Reducer public struct CardScannerFeature: Sendable {
   public var body: some ReducerOf<Self> {
-    BindingReducer()
-    
     Reduce { state, action in
       switch action {
-      case .binding(\.scannedResult):
-        print(state.scannedResult)
-        return .none
-      case .binding:
-        return .none
       case .scan:
         return .none
-      case .didScan(title: let title, setCode: let setCode):
+        
+      case let .didScan(result):
+        guard result != state.scannedResult else {
+          return .none
+        }
+        
+        return .run { send in
+          await send(.updateScanResult(result))
+        }
+        
+      case let .updateScanResult(result):
+        state.scannedResult = result
         return .none
-      case .fetchCard(title: let title, setCode: let setCode):
+        
+      case .fetchCard:
         return .none
+        
       case .updateCards(_):
         return .none
       }
-    }._printChanges()
+    }
+    ._printChanges()
   }
   
   public init() {}
@@ -36,10 +43,10 @@ public extension CardScannerFeature {
     }
   }
   
-  enum Action: Equatable, Sendable, BindableAction {
-    case binding(BindingAction<State>)
+  enum Action: Equatable, Sendable {
     case scan
-    case didScan(title: String, setCode: String)
+    case didScan(OCRCardScannedResult)
+    case updateScanResult(OCRCardScannedResult)
     case fetchCard(title: String, setCode: String)
     case updateCards(CardDataSource?)
   }
