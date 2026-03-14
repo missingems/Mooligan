@@ -2,7 +2,6 @@ import ComposableArchitecture
 import Networking
 
 @Reducer public struct CardScannerFeature: Sendable {
-  
   public var body: some ReducerOf<Self> {
     Reduce { state, action in
       return .none

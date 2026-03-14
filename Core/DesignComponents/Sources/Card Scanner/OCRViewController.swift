@@ -1,59 +1,11 @@
+#if canImport(UIKit)
 import UIKit
 import AVFoundation
 import Vision
 import CoreImage
-import SwiftUI
+import UIKit
 
-struct ScannedResult: Equatable {
-  let title: String
-  let setCode: String
-}
-
-struct ScannerView: UIViewControllerRepresentable {
-  var onValidatedScan: (ScannedResult) -> Void
-  
-  func makeCoordinator() -> Coordinator {
-    Coordinator(onValidatedScan: onValidatedScan)
-  }
-  
-  func makeUIViewController(context: Context) -> ScannerViewController {
-    let controller = ScannerViewController()
-    controller.didDetectCard = { value, a in
-      
-    }
-    return controller
-  }
-  
-  func updateUIViewController(_ uiViewController: ScannerViewController, context: Context) {}
-  
-  final class Coordinator {
-    var onValidatedScan: (ScannedResult) -> Void
-    
-    private var resultBuffer: [ScannedResult] = []
-    private let requiredConsistency = 3
-    
-    init(onValidatedScan: @escaping (ScannedResult) -> Void) {
-      self.onValidatedScan = onValidatedScan
-    }
-    
-    func didDetectCard(title: String, setCode: String) {
-      let newResult = ScannedResult(title: title, setCode: setCode)
-      
-      resultBuffer.append(newResult)
-      
-      if resultBuffer.count > requiredConsistency {
-        resultBuffer.removeFirst()
-      }
-      
-      if resultBuffer.count == requiredConsistency && resultBuffer.allSatisfy({ $0 == newResult }) {
-        onValidatedScan(newResult)
-        resultBuffer.removeAll()
-      }
-    }
-  }
-}
-
-final class ScannerViewController: UIViewController {
+final class OCRViewController: UIViewController {
   var didDetectCard: ((_ title: String, _ setCode: String) -> Void)?
   private let captureSession = AVCaptureSession()
   private var previewLayer: AVCaptureVideoPreviewLayer!
@@ -172,42 +124,7 @@ final class ScannerViewController: UIViewController {
   }
 }
 
-extension CGPoint {
-  func scaled(_ size: CGSize) -> CGPoint {
-    return CGPoint(x: self.x * size.width, y: self.y * size.height)
-  }
-}
-
-struct MainScannerUI: View {
-  @State private var validatedCard: ScannedResult?
-  
-  var body: some View {
-    ZStack {
-      ScannerView { result in
-        self.validatedCard = result
-      }
-      .ignoresSafeArea()
-      
-      if let card = validatedCard {
-        VStack(spacing: 4) {
-          Text(card.title)
-            .font(.title2)
-            .bold()
-          Text(card.setCode)
-            .font(.subheadline)
-            .monospaced()
-        }
-        .padding()
-        .background(.ultraThinMaterial)
-        .cornerRadius(12)
-        .transition(.move(edge: .top).combined(with: .opacity))
-        .id(card.title + card.setCode)
-      }
-    }
-  }
-}
-
-extension ScannerViewController: @preconcurrency AVCaptureVideoDataOutputSampleBufferDelegate {
+extension OCRViewController: @preconcurrency AVCaptureVideoDataOutputSampleBufferDelegate {
   func captureOutput(
     _ output: AVCaptureOutput,
     didOutput sampleBuffer: CMSampleBuffer,
@@ -228,7 +145,7 @@ extension ScannerViewController: @preconcurrency AVCaptureVideoDataOutputSampleB
   }
 }
 
-extension ScannerViewController {
+extension OCRViewController {
   private func drawBox(_ observation: VNRectangleObserver.Corners) {
     boundingBoxLayer.path = nil
     
@@ -257,45 +174,10 @@ extension ScannerViewController {
   }
 }
 
-@MainActor struct VNRectangleObserver {
-  struct Corners {
-    let topLeft: CGPoint
-    let topRight: CGPoint
-    let bottomLeft: CGPoint
-    let bottomRight: CGPoint
-  }
-  
-  let imageBuffer: CVImageBuffer
-  let request = VNDetectRectanglesRequest()
-  let handler: VNImageRequestHandler
-  
-  init?(imageBuffer: CVImageBuffer?) {
-    guard let imageBuffer else {
-      return nil
-    }
-    self.imageBuffer = imageBuffer
-    
-    request.maximumObservations = 1
-    request.minimumConfidence = 0.8
-    
-    handler = VNImageRequestHandler(
-      cvPixelBuffer: imageBuffer,
-      orientation: .right
-    )
-  }
-  
-  func proccess(onUpdate: @escaping @Sendable @MainActor (Corners) -> Void) {
-    try? handler.perform([request])
-    
-    request.results?.forEach { [onUpdate] observation in
-      onUpdate(
-        Corners(
-          topLeft: observation.topLeft,
-          topRight: observation.topRight,
-          bottomLeft: observation.bottomLeft,
-          bottomRight: observation.bottomRight
-        )
-      )
-    }
+fileprivate extension CGPoint {
+  func scaled(_ size: CGSize) -> CGPoint {
+    return CGPoint(x: self.x * size.width, y: self.y * size.height)
   }
 }
+
+#endif // canImport(UIKit)

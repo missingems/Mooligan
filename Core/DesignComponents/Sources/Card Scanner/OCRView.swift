@@ -1,6 +1,6 @@
 import SwiftUI
 
-public struct CardScannerView: View {
+public struct OCRView: View {
   @Binding public var title: String
   @Binding public var setCode: String
   
@@ -14,7 +14,7 @@ public struct CardScannerView: View {
   
   public var body: some View {
     #if canImport(UIKit)
-    ScannerView { result in
+    OCRViewControllerRepresentable { result in
       self.title = result.title
       self.setCode = result.setCode
     }

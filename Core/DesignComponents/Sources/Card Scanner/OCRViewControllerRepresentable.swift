@@ -1,7 +1,7 @@
 #if canImport(UIKit)
 import SwiftUI
 
-struct ScannerView: UIViewControllerRepresentable {
+struct OCRViewControllerRepresentable: UIViewControllerRepresentable {
   struct ScannedResult: Equatable {
     let title: String
     let setCode: String
@@ -13,15 +13,15 @@ struct ScannerView: UIViewControllerRepresentable {
     Coordinator(onValidatedScan: onValidatedScan)
   }
   
-  func makeUIViewController(context: Context) -> ScannerViewController {
-    let controller = ScannerViewController()
+  func makeUIViewController(context: Context) -> OCRViewController {
+    let controller = OCRViewController()
     controller.didDetectCard = { value, a in
       
     }
     return controller
   }
   
-  func updateUIViewController(_ uiViewController: ScannerViewController, context: Context) {}
+  func updateUIViewController(_ uiViewController: OCRViewController, context: Context) {}
   
   final class Coordinator {
     var onValidatedScan: (ScannedResult) -> Void
