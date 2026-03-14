@@ -13,9 +13,13 @@ public struct CardScannerView: View {
   }
   
   public var body: some View {
+    #if canImport(UIKit)
     ScannerView { result in
       self.title = result.title
       self.setCode = result.setCode
     }
+    #else
+    Text("\(self) not available on this platform")
+    #endif
   }
 }
