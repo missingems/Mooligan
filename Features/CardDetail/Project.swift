@@ -2,6 +2,9 @@ import ProjectDescription
 
 let project = Project(
   name: "CardDetail",
+  options: .options(
+    automaticSchemesOptions: .disabled
+  ),
   settings: .settings(
     base: [
       "SWIFT_VERSION": "6.2",
@@ -9,7 +12,8 @@ let project = Project(
       "ENABLE_MODULE_VERIFIER": "YES",
       "SWIFT_EMIT_LOC_STRINGS": "YES"
     ]
-  ),  targets: [
+  ),
+  targets: [
     .target(
       name: "CardDetailRunner",
       destinations: .iOS,
@@ -46,7 +50,53 @@ let project = Project(
       infoPlist: .default,
       sources: ["Tests/**"],
       resources: [],
-      dependencies: [.target(name: "CardDetail")]
+      dependencies: [.target(name: "CardDetail")],
+      settings: .settings(
+        base: [
+          "CODE_COVERAGE_ENABLED": "YES"
+        ]
+      )
     ),
+  ],
+  schemes: [
+    .scheme(
+      name: "CardDetail",
+      buildAction: .buildAction(targets: ["CardDetail"]),
+      testAction: .targets(
+        [
+          .testableTarget(
+            target: "CardDetailTests",
+            parallelization: .swiftTestingOnly,
+            isRandomExecutionOrdering: true
+          )
+        ],
+        options: .options(
+          coverage: true,
+          codeCoverageTargets: ["CardDetail"]
+        )
+      )
+    ),
+    .scheme(
+      name: "CardDetailRunner",
+      buildAction: .buildAction(targets: ["CardDetailRunner"]),
+      runAction: .runAction(executable: "CardDetailRunner")
+    ),
+    .scheme(
+      name: "CardDetailTests",
+      buildAction: .buildAction(targets: ["CardDetailTests"]),
+      testAction: .targets(
+        [
+          .testableTarget(
+            target: "CardDetailTests",
+            parallelization: .swiftTestingOnly,
+            isRandomExecutionOrdering: true
+          )
+        ],
+        options: .options(
+          coverage: true,
+          codeCoverageTargets: ["CardDetail"]
+        )
+      )
+    )
   ]
 )

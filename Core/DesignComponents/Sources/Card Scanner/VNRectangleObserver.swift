@@ -2,47 +2,46 @@ import Foundation
 import CoreImage
 import Vision
 
-struct VNRectangleObserver {
-  struct Corners {
+struct VNRectangleObserver: Sendable {
+  struct Corners: Sendable {
     let topLeft: CGPoint
     let topRight: CGPoint
     let bottomLeft: CGPoint
     let bottomRight: CGPoint
   }
   
-  let imageBuffer: CVImageBuffer
-  let request = VNDetectRectanglesRequest()
-  let handler: VNImageRequestHandler
+  private final class Handler: @unchecked Sendable {
+    let value: VNImageRequestHandler
+    init(_ value: VNImageRequestHandler) { self.value = value }
+  }
+  
+  private let handler: Handler
   
   init?(imageBuffer: CVImageBuffer?) {
-    guard let imageBuffer else {
-      return nil
-    }
-    self.imageBuffer = imageBuffer
-    
-    request.maximumObservations = 1
-    request.minimumConfidence = 0.8
-    
-    handler = VNImageRequestHandler(
-      cvPixelBuffer: imageBuffer,
-      orientation: .right
+    guard let imageBuffer else { return nil }
+    handler = Handler(
+      VNImageRequestHandler(
+        cvPixelBuffer: imageBuffer,
+        orientation: .right // This ensures Vision knows the phone is in portrait!
+      )
     )
   }
   
-  @MainActor func proccess(
-    onUpdate: @escaping @Sendable @MainActor (Corners) -> Void
-  ) {
-    try? handler.perform([request])
+  // Changed to a synchronous return to fix the infinite lock
+  func process() -> Corners? {
+    let request = VNDetectRectanglesRequest()
+    request.maximumObservations = 1
+    request.minimumConfidence = 0.8
     
-    request.results?.forEach { [onUpdate] observation in
-      onUpdate(
-        Corners(
-          topLeft: observation.topLeft,
-          topRight: observation.topRight,
-          bottomLeft: observation.bottomLeft,
-          bottomRight: observation.bottomRight
-        )
-      )
-    }
+    try? handler.value.perform([request])
+    
+    guard let observation = request.results?.first else { return nil }
+    
+    return Corners(
+      topLeft: observation.topLeft,
+      topRight: observation.topRight,
+      bottomLeft: observation.bottomLeft,
+      bottomRight: observation.bottomRight
+    )
   }
 }

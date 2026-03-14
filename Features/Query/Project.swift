@@ -2,6 +2,9 @@ import ProjectDescription
 
 let project = Project(
   name: "Query",
+  options: .options(
+    automaticSchemesOptions: .disabled
+  ),
   settings: .settings(
     base: [
       "SWIFT_VERSION": "6.2",
@@ -47,8 +50,53 @@ let project = Project(
       infoPlist: .default,
       sources: ["Tests/**"],
       resources: [],
-      dependencies: [.target(name: "Query")]
+      dependencies: [.target(name: "Query")],
+      settings: .settings(
+        base: [
+          "CODE_COVERAGE_ENABLED": "YES"
+        ]
+      )
     ),
+  ],
+  schemes: [
+    .scheme(
+      name: "Query",
+      buildAction: .buildAction(targets: ["Query"]),
+      testAction: .targets(
+        [
+          .testableTarget(
+            target: "QueryTests",
+            parallelization: .swiftTestingOnly,
+            isRandomExecutionOrdering: true
+          )
+        ],
+        options: .options(
+          coverage: true,
+          codeCoverageTargets: ["Query"]
+        )
+      )
+    ),
+    .scheme(
+      name: "QueryRunner",
+      buildAction: .buildAction(targets: ["QueryRunner"]),
+      runAction: .runAction(executable: "QueryRunner")
+    ),
+    .scheme(
+      name: "QueryTests",
+      buildAction: .buildAction(targets: ["QueryTests"]),
+      testAction: .targets(
+        [
+          .testableTarget(
+            target: "QueryTests",
+            parallelization: .swiftTestingOnly,
+            isRandomExecutionOrdering: true
+          )
+        ],
+        options: .options(
+          coverage: true,
+          codeCoverageTargets: ["Query"]
+        )
+      )
+    )
   ]
 )
-

@@ -1,7 +1,7 @@
 import ProjectDescription
 
 let project = Project(
-  name: "Browse",
+  name: "CardScanner",
   options: .options(
     automaticSchemesOptions: .disabled
   ),
@@ -15,24 +15,25 @@ let project = Project(
   ),
   targets: [
     .target(
-      name: "BrowseRunner",
+      name: "CardScannerRunner",
       destinations: .iOS,
       product: .app,
-      bundleId: "com.missingems.Mooligan.BrowseRunner",
+      bundleId: "com.missingems.Mooligan.CardScannerRunner",
       infoPlist: .extendingDefault(
         with: [
           "UILaunchStoryboardName": "LaunchScreen.storyboard",
+          "NSCameraUsageDescription": "Used to scan card titles and set codes.",
         ]
       ),
       sources: ["Runner/**"],
       resources: ["Resources/**"],
-      dependencies: [.target(name: "Browse")]
+      dependencies: [.target(name: "CardScanner")]
     ),
     .target(
-      name: "Browse",
+      name: "CardScanner",
       destinations: .iOS,
       product: .framework,
-      bundleId: "com.missingems.Mooligan.Browse",
+      bundleId: "com.missingems.Mooligan.CardScanner",
       infoPlist: .default,
       sources: ["Sources/**"],
       resources: [],
@@ -43,14 +44,14 @@ let project = Project(
       ]
     ),
     .target(
-      name: "BrowseTests",
+      name: "CardScannerTests",
       destinations: .iOS,
       product: .unitTests,
-      bundleId: "com.missingems.Mooligan.BrowseTests",
+      bundleId: "com.missingems.CardScannerTests",
       infoPlist: .default,
       sources: ["Tests/**"],
       resources: [],
-      dependencies: [.target(name: "Browse")],
+      dependencies: [.target(name: "CardScanner")],
       settings: .settings(
         base: [
           "CODE_COVERAGE_ENABLED": "YES"
@@ -60,41 +61,41 @@ let project = Project(
   ],
   schemes: [
     .scheme(
-      name: "Browse",
-      buildAction: .buildAction(targets: ["Browse"]),
+      name: "CardScanner",
+      buildAction: .buildAction(targets: ["CardScanner"]),
       testAction: .targets(
         [
           .testableTarget(
-            target: "BrowseTests",
-            parallelization: .swiftTestingOnly,
-            isRandomExecutionOrdering: true
-          ),
-        ],
-        options: .options(
-          coverage: true,
-          codeCoverageTargets: ["Browse"]
-        )
-      )
-    ),
-    .scheme(
-      name: "BrowseRunner",
-      buildAction: .buildAction(targets: ["BrowseRunner"]),
-      runAction: .runAction(executable: "BrowseRunner")
-    ),
-    .scheme(
-      name: "BrowseTests",
-      buildAction: .buildAction(targets: ["BrowseTests"]),
-      testAction: .targets(
-        [
-          .testableTarget(
-            target: "BrowseTests",
+            target: "CardScannerTests",
             parallelization: .swiftTestingOnly,
             isRandomExecutionOrdering: true
           )
         ],
         options: .options(
           coverage: true,
-          codeCoverageTargets: ["Browse"]
+          codeCoverageTargets: ["CardScanner"]
+        )
+      )
+    ),
+    .scheme(
+      name: "CardScannerRunner",
+      buildAction: .buildAction(targets: ["CardScannerRunner"]),
+      runAction: .runAction(executable: "CardScannerRunner")
+    ),
+    .scheme(
+      name: "CardScannerTests",
+      buildAction: .buildAction(targets: ["CardScannerTests"]),
+      testAction: .targets(
+        [
+          .testableTarget(
+            target: "CardScannerTests",
+            parallelization: .swiftTestingOnly,
+            isRandomExecutionOrdering: true
+          )
+        ],
+        options: .options(
+          coverage: true,
+          codeCoverageTargets: ["CardScanner"]
         )
       )
     )
