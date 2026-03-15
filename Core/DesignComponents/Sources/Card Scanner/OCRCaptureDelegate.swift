@@ -102,21 +102,29 @@ final class OCRCaptureDelegate: NSObject, AVCaptureVideoDataOutputSampleBufferDe
   }
   
   private func parseSetAndCode(_ strings: [String]) -> (set: String, code: String)? {
-    let words = strings.flatMap { $0.components(separatedBy: .whitespacesAndNewlines) }
-    var n = ""; var s = ""
+    let fullText = strings.joined(separator: " ")
+    let words = fullText.components(separatedBy: .whitespaces)
+    
+    var code = ""
+    var set = ""
     
     for word in words {
-      let cleaned = word.trimmingCharacters(in: .punctuationCharacters)
-      let u = cleaned.uppercased()
+      let cleaned = word.trimmingCharacters(in: CharacterSet(charactersIn: "•.,"))
       
-      if n.isEmpty, u.range(of: "^\\d{3,4}$", options: .regularExpression) != nil {
-        n = u
-      } else if s.isEmpty, u.count == 3 {
-        s = u
+      if set.isEmpty, cleaned.range(of: "^[A-Z][A-Z0-9]{2}$", options: .regularExpression) != nil {
+        set = cleaned
+      }
+      
+      if code.isEmpty {
+        let parts = cleaned.components(separatedBy: "/")
+        if let firstPart = parts.first, firstPart.range(of: "^\\d{3,4}$", options: .regularExpression) != nil {
+          code = firstPart
+        }
       }
     }
     
-    if s.isEmpty, n.isEmpty { return nil } else { return (s, n) }
+    if set.isEmpty || code.isEmpty { return nil }
+    return (set, code)
   }
   
   private func extractAndFlattenCard(
