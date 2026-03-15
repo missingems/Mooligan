@@ -46,6 +46,12 @@ public struct SearchQuery: Equatable, Hashable, Sendable {
     }
   }
   
+  public var collectorNumber: String? {
+    didSet {
+      page = 1
+    }
+  }
+  
   public var cardType: Set<CardType> = [] {
     didSet {
       if oldValue.intersection(cardType).contains(.all) == false, cardType.contains(.all) {
@@ -87,6 +93,7 @@ public struct SearchQuery: Equatable, Hashable, Sendable {
     name: String = "",
     cardType: Set<CardType> = [.all],
     setCode: String? = nil,
+    collectorNumber: String? = nil,
     page: Int,
     sortMode: SortMode,
     sortDirection: SortDirection
@@ -95,6 +102,7 @@ public struct SearchQuery: Equatable, Hashable, Sendable {
     self.cardType = cardType
     self.page = page
     self.setCode = setCode
+    self.collectorNumber = collectorNumber
     self.sortMode = sortMode
     self.sortDirection = sortDirection
   }
@@ -108,6 +116,10 @@ public struct SearchQuery: Equatable, Hashable, Sendable {
     
     if let setCode {
       filters.append(.set(setCode))
+    }
+    
+    if let collectorNumber {
+      filters.append(.collectorNumber(collectorNumber, .equal))
     }
     
     if cardType != [.all] {
