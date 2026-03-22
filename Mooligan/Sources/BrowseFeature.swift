@@ -68,6 +68,10 @@ import CardScanner
       Browse.BrowseFeature()
     }
     
+    Scope(state: \.scan, action: \.scan) {
+      CardScannerFeature()
+    }
+    
     Reduce { state, action in
       switch action {
       case let .sets(action):

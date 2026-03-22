@@ -65,31 +65,28 @@ final class OCRViewController: UIViewController {
   }
   
   private func drawBox(_ corners: VNRectangleObserver.Corners?) {
-    DispatchQueue.main.async { [weak self] in
-      guard let self = self else { return }
-      self.boundingBoxLayer.path = nil
-      guard let corners = corners else { return }
-
-      let converted = [
-        corners.topLeft,
-        corners.topRight,
-        corners.bottomRight,
-        corners.bottomLeft
-      ].map { point -> CGPoint in
-        self.previewLayer.layerPointConverted(
-          fromCaptureDevicePoint: CGPoint(
-            x: 1.0 - point.y,
-            y: 1.0 - point.x
-          )
+    boundingBoxLayer.path = nil
+    guard let corners = corners else { return }
+    
+    let converted = [
+      corners.topLeft,
+      corners.topRight,
+      corners.bottomRight,
+      corners.bottomLeft
+    ].map { point -> CGPoint in
+      previewLayer.layerPointConverted(
+        fromCaptureDevicePoint: CGPoint(
+          x: 1.0 - point.y,
+          y: 1.0 - point.x
         )
-      }
-
-      let path = UIBezierPath()
-      path.move(to: converted[0])
-      converted.dropFirst().forEach { path.addLine(to: $0) }
-      path.close()
-
-      self.boundingBoxLayer.path = path.cgPath
+      )
     }
+    
+    let path = UIBezierPath()
+    path.move(to: converted[0])
+    converted.dropFirst().forEach { path.addLine(to: $0) }
+    path.close()
+    
+    boundingBoxLayer.path = path.cgPath
   }
 }

@@ -51,6 +51,7 @@ import Networking
         return .none
       }
     }
+    ._printChanges()
   }
   
   public init() {}
@@ -58,10 +59,10 @@ import Networking
 
 public extension CardScannerFeature {
   @ObservableState struct State: Sendable, Equatable {
-    var scannedResult: OCRCardScannedResult
+    var scannedResult: OCRCardScannedResult?
     var dataSource: CardDataSource?
     
-    public init(scannedResult: OCRCardScannedResult) {
+    public init(scannedResult: OCRCardScannedResult?) {
       self.scannedResult = scannedResult
     }
   }
