@@ -128,6 +128,5 @@ import Foundation
       }
     }
     .forEach(\.path, action: \.path)
-    ._printChanges(.actionLabels)
   }
 }
