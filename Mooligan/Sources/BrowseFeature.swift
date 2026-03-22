@@ -5,6 +5,7 @@ import Query
 import ScryfallKit
 import Networking
 import Foundation
+import CardScanner
 
 @Reducer enum Path {
   case showCardDetail(CardDetailFeature)
@@ -14,12 +15,17 @@ import Foundation
 @Reducer struct Feature {
   enum TabInfo: Equatable, CaseIterable, Identifiable {
     case sets
+    case scan
     case collection
     
     var title: String {
       switch self {
       case .sets:
         return String(localized: "Sets")
+        
+      case .scan:
+        return String(localized: "Scan")
+        
       case .collection:
         return String(localized: "Collection")
       }
@@ -29,6 +35,10 @@ import Foundation
       switch self {
       case .sets:
         return "text.page"
+        
+      case .scan:
+        return "scanner.fill"
+        
       case .collection:
         return "folder"
       }
@@ -41,12 +51,14 @@ import Foundation
   
   @ObservableState struct State {
     var sets: Browse.BrowseFeature.State
+    var scan: CardScannerFeature.State
     var selectedSet: MTGSet?
     var path = StackState<Path.State>()
   }
   
   enum Action {
     case sets(Browse.BrowseFeature.Action)
+    case scan(CardScannerFeature.Action)
     case path(StackActionOf<Path>)
   }
   
@@ -54,6 +66,10 @@ import Foundation
     Scope(state: \.sets, action: \.sets) {
       BindingReducer()
       Browse.BrowseFeature()
+    }
+    
+    Scope(state: \.scan, action: \.scan) {
+      CardScannerFeature()
     }
     
     Reduce { state, action in
@@ -75,6 +91,9 @@ import Foundation
           )
         }
         
+        return .none
+        
+      case .scan:
         return .none
         
       case let .path(value):
@@ -128,6 +147,5 @@ import Foundation
       }
     }
     .forEach(\.path, action: \.path)
-    ._printChanges(.actionLabels)
   }
 }

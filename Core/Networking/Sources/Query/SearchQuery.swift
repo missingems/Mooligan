@@ -40,7 +40,13 @@ public struct SearchQuery: Equatable, Hashable, Sendable {
     }
   }
   
-  public var setCode: String {
+  public var setCode: String? {
+    didSet {
+      page = 1
+    }
+  }
+  
+  public var collectorNumber: String? {
     didSet {
       page = 1
     }
@@ -86,7 +92,8 @@ public struct SearchQuery: Equatable, Hashable, Sendable {
   public init(
     name: String = "",
     cardType: Set<CardType> = [.all],
-    setCode: String,
+    setCode: String? = nil,
+    collectorNumber: String? = nil,
     page: Int,
     sortMode: SortMode,
     sortDirection: SortDirection
@@ -95,6 +102,7 @@ public struct SearchQuery: Equatable, Hashable, Sendable {
     self.cardType = cardType
     self.page = page
     self.setCode = setCode
+    self.collectorNumber = collectorNumber
     self.sortMode = sortMode
     self.sortDirection = sortDirection
   }
@@ -106,7 +114,13 @@ public struct SearchQuery: Equatable, Hashable, Sendable {
       filters.append(.name(name))
     }
     
-    filters.append(.set(setCode))
+    if let setCode {
+      filters.append(.set(setCode))
+    }
+    
+    if let collectorNumber {
+      filters.append(.collectorNumber(collectorNumber, .equal))
+    }
     
     if cardType != [.all] {
       filters.append(.compoundOr(cardType.map { .type($0.rawValue) }))

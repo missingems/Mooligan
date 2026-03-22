@@ -4,6 +4,9 @@
     "Collection" : {
 
     },
+    "Scan" : {
+
+    },
     "Sets" : {
       "extractionState" : "manual",
       "localizations" : {

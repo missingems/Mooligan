@@ -11,7 +11,7 @@ struct RunnerApp: App {
         RootView(
           store: Store(
             initialState: CardScannerFeature.State(
-              scannedResult: OCRCardScannedResult(title: "", setCode: "")
+              scannedResult: OCRCardScannedResult(title: "", set: nil, code: nil)
             )
           ) {
             CardScannerFeature()
@@ -21,6 +21,3 @@ struct RunnerApp: App {
     }
   }
 }
-
-
-
