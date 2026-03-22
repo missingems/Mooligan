@@ -1,4 +1,5 @@
 import Browse
+import CardScanner
 import CardDetail
 import ComposableArchitecture
 import Foundation
@@ -15,7 +16,13 @@ struct MooliganApp: App {
   
   var body: some Scene {
     WindowGroup {
-      RootView(store: Store(initialState: Feature.State(sets: .init(selectedSet: nil))) {
+      RootView(
+        store: Store(
+          initialState: Feature.State(
+            sets: .init(selectedSet: nil),
+            scan: .init(scannedResult: nil)
+          )
+        ) {
         Feature()
       })
     }
@@ -49,6 +56,14 @@ struct RootView: View {
             
           case .collection:
             Text(info.title)
+            
+          case .scan:
+            CardScanner.RootView(
+              store: store.scope(
+                state: \.scan,
+                action: \.scan
+              )
+            )
           }
         }
       }
