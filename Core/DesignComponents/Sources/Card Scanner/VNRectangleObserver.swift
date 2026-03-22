@@ -22,8 +22,11 @@ struct VNRectangleObserver: @unchecked Sendable {
     )
     
     request = VNDetectRectanglesRequest()
+    request.minimumAspectRatio = 0.55
+    request.maximumAspectRatio = 0.90
+    request.minimumSize = 0.25
+    request.minimumConfidence = 0.85
     request.maximumObservations = 1
-    request.minimumConfidence = 0.8
   }
   
   func process() -> Corners? {
