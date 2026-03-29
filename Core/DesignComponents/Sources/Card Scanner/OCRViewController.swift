@@ -1,6 +1,8 @@
 import UIKit
+import Vision
 @preconcurrency import AVFoundation
 
+// MARK: - View Controller
 final class OCRViewController: UIViewController {
   var didDetectResult: ((OCRCardScannedResult) -> Void)?
   
@@ -24,7 +26,9 @@ final class OCRViewController: UIViewController {
   private var isOverlayVisible = false
   private var hasConfirmedCard = false
   
-  // MARK: - Lifecycle
+  // Focus Throttling
+  private var lastFocusTime: Date = .distantPast
+  private let focusThrottleInterval: TimeInterval = 1.5
   
   override func viewDidLoad() {
     super.viewDidLoad()
@@ -109,13 +113,14 @@ extension OCRViewController {
   }
 }
 
-// MARK: - Corner Detection Handling
+// MARK: - Corner Detection Handling & Camera Focus
 extension OCRViewController {
   private func handleCorners(_ corners: VNRectangleObserver.Corners?) {
     DispatchQueue.main.async { [weak self] in
       guard let self else { return }
       
-      guard let corners, self.hasConfirmedCard else {
+      guard let corners else {
+        self.hasConfirmedCard = false
         self.scheduleFadeOut()
         return
       }
@@ -123,6 +128,14 @@ extension OCRViewController {
       let points = self.convertToScreenPoints(corners)
       
       guard self.isMagicTheGatheringRatio(points) else {
+        self.hasConfirmedCard = false
+        self.scheduleFadeOut()
+        return
+      }
+      
+      self.focusCamera(on: points)
+      
+      guard self.hasConfirmedCard else {
         self.scheduleFadeOut()
         return
       }
@@ -140,6 +153,34 @@ extension OCRViewController {
       }
     }
   }
+  
+  private func focusCamera(on screenPoints: [CGPoint]) {
+    let now = Date()
+    guard now.timeIntervalSince(lastFocusTime) > focusThrottleInterval else { return }
+    
+    let centerX = screenPoints.map(\.x).reduce(0, +) / 4
+    let centerY = screenPoints.map(\.y).reduce(0, +) / 4
+    let screenCenter = CGPoint(x: centerX, y: centerY)
+    
+    let devicePoint = previewLayer.captureDevicePointConverted(fromLayerPoint: screenCenter)
+    guard let device = AVCaptureDevice.default(for: .video) else { return }
+    
+    do {
+      try device.lockForConfiguration()
+      if device.isFocusPointOfInterestSupported && device.isFocusModeSupported(.continuousAutoFocus) {
+        device.focusPointOfInterest = devicePoint
+        device.focusMode = .continuousAutoFocus
+      }
+      if device.isExposurePointOfInterestSupported && device.isExposureModeSupported(.continuousAutoExposure) {
+        device.exposurePointOfInterest = devicePoint
+        device.exposureMode = .continuousAutoExposure
+      }
+      device.unlockForConfiguration()
+      lastFocusTime = now
+    } catch {
+      print("Could not lock device for configuration: \(error)")
+    }
+  }
 }
 
 // MARK: - Coordinate Conversion
@@ -151,6 +192,7 @@ extension OCRViewController {
           fromCaptureDevicePoint: CGPoint(x: 1.0 - point.y, y: 1.0 - point.x)
         )
       }
+    
     return Self.sortedCorners(rawPoints)
   }
   
@@ -160,11 +202,17 @@ extension OCRViewController {
     let centerY = points.map(\.y).reduce(0, +) / 4
     
     var topLeft: CGPoint?, topRight: CGPoint?, bottomLeft: CGPoint?, bottomRight: CGPoint?
+    
     for point in points {
-      if point.x <= centerX && point.y <= centerY      { topLeft = bestCandidate(topLeft, point, centerX, centerY) }
-      else if point.x > centerX && point.y <= centerY  { topRight = bestCandidate(topRight, point, centerX, centerY) }
-      else if point.x <= centerX && point.y > centerY  { bottomLeft = bestCandidate(bottomLeft, point, centerX, centerY) }
-      else                                             { bottomRight = bestCandidate(bottomRight, point, centerX, centerY) }
+      if point.x <= centerX && point.y <= centerY {
+        topLeft = bestCandidate(topLeft, point, centerX, centerY)
+      } else if point.x > centerX && point.y <= centerY {
+        topRight = bestCandidate(topRight, point, centerX, centerY)
+      } else if point.x <= centerX && point.y > centerY {
+        bottomLeft = bestCandidate(bottomLeft, point, centerX, centerY)
+      } else {
+        bottomRight = bestCandidate(bottomRight, point, centerX, centerY)
+      }
     }
     
     if topLeft == nil || topRight == nil || bottomLeft == nil || bottomRight == nil {
@@ -209,24 +257,28 @@ extension OCRViewController {
     
     let topLeft = points[0], topRight = points[1], bottomRight = points[2], bottomLeft = points[3]
     
-    let centre = CGPoint(x: (topLeft.x + topRight.x + bottomRight.x + bottomLeft.x) / 4,
-                         y: (topLeft.y + topRight.y + bottomRight.y + bottomLeft.y) / 4)
+    let centre = CGPoint(
+      x: (topLeft.x + topRight.x + bottomRight.x + bottomLeft.x) / 4,
+      y: (topLeft.y + topRight.y + bottomRight.y + bottomLeft.y) / 4
+    )
     
-    let topMiddle    = CGPoint(x: (topLeft.x + topRight.x) / 2, y: (topLeft.y + topRight.y) / 2)
+    let topMiddle = CGPoint(x: (topLeft.x + topRight.x) / 2, y: (topLeft.y + topRight.y) / 2)
     let bottomMiddle = CGPoint(x: (bottomLeft.x + bottomRight.x) / 2, y: (bottomLeft.y + bottomRight.y) / 2)
-    let leftMiddle   = CGPoint(x: (topLeft.x + bottomLeft.x) / 2, y: (topLeft.y + bottomLeft.y) / 2)
-    let rightMiddle  = CGPoint(x: (topRight.x + bottomRight.x) / 2, y: (topRight.y + bottomRight.y) / 2)
+    let leftMiddle = CGPoint(x: (topLeft.x + bottomLeft.x) / 2, y: (topLeft.y + bottomLeft.y) / 2)
+    let rightMiddle = CGPoint(x: (topRight.x + bottomRight.x) / 2, y: (topRight.y + bottomRight.y) / 2)
     
     let horizontalAxis = unitVector(from: leftMiddle,  to: rightMiddle)
     let verticalAxis = unitVector(from: topMiddle,   to: bottomMiddle)
     
-    let armLength = min(hypot(topRight.x - topLeft.x, topRight.y - topLeft.y),
-                        hypot(bottomLeft.x - topLeft.x, bottomLeft.y - topLeft.y)) * 0.07
+    let armLength = min(
+      hypot(topRight.x - topLeft.x, topRight.y - topLeft.y),
+      hypot(bottomLeft.x - topLeft.x, bottomLeft.y - topLeft.y)
+    ) * 0.07
     
     let path = UIBezierPath()
-    path.move(to:    CGPoint(x: centre.x - horizontalAxis.x * armLength, y: centre.y - horizontalAxis.y * armLength))
+    path.move(to: CGPoint(x: centre.x - horizontalAxis.x * armLength, y: centre.y - horizontalAxis.y * armLength))
     path.addLine(to: CGPoint(x: centre.x + horizontalAxis.x * armLength, y: centre.y + horizontalAxis.y * armLength))
-    path.move(to:    CGPoint(x: centre.x - verticalAxis.x * armLength, y: centre.y - verticalAxis.y * armLength))
+    path.move(to: CGPoint(x: centre.x - verticalAxis.x * armLength, y: centre.y - verticalAxis.y * armLength))
     path.addLine(to: CGPoint(x: centre.x + verticalAxis.x * armLength, y: centre.y + verticalAxis.y * armLength))
     return path.cgPath
   }
@@ -335,6 +387,8 @@ extension OCRViewController {
   
   private func executeFadeOut() {
     isOverlayVisible = false
+    hasConfirmedCard = false
+    
     let animation = opacityAnimation(from: 1, to: 0, duration: fadeOutDuration)
     animation.timingFunction = CAMediaTimingFunction(name: .easeIn)
     
@@ -347,10 +401,11 @@ extension OCRViewController {
       self.shadowCornerLayer.path = nil
       CATransaction.commit()
     }
+    
     whiteCornerLayer.opacity = 0
     shadowCornerLayer.opacity = 0
-    whiteCornerLayer.add(animation,                               forKey: "fadeOut")
-    shadowCornerLayer.add(animation.copy() as! CABasicAnimation,  forKey: "fadeOut")
+    whiteCornerLayer.add(animation, forKey: "fadeOut")
+    shadowCornerLayer.add(animation.copy() as! CABasicAnimation, forKey: "fadeOut")
     CATransaction.commit()
   }
   

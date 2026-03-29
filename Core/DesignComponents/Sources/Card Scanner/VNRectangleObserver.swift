@@ -22,10 +22,11 @@ struct VNRectangleObserver: @unchecked Sendable {
     )
     
     request = VNDetectRectanglesRequest()
-    request.minimumAspectRatio = 0.55
-    request.maximumAspectRatio = 0.90
-    request.minimumSize = 0.25
-    request.minimumConfidence = 0.85
+    request.minimumSize = 0.4
+    request.regionOfInterest = CGRect(x: 0.1, y: 0.1, width: 0.8, height: 0.8)
+    request.minimumConfidence = 0.6
+    request.minimumAspectRatio = VNAspectRatio(0.65)
+    request.maximumAspectRatio = VNAspectRatio(0.75)
     request.maximumObservations = 1
   }
   

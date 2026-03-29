@@ -7,7 +7,7 @@ final class OCRCaptureDelegate: NSObject, @unchecked Sendable {
   var onDetectCard: ((OCRCardScannedResult) -> Void)?
   
   private var isProcessing = false
-  private let ciContext = CIContext()
+  private let ciContext = CIContext(options: [.cacheIntermediates: false]) // Optimized for real-time
   
   private final class SendableImageBuffer: @unchecked Sendable {
     let value: CVImageBuffer
@@ -15,15 +15,14 @@ final class OCRCaptureDelegate: NSObject, @unchecked Sendable {
   }
   
   private func processOCR(on cardImage: CGImage?) {
-    guard let cardImage else {
-      return
-    }
+    guard let cardImage else { return }
     
     let width = CGFloat(cardImage.width)
     let height = CGFloat(cardImage.height)
     
-    let titleRect = CGRect(x: 0, y: 0, width: width, height: height * 0.15)
-    let setRect = CGRect(x: 0, y: height * 0.92, width: width * 0.5, height: height * 0.08)
+    // CGImage origin (0,0) is top-left. .integral prevents fractional pixel crashes.
+    let titleRect = CGRect(x: 0, y: 0, width: width, height: height * 0.15).integral
+    let setRect = CGRect(x: 0, y: height * 0.90, width: width * 0.5, height: height * 0.10).integral
     
     guard
       let titleImg = cardImage.cropping(to: titleRect),
@@ -34,10 +33,13 @@ final class OCRCaptureDelegate: NSObject, @unchecked Sendable {
     
     let titleReq = VNRecognizeTextRequest()
     titleReq.recognitionLevel = .accurate
+    titleReq.usesLanguageCorrection = false // CRITICAL for fantasy MTG words
     
     let setReq = VNRecognizeTextRequest()
     setReq.recognitionLevel = .accurate
+    setReq.usesLanguageCorrection = false
     
+    // Perform both requests
     try? VNImageRequestHandler(cgImage: titleImg, options: [:]).perform([titleReq])
     try? VNImageRequestHandler(cgImage: setImg, options: [:]).perform([setReq])
     
@@ -72,7 +74,9 @@ final class OCRCaptureDelegate: NSObject, @unchecked Sendable {
     for word in words {
       let cleaned = word.trimmingCharacters(in: CharacterSet(charactersIn: "•.,"))
       
-      if set.isEmpty, cleaned.range(of: "^[A-Z][A-Z0-9]{2}$", options: .regularExpression) != nil {
+      // MTG set codes are usually 3 characters, but occasionally 4 (e.g. promo sets).
+      // Allowed 3-4 alphanumeric to be safe.
+      if set.isEmpty, cleaned.range(of: "^[A-Z][A-Z0-9]{2,3}$", options: .regularExpression) != nil {
         set = cleaned
       }
       
@@ -113,29 +117,26 @@ extension OCRCaptureDelegate: AVCaptureVideoDataOutputSampleBufferDelegate {
     didOutput sampleBuffer: CMSampleBuffer,
     from connection: AVCaptureConnection
   ) {
-    guard !isProcessing else {
-      return
-    }
-    
-    defer {
-      isProcessing = false
-    }
-    
+    // Drop frames if we are already busy processing OCR
+    guard !isProcessing else { return }
     isProcessing = true
     
     guard let imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else {
+      isProcessing = false
       return
     }
     
     let sendableBuffer = SendableImageBuffer(imageBuffer)
-    
-    guard let observer = VNRectangleObserver(imageBuffer: imageBuffer) else { return }
+    guard let observer = VNRectangleObserver(imageBuffer: imageBuffer) else {
+      isProcessing = false
+      return
+    }
     
     guard let corners = observer.process() else {
       DispatchQueue.main.async { [weak self] in
         self?.onDrawBox?(nil)
       }
-      
+      isProcessing = false
       return
     }
     
@@ -143,12 +144,19 @@ extension OCRCaptureDelegate: AVCaptureVideoDataOutputSampleBufferDelegate {
       self?.onDrawBox?(corners)
     }
     
-    processOCR(
-      on: extractAndFlattenCard(
+    // Offload the heavy CoreImage flattening and Vision OCR to a background thread
+    // so we don't stall the camera feed.
+    Task { [weak self] in
+      guard let self else { return }
+      defer { self.isProcessing = false }
+      
+      let flattenedImage = self.extractAndFlattenCard(
         from: sendableBuffer.value,
         observation: corners
       )
-    )
+      
+      self.processOCR(on: flattenedImage)
+    }
   }
 }
 
