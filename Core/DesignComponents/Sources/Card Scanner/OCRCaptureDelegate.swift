@@ -2,7 +2,7 @@ import AVFoundation
 import CoreImage
 import Vision
 
-final class OCRCaptureDelegate: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate, @unchecked Sendable {
+final class OCRCaptureDelegate: NSObject, @unchecked Sendable {
   var onDrawBox: ((VNRectangleObserver.Corners?) -> Void)?
   var onDetectCard: ((OCRCardScannedResult) -> Void)?
   
@@ -12,49 +12,6 @@ final class OCRCaptureDelegate: NSObject, AVCaptureVideoDataOutputSampleBufferDe
   private final class SendableImageBuffer: @unchecked Sendable {
     let value: CVImageBuffer
     init(_ value: CVImageBuffer) { self.value = value }
-  }
-  
-  func captureOutput(
-    _ output: AVCaptureOutput,
-    didOutput sampleBuffer: CMSampleBuffer,
-    from connection: AVCaptureConnection
-  ) {
-    guard !isProcessing else {
-      return
-    }
-    
-    defer {
-      isProcessing = false
-    }
-    
-    isProcessing = true
-    
-    guard let imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else {
-      return
-    }
-    
-    let sendableBuffer = SendableImageBuffer(imageBuffer)
-    
-    guard let observer = VNRectangleObserver(imageBuffer: imageBuffer) else { return }
-    
-    guard let corners = observer.process() else {
-      DispatchQueue.main.async { [weak self] in
-        self?.onDrawBox?(nil)
-      }
-      
-      return
-    }
-    
-    DispatchQueue.main.async { [weak self] in
-      self?.onDrawBox?(corners)
-    }
-    
-    processOCR(
-      on: extractAndFlattenCard(
-        from: sendableBuffer.value,
-        observation: corners
-      )
-    )
   }
   
   private func processOCR(on cardImage: CGImage?) {
@@ -147,6 +104,51 @@ final class OCRCaptureDelegate: NSObject, AVCaptureVideoDataOutputSampleBufferDe
     
     guard let output = filter?.outputImage else { return nil }
     return ciContext.createCGImage(output, from: output.extent)
+  }
+}
+
+extension OCRCaptureDelegate: AVCaptureVideoDataOutputSampleBufferDelegate {
+  func captureOutput(
+    _ output: AVCaptureOutput,
+    didOutput sampleBuffer: CMSampleBuffer,
+    from connection: AVCaptureConnection
+  ) {
+    guard !isProcessing else {
+      return
+    }
+    
+    defer {
+      isProcessing = false
+    }
+    
+    isProcessing = true
+    
+    guard let imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else {
+      return
+    }
+    
+    let sendableBuffer = SendableImageBuffer(imageBuffer)
+    
+    guard let observer = VNRectangleObserver(imageBuffer: imageBuffer) else { return }
+    
+    guard let corners = observer.process() else {
+      DispatchQueue.main.async { [weak self] in
+        self?.onDrawBox?(nil)
+      }
+      
+      return
+    }
+    
+    DispatchQueue.main.async { [weak self] in
+      self?.onDrawBox?(corners)
+    }
+    
+    processOCR(
+      on: extractAndFlattenCard(
+        from: sendableBuffer.value,
+        observation: corners
+      )
+    )
   }
 }
 
