@@ -7,7 +7,7 @@ final class OCRCaptureDelegate: NSObject, @unchecked Sendable {
   var onDetectCard: ((OCRCardScannedResult) -> Void)?
   
   private var isProcessing = false
-  private let ciContext = CIContext(options: [.cacheIntermediates: false]) // Optimized for real-time
+  private let ciContext = CIContext(options: [.cacheIntermediates: false])
   
   private final class SendableImageBuffer: @unchecked Sendable {
     let value: CVImageBuffer
@@ -20,7 +20,6 @@ final class OCRCaptureDelegate: NSObject, @unchecked Sendable {
     let width = CGFloat(cardImage.width)
     let height = CGFloat(cardImage.height)
     
-    // CGImage origin (0,0) is top-left. .integral prevents fractional pixel crashes.
     let titleRect = CGRect(x: 0, y: 0, width: width, height: height * 0.15).integral
     let setRect = CGRect(x: 0, y: height * 0.90, width: width * 0.5, height: height * 0.10).integral
     
@@ -39,7 +38,6 @@ final class OCRCaptureDelegate: NSObject, @unchecked Sendable {
     setReq.recognitionLevel = .accurate
     setReq.usesLanguageCorrection = false
     
-    // Perform both requests
     try? VNImageRequestHandler(cgImage: titleImg, options: [:]).perform([titleReq])
     try? VNImageRequestHandler(cgImage: setImg, options: [:]).perform([setReq])
     
@@ -74,8 +72,6 @@ final class OCRCaptureDelegate: NSObject, @unchecked Sendable {
     for word in words {
       let cleaned = word.trimmingCharacters(in: CharacterSet(charactersIn: "•.,"))
       
-      // MTG set codes are usually 3 characters, but occasionally 4 (e.g. promo sets).
-      // Allowed 3-4 alphanumeric to be safe.
       if set.isEmpty, cleaned.range(of: "^[A-Z][A-Z0-9]{2,3}$", options: .regularExpression) != nil {
         set = cleaned
       }
@@ -88,7 +84,10 @@ final class OCRCaptureDelegate: NSObject, @unchecked Sendable {
       }
     }
     
-    if set.isEmpty || code.isEmpty { return nil }
+    if set.isEmpty || code.isEmpty {
+      return nil
+    }
+    
     return (set, code)
   }
   
@@ -144,8 +143,6 @@ extension OCRCaptureDelegate: AVCaptureVideoDataOutputSampleBufferDelegate {
       self?.onDrawBox?(corners)
     }
     
-    // Offload the heavy CoreImage flattening and Vision OCR to a background thread
-    // so we don't stall the camera feed.
     Task { [weak self] in
       guard let self else { return }
       defer { self.isProcessing = false }
