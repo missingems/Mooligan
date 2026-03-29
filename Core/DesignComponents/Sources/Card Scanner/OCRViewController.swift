@@ -1,5 +1,5 @@
 import UIKit
-import AVFoundation
+@preconcurrency import AVFoundation
 
 final class OCRViewController: UIViewController {
   var didDetectResult: ((OCRCardScannedResult) -> Void)?
@@ -52,15 +52,17 @@ final class OCRViewController: UIViewController {
   
   override func viewDidAppear(_ animated: Bool) {
     super.viewDidAppear(animated)
-    sessionQueue.async { [weak self] in
-      self?.captureSession.startRunning()
+    
+    sessionQueue.async { [captureSession] in
+      captureSession.startRunning()
     }
   }
   
   override func viewDidDisappear(_ animated: Bool) {
     super.viewDidDisappear(animated)
-    sessionQueue.async { [weak self] in
-      self?.captureSession.stopRunning()
+    
+    sessionQueue.async { [captureSession] in
+      captureSession.stopRunning()
     }
   }
   

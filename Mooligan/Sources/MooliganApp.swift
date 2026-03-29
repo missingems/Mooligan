@@ -53,7 +53,6 @@ struct RootView: View {
               }
             }
             
-            
           case .collection:
             Text(info.title)
             
