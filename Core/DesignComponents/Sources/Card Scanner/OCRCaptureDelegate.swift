@@ -38,8 +38,8 @@ final class OCRCaptureDelegate: NSObject, AVCaptureVideoDataOutputSampleBufferDe
     guard let observer = VNRectangleObserver(imageBuffer: imageBuffer) else { return }
     
     guard let corners = observer.process() else {
-      DispatchQueue.main.async {
-        [weak self] in self?.onDrawBox?(nil)
+      DispatchQueue.main.async { [weak self] in
+        self?.onDrawBox?(nil)
       }
       
       return
@@ -85,7 +85,11 @@ final class OCRCaptureDelegate: NSObject, AVCaptureVideoDataOutputSampleBufferDe
     try? VNImageRequestHandler(cgImage: setImg, options: [:]).perform([setReq])
     
     let title = titleReq.results?.first?.topCandidates(1).first?.string ?? ""
-    let parsedSetAndCode = parseSetAndCode(setReq.results?.compactMap { $0.topCandidates(1).first?.string } ?? [])
+    let parsedSetAndCode = parseSetAndCode(
+      setReq.results?.compactMap {
+        $0.topCandidates(1).first?.string
+      } ?? []
+    )
     
     guard !title.isEmpty else { return }
     
