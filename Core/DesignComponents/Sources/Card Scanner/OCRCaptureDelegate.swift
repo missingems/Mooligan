@@ -32,7 +32,7 @@ final class OCRCaptureDelegate: NSObject, @unchecked Sendable {
     
     let titleReq = VNRecognizeTextRequest()
     titleReq.recognitionLevel = .accurate
-    titleReq.usesLanguageCorrection = false // CRITICAL for fantasy MTG words
+    titleReq.usesLanguageCorrection = false
     
     let setReq = VNRecognizeTextRequest()
     setReq.recognitionLevel = .accurate
@@ -116,7 +116,6 @@ extension OCRCaptureDelegate: AVCaptureVideoDataOutputSampleBufferDelegate {
     didOutput sampleBuffer: CMSampleBuffer,
     from connection: AVCaptureConnection
   ) {
-    // Drop frames if we are already busy processing OCR
     guard !isProcessing else { return }
     isProcessing = true
     
