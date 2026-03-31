@@ -2,7 +2,6 @@ import UIKit
 import Vision
 @preconcurrency import AVFoundation
 
-// MARK: - View Controller
 final class OCRViewController: UIViewController {
   var didDetectResult: ((OCRCardScannedResult) -> Void)?
   
@@ -26,7 +25,6 @@ final class OCRViewController: UIViewController {
   private var isOverlayVisible = false
   private var hasConfirmedCard = false
   
-  // Focus Throttling
   private var lastFocusTime: Date = .distantPast
   private let focusThrottleInterval: TimeInterval = 1.5
   

@@ -1,6 +1,5 @@
 public struct OCRCardScannedResult: Equatable, Sendable {
   public struct SetCode: Equatable, Sendable {
-    
     public let set: String?
     public let code: String?
     
@@ -17,5 +16,9 @@ public struct OCRCardScannedResult: Equatable, Sendable {
   public init(title: String, set: String?, code: String?) {
     self.title = title
     self.setCode = SetCode(set: set, code: code)
+  }
+  
+  static public func ==(lhs: Self, rhs: Self) -> Bool {
+    lhs.title == rhs.title
   }
 }
