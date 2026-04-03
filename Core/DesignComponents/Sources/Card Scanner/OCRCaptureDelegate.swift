@@ -5,6 +5,7 @@ import Vision
 final class OCRCaptureDelegate: NSObject, @unchecked Sendable {
   var onDrawBox: ((VNRectangleObserver.Corners?) -> Void)?
   var onDetectCard: ((OCRCardScannedResult) -> Void)?
+  var onFlattenedImage: ((CGImage?) -> Void)?
   
   private var isProcessing = false
   private let ciContext = CIContext(options: [.cacheIntermediates: false])
@@ -15,51 +16,51 @@ final class OCRCaptureDelegate: NSObject, @unchecked Sendable {
   }
   
   private func processOCR(on cardImage: CGImage?) {
-    guard let cardImage else { return }
-    
-    let width = CGFloat(cardImage.width)
-    let height = CGFloat(cardImage.height)
-    
-    let titleRect = CGRect(x: 0, y: 0, width: width, height: height * 0.15).integral
-    let setRect = CGRect(x: 0, y: height * 0.90, width: width * 0.5, height: height * 0.10).integral
-    
-    guard
-      let titleImg = cardImage.cropping(to: titleRect),
-      let setImg = cardImage.cropping(to: setRect)
-    else {
-      return
-    }
-    
-    let titleReq = VNRecognizeTextRequest()
-    titleReq.recognitionLevel = .accurate
-    titleReq.usesLanguageCorrection = false
-    
-    let setReq = VNRecognizeTextRequest()
-    setReq.recognitionLevel = .accurate
-    setReq.usesLanguageCorrection = false
-    
-    try? VNImageRequestHandler(cgImage: titleImg, options: [:]).perform([titleReq])
-    try? VNImageRequestHandler(cgImage: setImg, options: [:]).perform([setReq])
-    
-    let title = titleReq.results?.first?.topCandidates(1).first?.string ?? ""
-    let parsedSetAndCode = parseSetAndCode(
-      setReq.results?.compactMap {
-        $0.topCandidates(1).first?.string
-      } ?? []
-    )
-    
-    guard !title.isEmpty else { return }
-    
-    let callback = onDetectCard
-    DispatchQueue.main.async {
-      callback?(
-        OCRCardScannedResult(
-          title: title,
-          set: parsedSetAndCode?.set,
-          code: parsedSetAndCode?.code
-        )
-      )
-    }
+//    guard let cardImage else { return }
+//    
+//    let width = CGFloat(cardImage.width)
+//    let height = CGFloat(cardImage.height)
+//    
+//    let titleRect = CGRect(x: 0, y: 0, width: width, height: height * 0.15).integral
+//    let setRect = CGRect(x: 0, y: height * 0.90, width: width * 0.5, height: height * 0.10).integral
+//    
+//    guard
+//      let titleImg = cardImage.cropping(to: titleRect),
+//      let setImg = cardImage.cropping(to: setRect)
+//    else {
+//      return
+//    }
+//    
+//    let titleReq = VNRecognizeTextRequest()
+//    titleReq.recognitionLevel = .accurate
+//    titleReq.usesLanguageCorrection = false
+//    
+//    let setReq = VNRecognizeTextRequest()
+//    setReq.recognitionLevel = .accurate
+//    setReq.usesLanguageCorrection = false
+//    
+//    try? VNImageRequestHandler(cgImage: titleImg, options: [:]).perform([titleReq])
+//    try? VNImageRequestHandler(cgImage: setImg, options: [:]).perform([setReq])
+//    
+//    let title = titleReq.results?.first?.topCandidates(1).first?.string ?? ""
+//    let parsedSetAndCode = parseSetAndCode(
+//      setReq.results?.compactMap {
+//        $0.topCandidates(1).first?.string
+//      } ?? []
+//    )
+//    
+//    guard !title.isEmpty else { return }
+//    
+//    let callback = onDetectCard
+//    DispatchQueue.main.async {
+//      callback?(
+//        OCRCardScannedResult(
+//          title: title,
+//          set: parsedSetAndCode?.set,
+//          code: parsedSetAndCode?.code
+//        )
+//      )
+//    }
   }
   
   private func parseSetAndCode(_ strings: [String]) -> (set: String, code: String)? {
@@ -133,6 +134,7 @@ extension OCRCaptureDelegate: AVCaptureVideoDataOutputSampleBufferDelegate {
     guard let corners = observer.process() else {
       DispatchQueue.main.async { [weak self] in
         self?.onDrawBox?(nil)
+        self?.onFlattenedImage?(nil)
       }
       isProcessing = false
       return
@@ -150,6 +152,9 @@ extension OCRCaptureDelegate: AVCaptureVideoDataOutputSampleBufferDelegate {
         from: sendableBuffer.value,
         observation: corners
       )
+      
+      let previewCallback = self.onFlattenedImage
+      DispatchQueue.main.async { previewCallback?(flattenedImage) }
       
       self.processOCR(on: flattenedImage)
     }

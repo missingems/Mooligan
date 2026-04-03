@@ -11,11 +11,26 @@ final class OCRViewController: UIViewController {
   private let captureDelegate = OCRCaptureDelegate()
   private let sessionQueue = DispatchQueue(label: "CaptureSessionQueue")
   
+  // MARK: - Overlay Layers
+  private let dimmingLayer = CAShapeLayer()
   private let shadowCornerLayer = CAShapeLayer()
-  private let whiteCornerLayer = CAShapeLayer()
+  private let yellowCornerLayer = CAShapeLayer()
   
-  private let fadeOutDelay: TimeInterval = 0.6
-  private let fadeOutDuration: TimeInterval = 0.35
+  private let cardPreviewImageView: UIImageView = {
+    let iv = UIImageView()
+    iv.contentMode = .scaleAspectFit
+    iv.clipsToBounds = true
+    iv.layer.cornerRadius = 6
+    iv.layer.borderColor = UIColor.white.withAlphaComponent(0.6).cgColor
+    iv.layer.borderWidth = 1.5
+    iv.backgroundColor = UIColor.black.withAlphaComponent(0.3)
+    iv.alpha = 0
+    iv.translatesAutoresizingMaskIntoConstraints = false
+    return iv
+  }()
+  
+  private let fadeOutDelay: TimeInterval = 0.15
+  private let fadeOutDuration: TimeInterval = 0.15
   private let snapDuration: TimeInterval = 0.12
   
   private let minimumCornerLength: CGFloat = 18
@@ -23,7 +38,6 @@ final class OCRViewController: UIViewController {
   
   private var fadeOutWorkItem: DispatchWorkItem?
   private var isOverlayVisible = false
-  private var hasConfirmedCard = false
   
   private var lastFocusTime: Date = .distantPast
   private let focusThrottleInterval: TimeInterval = 1.5
@@ -70,13 +84,13 @@ extension OCRViewController {
     
     captureDelegate.onDetectCard = { [weak self] result in
       guard let self else { return }
-      let isComplete = !result.title.isEmpty
-      DispatchQueue.main.async {
-        self.hasConfirmedCard = isComplete
-      }
-      if isComplete {
+      if !result.title.isEmpty {
         self.didDetectResult?(result)
       }
+    }
+    
+    captureDelegate.onFlattenedImage = { [weak self] image in
+      self?.updatePreview(image)
     }
     
     let videoOutput = AVCaptureVideoDataOutput()
@@ -92,6 +106,15 @@ extension OCRViewController {
   }
   
   private func setupOverlayLayers() {
+    // 1. The Shadow-Only Vignette Trick
+    dimmingLayer.fillColor = UIColor.clear.cgColor
+    dimmingLayer.shadowColor = UIColor.black.cgColor
+    dimmingLayer.shadowRadius = 45
+    dimmingLayer.shadowOpacity = 0.45
+    dimmingLayer.shadowOffset = .zero
+    dimmingLayer.opacity = 0
+    
+    // 2. The Corner Shadow Stroke (Thicker black layer underneath)
     shadowCornerLayer.strokeColor = UIColor.black.withAlphaComponent(0.55).cgColor
     shadowCornerLayer.lineWidth = 5.5
     shadowCornerLayer.fillColor = UIColor.clear.cgColor
@@ -99,15 +122,44 @@ extension OCRViewController {
     shadowCornerLayer.lineJoin = .round
     shadowCornerLayer.opacity = 0
     
-    whiteCornerLayer.strokeColor = UIColor.white.cgColor
-    whiteCornerLayer.lineWidth = 3
-    whiteCornerLayer.fillColor = UIColor.clear.cgColor
-    whiteCornerLayer.lineCap = .round
-    whiteCornerLayer.lineJoin = .round
-    whiteCornerLayer.opacity = 0
+    // 3. The Apple Notes-style Yellow Corners (Foreground)
+    yellowCornerLayer.strokeColor = UIColor.systemYellow.cgColor
+    yellowCornerLayer.lineWidth = 4.5
+    yellowCornerLayer.fillColor = UIColor.clear.cgColor
+    yellowCornerLayer.lineCap = .round
+    yellowCornerLayer.lineJoin = .round
+    yellowCornerLayer.opacity = 0
     
+    view.layer.addSublayer(dimmingLayer)
     view.layer.addSublayer(shadowCornerLayer)
-    view.layer.addSublayer(whiteCornerLayer)
+    view.layer.addSublayer(yellowCornerLayer)
+    
+    view.addSubview(cardPreviewImageView)
+    
+    let previewWidth: CGFloat = 88
+    let previewHeight: CGFloat = previewWidth * (88.0 / 63.0)
+    
+    NSLayoutConstraint.activate([
+      cardPreviewImageView.widthAnchor.constraint(equalToConstant: previewWidth),
+      cardPreviewImageView.heightAnchor.constraint(equalToConstant: previewHeight),
+      cardPreviewImageView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -16),
+      cardPreviewImageView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -16)
+    ])
+  }
+}
+
+// MARK: - Preview
+extension OCRViewController {
+  private func updatePreview(_ cgImage: CGImage?) {
+    DispatchQueue.main.async { [weak self] in
+      guard let self else { return }
+      if let cgImage {
+        self.cardPreviewImageView.image = UIImage(cgImage: cgImage)
+        UIView.animate(withDuration: 0.2) { self.cardPreviewImageView.alpha = 1 }
+      } else {
+        UIView.animate(withDuration: 0.35) { self.cardPreviewImageView.alpha = 0 }
+      }
+    }
   }
 }
 
@@ -118,7 +170,6 @@ extension OCRViewController {
       guard let self else { return }
       
       guard let corners else {
-        self.hasConfirmedCard = false
         self.scheduleFadeOut()
         return
       }
@@ -126,27 +177,20 @@ extension OCRViewController {
       let points = self.convertToScreenPoints(corners)
       
       guard self.isMagicTheGatheringRatio(points) else {
-        self.hasConfirmedCard = false
         self.scheduleFadeOut()
         return
       }
       
       self.focusCamera(on: points)
-      
-      guard self.hasConfirmedCard else {
-        self.scheduleFadeOut()
-        return
-      }
-      
       self.cancelFadeOut()
       
+      let newDimmingPath = self.buildDimmingPath(for: points)
       let newCornerPath = self.buildCornersPath(for: points)
-      let newCrosshairPath = self.buildCrosshairPath(for: points)
       
       if self.isOverlayVisible {
-        self.snapPath(corners: newCornerPath, crosshair: newCrosshairPath)
+        self.snapPath(dimming: newDimmingPath, corners: newCornerPath)
       } else {
-        self.setPath(corners: newCornerPath, crosshair: newCrosshairPath)
+        self.setPath(dimming: newDimmingPath, corners: newCornerPath)
         self.fadeIn()
       }
     }
@@ -190,7 +234,6 @@ extension OCRViewController {
           fromCaptureDevicePoint: CGPoint(x: 1.0 - point.y, y: 1.0 - point.x)
         )
       }
-    
     return Self.sortedCorners(rawPoints)
   }
   
@@ -229,6 +272,34 @@ extension OCRViewController {
 
 // MARK: - Path Building
 extension OCRViewController {
+  
+  private func buildDimmingPath(for points: [CGPoint]) -> CGPath {
+    let path = UIBezierPath(rect: view.bounds.insetBy(dx: -200, dy: -200))
+    guard points.count == 4 else { return path.cgPath }
+    
+    let centerX = points.reduce(0) { $0 + $1.x } / 4
+    let centerY = points.reduce(0) { $0 + $1.y } / 4
+    let expansion: CGFloat = 16.0
+    
+    let expandedPoints = points.map { pt -> CGPoint in
+      let dx = pt.x - centerX
+      let dy = pt.y - centerY
+      let dist = hypot(dx, dy)
+      guard dist > 0 else { return pt }
+      return CGPoint(x: pt.x + (dx / dist) * expansion, y: pt.y + (dy / dist) * expansion)
+    }
+    
+    let cutoutPath = UIBezierPath()
+    cutoutPath.move(to: expandedPoints[0])
+    cutoutPath.addLine(to: expandedPoints[1])
+    cutoutPath.addLine(to: expandedPoints[2])
+    cutoutPath.addLine(to: expandedPoints[3])
+    cutoutPath.close()
+    
+    path.append(cutoutPath.reversing())
+    return path.cgPath
+  }
+  
   private func buildCornersPath(for points: [CGPoint]) -> CGPath {
     guard points.count == 4 else { return CGMutablePath() }
     
@@ -247,37 +318,6 @@ extension OCRViewController {
     addCorner(to: path, at: topRight, edge1End: topLeft, edge2End: bottomRight, armLength: armLength, cornerRadius: cornerRadius)
     addCorner(to: path, at: bottomRight, edge1End: bottomLeft, edge2End: topRight, armLength: armLength, cornerRadius: cornerRadius)
     addCorner(to: path, at: bottomLeft, edge1End: bottomRight, edge2End: topLeft, armLength: armLength, cornerRadius: cornerRadius)
-    return path.cgPath
-  }
-  
-  private func buildCrosshairPath(for points: [CGPoint]) -> CGPath {
-    guard points.count == 4 else { return CGMutablePath() }
-    
-    let topLeft = points[0], topRight = points[1], bottomRight = points[2], bottomLeft = points[3]
-    
-    let centre = CGPoint(
-      x: (topLeft.x + topRight.x + bottomRight.x + bottomLeft.x) / 4,
-      y: (topLeft.y + topRight.y + bottomRight.y + bottomLeft.y) / 4
-    )
-    
-    let topMiddle = CGPoint(x: (topLeft.x + topRight.x) / 2, y: (topLeft.y + topRight.y) / 2)
-    let bottomMiddle = CGPoint(x: (bottomLeft.x + bottomRight.x) / 2, y: (bottomLeft.y + bottomRight.y) / 2)
-    let leftMiddle = CGPoint(x: (topLeft.x + bottomLeft.x) / 2, y: (topLeft.y + bottomLeft.y) / 2)
-    let rightMiddle = CGPoint(x: (topRight.x + bottomRight.x) / 2, y: (topRight.y + bottomRight.y) / 2)
-    
-    let horizontalAxis = unitVector(from: leftMiddle,  to: rightMiddle)
-    let verticalAxis = unitVector(from: topMiddle,   to: bottomMiddle)
-    
-    let armLength = min(
-      hypot(topRight.x - topLeft.x, topRight.y - topLeft.y),
-      hypot(bottomLeft.x - topLeft.x, bottomLeft.y - topLeft.y)
-    ) * 0.07
-    
-    let path = UIBezierPath()
-    path.move(to: CGPoint(x: centre.x - horizontalAxis.x * armLength, y: centre.y - horizontalAxis.y * armLength))
-    path.addLine(to: CGPoint(x: centre.x + horizontalAxis.x * armLength, y: centre.y + horizontalAxis.y * armLength))
-    path.move(to: CGPoint(x: centre.x - verticalAxis.x * armLength, y: centre.y - verticalAxis.y * armLength))
-    path.addLine(to: CGPoint(x: centre.x + verticalAxis.x * armLength, y: centre.y + verticalAxis.y * armLength))
     return path.cgPath
   }
   
@@ -321,18 +361,19 @@ extension OCRViewController {
 
 // MARK: - Animations
 extension OCRViewController {
-  private func setPath(corners: CGPath, crosshair: CGPath) {
+  private func setPath(dimming: CGPath, corners: CGPath) {
     CATransaction.begin()
     CATransaction.setDisableActions(true)
-    whiteCornerLayer.path = corners
+    dimmingLayer.shadowPath = dimming
     shadowCornerLayer.path = corners
+    yellowCornerLayer.path = corners
     CATransaction.commit()
   }
   
-  private func snapPath(corners newCorners: CGPath, crosshair newCrosshair: CGPath) {
-    func makeAnimation(from layer: CAShapeLayer, to newPath: CGPath) -> CABasicAnimation {
-      let animation = CABasicAnimation(keyPath: "path")
-      animation.fromValue = layer.presentation()?.path ?? layer.path
+  private func snapPath(dimming newDimmingPath: CGPath, corners newCornersPath: CGPath) {
+    func makeAnimation(keyPath: String, from path: CGPath?, to newPath: CGPath) -> CABasicAnimation {
+      let animation = CABasicAnimation(keyPath: keyPath)
+      animation.fromValue = path
       animation.toValue = newPath
       animation.duration = snapDuration
       animation.timingFunction = CAMediaTimingFunction(name: .easeOut)
@@ -343,21 +384,32 @@ extension OCRViewController {
     
     CATransaction.begin()
     CATransaction.setDisableActions(true)
-    whiteCornerLayer.path = newCorners
-    shadowCornerLayer.path = newCorners
+    
+    let currentShadowPath = dimmingLayer.presentation()?.shadowPath ?? dimmingLayer.shadowPath
+    let currentShadowCorners = shadowCornerLayer.presentation()?.path ?? shadowCornerLayer.path
+    let currentYellowCorners = yellowCornerLayer.presentation()?.path ?? yellowCornerLayer.path
+    
+    dimmingLayer.shadowPath = newDimmingPath
+    shadowCornerLayer.path = newCornersPath
+    yellowCornerLayer.path = newCornersPath
     CATransaction.commit()
     
-    whiteCornerLayer.add(makeAnimation(from: whiteCornerLayer,   to: newCorners),   forKey: "snapPath")
-    shadowCornerLayer.add(makeAnimation(from: shadowCornerLayer, to: newCorners),   forKey: "snapPath")
+    dimmingLayer.add(makeAnimation(keyPath: "shadowPath", from: currentShadowPath, to: newDimmingPath), forKey: "snapShadow")
+    shadowCornerLayer.add(makeAnimation(keyPath: "path", from: currentShadowCorners, to: newCornersPath), forKey: "snapCorners")
+    yellowCornerLayer.add(makeAnimation(keyPath: "path", from: currentYellowCorners, to: newCornersPath), forKey: "snapCorners")
   }
   
   private func fadeIn() {
     isOverlayVisible = true
-    let animation = opacityAnimation(from: 0, to: 1, duration: 0.2)
-    whiteCornerLayer.opacity = 1
+    let animation = opacityAnimation(from: 0, to: 1.0, duration: 0.2)
+    
+    dimmingLayer.opacity = 1
     shadowCornerLayer.opacity = 1
-    whiteCornerLayer.add(animation,                               forKey: "fadeIn")
-    shadowCornerLayer.add(animation.copy() as! CABasicAnimation,  forKey: "fadeIn")
+    yellowCornerLayer.opacity = 1
+    
+    dimmingLayer.add(animation, forKey: "fadeIn")
+    shadowCornerLayer.add(animation.copy() as! CABasicAnimation, forKey: "fadeIn")
+    yellowCornerLayer.add(animation.copy() as! CABasicAnimation, forKey: "fadeIn")
   }
   
   private func scheduleFadeOut() {
@@ -376,18 +428,20 @@ extension OCRViewController {
     guard isOverlayVisible else { return }
     CATransaction.begin()
     CATransaction.setDisableActions(true)
-    whiteCornerLayer.opacity = 1
+    dimmingLayer.opacity = 1
     shadowCornerLayer.opacity = 1
+    yellowCornerLayer.opacity = 1
     CATransaction.commit()
-    whiteCornerLayer.removeAnimation(forKey: "fadeOut")
+    
+    dimmingLayer.removeAnimation(forKey: "fadeOut")
     shadowCornerLayer.removeAnimation(forKey: "fadeOut")
+    yellowCornerLayer.removeAnimation(forKey: "fadeOut")
   }
   
   private func executeFadeOut() {
     isOverlayVisible = false
-    hasConfirmedCard = false
     
-    let animation = opacityAnimation(from: 1, to: 0, duration: fadeOutDuration)
+    let animation = opacityAnimation(from: 1.0, to: 0, duration: fadeOutDuration)
     animation.timingFunction = CAMediaTimingFunction(name: .easeIn)
     
     CATransaction.begin()
@@ -395,15 +449,19 @@ extension OCRViewController {
       guard let self, !self.isOverlayVisible else { return }
       CATransaction.begin()
       CATransaction.setDisableActions(true)
-      self.whiteCornerLayer.path = nil
+      self.dimmingLayer.shadowPath = nil
       self.shadowCornerLayer.path = nil
+      self.yellowCornerLayer.path = nil
       CATransaction.commit()
     }
     
-    whiteCornerLayer.opacity = 0
+    dimmingLayer.opacity = 0
     shadowCornerLayer.opacity = 0
-    whiteCornerLayer.add(animation, forKey: "fadeOut")
+    yellowCornerLayer.opacity = 0
+    
+    dimmingLayer.add(animation, forKey: "fadeOut")
     shadowCornerLayer.add(animation.copy() as! CABasicAnimation, forKey: "fadeOut")
+    yellowCornerLayer.add(animation.copy() as! CABasicAnimation, forKey: "fadeOut")
     CATransaction.commit()
   }
   
