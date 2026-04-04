@@ -1,3 +1,5 @@
+import UIKit
+
 public struct OCRCardScannedResult: Equatable, Sendable {
   public struct SetCode: Equatable, Sendable {
     public let set: String?
@@ -21,4 +23,8 @@ public struct OCRCardScannedResult: Equatable, Sendable {
   static public func ==(lhs: Self, rhs: Self) -> Bool {
     lhs.title == rhs.title
   }
+}
+
+public struct CardImageResult: Equatable, Sendable {
+  public let phHash: UInt64
 }

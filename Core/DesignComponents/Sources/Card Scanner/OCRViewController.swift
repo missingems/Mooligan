@@ -3,7 +3,7 @@ import Vision
 @preconcurrency import AVFoundation
 
 final class OCRViewController: UIViewController {
-  var didDetectResult: ((OCRCardScannedResult) -> Void)?
+  var didDetectResult: ((CardImageResult) -> Void)?
   
   private let captureSession = AVCaptureSession()
   private var previewLayer: AVCaptureVideoPreviewLayer!
@@ -11,7 +11,6 @@ final class OCRViewController: UIViewController {
   private let captureDelegate = OCRCaptureDelegate()
   private let sessionQueue = DispatchQueue(label: "CaptureSessionQueue")
   
-  // MARK: - Overlay Layers
   private let dimmingLayer = CAShapeLayer()
   private let shadowCornerLayer = CAShapeLayer()
   private let yellowCornerLayer = CAShapeLayer()
@@ -29,9 +28,9 @@ final class OCRViewController: UIViewController {
     return iv
   }()
   
-  private let fadeOutDelay: TimeInterval = 0.15
-  private let fadeOutDuration: TimeInterval = 0.15
-  private let snapDuration: TimeInterval = 0.12
+  private let fadeOutDelay: TimeInterval = 0.6
+  private let fadeOutDuration: TimeInterval = 0.35
+  private let snapDuration: TimeInterval = 0.315
   
   private let minimumCornerLength: CGFloat = 18
   private let maximumCornerLength: CGFloat = 36
@@ -84,9 +83,7 @@ extension OCRViewController {
     
     captureDelegate.onDetectCard = { [weak self] result in
       guard let self else { return }
-      if !result.title.isEmpty {
-        self.didDetectResult?(result)
-      }
+      self.didDetectResult?(result)
     }
     
     captureDelegate.onFlattenedImage = { [weak self] image in
@@ -106,15 +103,13 @@ extension OCRViewController {
   }
   
   private func setupOverlayLayers() {
-    // 1. The Shadow-Only Vignette Trick
     dimmingLayer.fillColor = UIColor.clear.cgColor
     dimmingLayer.shadowColor = UIColor.black.cgColor
-    dimmingLayer.shadowRadius = 45
+    dimmingLayer.shadowRadius = 35
     dimmingLayer.shadowOpacity = 0.45
     dimmingLayer.shadowOffset = .zero
     dimmingLayer.opacity = 0
     
-    // 2. The Corner Shadow Stroke (Thicker black layer underneath)
     shadowCornerLayer.strokeColor = UIColor.black.withAlphaComponent(0.55).cgColor
     shadowCornerLayer.lineWidth = 5.5
     shadowCornerLayer.fillColor = UIColor.clear.cgColor
@@ -122,7 +117,6 @@ extension OCRViewController {
     shadowCornerLayer.lineJoin = .round
     shadowCornerLayer.opacity = 0
     
-    // 3. The Apple Notes-style Yellow Corners (Foreground)
     yellowCornerLayer.strokeColor = UIColor.systemYellow.cgColor
     yellowCornerLayer.lineWidth = 4.5
     yellowCornerLayer.fillColor = UIColor.clear.cgColor
@@ -148,7 +142,6 @@ extension OCRViewController {
   }
 }
 
-// MARK: - Preview
 extension OCRViewController {
   private func updatePreview(_ cgImage: CGImage?) {
     DispatchQueue.main.async { [weak self] in
@@ -163,7 +156,6 @@ extension OCRViewController {
   }
 }
 
-// MARK: - Corner Detection Handling & Camera Focus
 extension OCRViewController {
   private func handleCorners(_ corners: VNRectangleObserver.Corners?) {
     DispatchQueue.main.async { [weak self] in
@@ -207,25 +199,20 @@ extension OCRViewController {
     let devicePoint = previewLayer.captureDevicePointConverted(fromLayerPoint: screenCenter)
     guard let device = AVCaptureDevice.default(for: .video) else { return }
     
-    do {
-      try device.lockForConfiguration()
-      if device.isFocusPointOfInterestSupported && device.isFocusModeSupported(.continuousAutoFocus) {
-        device.focusPointOfInterest = devicePoint
-        device.focusMode = .continuousAutoFocus
-      }
-      if device.isExposurePointOfInterestSupported && device.isExposureModeSupported(.continuousAutoExposure) {
-        device.exposurePointOfInterest = devicePoint
-        device.exposureMode = .continuousAutoExposure
-      }
-      device.unlockForConfiguration()
-      lastFocusTime = now
-    } catch {
-      print("Could not lock device for configuration: \(error)")
+    try? device.lockForConfiguration()
+    if device.isFocusPointOfInterestSupported && device.isFocusModeSupported(.continuousAutoFocus) {
+      device.focusPointOfInterest = devicePoint
+      device.focusMode = .continuousAutoFocus
     }
+    if device.isExposurePointOfInterestSupported && device.isExposureModeSupported(.continuousAutoExposure) {
+      device.exposurePointOfInterest = devicePoint
+      device.exposureMode = .continuousAutoExposure
+    }
+    device.unlockForConfiguration()
+    lastFocusTime = now
   }
 }
 
-// MARK: - Coordinate Conversion
 extension OCRViewController {
   private func convertToScreenPoints(_ corners: VNRectangleObserver.Corners) -> [CGPoint] {
     let rawPoints = [corners.topLeft, corners.topRight, corners.bottomRight, corners.bottomLeft]
@@ -234,11 +221,15 @@ extension OCRViewController {
           fromCaptureDevicePoint: CGPoint(x: 1.0 - point.y, y: 1.0 - point.x)
         )
       }
+    
     return Self.sortedCorners(rawPoints)
   }
   
   private static func sortedCorners(_ points: [CGPoint]) -> [CGPoint] {
-    guard points.count == 4 else { return points }
+    guard points.count == 4 else {
+      return points
+    }
+    
     let centerX = points.map(\.x).reduce(0, +) / 4
     let centerY = points.map(\.y).reduce(0, +) / 4
     
@@ -257,7 +248,9 @@ extension OCRViewController {
     }
     
     if topLeft == nil || topRight == nil || bottomLeft == nil || bottomRight == nil {
-      let sorted = points.sorted { atan2($0.y - centerY, $0.x - centerX) < atan2($1.y - centerY, $1.x - centerX) }
+      let sorted = points.sorted {
+        atan2($0.y - centerY, $0.x - centerX) < atan2($1.y - centerY, $1.x - centerX)
+      }
       return [sorted[3], sorted[0], sorted[1], sorted[2]]
     }
     
@@ -270,9 +263,7 @@ extension OCRViewController {
   }
 }
 
-// MARK: - Path Building
 extension OCRViewController {
-  
   private func buildDimmingPath(for points: [CGPoint]) -> CGPath {
     let path = UIBezierPath(rect: view.bounds.insetBy(dx: -200, dy: -200))
     guard points.count == 4 else { return path.cgPath }
@@ -359,7 +350,6 @@ extension OCRViewController {
   }
 }
 
-// MARK: - Animations
 extension OCRViewController {
   private func setPath(dimming: CGPath, corners: CGPath) {
     CATransaction.begin()
@@ -476,7 +466,6 @@ extension OCRViewController {
   }
 }
 
-// MARK: - Validation
 extension OCRViewController {
   private func isMagicTheGatheringRatio(_ points: [CGPoint]) -> Bool {
     guard points.count == 4 else { return false }

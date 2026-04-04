@@ -1,10 +1,11 @@
 import AVFoundation
 import CoreImage
 import Vision
+import UIKit
 
 final class OCRCaptureDelegate: NSObject, @unchecked Sendable {
   var onDrawBox: ((VNRectangleObserver.Corners?) -> Void)?
-  var onDetectCard: ((OCRCardScannedResult) -> Void)?
+  var onDetectCard: ((CardImageResult) -> Void)?
   var onFlattenedImage: ((CGImage?) -> Void)?
   
   private var isProcessing = false
@@ -16,7 +17,7 @@ final class OCRCaptureDelegate: NSObject, @unchecked Sendable {
   }
   
   private func processOCR(on cardImage: CGImage?) {
-//    guard let cardImage else { return }
+    guard let cardImage else { return }
 //    
 //    let width = CGFloat(cardImage.width)
 //    let height = CGFloat(cardImage.height)
@@ -50,17 +51,15 @@ final class OCRCaptureDelegate: NSObject, @unchecked Sendable {
 //    )
 //    
 //    guard !title.isEmpty else { return }
-//    
-//    let callback = onDetectCard
-//    DispatchQueue.main.async {
-//      callback?(
-//        OCRCardScannedResult(
-//          title: title,
-//          set: parsedSetAndCode?.set,
-//          code: parsedSetAndCode?.code
-//        )
-//      )
-//    }
+//
+    if let value = cardImage.pHash {
+      let callback = onDetectCard
+      DispatchQueue.main.async {
+        callback?(
+          CardImageResult(phHash: value)
+        )
+      }
+    }
   }
   
   private func parseSetAndCode(_ strings: [String]) -> (set: String, code: String)? {

@@ -5,34 +5,34 @@ import Networking
 
 @Reducer public struct CardScannerFeature: Sendable {
   @Dependency(\.cardQueryRequestClient) var client
+  @Dependency(\.cardImageHashSyncManager) var imageHashManager
   
   public var body: some ReducerOf<Self> {
-    Reduce {state, action in
+    Reduce { state, action in
       switch action {
       case let .didScan(result):
-        guard result != state.scannedResult else {
-          return .none
-        }
-        
         return .run { send in
+          let bestMatch = await imageHashManager.findBestMatch(for: result.phHash)
+          print(bestMatch)
           await send(.updateScanResult(result))
         }
         
       case let .updateScanResult(result):
-        guard state.scannedResult != result else {
-          return .none
-        }
-        
-        state.scannedResult = result
-        
-        return .run { send in
-          await send(
-            .fetchCard(
-              withSetCode: .withSetCode(result),
-              withoutSetCode: .withoutSetCode(result)
-            )
-          )
-        }
+//        guard state.scannedResult != result else {
+//          return .none
+//        }
+//        
+//        state.scannedResult = result
+//        
+//        return .run { send in
+//          await send(
+//            .fetchCard(
+//              withSetCode: .withSetCode(result),
+//              withoutSetCode: .withoutSetCode(result)
+//            )
+//          )
+//        }
+        return .none
         
       case let .fetchCard(query1, query2):
         guard let query1, let query2 else {
@@ -75,6 +75,11 @@ import Networking
         state.queryWithoutSetCode = query2
         return .none
         
+      case .syncCardImageHashDatabase:
+        return .run { send in
+          await imageHashManager.sync()
+        }
+        
       case let .loadMoreCardsIfNeeded(displayingIndex):
         guard
           displayingIndex == (state.dataSource?.cardDetails.count ?? 1) - 1,
@@ -114,11 +119,19 @@ public extension CardScannerFeature {
   }
   
   enum Action: Equatable, Sendable {
-    case didScan(OCRCardScannedResult)
-    case updateScanResult(OCRCardScannedResult)
+    case didScan(CardImageResult)
+    case updateScanResult(CardImageResult)
     case fetchCard(withSetCode: SearchQuery?, withoutSetCode: SearchQuery?)
     case updateCards(CardDataSource, withSetCode: SearchQuery, withoutSetCode: SearchQuery)
     case loadMoreCardsIfNeeded(displayingIndex: Int)
+    case syncCardImageHashDatabase
+  }
+  
+  enum SyncStatus: Equatable, Sendable {
+    case syncing
+    case checkingForUpdates
+    case synced
+    case syncedFailure
   }
 }
 

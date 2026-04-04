@@ -9,46 +9,28 @@ public struct RootView: View {
   
   public var body: some View {
     NavigationView {
-      VStack(spacing: 16.0) {
+      ZStack(alignment: .bottom) {
         OCRView { result in
           store.send(.didScan(result))
         }
         .ignoresSafeArea(.all)
-        .background(.gray)
-        .clipShape(RoundedRectangle(cornerRadius: 24.0))
         
-        if let cardDetails = store.dataSource?.cardDetails, !cardDetails.isEmpty {
-          ScrollView(.horizontal, showsIndicators: false) {
-            LazyHStack(spacing: 8.0) {
-              ForEach(Array(zip(cardDetails, cardDetails.indices)), id: \.0.card.id) { value in
-                let cardInfo = value.0
-                let index = value.1
-                
-                Button(
-                  action: {
-                  }, label: {
-                    CardView(
-                      displayableCard: cardInfo.displayableCardImage,
-                      priceVisibility: .hidden,
-                      shouldShowShadow: false
-                    )
-                  }
-                )
-                .frame(width: 183)
-                .buttonStyle(.sinkableButtonStyle)
-                .onAppear {
-                  store.send(.loadMoreCardsIfNeeded(displayingIndex: index))
-                }
-              }
+        HStack {
+          Button(action: {
+            print("Blank circle pressed")
+          }) {
+            ZStack {
+              Circle()
             }
-            .padding(.horizontal, 16.0)
+            .frame(width: 83, height: 83)
           }
-          .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
-          .padding(.top, 3.0)
-          .padding(.bottom, 16.0)
-          .scrollClipDisabled(true)
-          .fixedSize(horizontal: false, vertical: true)
+          .padding(.all, 6)
+          .glassEffect(.regular.interactive(), in: .circle)
         }
+        .padding(.bottom, 20)
+      }
+      .task {
+        store.send(.syncCardImageHashDatabase)
       }
     }
   }
@@ -57,4 +39,3 @@ public struct RootView: View {
     self.store = store
   }
 }
-
