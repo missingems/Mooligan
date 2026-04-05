@@ -37,7 +37,7 @@ import CardScanner
         return "text.page"
         
       case .scan:
-        return "scanner.fill"
+        return "camera.fill"
         
       case .collection:
         return "folder"
