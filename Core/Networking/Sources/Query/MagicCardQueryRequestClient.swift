@@ -3,7 +3,7 @@ import ScryfallKit
 
 public protocol MagicCardQueryRequestClient: Sendable {
   func queryCards(_ query: SearchQuery) async throws -> ObjectList<Card>
-  func queryCards(_ ids: [String]) async throws -> ObjectList<Card>
+  func queryCards(for id: String) async throws -> ObjectList<Card>
 }
 
 public enum MagicCardQueryRequestClientKey: DependencyKey {
@@ -33,26 +33,35 @@ extension ScryfallClient: MagicCardQueryRequestClient {
     )
   }
   
-  public func queryCards(_ ids: [String]) async throws -> ObjectList<Card> {
-    try await withThrowingTaskGroup(of: Card.self) { group in
-      for id in ids {
-        group.addTask {
-          try await self.getCard(identifier: .scryfallID(id: id))
-        }
-      }
-      
-      var cards: [Card] = []
-      for try await card in group {
-        cards.append(card)
-      }
-      
-      return ObjectList(
-        data: cards,
-        hasMore: false,
-        nextPage: nil,
-        totalCards: cards.count,
-        warnings: nil
+  public func queryCards(for id: String) async throws -> ObjectList<Card> {
+    let value = try await getCard(identifier: .scryfallID(id: id))
+    var cards: [Card] = []
+    if let oracleId = value.oracleId {
+      cards = try await searchCards(
+        filters: [.oracleId(oracleId), .game(.paper)],
+        unique: .prints,
+        order: .released,
+        sortDirection: .desc,
+        includeExtras: true,
+        includeMultilingual: false,
+        includeVariations: true,
+        page: 1
       )
+      .data
     }
+    
+    if let index = cards.firstIndex(of: value) {
+      cards.remove(at: index)
+    }
+    
+    cards.insert(value, at: 0)
+    
+    return ObjectList(
+      data: cards,
+      hasMore: false,
+      nextPage: nil,
+      totalCards: cards.count,
+      warnings: nil
+    )
   }
 }

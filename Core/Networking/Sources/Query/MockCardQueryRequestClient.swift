@@ -2,7 +2,7 @@ import ComposableArchitecture
 import ScryfallKit
 
 public struct MockCardQueryRequestClient: MagicCardQueryRequestClient {
-  public func queryCards(_ ids: [String]) async throws -> ScryfallKit.ObjectList<ScryfallKit.Card> {
+  public func queryCards(for id: String) async throws -> ScryfallKit.ObjectList<ScryfallKit.Card> {
     response
   }
   
