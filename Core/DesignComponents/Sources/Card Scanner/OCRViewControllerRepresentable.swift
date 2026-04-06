@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct OCRViewControllerRepresentable: UIViewControllerRepresentable {
-  var onValidatedScan: (CardImageResult) -> Void
+  var onValidatedScan: (ScannedImage) -> Void
   
   func makeCoordinator() -> Coordinator {
     Coordinator(onValidatedScan: onValidatedScan)
@@ -22,16 +22,16 @@ struct OCRViewControllerRepresentable: UIViewControllerRepresentable {
   }
   
   final class Coordinator {
-    var onValidatedScan: (CardImageResult) -> Void
+    var onValidatedScan: (ScannedImage) -> Void
     
-    private var resultBuffer: [CardImageResult] = []
-    private let requiredConsistency = 3
+    private var resultBuffer: [ScannedImage] = []
+    private let requiredConsistency = 0
     
-    init(onValidatedScan: @escaping (CardImageResult) -> Void) {
+    init(onValidatedScan: @escaping (ScannedImage) -> Void) {
       self.onValidatedScan = onValidatedScan
     }
     
-    func didDetect(result: CardImageResult) {
+    func didDetect(result: ScannedImage) {
       resultBuffer.append(result)
       
       if resultBuffer.count > requiredConsistency {

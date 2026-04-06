@@ -3,6 +3,7 @@ import ScryfallKit
 
 public protocol MagicCardQueryRequestClient: Sendable {
   func queryCards(_ query: SearchQuery) async throws -> ObjectList<Card>
+  func queryCards(_ ids: [String]) async throws -> ObjectList<Card>
 }
 
 public enum MagicCardQueryRequestClientKey: DependencyKey {
@@ -30,5 +31,28 @@ extension ScryfallClient: MagicCardQueryRequestClient {
       includeVariations: true,
       page: query.page
     )
+  }
+  
+  public func queryCards(_ ids: [String]) async throws -> ObjectList<Card> {
+    try await withThrowingTaskGroup(of: Card.self) { group in
+      for id in ids {
+        group.addTask {
+          try await self.getCard(identifier: .scryfallID(id: id))
+        }
+      }
+      
+      var cards: [Card] = []
+      for try await card in group {
+        cards.append(card)
+      }
+      
+      return ObjectList(
+        data: cards,
+        hasMore: false,
+        nextPage: nil,
+        totalCards: cards.count,
+        warnings: nil
+      )
+    }
   }
 }

@@ -1,10 +1,10 @@
 import SwiftUI
 
 public struct OCRView: View {
-  var onUpdate: (CardImageResult) -> Void
+  var onUpdate: (ScannedImage) -> Void
   
   public init(
-    onUpdate: @escaping (CardImageResult) -> Void
+    onUpdate: @escaping (ScannedImage) -> Void
   ) {
     self.onUpdate = onUpdate
   }

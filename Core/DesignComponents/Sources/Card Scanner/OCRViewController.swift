@@ -3,7 +3,7 @@ import Vision
 @preconcurrency import AVFoundation
 
 final class OCRViewController: UIViewController {
-  var didDetectResult: ((CardImageResult) -> Void)?
+  var didDetectResult: ((ScannedImage) -> Void)?
   
   private let captureSession = AVCaptureSession()
   private var previewLayer: AVCaptureVideoPreviewLayer!
@@ -14,19 +14,6 @@ final class OCRViewController: UIViewController {
   private let dimmingLayer = CAShapeLayer()
   private let shadowCornerLayer = CAShapeLayer()
   private let yellowCornerLayer = CAShapeLayer()
-  
-  private let cardPreviewImageView: UIImageView = {
-    let iv = UIImageView()
-    iv.contentMode = .scaleAspectFit
-    iv.clipsToBounds = true
-    iv.layer.cornerRadius = 6
-    iv.layer.borderColor = UIColor.white.withAlphaComponent(0.6).cgColor
-    iv.layer.borderWidth = 1.5
-    iv.backgroundColor = UIColor.black.withAlphaComponent(0.3)
-    iv.alpha = 0
-    iv.translatesAutoresizingMaskIntoConstraints = false
-    return iv
-  }()
   
   private let fadeOutDelay: TimeInterval = 0.6
   private let fadeOutDuration: TimeInterval = 0.35
@@ -71,7 +58,7 @@ extension OCRViewController {
       let input = try? AVCaptureDeviceInput(device: backCamera)
     else { return }
     
-    captureSession.sessionPreset = .hd4K3840x2160
+    captureSession.sessionPreset = .hd1920x1080
     
     if captureSession.canAddInput(input) {
       captureSession.addInput(input)
@@ -84,10 +71,6 @@ extension OCRViewController {
     captureDelegate.onDetectCard = { [weak self] result in
       guard let self else { return }
       self.didDetectResult?(result)
-    }
-    
-    captureDelegate.onFlattenedImage = { [weak self] image in
-      self?.updatePreview(image)
     }
     
     let videoOutput = AVCaptureVideoDataOutput()
@@ -127,32 +110,6 @@ extension OCRViewController {
     view.layer.addSublayer(dimmingLayer)
     view.layer.addSublayer(shadowCornerLayer)
     view.layer.addSublayer(yellowCornerLayer)
-    
-    view.addSubview(cardPreviewImageView)
-    
-    let previewWidth: CGFloat = 88
-    let previewHeight: CGFloat = previewWidth * (88.0 / 63.0)
-    
-    NSLayoutConstraint.activate([
-      cardPreviewImageView.widthAnchor.constraint(equalToConstant: previewWidth),
-      cardPreviewImageView.heightAnchor.constraint(equalToConstant: previewHeight),
-      cardPreviewImageView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -16),
-      cardPreviewImageView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -16)
-    ])
-  }
-}
-
-extension OCRViewController {
-  private func updatePreview(_ cgImage: CGImage?) {
-    DispatchQueue.main.async { [weak self] in
-      guard let self else { return }
-      if let cgImage {
-        self.cardPreviewImageView.image = UIImage(cgImage: cgImage)
-        UIView.animate(withDuration: 0.2) { self.cardPreviewImageView.alpha = 1 }
-      } else {
-        UIView.animate(withDuration: 0.35) { self.cardPreviewImageView.alpha = 0 }
-      }
-    }
   }
 }
 

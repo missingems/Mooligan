@@ -1,5 +1,5 @@
-struct CardHashDatabaseManifest: Codable {
-  let version: Int
-  let cardCount: Int
-  let lastUpdated: String
+public struct CardHashDatabaseManifest: Codable, Sendable {
+  public let masterVersion: Int
+  public let masterChunks: Int
+  public let latestPatch: Int
 }

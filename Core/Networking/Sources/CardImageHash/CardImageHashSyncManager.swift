@@ -1,25 +1,37 @@
 import AVFoundation
+@preconcurrency import Vision
 import CoreImage
 import Accelerate
 import ComposableArchitecture
 import Foundation
-import UIKit
+
+// MARK: - 1. Protocols & Models
 
 public protocol CardImageHashSyncManagable: Sendable {
   func sync() async
-  func findBestMatch(for targetHash: UInt64) async -> MatchResult?
+  func findBestMatches(for image: CGImage) async -> [MatchResult]
 }
 
-enum SyncError: Error, LocalizedError {
+public struct MatchResult: Sendable, Equatable {
+  public let id: String
+  public let distance: Float
+  
+  public init(id: String, distance: Float) {
+    self.id = id
+    self.distance = distance
+  }
+}
+
+public enum SyncError: Error, LocalizedError {
   case invalidURL
   case manifestFetchFailed
   case databaseFetchFailed
   case decompressionFailed
   case decodeFailed
   
-  var errorDescription: String? {
+  public var errorDescription: String? {
     switch self {
-    case .invalidURL: return "The GitHub URL is invalid."
+    case .invalidURL: return "The cloud URL is invalid."
     case .manifestFetchFailed: return "Could not fetch the latest version info."
     case .databaseFetchFailed: return "Failed to download the database file."
     case .decompressionFailed: return "Failed to decompress the LZFSE data."
@@ -28,118 +40,288 @@ enum SyncError: Error, LocalizedError {
   }
 }
 
+// MARK: - 2. The TCA Actor
+
 public final actor CardImageHashSyncManager: CardImageHashSyncManagable {
-  var records: [CardImageHashRecord] = []
-  var isReady = false
-  var syncStatus = "Initializing..."
-  var isDownloading = false
   
-  private let baseURL = "https://missingems.github.io/MTGImageHash/"
+  // RAM Cache for 0.05s lookups
+  var observations: [String: VNFeaturePrintObservation] = [:]
   
-  private var localDatabaseURL: URL {
-    FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-      .appendingPathComponent("MTG_Hashes.bplist")
+  public var isReady = false
+  public var syncStatus = "Initializing..." {
+    didSet {
+      print(syncStatus)
+    }
   }
+  public var isDownloading = false
+  
+  private let baseURL: String
+  private let defaults: UserDefaults
+  
+  // File Paths in the App's Writable Sandbox
+  private var documentsDirectory: URL {
+    FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+  }
+  private var localDatabaseURL: URL {
+    documentsDirectory.appendingPathComponent("MTG_Hashes_Compressed.bplist")
+  }
+  private var localManifestURL: URL {
+    documentsDirectory.appendingPathComponent("manifest.json")
+  }
+  
+  func generateFeaturePrint(from cgImage: CGImage) throws -> VNFeaturePrintObservation? {
+    let request = VNGenerateImageFeaturePrintRequest()
+    if #available(iOS 17.0, macOS 14.0, *) { request.revision = VNGenerateImageFeaturePrintRequestRevision2 }
+    else { request.revision = VNGenerateImageFeaturePrintRequestRevision1 }
+    try VNImageRequestHandler(cgImage: cgImage, options: [:]).perform([request])
+    return request.results?.first as? VNFeaturePrintObservation
+  }
+  
+  /// Public initializer required for cross-module instantiation via Tuist
+  public init(
+    baseURL: String = "https://missingems.github.io/MTGImageHash",
+    defaults: UserDefaults = .standard
+  ) {
+    self.baseURL = baseURL
+    self.defaults = defaults
+  }
+  
+  // MARK: - Core Functions
   
   public func sync() async {
     await loadLocalCache()
-    await syncWithCloud()
+    await syncFromGitHub()
   }
   
-  public func findBestMatch(for targetHash: UInt64) -> MatchResult? {
-    var bestMatchId: String?
-    var lowestDistance = 64
+  public func findBestMatches(for image: CGImage) -> [MatchResult] {
+    guard let targetObservation = try? generateFeaturePrint(from: image) else { return [] }
+    var candidates: [MatchResult] = []
+    let confidenceThreshold: Float = 15.0
     
-    for record in records {
-      let distance = (record.hash ^ targetHash).nonzeroBitCount
-      
-      if distance < lowestDistance {
-        lowestDistance = distance
-        bestMatchId = record.id
-        
-        if distance == 0 { break }
+    for (id, dbObservation) in observations {
+      var distance: Float = 0
+      do {
+        try targetObservation.computeDistance(&distance, to: dbObservation)
+        if distance <= confidenceThreshold {
+          candidates.append(MatchResult(id: id, distance: distance))
+        }
+      } catch {
+        continue
       }
     }
     
-    if lowestDistance <= 20, let id = bestMatchId {
-      return MatchResult(id: id, distance: lowestDistance)
-    }
-    
-    return nil
+    return candidates
+      .sorted { $0.distance < $1.distance }
+      .prefix(5)
+      .map { $0 }
   }
+  
+  // MARK: - Tuist First-Launch & Local Load
   
   private func loadLocalCache() async {
     let dbURL = localDatabaseURL
+    let fileManager = FileManager.default
+    
+    // 1. FIRST LAUNCH CHECK: Copy from Tuist Framework Bundle to Documents Directory
+    if !fileManager.fileExists(atPath: dbURL.path) {
+      self.syncStatus = "First launch: Unpacking embedded database..."
+      
+      let frameworkBundle = Bundle(for: BundleFinder.self)
+      var targetDBPath: URL? = nil
+      var targetManifestPath: URL? = nil
+      
+      // Handle Tuist's Dynamic vs Static Framework resource bundling
+      if let rootURL = frameworkBundle.url(forResource: "MTG_Hashes_Compressed", withExtension: "bplist") {
+        targetDBPath = rootURL
+//        targetManifestPath = frameworkBundle.url(forResource: "manifest", withExtension: "json")
+      } else if let resourceBundleURL = frameworkBundle.urls(forResourcesWithExtension: "bundle", subdirectory: nil)?.first,
+                let resourceBundle = Bundle(url: resourceBundleURL) {
+        targetDBPath = resourceBundle.url(forResource: "MTG_Hashes_Compressed", withExtension: "bplist")
+//        targetManifestPath = resourceBundle.url(forResource: "manifest", withExtension: "json")
+      }
+      
+      guard let bundleDBPath = targetDBPath else {
+        self.syncStatus = "Error: Missing MTG_Hashes.lzfse in module resources."
+        return
+      }
+      
+      do {
+        try fileManager.copyItem(at: bundleDBPath, to: dbURL)
+        
+        if let bundleManifestPath = targetManifestPath {
+          if !fileManager.fileExists(atPath: localManifestURL.path) {
+            try fileManager.copyItem(at: bundleManifestPath, to: localManifestURL)
+          }
+        }
+      } catch {
+        self.syncStatus = "Failed to unpack database: \(error.localizedDescription)"
+        return
+      }
+    }
+    
+    // 2. LOAD INTO RAM
+    self.syncStatus = "Loading local database..."
     
     do {
-      let cachedRecords = try await Task.detached {
-        let data = try Data(contentsOf: dbURL)
-        return try PropertyListDecoder().decode([CardImageHashRecord].self, from: data)
+      let hydratedDict = try await Task.detached {
+        let fileData = try Data(contentsOf: dbURL)
+        // Smart Fallback: Try LZFSE decompression, otherwise assume raw binary plist
+        let decompressedData = (try? (fileData as NSData).decompressed(using: .lzfse) as Data) ?? fileData
+        
+        guard let flatDict = try PropertyListSerialization.propertyList(from: decompressedData, options: [], format: nil) as? [String: Data] else {
+          throw SyncError.decodeFailed
+        }
+        
+        var activeObservations: [String: VNFeaturePrintObservation] = [:]
+        activeObservations.reserveCapacity(flatDict.count)
+        
+        for (id, vectorData) in flatDict {
+          if let obs = try? NSKeyedUnarchiver.unarchivedObject(ofClass: VNFeaturePrintObservation.self, from: vectorData) {
+            activeObservations[id] = obs
+          }
+        }
+        return activeObservations
       }.value
       
-      self.records = cachedRecords
+      self.observations = hydratedDict
       self.isReady = true
-      self.syncStatus = "Loaded \(cachedRecords.count) cards locally."
+      self.syncStatus = "Loaded \(hydratedDict.count) cards locally."
+      
     } catch {
-      self.syncStatus = "No local database. Waiting for cloud sync..."
+      self.syncStatus = "Failed to load local cache. Corrupted file."
     }
   }
   
-  private func syncWithCloud() async {
-    guard
-      let manifestURL = URL(string: "\(baseURL)/manifest.json"),
-      let databaseURL = URL(string: "\(baseURL)/MTG_Hashes.bplist")
-    else {
-      syncStatus = "Error: Invalid URLs"
-      return
-    }
+  // MARK: - OTA Cloud Sync
+  
+  private func syncFromGitHub() async {
+    guard let manifestURL = URL(string: "\(baseURL)/manifest.json") else { return }
     
     self.isDownloading = true
     defer { self.isDownloading = false }
     
     do {
-      let (manifestData, _) = try await URLSession.shared.data(from: manifestURL)
-      let remoteManifest = try JSONDecoder().decode(CardHashDatabaseManifest.self, from: manifestData)
-      let localVersion = UserDefaults.standard.integer(forKey: "LocalDBVersion")
+      // 1. Fetch Remote Manifest
+      let (remoteManifestData, _) = try await URLSession.shared.data(from: manifestURL)
+      let remoteManifest = try JSONDecoder().decode(CardHashDatabaseManifest.self, from: remoteManifestData)
       
-      if remoteManifest.version > localVersion || records.isEmpty {
-        self.syncStatus = "Downloading update..."
+      // 2. Read Local Manifest State
+      var localPatchLevel = 0
+      if let localManifestData = try? Data(contentsOf: localManifestURL),
+         let localManifest = try? JSONDecoder().decode(CardHashDatabaseManifest.self, from: localManifestData) {
+        localPatchLevel = localManifest.latestPatch
         
-        let (compressedData, _) = try await URLSession.shared.data(from: databaseURL)
-        
-        self.syncStatus = "Processing database..."
-        let dbURL = localDatabaseURL
-        
-        let newRecords = try await Task.detached {
-          guard let decompressedData = try? (compressedData as NSData).decompressed(using: .lzfse) as Data else {
-            throw SyncError.decompressionFailed
-          }
-          
-          let records = try PropertyListDecoder().decode([CardImageHashRecord].self, from: decompressedData)
-          try decompressedData.write(to: dbURL, options: .atomic)
-          
-          return records
-        }.value
-        
-        UserDefaults.standard.set(remoteManifest.version, forKey: "LocalDBVersion")
-        self.records = newRecords
-        self.isReady = true
-        self.syncStatus = "Up to date (\(newRecords.count) cards)"
-      } else {
-        self.syncStatus = "Database is up to date."
+        // If the remote master version is completely different, force a full reset
+        if localManifest.masterVersion != remoteManifest.masterVersion {
+          localPatchLevel = -1
+        }
       }
+      
+      // 3. Check if we need updates
+      guard remoteManifest.latestPatch > localPatchLevel else {
+        self.syncStatus = "Database is up to date."
+        return
+      }
+      
+      let patchGap = remoteManifest.latestPatch - localPatchLevel
+      
+      // 4. Threshold Logic: Delta Patch vs Chunked Master
+      let updatedDictionary = try await Task.detached {
+        var newMasterDict: [String: Data] = [:]
+        
+        if patchGap > 20 || localPatchLevel == -1 {
+          // Fallback: Download the stitched chunks if we are too far behind
+          newMasterDict = try await self.downloadChunkedMaster(remoteManifest: remoteManifest)
+        } else {
+          // Standard: Download missing sequential patches
+          newMasterDict = try await self.downloadAndMergePatches(localVersion: localPatchLevel, remoteVersion: remoteManifest.latestPatch)
+        }
+        
+        // Re-compress and save the newly assembled master database
+        let updatedBinary = try PropertyListSerialization.data(fromPropertyList: newMasterDict, format: .binary, options: 0)
+        let updatedCompressed = try (updatedBinary as NSData).compressed(using: .lzfse) as Data
+        try await updatedCompressed.write(to: self.localDatabaseURL)
+        
+        // Save the remote manifest locally so we know we are synced
+        try await remoteManifestData.write(to: self.localManifestURL)
+        
+        return newMasterDict
+      }.value
+      
+      // 5. Hydrate the updated dictionary into RAM
+      self.syncStatus = "Hydrating updated vectors..."
+      
+      let hydratedDict = await Task.detached {
+        var activeObservations: [String: VNFeaturePrintObservation] = [:]
+        activeObservations.reserveCapacity(updatedDictionary.count)
+        for (id, vectorData) in updatedDictionary {
+          if let obs = try? NSKeyedUnarchiver.unarchivedObject(ofClass: VNFeaturePrintObservation.self, from: vectorData) {
+            activeObservations[id] = obs
+          }
+        }
+        return activeObservations
+      }.value
+      
+      self.observations = hydratedDict
+      self.syncStatus = "Up to date (\(hydratedDict.count) cards)."
+      
     } catch {
       if !self.isReady {
         self.syncStatus = "Failed to sync: Check internet connection."
       }
     }
   }
+  
+  // MARK: - Download Helpers (Runs in Detached Tasks)
+  
+  private nonisolated func downloadChunkedMaster(remoteManifest: CardHashDatabaseManifest) async throws -> [String: Data] {
+    var masterDictionary: [String: Data] = [:]
+    masterDictionary.reserveCapacity(90000)
+    
+    for i in 0..<remoteManifest.masterChunks {
+      let chunkURL = URL(string: "\(baseURL)/MTG_Hashes_Master_\(i).lzfse")!
+      
+      if let (compressedData, response) = try? await URLSession.shared.data(from: chunkURL),
+         let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 {
+        
+        let decompressedData = try (compressedData as NSData).decompressed(using: .lzfse) as Data
+        if let chunkDict = try PropertyListSerialization.propertyList(from: decompressedData, options: [], format: nil) as? [String: Data] {
+          masterDictionary.merge(chunkDict) { (current, _) in current }
+        }
+      } else {
+        throw SyncError.databaseFetchFailed
+      }
+    }
+    return masterDictionary
+  }
+  
+  private nonisolated func downloadAndMergePatches(localVersion: Int, remoteVersion: Int) async throws -> [String: Data] {
+    // 1. Load current master into RAM
+    let localCompressed = try await Data(contentsOf: self.localDatabaseURL)
+    let localDecompressed = (try? (localCompressed as NSData).decompressed(using: .lzfse) as Data) ?? localCompressed
+    guard var masterDictionary = try PropertyListSerialization.propertyList(from: localDecompressed, options: [], format: nil) as? [String: Data] else {
+      throw SyncError.decodeFailed
+    }
+    
+    // 2. Download missing sequential patches
+    for patchNumber in (localVersion + 1)...remoteVersion {
+      let patchURL = URL(string: "\(baseURL)/patch_\(patchNumber).lzfse")!
+      
+      if let (patchCompressed, response) = try? await URLSession.shared.data(from: patchURL),
+         let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 {
+        
+        let patchDecompressed = try (patchCompressed as NSData).decompressed(using: .lzfse) as Data
+        if let patchDict = try PropertyListSerialization.propertyList(from: patchDecompressed, options: [], format: nil) as? [String: Data] {
+          // Merge new vectors (overwrites if ID already exists)
+          masterDictionary.merge(patchDict) { (_, new) in new }
+        }
+      }
+    }
+    return masterDictionary
+  }
 }
 
-public struct MatchResult: Sendable {
-  let id: String
-  let distance: Int
-}
+// MARK: - 3. TCA Dependency Injection
 
 public extension DependencyValues {
   var cardImageHashSyncManager: any CardImageHashSyncManagable {
@@ -153,3 +335,8 @@ public enum CardImageHashSyncManagerKey: DependencyKey {
   public static let previewValue: any CardImageHashSyncManagable = CardImageHashSyncManager()
   public static let testValue: any CardImageHashSyncManagable = CardImageHashSyncManager()
 }
+
+// MARK: - 4. Tuist Utilities
+
+/// A dummy class used strictly to locate the framework bundle in memory for Tuist resource unpacking.
+private class BundleFinder {}

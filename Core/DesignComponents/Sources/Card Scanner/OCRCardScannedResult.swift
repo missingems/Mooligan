@@ -1,3 +1,4 @@
+import Vision
 import UIKit
 
 public struct OCRCardScannedResult: Equatable, Sendable {
@@ -25,6 +26,6 @@ public struct OCRCardScannedResult: Equatable, Sendable {
   }
 }
 
-public struct CardImageResult: Equatable, Sendable {
-  public let phHash: UInt64
+public struct ScannedImage: Equatable, @unchecked Sendable {
+  public let value: CGImage
 }

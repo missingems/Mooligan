@@ -18,7 +18,7 @@ let project = Project(
       bundleId: "com.missingems.Mooligan.Networking",
       infoPlist: .default,
       sources: ["Sources/**"],
-      resources: [],
+      resources: ["Resources/**"],
       dependencies: [
         .external(name: "ScryfallKit"),
         .project(target: "Featurist", path: "../../Core/Featurist"),
