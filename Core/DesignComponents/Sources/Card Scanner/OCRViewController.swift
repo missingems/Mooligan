@@ -3,7 +3,9 @@ import Vision
 @preconcurrency import AVFoundation
 
 final class OCRViewController: UIViewController {
+  var isScanningPaused = false
   var didDetectResult: ((ScannedImage) -> Void)?
+  var didUpdateTrackingCorners: ((QuadCorners?) -> Void)?
   
   private let captureSession = AVCaptureSession()
   private var previewLayer: AVCaptureVideoPreviewLayer!
@@ -50,7 +52,6 @@ final class OCRViewController: UIViewController {
   }
 }
 
-// MARK: - Setup
 extension OCRViewController {
   private func setupCamera() {
     guard
@@ -68,9 +69,15 @@ extension OCRViewController {
       self?.handleCorners(corners)
     }
     
-    captureDelegate.onDetectCard = { [weak self] result in
-      guard let self else { return }
-      self.didDetectResult?(result)
+    captureDelegate.onDetectCard = { [weak self] image, corners in
+      guard let self, !self.isScanningPaused else { return }
+      let points = self.convertToScreenPoints(corners)
+      let minX = points.map(\.x).min() ?? 0
+      let maxX = points.map(\.x).max() ?? 0
+      let minY = points.map(\.y).min() ?? 0
+      let maxY = points.map(\.y).max() ?? 0
+      let rect = CGRect(x: minX, y: minY, width: maxX - minX, height: maxY - minY)
+      self.didDetectResult?(ScannedImage(value: image, bounds: rect))
     }
     
     let videoOutput = AVCaptureVideoDataOutput()
@@ -115,15 +122,26 @@ extension OCRViewController {
 
 extension OCRViewController {
   private func handleCorners(_ corners: VNRectangleObserver.Corners?) {
+    guard !isScanningPaused else { return }
+    
     DispatchQueue.main.async { [weak self] in
       guard let self else { return }
       
       guard let corners else {
+        self.didUpdateTrackingCorners?(nil)
         self.scheduleFadeOut()
         return
       }
       
       let points = self.convertToScreenPoints(corners)
+      
+      let quad = QuadCorners(
+        topLeft: points[0],
+        topRight: points[1],
+        bottomRight: points[2],
+        bottomLeft: points[3]
+      )
+      self.didUpdateTrackingCorners?(quad)
       
       guard self.isMagicTheGatheringRatio(points) else {
         self.scheduleFadeOut()
@@ -168,9 +186,7 @@ extension OCRViewController {
     device.unlockForConfiguration()
     lastFocusTime = now
   }
-}
-
-extension OCRViewController {
+  
   private func convertToScreenPoints(_ corners: VNRectangleObserver.Corners) -> [CGPoint] {
     let rawPoints = [corners.topLeft, corners.topRight, corners.bottomRight, corners.bottomLeft]
       .map { point in
@@ -178,14 +194,11 @@ extension OCRViewController {
           fromCaptureDevicePoint: CGPoint(x: 1.0 - point.y, y: 1.0 - point.x)
         )
       }
-    
     return Self.sortedCorners(rawPoints)
   }
   
   private static func sortedCorners(_ points: [CGPoint]) -> [CGPoint] {
-    guard points.count == 4 else {
-      return points
-    }
+    guard points.count == 4 else { return points }
     
     let centerX = points.map(\.x).reduce(0, +) / 4
     let centerY = points.map(\.y).reduce(0, +) / 4
@@ -349,11 +362,9 @@ extension OCRViewController {
   private func fadeIn() {
     isOverlayVisible = true
     let animation = opacityAnimation(from: 0, to: 1.0, duration: 0.2)
-    
     dimmingLayer.opacity = 1
     shadowCornerLayer.opacity = 1
     yellowCornerLayer.opacity = 1
-    
     dimmingLayer.add(animation, forKey: "fadeIn")
     shadowCornerLayer.add(animation.copy() as! CABasicAnimation, forKey: "fadeIn")
     yellowCornerLayer.add(animation.copy() as! CABasicAnimation, forKey: "fadeIn")
@@ -379,7 +390,6 @@ extension OCRViewController {
     shadowCornerLayer.opacity = 1
     yellowCornerLayer.opacity = 1
     CATransaction.commit()
-    
     dimmingLayer.removeAnimation(forKey: "fadeOut")
     shadowCornerLayer.removeAnimation(forKey: "fadeOut")
     yellowCornerLayer.removeAnimation(forKey: "fadeOut")
@@ -387,7 +397,6 @@ extension OCRViewController {
   
   private func executeFadeOut() {
     isOverlayVisible = false
-    
     let animation = opacityAnimation(from: 1.0, to: 0, duration: fadeOutDuration)
     animation.timingFunction = CAMediaTimingFunction(name: .easeIn)
     
@@ -405,7 +414,6 @@ extension OCRViewController {
     dimmingLayer.opacity = 0
     shadowCornerLayer.opacity = 0
     yellowCornerLayer.opacity = 0
-    
     dimmingLayer.add(animation, forKey: "fadeOut")
     shadowCornerLayer.add(animation.copy() as! CABasicAnimation, forKey: "fadeOut")
     yellowCornerLayer.add(animation.copy() as! CABasicAnimation, forKey: "fadeOut")
@@ -421,29 +429,23 @@ extension OCRViewController {
     animation.isRemovedOnCompletion = false
     return animation
   }
-}
-
-extension OCRViewController {
+  
   private func isMagicTheGatheringRatio(_ points: [CGPoint]) -> Bool {
     guard points.count == 4 else { return false }
-    
     let topLeft = points[0], topRight = points[1], bottomRight = points[2], bottomLeft = points[3]
     
     let topWidth = hypot(topRight.x - topLeft.x, topRight.y - topLeft.y)
     let bottomWidth = hypot(bottomRight.x - bottomLeft.x, bottomRight.y - bottomLeft.y)
-    
     let leftHeight = hypot(bottomLeft.x - topLeft.x, bottomLeft.y - topLeft.y)
     let rightHeight = hypot(bottomRight.x - topRight.x, bottomRight.y - topRight.y)
     
     let averageWidth = (topWidth + bottomWidth) / 2.0
     let averageHeight = (leftHeight + rightHeight) / 2.0
-    
     guard averageWidth > 0, averageHeight > 0 else { return false }
     
     let ratio = max(averageWidth, averageHeight) / min(averageWidth, averageHeight)
     let targetRatio: CGFloat = 88.0 / 63.0
     let tolerance: CGFloat = 0.15
-    
     return abs(ratio - targetRatio) <= tolerance
   }
 }

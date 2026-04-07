@@ -5,7 +5,7 @@ import UIKit
 
 final class OCRCaptureDelegate: NSObject, @unchecked Sendable {
   var onDrawBox: ((VNRectangleObserver.Corners?) -> Void)?
-  var onDetectCard: ((ScannedImage) -> Void)?
+  var onDetectCard: ((CGImage, VNRectangleObserver.Corners) -> Void)?
   
   private var isProcessing = false
   private let ciContext = CIContext(options: [.cacheIntermediates: false])
@@ -15,44 +15,12 @@ final class OCRCaptureDelegate: NSObject, @unchecked Sendable {
     init(_ value: CVImageBuffer) { self.value = value }
   }
   
-  private func processOCR(on cardImage: CGImage?) {
+  private func processOCR(on cardImage: CGImage?, corners: VNRectangleObserver.Corners) {
     guard let cardImage else { return }
-    
     let callback = onDetectCard
     DispatchQueue.main.async {
-      callback?(
-        ScannedImage(value: cardImage)
-      )
+      callback?(cardImage, corners)
     }
-  }
-  
-  private func parseSetAndCode(_ strings: [String]) -> (set: String, code: String)? {
-    let fullText = strings.joined(separator: " ")
-    let words = fullText.components(separatedBy: .whitespaces)
-    
-    var code = ""
-    var set = ""
-    
-    for word in words {
-      let cleaned = word.trimmingCharacters(in: CharacterSet(charactersIn: "•.,"))
-      
-      if set.isEmpty, cleaned.range(of: "^[A-Z][A-Z0-9]{2,3}$", options: .regularExpression) != nil {
-        set = cleaned
-      }
-      
-      if code.isEmpty {
-        let parts = cleaned.components(separatedBy: "/")
-        if let firstPart = parts.first, firstPart.range(of: "^\\d{3,4}$", options: .regularExpression) != nil {
-          code = firstPart
-        }
-      }
-    }
-    
-    if set.isEmpty || code.isEmpty {
-      return nil
-    }
-    
-    return (set, code)
   }
   
   private func extractAndFlattenCard(
@@ -114,7 +82,8 @@ extension OCRCaptureDelegate: AVCaptureVideoDataOutputSampleBufferDelegate {
         on: extractAndFlattenCard(
           from: sendableBuffer.value,
           observation: corners
-        )
+        ),
+        corners: corners
       )
     }
   }

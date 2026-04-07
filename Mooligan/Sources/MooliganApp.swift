@@ -63,6 +63,13 @@ struct RootView: View {
                 action: \.scan
               )
             )
+            // 1. Force the tab items (icons/text) to use dark mode (white)
+            .toolbarColorScheme(.dark, for: .tabBar)
+            // 2. Force the tab bar background to be black
+            .toolbarBackground(.black, for: .tabBar)
+            // 3. Ensure the background stays visible, preventing it from
+            // becoming transparent against the camera view
+            .toolbarBackground(.visible, for: .tabBar)
           }
         }
       }

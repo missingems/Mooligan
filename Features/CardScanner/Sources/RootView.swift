@@ -1,139 +1,97 @@
+import SwiftUI
 import DesignComponents
-import Networking
+import NukeUI
 import ScryfallKit
 import ComposableArchitecture
-import SwiftUI
 
 public struct RootView: View {
   @Bindable var store: StoreOf<CardScannerFeature>
-  @Namespace private var morphSpace
   
-  // Local state for the foil menu
-  @State private var selectedFinish: String = "Non-Foil"
+  private let logicalCardSize = CGSize(width: 250, height: 350)
+  private let finalMorphedSize = CGSize(width: 320, height: 448)
   
   public var body: some View {
     NavigationView {
-      ZStack(alignment: .bottom) {
-        OCRView { result in
-          store.send(.didScan(result))
-        }
-        .background(.white)
-        .ignoresSafeArea(.all)
-        
-        LinearGradient(
-          colors: [.black.opacity(0.7), .clear],
-          startPoint: .bottom,
-          endPoint: .top
-        )
-        .ignoresSafeArea()
-        .frame(height: 230, alignment: .bottom)
-        .opacity(store.dataSource?.cardDetails.isEmpty == false ? 1 : 0)
-        
-        VStack(spacing: 8) {
-          if let cardDetails = store.dataSource?.cardDetails, !cardDetails.isEmpty {
-            let cardWidth: CGFloat = 183
-            let horizontalPadding = (UIScreen.main.bounds.width - cardWidth) / 2
+      GeometryReader { geo in
+        ZStack(alignment: .topLeading) {
+          OCRView(
+            isMorphed: store.isMorphed,
+            onValidatedScan: { result in store.send(.didScan(result)) },
+            onTrackingUpdate: { corners in store.send(.trackingCornersUpdated(corners)) }
+          )
+          .background(.black)
+          .ignoresSafeArea(.all)
+          
+          if let card = store.scrolledCard, let liveCorners = store.latestTrackedCorners {
+            let targetCorners = store.isMorphed ? uprightCorners(in: geo) : liveCorners
             
-            ScrollView(.horizontal, showsIndicators: false) {
-              LazyHStack(spacing: 8.0) {
-                ForEach(Array(zip(cardDetails, cardDetails.indices)), id: \.0.card.id) { value in
-                  let cardInfo = value.0
-                  
-                  Button(
-                    action: {
-                      // Optional tap action
-                    }, label: {
-                      CardView(
-                        displayableCard: cardInfo.displayableCardImage,
-                        priceVisibility: .hidden,
-                        shouldShowShadow: true
-                      )
-                    }
-                  )
-                  .frame(width: cardWidth)
-                  .buttonStyle(.sinkableButtonStyle)
-                  .id(cardInfo.card.id)
-                  .scrollTransition(
-                    topLeading: .interactive,
-                    bottomTrailing: .interactive,
-                    axis: .horizontal
-                  ) { effect, phase in
-                    let opacity = 1.0 - abs(phase.value) * 0.618
-                    return effect.opacity(opacity)
+            LazyImage(url: URL(string: card.imageUris?.normal ?? "")) { state in
+              if let image = state.image {
+                image
+                  .resizable()
+                  .aspectRatio(contentMode: .fill)
+                  .onAppear {
+                    store.send(
+                      .imageDownloadCompleted,
+                      animation: .spring(response: 0.6, dampingFraction: 0.8)
+                    )
                   }
-                }
+              } else if state.error != nil {
+                Color.red.opacity(0.5)
+              } else {
+                Color.clear
               }
-              .scrollTargetLayout()
             }
-            .scrollPosition(id: $store.scrolledCardID)
-            .scrollTargetBehavior(.viewAligned)
-            .safeAreaPadding(.horizontal, horizontalPadding)
-            .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
-            .scrollClipDisabled(true)
-            .fixedSize(horizontal: false, vertical: true)
-            .transition(
-              .asymmetric(
-                insertion: .scale(scale: 0.01, anchor: .bottom).combined(with: .opacity),
-                removal: .scale(scale: 0.01, anchor: .bottom).combined(with: .opacity)
-              )
+            .frame(width: logicalCardSize.width, height: logicalCardSize.height)
+            .projected(to: targetCorners, logicalSize: logicalCardSize)
+            .shadow(
+              color: .black.opacity(store.isMorphed ? 0.6 : 0.0),
+              radius: store.isMorphed ? 30 : 0,
+              y: store.isMorphed ? 20 : 0
             )
           }
           
-          GlassEffectContainer {
-            HStack(spacing: 5.0) {
-              if let card = store.scrolledCard {
-                Text(card.set.uppercased())
-                  .font(.subheadline)
-                  .fontWidth(.condensed)
-                  .frame(minHeight: 44.0)
-                  .padding(.horizontal, 16)
-                  .lineLimit(1)
-                  .glassEffect()
-                  .glassEffectID("left_pill", in: morphSpace)
-                
-                Text(card.name)
-                  .font(.headline)
-                  .frame(minHeight: 44.0)
-                  .padding(.horizontal, 16)
-                  .multilineTextAlignment(.center)
-                  .lineLimit(1)
-                  .glassEffect()
-                  .glassEffectID("main_pill", in: morphSpace)
-                
-                Menu {
-                  Button("Main Deck") { /* Add action */ }
-                  Button("Sideboard") { /* Add action */ }
-                  Button("Collection") { /* Add action */ }
-                } label: {
-                  Image(systemName: "plus")
-                    .frame(minHeight: 44.0)
-                    .padding(.horizontal, 16)
+          VStack {
+            Spacer()
+            HStack {
+              Spacer()
+              Button(action: {
+                if store.isMorphed {
+                  store.send(.resetScan, animation: .spring)
+                } else {
+                  print("Blank circle pressed")
                 }
-                .glassEffect(.regular.interactive())
-                .glassEffectID("add_to_pill", in: morphSpace)
-              } else {
-                Text("Scanning")
-                  .font(.subheadline)
-                  .frame(minHeight: 44.0)
-                  .padding(.horizontal, 24)
-                  .glassEffect()
-                  .glassEffectID("main_pill", in: morphSpace)
+              }) {
+                Circle().fill(.white)
+                  .frame(width: 83, height: 83)
               }
+              .padding(.all, 6)
+              Spacer()
             }
+            .padding(.bottom, 34)
           }
-          .animation(.default, value: store.scrolledCardID)
+          .zIndex(10)
         }
-        .animation(.spring(response: 0.45, dampingFraction: 0.7), value: store.dataSource != nil)
-        .padding(.bottom, 13.0)
       }
-      .task {
-        store.send(.syncCardImageHashDatabase)
-      }
+      .task { store.send(.syncCardImageHashDatabase) }
     }
+  }
+  
+  private func uprightCorners(in geo: GeometryProxy) -> QuadCorners {
+    let midX = geo.size.width / 2
+    let midY = geo.size.height / 2
+    let halfW = finalMorphedSize.width / 2
+    let halfH = finalMorphedSize.height / 2
+    
+    return QuadCorners(
+      topLeft: CGPoint(x: midX - halfW, y: midY - halfH),
+      topRight: CGPoint(x: midX + halfW, y: midY - halfH),
+      bottomRight: CGPoint(x: midX + halfW, y: midY + halfH),
+      bottomLeft: CGPoint(x: midX - halfW, y: midY + halfH)
+    )
   }
   
   public init(store: StoreOf<CardScannerFeature>) {
     self.store = store
   }
 }
-

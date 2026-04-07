@@ -1,17 +1,26 @@
 import SwiftUI
 
 public struct OCRView: View {
-  var onUpdate: (ScannedImage) -> Void
+  var isMorphed: Bool
+  var onValidatedScan: (ScannedImage) -> Void
+  var onTrackingUpdate: (QuadCorners?) -> Void
   
   public init(
-    onUpdate: @escaping (ScannedImage) -> Void
+    isMorphed: Bool,
+    onValidatedScan: @escaping (ScannedImage) -> Void,
+    onTrackingUpdate: @escaping (QuadCorners?) -> Void
   ) {
-    self.onUpdate = onUpdate
+    self.isMorphed = isMorphed
+    self.onValidatedScan = onValidatedScan
+    self.onTrackingUpdate = onTrackingUpdate
   }
   
   public var body: some View {
-    OCRViewControllerRepresentable(
-      onValidatedScan: onUpdate
+    OCRViewRepresentable(
+      isPaused: isMorphed,
+      onValidatedScan: onValidatedScan,
+      onTrackingUpdate: onTrackingUpdate
     )
   }
 }
+

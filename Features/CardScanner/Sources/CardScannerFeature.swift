@@ -20,15 +20,24 @@ private let kRequiredConfirmationCount: Int = 3
     Reduce { state, action in
       switch action {
       case .binding:
-        // We no longer need to manually intercept and update the scrolled card
-        // because we made it a computed property in the State below.
+        return .none
+        
+      case let .trackingCornersUpdated(corners):
+        state.latestTrackedCorners = corners
+        return .none
+        
+      case .imageDownloadCompleted:
+        state.isMorphed = true
+        return .none
+        
+      case .resetScan:
+        state.scrolledCardID = nil
+        state.isMorphed = false
+        state.dataSource = nil
         return .none
         
       case let .didScan(result):
-        guard !state.isProcessingFrame else {
-          return .none
-        }
-        
+        guard !state.isProcessingFrame else { return .none }
         state.isProcessingFrame = true
         
         return .run { send in
@@ -88,20 +97,14 @@ private let kRequiredConfirmationCount: Int = 3
         
       case let .updateMatches(result):
         state.dataSource = result
-        
         if let firstCardID = result.cardDetails.first?.card.id {
           state.scrolledCardID = firstCardID
         }
-        
         return .none
         
       case .syncCardImageHashDatabase:
         return .run { send in
           await imageHashManager.sync()
-          let a: (String, Float) = (id: "83293ff4-0841-4f5e-8d59-1ae29a62c890", distance: 0.0)
-          await send(.internalMatchesFound([a]))
-          await send(.internalMatchesFound([a]))
-          await send(.internalMatchesFound([a]))
         }
       }
     }
@@ -110,8 +113,6 @@ private let kRequiredConfirmationCount: Int = 3
   public init() {}
 }
 
-// MARK: - State, Action, SyncStatus
-
 public extension CardScannerFeature {
   @ObservableState struct State: Sendable, Equatable {
     var scannedResult: OCRCardScannedResult?
@@ -119,11 +120,10 @@ public extension CardScannerFeature {
     var queryWithSetCode: SearchQuery?
     var queryWithoutSetCode: SearchQuery?
     
-    // The ID bound to the ScrollView
+    var latestTrackedCorners: QuadCorners? = nil
     var scrolledCardID: UUID?
+    var isMorphed: Bool = false
     
-    // 💡 FIX: Make scrolledCard a computed property!
-    // It will now safely and automatically derive the correct card the exact millisecond the user scrolls.
     var scrolledCard: Card? {
       guard let id = scrolledCardID, let details = dataSource?.cardDetails else { return nil }
       return details.first(where: { $0.card.id == id })?.card
@@ -142,10 +142,13 @@ public extension CardScannerFeature {
   
   enum Action: Sendable, BindableAction {
     case binding(BindingAction<State>)
+    case trackingCornersUpdated(QuadCorners?)
     case didScan(ScannedImage)
     case internalMatchesFound([(id: String, distance: Float)])
     case updateMatches(CardDataSource)
     case syncCardImageHashDatabase
+    case imageDownloadCompleted
+    case resetScan
   }
   
   enum SyncStatus: Equatable, Sendable {
