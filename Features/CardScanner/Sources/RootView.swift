@@ -44,11 +44,6 @@ public struct RootView: View {
             }
             .frame(width: logicalCardSize.width, height: logicalCardSize.height)
             .projected(to: targetCorners, logicalSize: logicalCardSize)
-            .shadow(
-              color: .black.opacity(store.isMorphed ? 0.6 : 0.0),
-              radius: store.isMorphed ? 30 : 0,
-              y: store.isMorphed ? 20 : 0
-            )
           }
           
           VStack {
