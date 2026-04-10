@@ -1,6 +1,6 @@
 import SwiftUI
 import DesignComponents
-import NukeUI
+import Nuke
 import ScryfallKit
 import ComposableArchitecture
 
@@ -20,31 +20,26 @@ public struct RootView: View {
             onTrackingUpdate: { corners in store.send(.trackingCornersUpdated(corners)) }
           )
           .background(.black)
-          .ignoresSafeArea(.all)
           
-          if let card = store.scrolledCard, let liveCorners = store.latestTrackedCorners {
-            let targetCorners = store.isMorphed ? uprightCorners(in: geo) : liveCorners
-            
-            LazyImage(url: URL(string: card.imageUris?.normal ?? "")) { state in
-              if let image = state.image {
-                image
-                  .resizable()
-                  .aspectRatio(contentMode: .fill)
-                  .onAppear {
-                    store.send(
-                      .imageDownloadCompleted,
-                      animation: .spring(response: 0.6, dampingFraction: 0.8)
-                    )
+          ScrollView(.horizontal) {
+            HStack(spacing: 0) {
+              if let card = store.scrolledCard, let liveCorners = store.latestTrackedCorners {
+                let targetCorners = store.isMorphed ? uprightCorners(in: geo) : liveCorners
+                
+                if let sendableImage = store.downloadedCardImage {
+                  ZStack(alignment: .topLeading) {
+                    CardView(displayableCard: card.displayableCardImage, priceVisibility: .hidden)
+                      .frame(width: logicalCardSize.width, height: logicalCardSize.height)
+                      .projected(to: liveCorners, logicalSize: logicalCardSize)
                   }
-              } else if state.error != nil {
-                Color.red.opacity(0.5)
-              } else {
-                Color.clear
+                  // 4. Force this "page" in the ScrollView to match the exact screen size
+                  .frame(width: geo.size.width, height: geo.size.height, alignment: .topLeading)
+                  
+                }
               }
             }
-            .frame(width: logicalCardSize.width, height: logicalCardSize.height)
-            .projected(to: targetCorners, logicalSize: logicalCardSize)
           }
+          .frame(width: geo.size.width, height: geo.size.height)
           
           VStack {
             Spacer()
@@ -68,6 +63,7 @@ public struct RootView: View {
           .zIndex(10)
         }
       }
+      .ignoresSafeArea(.all)
       .task { store.send(.syncCardImageHashDatabase) }
     }
   }

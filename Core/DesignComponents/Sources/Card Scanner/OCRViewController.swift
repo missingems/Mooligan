@@ -1,6 +1,7 @@
 import UIKit
 import Vision
 @preconcurrency import AVFoundation
+import CoreImage
 
 final class OCRViewController: UIViewController {
   var isScanningPaused = false
@@ -30,30 +31,54 @@ final class OCRViewController: UIViewController {
   private var lastFocusTime: Date = .distantPast
   private let focusThrottleInterval: TimeInterval = 1.5
   
+  private let previewImageView = UIImageView()
+  
+#if targetEnvironment(simulator)
+  private var simulatorImageView: UIImageView!
+  private var simulatorTimer: Timer?
+  private var simulatorVisionObservation: VNRectangleObservation?
+  private let ciContext = CIContext(options: [.cacheIntermediates: false])
+#endif
+  
   override func viewDidLoad() {
     super.viewDidLoad()
     setupCamera()
     setupOverlayLayers()
+    setupPreviewImageView()
   }
   
   override func viewDidAppear(_ animated: Bool) {
     super.viewDidAppear(animated)
+#if targetEnvironment(simulator)
+    startSimulatorLoop()
+#else
     sessionQueue.async { [captureSession] in
       captureSession.startRunning()
     }
+#endif
   }
   
   override func viewDidDisappear(_ animated: Bool) {
     super.viewDidDisappear(animated)
+#if targetEnvironment(simulator)
+    simulatorTimer?.invalidate()
+    simulatorTimer = nil
+#else
     sessionQueue.async { [captureSession] in
       captureSession.stopRunning()
     }
+#endif
     fadeOutWorkItem?.cancel()
   }
 }
 
 extension OCRViewController {
   private func setupCamera() {
+#if targetEnvironment(simulator)
+    setupSimulatorEnvironment()
+    return
+#endif
+    
     guard
       let backCamera = AVCaptureDevice.default(for: .video),
       let input = try? AVCaptureDeviceInput(device: backCamera)
@@ -71,6 +96,9 @@ extension OCRViewController {
     
     captureDelegate.onDetectCard = { [weak self] image, corners in
       guard let self, !self.isScanningPaused else { return }
+      
+      self.previewImageView.image = UIImage(cgImage: image)
+      
       let points = self.convertToScreenPoints(corners)
       let minX = points.map(\.x).min() ?? 0
       let maxX = points.map(\.x).max() ?? 0
@@ -118,7 +146,162 @@ extension OCRViewController {
     view.layer.addSublayer(shadowCornerLayer)
     view.layer.addSublayer(yellowCornerLayer)
   }
+  
+  private func setupPreviewImageView() {
+    previewImageView.translatesAutoresizingMaskIntoConstraints = false
+    previewImageView.contentMode = .scaleAspectFit
+    previewImageView.backgroundColor = UIColor.black.withAlphaComponent(0.5)
+    previewImageView.layer.borderColor = UIColor.green.cgColor
+    previewImageView.layer.borderWidth = 2
+    previewImageView.layer.cornerRadius = 8
+    previewImageView.clipsToBounds = true
+    view.addSubview(previewImageView)
+    
+    NSLayoutConstraint.activate([
+      previewImageView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -16),
+      previewImageView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 16),
+      previewImageView.widthAnchor.constraint(equalToConstant: 80), // Approx 2.5:3.5 MTG Card Ratio
+      previewImageView.heightAnchor.constraint(equalToConstant: 112)
+    ])
+  }
 }
+
+// MARK: - Simulator Mock using Actual Vision Detection & Cropping
+#if targetEnvironment(simulator)
+extension OCRViewController {
+  private func setupSimulatorEnvironment() {
+    // Looks for "simulator_card" in your assets. Falls back to generating one if missing.
+    let mockImage = DesignComponentsAsset.simulatorCard.image
+    
+    simulatorImageView = UIImageView(image: mockImage)
+    simulatorImageView.contentMode = .scaleAspectFill
+    simulatorImageView.frame = view.bounds
+    view.layer.insertSublayer(simulatorImageView.layer, at: 0)
+    
+    // Process the static image exactly like a camera frame
+    guard let cgImage = mockImage.cgImage else { return }
+    let request = VNDetectRectanglesRequest { [weak self] req, _ in
+      self?.simulatorVisionObservation = req.results?.first as? VNRectangleObservation
+    }
+    // Matching typical card finding thresholds
+    request.minimumSize = 0.2
+    request.maximumObservations = 1
+    request.minimumConfidence = 0.5
+    
+    try? VNImageRequestHandler(cgImage: cgImage, options: [:]).perform([request])
+  }
+  
+  private func startSimulatorLoop() {
+    simulatorTimer?.invalidate()
+    simulatorTimer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true) { [weak self] _ in
+      self?.simulateScanTick()
+    }
+  }
+  
+  private func simulateScanTick() {
+    guard !isScanningPaused, let image = simulatorImageView.image else { return }
+    
+    // If Vision didn't find anything in the static image, act like empty frame
+    guard let observation = simulatorVisionObservation else {
+      self.didUpdateTrackingCorners?(nil)
+      self.scheduleFadeOut()
+      return
+    }
+    
+    // 1. Calculate UI Overlay Mappings
+    let viewSize = self.view.bounds.size
+    let imageSize = image.size
+    let scale = max(viewSize.width / imageSize.width, viewSize.height / imageSize.height)
+    let scaledImageSize = CGSize(width: imageSize.width * scale, height: imageSize.height * scale)
+    let offsetX = (viewSize.width - scaledImageSize.width) / 2.0
+    let offsetY = (viewSize.height - scaledImageSize.height) / 2.0
+    
+    func convertToViewSpace(_ point: CGPoint) -> CGPoint {
+      let x = point.x * scaledImageSize.width + offsetX
+      let y = (1.0 - point.y) * scaledImageSize.height + offsetY
+      return CGPoint(x: x, y: y)
+    }
+    
+    let rawPoints = [
+      convertToViewSpace(observation.topLeft),
+      convertToViewSpace(observation.topRight),
+      convertToViewSpace(observation.bottomRight),
+      convertToViewSpace(observation.bottomLeft)
+    ]
+    let points = Self.sortedCorners(rawPoints)
+    
+    let quad = QuadCorners(
+      topLeft: points[0],
+      topRight: points[1],
+      bottomRight: points[2],
+      bottomLeft: points[3]
+    )
+    
+    self.didUpdateTrackingCorners?(quad)
+    
+    guard self.isMagicTheGatheringRatio(points) else {
+      self.scheduleFadeOut()
+      return
+    }
+    
+    self.cancelFadeOut()
+    
+    let newDimmingPath = self.buildDimmingPath(for: points)
+    let newCornerPath = self.buildCornersPath(for: points)
+    
+    if self.isOverlayVisible {
+      self.snapPath(dimming: newDimmingPath, corners: newCornerPath)
+    } else {
+      self.setPath(dimming: newDimmingPath, corners: newCornerPath)
+      self.fadeIn()
+    }
+    
+    // 2. Crop & Flatten the Card (Emulating OCRCaptureDelegate)
+    guard let ciImage = CIImage(image: image) else { return }
+    let imgSize = ciImage.extent.size
+    
+    let filter = CIFilter(name: "CIPerspectiveCorrection")
+    filter?.setValue(ciImage, forKey: kCIInputImageKey)
+    
+    // Vision and CoreImage both use origin at bottom-left, mapped 0...1
+    filter?.setValue(CIVector(cgPoint: CGPoint(x: observation.topLeft.x * imgSize.width, y: observation.topLeft.y * imgSize.height)), forKey: "inputTopLeft")
+    filter?.setValue(CIVector(cgPoint: CGPoint(x: observation.topRight.x * imgSize.width, y: observation.topRight.y * imgSize.height)), forKey: "inputTopRight")
+    filter?.setValue(CIVector(cgPoint: CGPoint(x: observation.bottomLeft.x * imgSize.width, y: observation.bottomLeft.y * imgSize.height)), forKey: "inputBottomLeft")
+    filter?.setValue(CIVector(cgPoint: CGPoint(x: observation.bottomRight.x * imgSize.width, y: observation.bottomRight.y * imgSize.height)), forKey: "inputBottomRight")
+    
+    guard let output = filter?.outputImage,
+          let croppedCGImage = ciContext.createCGImage(output, from: output.extent) else {
+      return
+    }
+    
+    self.previewImageView.image = UIImage(cgImage: croppedCGImage)
+    
+    let minX = points.map(\.x).min() ?? 0
+    let maxX = points.map(\.x).max() ?? 0
+    let minY = points.map(\.y).min() ?? 0
+    let maxY = points.map(\.y).max() ?? 0
+    let rect = CGRect(x: minX, y: minY, width: maxX - minX, height: maxY - minY)
+    
+    // Pass the flattened CGImage exactly as the live camera delegate does
+    self.didDetectResult?(ScannedImage(value: croppedCGImage, bounds: rect))
+  }
+  
+  private func generateFallbackImage() -> UIImage {
+    let renderer = UIGraphicsImageRenderer(size: CGSize(width: 1080, height: 1920))
+    return renderer.image { ctx in
+      UIColor.black.setFill()
+      ctx.fill(CGRect(x: 0, y: 0, width: 1080, height: 1920))
+      
+      UIColor.lightGray.setFill() // High contrast so Vision catches it reliably
+      let width: CGFloat = 800
+      let height: CGFloat = width * (88.0 / 63.0)
+      let rect = CGRect(x: (1080 - width) / 2, y: (1920 - height) / 2, width: width, height: height)
+      let path = UIBezierPath(roundedRect: rect, cornerRadius: 40)
+      path.fill()
+    }
+  }
+}
+#endif
 
 extension OCRViewController {
   private func handleCorners(_ corners: VNRectangleObserver.Corners?) {

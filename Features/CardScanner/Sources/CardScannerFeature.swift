@@ -3,16 +3,26 @@ import ScryfallKit
 import DesignComponents
 import Networking
 import Foundation
+import Nuke
+import UIKit
 
 private let kMinConfidenceDistance: Float = 0.35
 private let kSameCardDistanceTolerance: Float = 0.08
 private let kRequiredConfirmationCount: Int = 3
 
+public struct SendableImage: @unchecked Sendable, Equatable {
+  public let uiImage: UIImage
+  public init(_ uiImage: UIImage) { self.uiImage = uiImage }
+}
+
 @Reducer public struct CardScannerFeature: Sendable {
   @Dependency(\.cardQueryRequestClient) var client
   @Dependency(\.cardImageHashSyncManager) var imageHashManager
   
-  private enum CancelID { case networkQuery }
+  private enum CancelID {
+    case networkQuery
+    case imageDownload
+  }
   
   public var body: some ReducerOf<Self> {
     BindingReducer()
@@ -26,16 +36,18 @@ private let kRequiredConfirmationCount: Int = 3
         state.latestTrackedCorners = corners
         return .none
         
-      case .imageDownloadCompleted:
-        state.isMorphed = true
-        return .none
-        
       case .resetScan:
         state.scrolledCardID = nil
         state.isMorphed = false
         state.dataSource = nil
-        return .none
+        state.downloadedCardImage = nil
+        // Cancel any in-flight downloads or queries when resetting
+        return .merge(
+          .cancel(id: CancelID.networkQuery),
+          .cancel(id: CancelID.imageDownload)
+        )
         
+        // 1. Scan for card
       case let .didScan(result):
         guard !state.isProcessingFrame else { return .none }
         state.isProcessingFrame = true
@@ -46,6 +58,7 @@ private let kRequiredConfirmationCount: Int = 3
           await send(.internalMatchesFound(bestMatches))
         }
         
+        // 2. Found Card -> Verify internal matches
       case let .internalMatchesFound(matches):
         state.isProcessingFrame = false
         
@@ -100,6 +113,31 @@ private let kRequiredConfirmationCount: Int = 3
         if let firstCardID = result.cardDetails.first?.card.id {
           state.scrolledCardID = firstCardID
         }
+        
+        // 3. Download card here using Nuke ImagePipeline
+        if let card = state.scrolledCard,
+           let urlString = card.card.imageUris?.large,
+           let url = URL(string: urlString) {
+          return .run { send in
+            do {
+              let response = try await ImagePipeline.shared.image(for: url)
+              
+              // 4. Trigger action update with animation once downloaded
+              await send(
+                .imageDownloadCompleted(SendableImage(response))
+              )
+            } catch {
+              print("Image download failed: \(error)")
+            }
+          }
+          .cancellable(id: CancelID.imageDownload, cancelInFlight: true)
+        }
+        return .none
+        
+        // 4. Action updates the border position and saves the image
+      case let .imageDownloadCompleted(image):
+        state.downloadedCardImage = image
+        state.isMorphed = true
         return .none
         
       case .syncCardImageHashDatabase:
@@ -122,11 +160,12 @@ public extension CardScannerFeature {
     
     var latestTrackedCorners: QuadCorners? = nil
     var scrolledCardID: UUID?
+    var downloadedCardImage: SendableImage? = nil
     var isMorphed: Bool = false
     
-    var scrolledCard: Card? {
+    var scrolledCard: CardInfo? {
       guard let id = scrolledCardID, let details = dataSource?.cardDetails else { return nil }
-      return details.first(where: { $0.card.id == id })?.card
+      return details.first(where: { $0.card.id == id })
     }
     
     var lastQueriedMatchID: String? = nil
@@ -147,7 +186,7 @@ public extension CardScannerFeature {
     case internalMatchesFound([(id: String, distance: Float)])
     case updateMatches(CardDataSource)
     case syncCardImageHashDatabase
-    case imageDownloadCompleted
+    case imageDownloadCompleted(SendableImage)
     case resetScan
   }
   

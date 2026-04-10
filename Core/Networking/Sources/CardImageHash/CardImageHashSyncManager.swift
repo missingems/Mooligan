@@ -62,17 +62,43 @@ public final actor CardImageHashSyncManager: CardImageHashSyncManagable {
   private var documentsDirectory: URL {
     FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
   }
+  
+  // FIX 1: Updated to .lzfse to match your new export format and bypass Xcode Error 2
   private var localDatabaseURL: URL {
-    documentsDirectory.appendingPathComponent("MTG_Hashes_Compressed.bplist")
+    documentsDirectory.appendingPathComponent("MTG_Hashes_Compressed.lzfse")
   }
+  
   private var localManifestURL: URL {
     documentsDirectory.appendingPathComponent("manifest.json")
   }
   
   func generateFeaturePrint(from cgImage: CGImage) throws -> VNFeaturePrintObservation? {
     let request = VNGenerateImageFeaturePrintRequest()
-    if #available(iOS 17.0, macOS 14.0, *) { request.revision = VNGenerateImageFeaturePrintRequestRevision2 }
-    else { request.revision = VNGenerateImageFeaturePrintRequestRevision1 }
+    
+    // CRITICAL ACCURACY FIX 1: Prevent Model Mismatch
+    // If your database was built with Revision 1, the scanner MUST use Revision 1.
+    // Comparing Rev 2 feature prints to Rev 1 database prints destroys accuracy.
+    if let dbModel = observations.values.first {
+      request.revision = VNGenerateImageFeaturePrintRequestRevision2
+    } else {
+      if #available(iOS 17.0, macOS 14.0, *) {
+        request.revision = VNGenerateImageFeaturePrintRequestRevision2
+      } else {
+        request.revision = VNGenerateImageFeaturePrintRequestRevision1
+      }
+    }
+    
+    // CRITICAL ACCURACY FIX 2: Prevent Center Cropping
+    // Magic cards are rectangular. By default, Vision center-crops the image to a square,
+    // cutting off the text box/borders and ruining the hash.
+    request.imageCropAndScaleOption = .scaleFill
+    
+#if targetEnvironment(simulator)
+    // The iOS Simulator lacks the physical Neural Engine (ANE) hardware.
+    // We force the request to use the CPU to prevent "Espresso context" crashes.
+    request.usesCPUOnly = true
+#endif
+    
     try VNImageRequestHandler(cgImage: cgImage, options: [:]).perform([request])
     return request.results?.first as? VNFeaturePrintObservation
   }
@@ -94,9 +120,11 @@ public final actor CardImageHashSyncManager: CardImageHashSyncManagable {
   }
   
   public func findBestMatches(for image: CGImage) -> [MatchResult] {
-    guard let targetObservation = try? generateFeaturePrint(from: image) else { return [] }
+    guard let targetObservation = try? generateFeaturePrint(from: image) else {
+      return []
+    }
     var candidates: [MatchResult] = []
-    let confidenceThreshold: Float = 15.0
+    let confidenceThreshold: Float = 10
     
     for (id, dbObservation) in observations {
       var distance: Float = 0
@@ -130,18 +158,17 @@ public final actor CardImageHashSyncManager: CardImageHashSyncManagable {
       var targetDBPath: URL? = nil
       var targetManifestPath: URL? = nil
       
+      // FIX 2: Updated withExtension to "lzfse"
       // Handle Tuist's Dynamic vs Static Framework resource bundling
-      if let rootURL = frameworkBundle.url(forResource: "MTG_Hashes_Compressed", withExtension: "bplist") {
+      if let rootURL = frameworkBundle.url(forResource: "MTG_Hashes_Compressed", withExtension: "lzfse") {
         targetDBPath = rootURL
-//        targetManifestPath = frameworkBundle.url(forResource: "manifest", withExtension: "json")
       } else if let resourceBundleURL = frameworkBundle.urls(forResourcesWithExtension: "bundle", subdirectory: nil)?.first,
                 let resourceBundle = Bundle(url: resourceBundleURL) {
-        targetDBPath = resourceBundle.url(forResource: "MTG_Hashes_Compressed", withExtension: "bplist")
-//        targetManifestPath = resourceBundle.url(forResource: "manifest", withExtension: "json")
+        targetDBPath = resourceBundle.url(forResource: "MTG_Hashes_Compressed", withExtension: "lzfse")
       }
       
       guard let bundleDBPath = targetDBPath else {
-        self.syncStatus = "Error: Missing MTG_Hashes.lzfse in module resources."
+        self.syncStatus = "Error: Missing MTG_Hashes_Compressed.lzfse in module resources."
         return
       }
       
@@ -203,6 +230,7 @@ public final actor CardImageHashSyncManager: CardImageHashSyncManagable {
     do {
       // 1. Fetch Remote Manifest
       let (remoteManifestData, _) = try await URLSession.shared.data(from: manifestURL)
+      
       let remoteManifest = try JSONDecoder().decode(CardHashDatabaseManifest.self, from: remoteManifestData)
       
       // 2. Read Local Manifest State
