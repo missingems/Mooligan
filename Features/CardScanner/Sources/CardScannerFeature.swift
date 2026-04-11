@@ -15,6 +15,22 @@ public struct SendableImage: @unchecked Sendable, Equatable {
   public init(_ uiImage: UIImage) { self.uiImage = uiImage }
 }
 
+public enum ScannerStatus: Equatable, Sendable {
+  case loading
+  case scanning
+  case scanFound
+  case cardDetails(title: String, subtitle: String)
+  
+  public var displayTitle: String {
+    switch self {
+    case .loading: return "Loading..."
+    case .scanning: return "Scanning..."
+    case .scanFound: return "Scan Found!"
+    case let .cardDetails(title, _): return title
+    }
+  }
+}
+
 @Reducer public struct CardScannerFeature: Sendable {
   @Dependency(\.cardQueryRequestClient) var client
   @Dependency(\.cardImageHashSyncManager) var imageHashManager
@@ -22,6 +38,7 @@ public struct SendableImage: @unchecked Sendable, Equatable {
   private enum CancelID {
     case networkQuery
     case imageDownload
+    case variantsQuery
   }
   
   public var body: some ReducerOf<Self> {
@@ -41,14 +58,21 @@ public struct SendableImage: @unchecked Sendable, Equatable {
         state.isMorphed = false
         state.dataSource = nil
         state.downloadedCardImage = nil
-        // Cancel any in-flight downloads or queries when resetting
+        state.lastQueriedMatchID = nil
+        state.pendingMatchID = nil
+        state.pendingMatchCount = 0
+        state.isProcessingFrame = false
+        state.status = .scanning
+        
         return .merge(
           .cancel(id: CancelID.networkQuery),
-          .cancel(id: CancelID.imageDownload)
+          .cancel(id: CancelID.imageDownload),
+          .cancel(id: CancelID.variantsQuery)
         )
         
         // 1. Scan for card
       case let .didScan(result):
+        guard state.dataSource == nil else { return .none }
         guard !state.isProcessingFrame else { return .none }
         state.isProcessingFrame = true
         
@@ -65,20 +89,20 @@ public struct SendableImage: @unchecked Sendable, Equatable {
         guard let topMatch = matches.first else {
           state.pendingMatchID = nil
           state.pendingMatchCount = 0
+          if state.dataSource == nil { state.status = .scanning }
           return .none
         }
+        
+        if state.dataSource == nil { state.status = .scanFound }
         
         if state.lastQueriedMatchID == topMatch.id {
           state.pendingMatchCount += 1
           return .none
         }
-        
-        if let lastQueriedID = state.lastQueriedMatchID,
-           matches.prefix(3).contains(where: { $0.id == lastQueriedID }) {
+        if let lastQueriedID = state.lastQueriedMatchID, matches.prefix(3).contains(where: { $0.id == lastQueriedID }) {
           state.pendingMatchCount += 1
           return .none
         }
-        
         if state.pendingMatchID == topMatch.id {
           state.pendingMatchCount += 1
         } else {
@@ -87,10 +111,7 @@ public struct SendableImage: @unchecked Sendable, Equatable {
           state.lastTopMatchDistance = topMatch.distance
           return .none
         }
-        
-        guard state.pendingMatchCount >= kRequiredConfirmationCount else {
-          return .none
-        }
+        guard state.pendingMatchCount >= kRequiredConfirmationCount else { return .none }
         
         state.lastQueriedMatchID = topMatch.id
         state.lastTopMatchDistance = topMatch.distance
@@ -99,51 +120,85 @@ public struct SendableImage: @unchecked Sendable, Equatable {
         
         if let value = matches.first?.id {
           return .run { send in
-            let result = try await client.queryCards(for: value).data
-            await send(.updateMatches(CardDataSource(cards: result, hasNextPage: false, total: result.count)))
+            let card = try await client.queryCard(for: value)
+            await send(.singleCardFound(card))
           } catch: { error, send in
             print("Scryfall query failed: \(error)")
+            await send(.resetScan)
           }.cancellable(id: CancelID.networkQuery, cancelInFlight: true)
         } else {
           return .none
         }
         
-      case let .updateMatches(result):
-        state.dataSource = result
-        if let firstCardID = result.cardDetails.first?.card.id {
-          state.scrolledCardID = firstCardID
+        // 3. Handle the single initial card
+      case let .singleCardFound(card):
+        let setName = card.setName ?? card.set.uppercased()
+        let subtitle = "\(setName) • #\(card.collectorNumber)"
+        
+        state.status = .cardDetails(title: card.name, subtitle: subtitle)
+        state.dataSource = CardDataSource(cards: [card], hasNextPage: false, total: 1)
+        state.scrolledCardID = card.id
+        
+        let fetchVariantsEffect: Effect<Action> = .run { send in
+          try await Task.sleep(nanoseconds: 20_000_000_0)
+          await send(.fetchVariants(card.name))
         }
         
-        // 3. Download card here using Nuke ImagePipeline
-        if let card = state.scrolledCard,
-           let urlString = card.card.imageUris?.large,
-           let url = URL(string: urlString) {
-          return .run { send in
+        if let urlString = card.imageUris?.large, let url = URL(string: urlString) {
+          let downloadImageEffect: Effect<Action> = .run { send in
             do {
               let response = try await ImagePipeline.shared.image(for: url)
-              
-              // 4. Trigger action update with animation once downloaded
-              await send(
-                .imageDownloadCompleted(SendableImage(response))
-              )
+              await send(.imageDownloadCompleted(SendableImage(response)))
             } catch {
               print("Image download failed: \(error)")
             }
-          }
-          .cancellable(id: CancelID.imageDownload, cancelInFlight: true)
+          }.cancellable(id: CancelID.imageDownload, cancelInFlight: true)
+          
+          return .concatenate(downloadImageEffect, fetchVariantsEffect)
+        } else {
+          return .none
         }
+        
+      case let .fetchVariants(name):
+        return .run { send in
+          let data = try await client.queryCards(SearchQuery(name: name, page: 1, sortMode: .released, sortDirection: .auto)).data
+          await send(.variantsLoaded(data))
+        } catch: { error, send in
+          print("Variants query failed: \(error)")
+        }.cancellable(id: CancelID.variantsQuery, cancelInFlight: true)
+        
+      case let .variantsLoaded(variants):
+        guard let currentCard = state.dataSource?.cardDetails.first?.card else { return .none }
+        
+        var updatedCards = variants
+        if let index = updatedCards.firstIndex(where: { $0.id == currentCard.id }) {
+          updatedCards.remove(at: index)
+        }
+        updatedCards.insert(currentCard, at: 0)
+        
+        state.dataSource = CardDataSource(cards: updatedCards, hasNextPage: false, total: updatedCards.count)
         return .none
         
-        // 4. Action updates the border position and saves the image
       case let .imageDownloadCompleted(image):
         state.downloadedCardImage = image
+        return .run { send in
+          try await Task.sleep(nanoseconds: 100_000_000)
+          await send(.triggerMorph)
+        }
+        
+      case .triggerMorph:
         state.isMorphed = true
         return .none
         
       case .syncCardImageHashDatabase:
         return .run { send in
           await imageHashManager.sync()
+          await send(.syncCompleted)
         }
+        
+      case .syncCompleted:
+        state.status = .scanning
+        return .none
       }
     }
   }
@@ -153,6 +208,8 @@ public struct SendableImage: @unchecked Sendable, Equatable {
 
 public extension CardScannerFeature {
   @ObservableState struct State: Sendable, Equatable {
+    var status: ScannerStatus = .loading
+    
     var scannedResult: OCRCardScannedResult?
     var dataSource: CardDataSource?
     var queryWithSetCode: SearchQuery?
@@ -184,9 +241,13 @@ public extension CardScannerFeature {
     case trackingCornersUpdated(QuadCorners?)
     case didScan(ScannedImage)
     case internalMatchesFound([(id: String, distance: Float)])
-    case updateMatches(CardDataSource)
+    case singleCardFound(Card)
+    case fetchVariants(String)
+    case variantsLoaded([Card])
     case syncCardImageHashDatabase
+    case syncCompleted
     case imageDownloadCompleted(SendableImage)
+    case triggerMorph
     case resetScan
   }
   

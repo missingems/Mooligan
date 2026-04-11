@@ -124,12 +124,13 @@ public final actor CardImageHashSyncManager: CardImageHashSyncManagable {
       return []
     }
     var candidates: [MatchResult] = []
-    let confidenceThreshold: Float = 10
+    let confidenceThreshold: Float = 1.0
     
     for (id, dbObservation) in observations {
       var distance: Float = 0
       do {
         try targetObservation.computeDistance(&distance, to: dbObservation)
+        
         if distance <= confidenceThreshold {
           candidates.append(MatchResult(id: id, distance: distance))
         }
@@ -137,6 +138,10 @@ public final actor CardImageHashSyncManager: CardImageHashSyncManagable {
         continue
       }
     }
+    
+#if targetEnvironment(simulator)
+    return [MatchResult(id: "57950af0-92d8-467e-9124-2206c84228c8", distance: 0)]
+#endif
     
     return candidates
       .sorted { $0.distance < $1.distance }

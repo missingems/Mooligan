@@ -47,7 +47,7 @@ public struct CardRemoteImageView: View {
         url: url,
         processors: transformers
       ),
-      transaction: Transaction(animation: .default)
+      transaction: Transaction(animation: .easeIn(duration: 0.1))
     ) { state in
       Group {
         if let image = state.image {

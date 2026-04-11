@@ -31,8 +31,6 @@ final class OCRViewController: UIViewController {
   private var lastFocusTime: Date = .distantPast
   private let focusThrottleInterval: TimeInterval = 1.5
   
-  private let previewImageView = UIImageView()
-  
 #if targetEnvironment(simulator)
   private var simulatorImageView: UIImageView!
   private var simulatorTimer: Timer?
@@ -44,7 +42,6 @@ final class OCRViewController: UIViewController {
     super.viewDidLoad()
     setupCamera()
     setupOverlayLayers()
-    setupPreviewImageView()
   }
   
   override func viewDidAppear(_ animated: Bool) {
@@ -84,7 +81,7 @@ extension OCRViewController {
       let input = try? AVCaptureDeviceInput(device: backCamera)
     else { return }
     
-    captureSession.sessionPreset = .hd1920x1080
+    captureSession.sessionPreset = .hd1280x720
     
     if captureSession.canAddInput(input) {
       captureSession.addInput(input)
@@ -96,8 +93,6 @@ extension OCRViewController {
     
     captureDelegate.onDetectCard = { [weak self] image, corners in
       guard let self, !self.isScanningPaused else { return }
-      
-      self.previewImageView.image = UIImage(cgImage: image)
       
       let points = self.convertToScreenPoints(corners)
       let minX = points.map(\.x).min() ?? 0
@@ -145,24 +140,6 @@ extension OCRViewController {
     view.layer.addSublayer(dimmingLayer)
     view.layer.addSublayer(shadowCornerLayer)
     view.layer.addSublayer(yellowCornerLayer)
-  }
-  
-  private func setupPreviewImageView() {
-    previewImageView.translatesAutoresizingMaskIntoConstraints = false
-    previewImageView.contentMode = .scaleAspectFit
-    previewImageView.backgroundColor = UIColor.black.withAlphaComponent(0.5)
-    previewImageView.layer.borderColor = UIColor.green.cgColor
-    previewImageView.layer.borderWidth = 2
-    previewImageView.layer.cornerRadius = 8
-    previewImageView.clipsToBounds = true
-    view.addSubview(previewImageView)
-    
-    NSLayoutConstraint.activate([
-      previewImageView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -16),
-      previewImageView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 16),
-      previewImageView.widthAnchor.constraint(equalToConstant: 80), // Approx 2.5:3.5 MTG Card Ratio
-      previewImageView.heightAnchor.constraint(equalToConstant: 112)
-    ])
   }
 }
 
@@ -274,15 +251,12 @@ extension OCRViewController {
       return
     }
     
-    self.previewImageView.image = UIImage(cgImage: croppedCGImage)
-    
     let minX = points.map(\.x).min() ?? 0
     let maxX = points.map(\.x).max() ?? 0
     let minY = points.map(\.y).min() ?? 0
     let maxY = points.map(\.y).max() ?? 0
     let rect = CGRect(x: minX, y: minY, width: maxX - minX, height: maxY - minY)
     
-    // Pass the flattened CGImage exactly as the live camera delegate does
     self.didDetectResult?(ScannedImage(value: croppedCGImage, bounds: rect))
   }
   
