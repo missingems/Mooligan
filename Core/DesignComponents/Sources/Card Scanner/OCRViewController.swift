@@ -81,7 +81,7 @@ extension OCRViewController {
       let input = try? AVCaptureDeviceInput(device: backCamera)
     else { return }
     
-    captureSession.sessionPreset = .hd1280x720
+    captureSession.sessionPreset = .hd4K3840x2160
     
     if captureSession.canAddInput(input) {
       captureSession.addInput(input)

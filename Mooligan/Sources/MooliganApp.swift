@@ -23,8 +23,8 @@ struct MooliganApp: App {
             scan: .init(scannedResult: nil)
           )
         ) {
-        Feature()
-      })
+          Feature()
+        })
     }
   }
 }
@@ -33,9 +33,11 @@ struct RootView: View {
   @Bindable var store: StoreOf<Feature>
   
   var body: some View {
-    TabView {
+    // 1. Bind to the store's selection
+    TabView(selection: $store.selectedTab) {
       ForEach(Feature.TabInfo.allCases) { info in
-        Tab(info.title, systemImage: info.systemIconName) {
+        // 2. Pass 'value: info' so the binding maps correctly
+        Tab(info.title, systemImage: info.systemIconName, value: info) {
           switch info {
           case .sets:
             NavigationStack(path: $store.scope(state: \.path, action: \.path)) {
@@ -63,12 +65,8 @@ struct RootView: View {
                 action: \.scan
               )
             )
-            // 1. Force the tab items (icons/text) to use dark mode (white)
             .toolbarColorScheme(.dark, for: .tabBar)
-            // 2. Force the tab bar background to be black
             .toolbarBackground(.black, for: .tabBar)
-            // 3. Ensure the background stays visible, preventing it from
-            // becoming transparent against the camera view
             .toolbarBackground(.visible, for: .tabBar)
           }
         }

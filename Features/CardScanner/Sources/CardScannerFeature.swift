@@ -39,6 +39,7 @@ public enum ScannerStatus: Equatable, Sendable {
     case networkQuery
     case imageDownload
     case variantsQuery
+    case delayedMorph
   }
   
   public var body: some ReducerOf<Self> {
@@ -50,6 +51,11 @@ public enum ScannerStatus: Equatable, Sendable {
         return .none
         
       case let .trackingCornersUpdated(corners):
+        // 1. IMMEDIATE TRACKING LOCK: Lock tracking the moment we confirm a scan
+        // and begin the network request. This stops the "tilted card" bug completely.
+        if state.lastQueriedMatchID != nil {
+          return .none
+        }
         state.latestTrackedCorners = corners
         return .none
         
@@ -64,13 +70,14 @@ public enum ScannerStatus: Equatable, Sendable {
         state.isProcessingFrame = false
         state.status = .scanning
         
+        // 2. CANCEL EVERYTHING: Ensure no delayed tasks fire after closing
         return .merge(
           .cancel(id: CancelID.networkQuery),
           .cancel(id: CancelID.imageDownload),
-          .cancel(id: CancelID.variantsQuery)
+          .cancel(id: CancelID.variantsQuery),
+          .cancel(id: CancelID.delayedMorph)
         )
         
-        // 1. Scan for card
       case let .didScan(result):
         guard state.dataSource == nil else { return .none }
         guard !state.isProcessingFrame else { return .none }
@@ -82,7 +89,6 @@ public enum ScannerStatus: Equatable, Sendable {
           await send(.internalMatchesFound(bestMatches))
         }
         
-        // 2. Found Card -> Verify internal matches
       case let .internalMatchesFound(matches):
         state.isProcessingFrame = false
         
@@ -130,34 +136,49 @@ public enum ScannerStatus: Equatable, Sendable {
           return .none
         }
         
-        // 3. Handle the single initial card
       case let .singleCardFound(card):
         let setName = card.setName ?? card.set.uppercased()
         let subtitle = "\(setName) • #\(card.collectorNumber)"
         
+        // 3. Populate data source with ONLY the initial card
         state.status = .cardDetails(title: card.name, subtitle: subtitle)
         state.dataSource = CardDataSource(cards: [card], hasNextPage: false, total: 1)
         state.scrolledCardID = card.id
         
-        let fetchVariantsEffect: Effect<Action> = .run { send in
-          try await Task.sleep(nanoseconds: 20_000_000_0)
-          await send(.fetchVariants(card.name))
-        }
-        
-        if let urlString = card.imageUris?.large, let url = URL(string: urlString) {
-          let downloadImageEffect: Effect<Action> = .run { send in
+        // 4. Handle image safely, then guarantee a morph trigger
+        return .run { send in
+          if let urlString = card.imageUris?.large, let url = URL(string: urlString) {
             do {
               let response = try await ImagePipeline.shared.image(for: url)
               await send(.imageDownloadCompleted(SendableImage(response)))
             } catch {
               print("Image download failed: \(error)")
+              await send(.triggerMorph) // Fallback trigger
             }
-          }.cancellable(id: CancelID.imageDownload, cancelInFlight: true)
-          
-          return .concatenate(downloadImageEffect, fetchVariantsEffect)
-        } else {
-          return .none
-        }
+          } else {
+            await send(.triggerMorph) // Fallback trigger
+          }
+        }.cancellable(id: CancelID.imageDownload, cancelInFlight: true)
+        
+      case let .imageDownloadCompleted(image):
+        state.downloadedCardImage = image
+        // 5. MORPH CANCELLATION: Tag this sleep task so it dies if the user hits close
+        return .run { send in
+          try await Task.sleep(nanoseconds: 50_000_000)
+          await send(.triggerMorph)
+        }.cancellable(id: CancelID.delayedMorph, cancelInFlight: true)
+        
+      case .triggerMorph:
+        state.isMorphed = true
+        
+        // 6. CHAINED VARIANTS: Fetch variants seamlessly after the UI morph begins
+        guard let cardName = state.scrolledCard?.card.name else { return .none }
+        
+        return .run { send in
+          // Wait briefly (0.5s) to let the 3D zoom animation finish before parsing JSON
+          try await Task.sleep(nanoseconds: 500_000_000)
+          await send(.fetchVariants(cardName))
+        }.cancellable(id: CancelID.variantsQuery, cancelInFlight: true)
         
       case let .fetchVariants(name):
         return .run { send in
@@ -177,17 +198,6 @@ public enum ScannerStatus: Equatable, Sendable {
         updatedCards.insert(currentCard, at: 0)
         
         state.dataSource = CardDataSource(cards: updatedCards, hasNextPage: false, total: updatedCards.count)
-        return .none
-        
-      case let .imageDownloadCompleted(image):
-        state.downloadedCardImage = image
-        return .run { send in
-          try await Task.sleep(nanoseconds: 100_000_000)
-          await send(.triggerMorph)
-        }
-        
-      case .triggerMorph:
-        state.isMorphed = true
         return .none
         
       case .syncCardImageHashDatabase:

@@ -13,78 +13,86 @@ public struct RootView: View {
   public var body: some View {
     NavigationView {
       GeometryReader { geo in
-        ZStack(alignment: .topLeading) {
-          OCRView(
-            isMorphed: store.isMorphed,
-            onValidatedScan: { result in store.send(.didScan(result)) },
-            onTrackingUpdate: { corners in store.send(.trackingCornersUpdated(corners)) }
-          )
-          .background(.black)
-          
-          ScrollView(.horizontal) {
-            HStack(spacing: 16) {
-              if let card = store.scrolledCard, let liveCorners = store.latestTrackedCorners {
-                if let cardDetails = store.dataSource?.cardDetails {
-                  
-                  let containerWidth = finalMorphedSize.width
-                  let spacing: CGFloat = 16
-                  let horizontalPadding = (geo.size.width - containerWidth) / 2
-                  
-                  ForEach(Array(zip(cardDetails, cardDetails.indices)), id: \.0.card.id) { value in
-                    let _card = value.0
-                    let index = value.1
+        ZStack(alignment: .bottom) {
+          ZStack(alignment: .topLeading) {
+            OCRView(
+              isMorphed: store.isMorphed,
+              onValidatedScan: { result in store.send(.didScan(result)) },
+              onTrackingUpdate: { corners in store.send(.trackingCornersUpdated(corners)) }
+            )
+            .background(.black)
+            
+            ScrollView(.horizontal) {
+              HStack(spacing: 8) {
+                // 1. SAFETY FALLBACK: Removed `liveCorners` from this guard statement.
+                // We MUST render this view if `scrolledCard` exists, no matter what.
+                if let card = store.scrolledCard {
+                  if let cardDetails = store.dataSource?.cardDetails {
                     
-                    let screenOffsetX = horizontalPadding + CGFloat(index) * (containerWidth + spacing)
-                    let adjustedLiveCorners = translate(liveCorners, byX: -screenOffsetX)
-                    let targetCorners = store.isMorphed ? uprightCorners(in: geo) : adjustedLiveCorners
+                    let containerWidth = finalMorphedSize.width
+                    let spacing: CGFloat = 8
+                    let horizontalPadding = (geo.size.width - containerWidth) / 2
                     
-                    let isMainCard = (_card.card.id == card.card.id) && (store.downloadedCardImage != nil)
+                    // 2. DEFAULT CORNERS: If the camera drops tracking before the lock engages,
+                    // safely default to the upright center so the view doesn't vanish.
+                    let liveCorners = store.latestTrackedCorners ?? uprightCorners(in: geo)
                     
-                    ZStack(alignment: .top) {
+                    ForEach(Array(zip(cardDetails, cardDetails.indices)), id: \.0.card.id) { value in
+                      let _card = value.0
+                      let index = value.1
                       
-                      // 1. The Card
-                      CardView(displayableCard: _card.displayableCardImage, priceVisibility: .hidden, shouldShowShadow: true)
-                        .frame(width: logicalCardSize.width, height: logicalCardSize.height)
-                        .projected(to: targetCorners, logicalSize: logicalCardSize)
-                        .animation(.bouncy, value: store.isMorphed)
-                        .frame(width: containerWidth, height: geo.size.height, alignment: .topLeading)
+                      let screenOffsetX = horizontalPadding + CGFloat(index) * (containerWidth + spacing)
+                      let adjustedLiveCorners = translate(liveCorners, byX: -screenOffsetX)
+                      let targetCorners = store.isMorphed ? uprightCorners(in: geo) : adjustedLiveCorners
                       
-                      // 2. The Text Detail Label (Now only Set / Collector Number)
-                      if store.isMorphed {
-                        let setName = _card.card.setName ?? _card.card.set.uppercased()
-                        
-                        Text("\(setName) • #\(_card.card.collectorNumber)")
-                          .font(.headline)
-                          .lineLimit(1)
-                          .padding(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
-                          .glassEffect(.regular)
-                          .offset(y: (geo.size.height / 2) + (finalMorphedSize.height / 2) + 24)
-                      }
-                    }
-                    .zIndex(isMainCard ? 1 : 0)
-                    .scrollTransition(.interactive, axis: .horizontal) { content, phase in
-                      content
-                        .rotation3DEffect(
-                          .degrees(phase.value * -15),
-                          axis: (x: 0, y: 1, z: 0),
-                          perspective: 0.6
+                      // MARK: - VStack Layout Fix
+                      VStack(spacing: 16) {
+                        CardView(
+                          displayableCard: _card.displayableCardImage,
+                          priceVisibility: .hidden,
+                          shouldShowShadow: true
                         )
-                        .scaleEffect(phase.isIdentity ? 1 : 0.95)
+                        // 3. Lock the card size specifically so it never shrinks
+                        .frame(width: logicalCardSize.width, height: logicalCardSize.height)
+                        
+                        // 4. Hide text smoothly using opacity
+                        Text("why")
+                          .font(.headline)
+                          .opacity(store.isMorphed ? 1 : 0)
+                      }
+                      // 5. Allow the VStack to grow naturally without compressing children
+                      .fixedSize()
+                      // 6. Project the entire stack to the tracked corners
+                      .projected(to: targetCorners, logicalSize: logicalCardSize)
+                      .animation(.bouncy, value: store.isMorphed)
+                      .frame(width: containerWidth, height: geo.size.height, alignment: .topLeading)
                     }
                   }
                 }
               }
+              .padding(.horizontal, (geo.size.width - finalMorphedSize.width) / 2)
+              .scrollTargetLayout()
             }
-            .padding(.horizontal, (geo.size.width - finalMorphedSize.width) / 2)
-            .scrollTargetLayout()
+            .scrollTargetBehavior(.viewAligned)
+            .scrollIndicators(.hidden)
+            .frame(width: geo.size.width, height: geo.size.height)
+            .background(.ultraThickMaterial.opacity(store.isMorphed ? 1 : 0))
+            .animation(.default, value: store.isMorphed)
           }
-          .scrollTargetBehavior(.viewAligned)
-          .scrollIndicators(.hidden)
-          .frame(width: geo.size.width, height: geo.size.height)
         }
       }
       .toolbar {
-        // Center Status - Now ALWAYS displays the state or the Card Title
+        // Top Left Bug Button
+        ToolbarItem(placement: .topBarLeading) {
+          Button(action: {
+            // Action to handle bug report or debug tools
+            print("Bug button tapped")
+          }) {
+            Image(systemName: "ladybug.fill")
+          }
+        }
+        
+        // Center Status
         ToolbarItem(id: "info", placement: .principal) {
           Text(store.status.displayTitle)
             .font(.headline)
@@ -100,9 +108,9 @@ public struct RootView: View {
         }
       }
       .ignoresSafeArea(.all)
-      .preferredColorScheme(.dark)
       .task { store.send(.syncCardImageHashDatabase) }
     }
+    .colorScheme(.dark)
   }
   
   private func uprightCorners(in geo: GeometryProxy) -> QuadCorners {
