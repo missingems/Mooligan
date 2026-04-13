@@ -1,11 +1,8 @@
-import AVFoundation
+import Foundation
 @preconcurrency import Vision
 import CoreImage
 import Accelerate
 import ComposableArchitecture
-import Foundation
-
-// MARK: - 1. Protocols & Models
 
 public protocol CardImageHashSyncManagable: Sendable {
   func sync() async
@@ -40,11 +37,8 @@ public enum SyncError: Error, LocalizedError {
   }
 }
 
-// MARK: - 2. The TCA Actor
-
 public final actor CardImageHashSyncManager: CardImageHashSyncManagable {
   
-  // RAM Cache for 0.05s lookups
   var observations: [String: VNFeaturePrintObservation] = [:]
   
   public var isReady = false
@@ -58,12 +52,10 @@ public final actor CardImageHashSyncManager: CardImageHashSyncManagable {
   private let baseURL: String
   private let defaults: UserDefaults
   
-  // File Paths in the App's Writable Sandbox
   private var documentsDirectory: URL {
     FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
   }
   
-  // FIX 1: Updated to .lzfse to match your new export format and bypass Xcode Error 2
   private var localDatabaseURL: URL {
     documentsDirectory.appendingPathComponent("MTG_Hashes_Compressed.lzfse")
   }
@@ -75,9 +67,6 @@ public final actor CardImageHashSyncManager: CardImageHashSyncManagable {
   func generateFeaturePrint(from cgImage: CGImage) throws -> VNFeaturePrintObservation? {
     let request = VNGenerateImageFeaturePrintRequest()
     
-    // CRITICAL ACCURACY FIX 1: Prevent Model Mismatch
-    // If your database was built with Revision 1, the scanner MUST use Revision 1.
-    // Comparing Rev 2 feature prints to Rev 1 database prints destroys accuracy.
     if let dbModel = observations.values.first {
       request.revision = VNGenerateImageFeaturePrintRequestRevision2
     } else {
@@ -88,14 +77,9 @@ public final actor CardImageHashSyncManager: CardImageHashSyncManagable {
       }
     }
     
-    // CRITICAL ACCURACY FIX 2: Prevent Center Cropping
-    // Magic cards are rectangular. By default, Vision center-crops the image to a square,
-    // cutting off the text box/borders and ruining the hash.
     request.imageCropAndScaleOption = .scaleFill
     
 #if targetEnvironment(simulator)
-    // The iOS Simulator lacks the physical Neural Engine (ANE) hardware.
-    // We force the request to use the CPU to prevent "Espresso context" crashes.
     request.usesCPUOnly = true
 #endif
     
@@ -103,7 +87,6 @@ public final actor CardImageHashSyncManager: CardImageHashSyncManagable {
     return request.results?.first as? VNFeaturePrintObservation
   }
   
-  /// Public initializer required for cross-module instantiation via Tuist
   public init(
     baseURL: String = "https://missingems.github.io/MTGImageHash",
     defaults: UserDefaults = .standard
@@ -111,8 +94,6 @@ public final actor CardImageHashSyncManager: CardImageHashSyncManagable {
     self.baseURL = baseURL
     self.defaults = defaults
   }
-  
-  // MARK: - Core Functions
   
   public func sync() async {
     await loadLocalCache()
@@ -130,7 +111,6 @@ public final actor CardImageHashSyncManager: CardImageHashSyncManagable {
       var distance: Float = 0
       do {
         try targetObservation.computeDistance(&distance, to: dbObservation)
-        
         if distance <= confidenceThreshold {
           candidates.append(MatchResult(id: id, distance: distance))
         }
@@ -149,13 +129,10 @@ public final actor CardImageHashSyncManager: CardImageHashSyncManagable {
       .map { $0 }
   }
   
-  // MARK: - Tuist First-Launch & Local Load
-  
   private func loadLocalCache() async {
     let dbURL = localDatabaseURL
     let fileManager = FileManager.default
     
-    // 1. FIRST LAUNCH CHECK: Copy from Tuist Framework Bundle to Documents Directory
     if !fileManager.fileExists(atPath: dbURL.path) {
       self.syncStatus = "First launch: Unpacking embedded database..."
       
@@ -163,8 +140,6 @@ public final actor CardImageHashSyncManager: CardImageHashSyncManagable {
       var targetDBPath: URL? = nil
       var targetManifestPath: URL? = nil
       
-      // FIX 2: Updated withExtension to "lzfse"
-      // Handle Tuist's Dynamic vs Static Framework resource bundling
       if let rootURL = frameworkBundle.url(forResource: "MTG_Hashes_Compressed", withExtension: "lzfse") {
         targetDBPath = rootURL
       } else if let resourceBundleURL = frameworkBundle.urls(forResourcesWithExtension: "bundle", subdirectory: nil)?.first,
@@ -179,7 +154,6 @@ public final actor CardImageHashSyncManager: CardImageHashSyncManagable {
       
       do {
         try fileManager.copyItem(at: bundleDBPath, to: dbURL)
-        
         if let bundleManifestPath = targetManifestPath {
           if !fileManager.fileExists(atPath: localManifestURL.path) {
             try fileManager.copyItem(at: bundleManifestPath, to: localManifestURL)
@@ -191,13 +165,11 @@ public final actor CardImageHashSyncManager: CardImageHashSyncManagable {
       }
     }
     
-    // 2. LOAD INTO RAM
     self.syncStatus = "Loading local database..."
     
     do {
       let hydratedDict = try await Task.detached {
         let fileData = try Data(contentsOf: dbURL)
-        // Smart Fallback: Try LZFSE decompression, otherwise assume raw binary plist
         let decompressedData = (try? (fileData as NSData).decompressed(using: .lzfse) as Data) ?? fileData
         
         guard let flatDict = try PropertyListSerialization.propertyList(from: decompressedData, options: [], format: nil) as? [String: Data] else {
@@ -223,8 +195,6 @@ public final actor CardImageHashSyncManager: CardImageHashSyncManagable {
       self.syncStatus = "Failed to load local cache. Corrupted file."
     }
   }
-  
-  // MARK: - OTA Cloud Sync
   
   private func syncFromGitHub() async {
     guard let manifestURL = URL(string: "\(baseURL)/manifest.json") else { return }
@@ -354,8 +324,6 @@ public final actor CardImageHashSyncManager: CardImageHashSyncManagable {
   }
 }
 
-// MARK: - 3. TCA Dependency Injection
-
 public extension DependencyValues {
   var cardImageHashSyncManager: any CardImageHashSyncManagable {
     get { self[CardImageHashSyncManagerKey.self] }
@@ -369,7 +337,4 @@ public enum CardImageHashSyncManagerKey: DependencyKey {
   public static let testValue: any CardImageHashSyncManagable = CardImageHashSyncManager()
 }
 
-// MARK: - 4. Tuist Utilities
-
-/// A dummy class used strictly to locate the framework bundle in memory for Tuist resource unpacking.
 private class BundleFinder {}

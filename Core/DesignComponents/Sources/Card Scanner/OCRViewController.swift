@@ -4,7 +4,16 @@ import Vision
 import CoreImage
 
 final class OCRViewController: UIViewController {
-  var isScanningPaused = false
+  var isScanningPaused = false {
+    didSet {
+      captureDelegate.isPaused = isScanningPaused
+      if isScanningPaused {
+        DispatchQueue.main.async { [weak self] in
+          self?.executeFadeOut()
+        }
+      }
+    }
+  }
   var didDetectResult: ((ScannedImage) -> Void)?
   var didUpdateTrackingCorners: ((QuadCorners?) -> Void)?
   
@@ -69,6 +78,7 @@ final class OCRViewController: UIViewController {
   }
 }
 
+// MARK: - Camera Setup
 extension OCRViewController {
   private func setupCamera() {
 #if targetEnvironment(simulator)
@@ -100,6 +110,7 @@ extension OCRViewController {
       let minY = points.map(\.y).min() ?? 0
       let maxY = points.map(\.y).max() ?? 0
       let rect = CGRect(x: minX, y: minY, width: maxX - minX, height: maxY - minY)
+      
       self.didDetectResult?(ScannedImage(value: image, bounds: rect))
     }
     
@@ -147,7 +158,6 @@ extension OCRViewController {
 #if targetEnvironment(simulator)
 extension OCRViewController {
   private func setupSimulatorEnvironment() {
-    // Looks for "simulator_card" in your assets. Falls back to generating one if missing.
     let mockImage = DesignComponentsAsset.simulatorCard.image
     
     simulatorImageView = UIImageView(image: mockImage)
@@ -155,12 +165,10 @@ extension OCRViewController {
     simulatorImageView.frame = view.bounds
     view.layer.insertSublayer(simulatorImageView.layer, at: 0)
     
-    // Process the static image exactly like a camera frame
     guard let cgImage = mockImage.cgImage else { return }
     let request = VNDetectRectanglesRequest { [weak self] req, _ in
       self?.simulatorVisionObservation = req.results?.first as? VNRectangleObservation
     }
-    // Matching typical card finding thresholds
     request.minimumSize = 0.2
     request.maximumObservations = 1
     request.minimumConfidence = 0.5
@@ -178,14 +186,12 @@ extension OCRViewController {
   private func simulateScanTick() {
     guard !isScanningPaused, let image = simulatorImageView.image else { return }
     
-    // If Vision didn't find anything in the static image, act like empty frame
     guard let observation = simulatorVisionObservation else {
       self.didUpdateTrackingCorners?(nil)
       self.scheduleFadeOut()
       return
     }
     
-    // 1. Calculate UI Overlay Mappings
     let viewSize = self.view.bounds.size
     let imageSize = image.size
     let scale = max(viewSize.width / imageSize.width, viewSize.height / imageSize.height)
@@ -233,14 +239,11 @@ extension OCRViewController {
       self.fadeIn()
     }
     
-    // 2. Crop & Flatten the Card (Emulating OCRCaptureDelegate)
     guard let ciImage = CIImage(image: image) else { return }
     let imgSize = ciImage.extent.size
     
     let filter = CIFilter(name: "CIPerspectiveCorrection")
     filter?.setValue(ciImage, forKey: kCIInputImageKey)
-    
-    // Vision and CoreImage both use origin at bottom-left, mapped 0...1
     filter?.setValue(CIVector(cgPoint: CGPoint(x: observation.topLeft.x * imgSize.width, y: observation.topLeft.y * imgSize.height)), forKey: "inputTopLeft")
     filter?.setValue(CIVector(cgPoint: CGPoint(x: observation.topRight.x * imgSize.width, y: observation.topRight.y * imgSize.height)), forKey: "inputTopRight")
     filter?.setValue(CIVector(cgPoint: CGPoint(x: observation.bottomLeft.x * imgSize.width, y: observation.bottomLeft.y * imgSize.height)), forKey: "inputBottomLeft")
@@ -259,24 +262,10 @@ extension OCRViewController {
     
     self.didDetectResult?(ScannedImage(value: croppedCGImage, bounds: rect))
   }
-  
-  private func generateFallbackImage() -> UIImage {
-    let renderer = UIGraphicsImageRenderer(size: CGSize(width: 1080, height: 1920))
-    return renderer.image { ctx in
-      UIColor.black.setFill()
-      ctx.fill(CGRect(x: 0, y: 0, width: 1080, height: 1920))
-      
-      UIColor.lightGray.setFill() // High contrast so Vision catches it reliably
-      let width: CGFloat = 800
-      let height: CGFloat = width * (88.0 / 63.0)
-      let rect = CGRect(x: (1080 - width) / 2, y: (1920 - height) / 2, width: width, height: height)
-      let path = UIBezierPath(roundedRect: rect, cornerRadius: 40)
-      path.fill()
-    }
-  }
 }
 #endif
 
+// MARK: - Corner Handling
 extension OCRViewController {
   private func handleCorners(_ corners: VNRectangleObserver.Corners?) {
     guard !isScanningPaused else { return }
@@ -390,6 +379,7 @@ extension OCRViewController {
   }
 }
 
+// MARK: - Paths
 extension OCRViewController {
   private func buildDimmingPath(for points: [CGPoint]) -> CGPath {
     let path = UIBezierPath(rect: view.bounds.insetBy(dx: -200, dy: -200))
@@ -477,6 +467,7 @@ extension OCRViewController {
   }
 }
 
+// MARK: - Layer Animations
 extension OCRViewController {
   private func setPath(dimming: CGPath, corners: CGPath) {
     CATransaction.begin()
@@ -552,7 +543,7 @@ extension OCRViewController {
     yellowCornerLayer.removeAnimation(forKey: "fadeOut")
   }
   
-  private func executeFadeOut() {
+  fileprivate func executeFadeOut() {
     isOverlayVisible = false
     let animation = opacityAnimation(from: 1.0, to: 0, duration: fadeOutDuration)
     animation.timingFunction = CAMediaTimingFunction(name: .easeIn)

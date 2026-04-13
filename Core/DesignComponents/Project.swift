@@ -23,6 +23,7 @@ let project = Project(
         .external(name: "NukeUI"),
         .external(name: "Shimmer"),
         .external(name: "SVGView"),
+        .external(name: "VariableBlur"),
         .project(target: "Networking", path: "../../Core/Networking"),
         .project(target: "Featurist", path: "../../Core/Featurist"),
       ]

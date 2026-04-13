@@ -6,7 +6,6 @@ import SwiftUI
 public struct CardRemoteImageView: View {
   public let url: URL
   @Environment(\.displayScale) private var displayScale
-  @State private var cornerRadius: CGFloat?
   private let transformers: [ImageProcessing]
   private let size: CGSize?
   private let isLandscape: Bool
@@ -22,63 +21,56 @@ public struct CardRemoteImageView: View {
     self.isLandscape = isLandscape
     self.url = url
     
-    var transformers: [ImageProcessing] = []
+    var processors: [ImageProcessing] = [
+      // ✨ FIX 1: Downsample images on a background thread!
+      // This stops the UI from freezing when trying to decode
+      // massive 672x936 MTG bitmaps during a scroll event.
+      ImageProcessors.Resize(width: 400)
+    ]
     
     if isLandscape {
-      transformers.append(
-        RotationImageProcessor(degrees: 90)
-      )
+      processors.append(RotationImageProcessor(degrees: 90))
     }
     
     if isTransformed {
-      transformers.append(
-        FlipImageProcessor()
-      )
+      processors.append(FlipImageProcessor())
     }
     
-    self.transformers = transformers
+    self.transformers = processors
     self.size = size
     self.id = id
   }
   
   public var body: some View {
-    LazyImage(
-      request: ImageRequest(
-        url: url,
-        processors: transformers
-      ),
-      transaction: Transaction(animation: .default)
-    ) { state in
-      Group {
-        if let image = state.image {
-          image.resizable()
-        } else {
-          Color.primary.opacity(0.3)
-            .shimmering()
-            .blur(radius: 34.0)
+    // ✨ FIX 2: Replaced the @State and .onGeometryChange with an inline proxy.
+    // This perfectly calculates the relative MTG corner radius without
+    // ever mutating state, completely eliminating the AttributeGraph infinite loops.
+    GeometryReader { proxy in
+      let dynamicRadius = 0.0475 * (isLandscape ? proxy.size.height : proxy.size.width)
+      
+      LazyImage(
+        request: ImageRequest(
+          url: url,
+          processors: transformers
+        ),
+        transaction: Transaction(animation: .default)
+      ) { state in
+        Group {
+          if let image = state.image {
+            image.resizable()
+          } else {
+            Color.primary.opacity(0.3)
+              .shimmering()
+              .blur(radius: 34.0)
+          }
         }
       }
-      .aspectRatio(MagicCardImageRatio.widthToHeight.rawValue, contentMode: .fit)
+      .clipShape(RoundedRectangle(cornerRadius: dynamicRadius))
+      .overlay(
+        RoundedRectangle(cornerRadius: dynamicRadius)
+          .strokeBorder(.separator, lineWidth: 1 / displayScale)
+      )
     }
     .aspectRatio(MagicCardImageRatio.widthToHeight.rawValue, contentMode: .fit)
-    .onGeometryChange(
-      for: CGSize.self,
-      of: { proxy in
-        proxy.size
-      },
-      action: { newValue in
-        cornerRadius = 5 / 100 * (isLandscape ? newValue.height : newValue.width)
-      }
-    )
-    .clipShape(
-      RoundedRectangle(cornerRadius: cornerRadius ?? 0)
-    )
-    .overlay(
-      RoundedRectangle(cornerRadius: cornerRadius ?? 0)
-        .strokeBorder(
-          .separator,
-          lineWidth: 1 / displayScale
-        )
-    )
   }
 }

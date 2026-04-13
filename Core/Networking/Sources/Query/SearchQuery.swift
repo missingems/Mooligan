@@ -52,6 +52,12 @@ public struct SearchQuery: Equatable, Hashable, Sendable {
     }
   }
   
+  public var oracleID: String? {
+    didSet {
+      page = 1
+    }
+  }
+  
   public var cardType: Set<CardType> = [] {
     didSet {
       if oldValue.intersection(cardType).contains(.all) == false, cardType.contains(.all) {
@@ -94,6 +100,7 @@ public struct SearchQuery: Equatable, Hashable, Sendable {
     cardType: Set<CardType> = [.all],
     setCode: String? = nil,
     collectorNumber: String? = nil,
+    oracleID: String? = nil,
     page: Int,
     sortMode: SortMode,
     sortDirection: SortDirection
@@ -103,6 +110,7 @@ public struct SearchQuery: Equatable, Hashable, Sendable {
     self.page = page
     self.setCode = setCode
     self.collectorNumber = collectorNumber
+    self.oracleID = oracleID
     self.sortMode = sortMode
     self.sortDirection = sortDirection
   }
@@ -133,6 +141,12 @@ public struct SearchQuery: Equatable, Hashable, Sendable {
         filters.append(.colorIdentity(Card.Color.C.rawValue, .notEqual))
       }
     }
+    
+    if let oracleID {
+      filters.append(.oracleId(oracleID))
+    }
+    
+    filters.append(.game(.paper))
     
     return filters
   }

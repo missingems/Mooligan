@@ -7,6 +7,7 @@ final class OCRCaptureDelegate: NSObject, @unchecked Sendable {
   var onDrawBox: ((VNRectangleObserver.Corners?) -> Void)?
   var onDetectCard: ((CGImage, VNRectangleObserver.Corners) -> Void)?
   
+  var isPaused = false
   private var isProcessing = false
   private let ciContext = CIContext(options: [.cacheIntermediates: false])
   
@@ -48,7 +49,7 @@ extension OCRCaptureDelegate: AVCaptureVideoDataOutputSampleBufferDelegate {
     didOutput sampleBuffer: CMSampleBuffer,
     from connection: AVCaptureConnection
   ) {
-    guard !isProcessing else { return }
+    guard !isPaused, !isProcessing else { return }
     isProcessing = true
     
     guard let imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else {
