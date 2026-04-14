@@ -9,7 +9,7 @@ final class OCRViewController: UIViewController {
       captureDelegate.isPaused = isScanningPaused
       if isScanningPaused {
         DispatchQueue.main.async { [weak self] in
-          self?.executeFadeOut()
+//          self?.executeFadeOut()
         }
       }
     }
