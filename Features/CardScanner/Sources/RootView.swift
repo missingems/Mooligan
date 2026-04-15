@@ -4,6 +4,55 @@ import Nuke
 import ScryfallKit
 import ComposableArchitecture
 import VariableBlur
+import Foundation
+import UIKit
+import Networking
+
+// ✨ ADDED: The math modifier to map 4 corners to standard SwiftUI transforms
+public struct QuadOverlayModifier: ViewModifier {
+  public let corners: QuadCorners
+  
+  public func body(content: Content) -> some View {
+    // 1. Calculate width and height using the distance formula
+    let width = distance(corners.topLeft, corners.topRight)
+    let height = distance(corners.topLeft, corners.bottomLeft)
+    
+    // 2. Calculate the center point of the 4 corners
+    let center = CGPoint(
+      x: (corners.topLeft.x + corners.topRight.x + corners.bottomLeft.x + corners.bottomRight.x) / 4,
+      y: (corners.topLeft.y + corners.topRight.y + corners.bottomLeft.y + corners.bottomRight.y) / 4
+    )
+    
+    // 3. Calculate the rotation angle based on the top edge
+    let angle = atan2(corners.topRight.y - corners.topLeft.y, corners.topRight.x - corners.topLeft.x)
+    
+    // 4. Apply the transforms
+    content
+      .frame(width: width, height: height)
+      .rotationEffect(.radians(Double(angle)))
+      .position(center)
+    // Interactive spring smooths out the jitter from the live camera feed
+      .animation(.interactiveSpring(response: 0.2, dampingFraction: 0.8), value: center)
+  }
+  
+  private func distance(_ p1: CGPoint, _ p2: CGPoint) -> CGFloat {
+    hypot(p2.x - p1.x, p2.y - p1.y)
+  }
+}
+
+public extension View {
+  func trackCorners(_ corners: QuadCorners?) -> some View {
+    Group {
+      if let corners = corners {
+        self.modifier(QuadOverlayModifier(corners: corners))
+      } else {
+        self.hidden()
+      }
+    }
+  }
+}
+
+// MARK: - Views
 
 public struct RootView: View {
   @Bindable var store: StoreOf<CardScannerFeature>
@@ -17,18 +66,26 @@ public struct RootView: View {
     NavigationView {
       let hasScannedCard = store.dataSource != nil
       ZStack(alignment: .bottom) {
-      ZStack(alignment: .center) {
-        
-        
-        
-        OCRView(
-          isMorphed: store.isScanningPaused,
-          onValidatedScan: { result in store.send(.didScan(result)) },
-          onTrackingUpdate: { corners in store.send(.trackingCornersUpdated(corners)) }
-        )
-        .background(.black)
-        
-        
+        ZStack(alignment: .center) {
+          OCRView(
+            isMorphed: store.isScanningPaused,
+            onValidatedScan: { result in store.send(.didScan(result)) },
+            onTrackingUpdate: { corners in store.send(.trackingCornersUpdated(corners)) }
+          )
+          .background(.black)
+          
+          // ✨ ADDED: The live AR tracking overlay
+          if !store.isMorphed, let corners = store.latestTrackedCorners {
+            // Replace "card_back" with your actual placeholder or a downloaded UI image
+            Image("card_back")
+              .resizable()
+              .scaledToFill()
+              .clipShape(RoundedRectangle(cornerRadius: 12)) // Standard MTG corner radius
+              .shadow(color: .black.opacity(0.5), radius: 10, y: 5)
+              .trackCorners(corners)
+              .transition(.opacity)
+          }
+          
           ScrollView(.horizontal) {
             HStack(spacing: 8) {
               if let cardDetails = store.dataSource?.cardDetails {
@@ -41,7 +98,7 @@ public struct RootView: View {
                   
                   let detailsOpacity: Double = isScanning ? 0.0 : 1.0
                   
-                  // ✨ Calculate the proper ratio size for this specific card
+                  // Calculate the proper ratio size for this specific card
                   let configuration = CardView.LayoutConfiguration(
                     rotation: cardInfo.card.isLandscape ? .landscape : .portrait,
                     maxWidth: containerWidth.rounded()
@@ -102,6 +159,7 @@ public struct RootView: View {
                       .monospaced()
                       .fixedSize(horizontal: true, vertical: true)
                     }
+                    .opacity(detailsOpacity) // Applying opacity based on scan state
                     .frame(width: containerWidth)
                     .fixedSize(horizontal: false, vertical: true)
                   }
@@ -214,4 +272,3 @@ public struct RootView: View {
     self.store = store
   }
 }
-

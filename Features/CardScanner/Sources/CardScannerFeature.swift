@@ -7,6 +7,8 @@ import DesignComponents
 import ScryfallKit
 import Networking
 
+// MARK: - Reducer & Status
+
 public enum ScannerStatus: Equatable, Sendable {
   case loading
   case scanning
@@ -83,11 +85,8 @@ public enum ScannerStatus: Equatable, Sendable {
       return .none
       
     case let .trackingCornersUpdated(corners):
-      // 1. IMMEDIATE TRACKING LOCK: Prevent box update after scan confirms
-      // Keeps the layout anchor stable so the `matchedCardImage` can overlay cleanly
-      if state.isScanningPaused || state.lastQueriedMatchID != nil {
-        return .none
-      }
+      // ✨ FIX: Always update the corners so the SwiftUI overlay continues to follow the real-world card.
+      // (Removed the if state.isScanningPaused lock so it tracks while querying data)
       state.latestTrackedCorners = corners
       return .none
       
@@ -161,7 +160,7 @@ public enum ScannerStatus: Equatable, Sendable {
       return .run { send in
         if let urlString = card.imageUris?.normal, let url = URL(string: urlString) {
           do {
-            let response = try await ImagePipeline.shared.image(for: url)
+            let _ = try await ImagePipeline.shared.image(for: url)
             await send(.imageDownloadCompleted(card))
           } catch {
             print("Image download failed: \(error)")
