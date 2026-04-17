@@ -7,7 +7,8 @@ final class OCRCaptureDelegate: NSObject, @unchecked Sendable {
   var onDrawBox: ((VNRectangleObserver.Corners?) -> Void)?
   var onDetectCard: ((CGImage, VNRectangleObserver.Corners) -> Void)?
   
-  var isPaused = false
+  // Renamed to clarify this only pauses the extraction, not the tracking
+  var isOCRDisabled = false
   private var isProcessing = false
   private let ciContext = CIContext(options: [.cacheIntermediates: false])
   
@@ -49,7 +50,8 @@ extension OCRCaptureDelegate: AVCaptureVideoDataOutputSampleBufferDelegate {
     didOutput sampleBuffer: CMSampleBuffer,
     from connection: AVCaptureConnection
   ) {
-    guard !isPaused, !isProcessing else { return }
+    // We let this run constantly to keep finding corners
+    guard !isProcessing else { return }
     isProcessing = true
     
     guard let imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else {
@@ -71,8 +73,15 @@ extension OCRCaptureDelegate: AVCaptureVideoDataOutputSampleBufferDelegate {
       return
     }
     
+    // Always pass the tracking box back to the UI
     DispatchQueue.main.async { [weak self] in
       self?.onDrawBox?(corners)
+    }
+    
+    // Stop the heavy image cropping if OCR is disabled
+    guard !isOCRDisabled else {
+      isProcessing = false
+      return
     }
     
     Task { [weak self] in

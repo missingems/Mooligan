@@ -1,5 +1,7 @@
-import Vision
-import UIKit
+import Foundation
+import CoreGraphics
+import QuartzCore
+
 import SwiftUI
 
 public struct OCRCardScannedResult: Equatable, Sendable {
@@ -49,7 +51,7 @@ public struct QuadCorners: Equatable, Sendable {
     self.bottomLeft = bottomLeft
   }
   
-  public func transformMatrix(for bounds: CGSize) -> CATransform3D {
+  public func transformMatrix() -> CATransform3D {
     let x0 = topLeft.x, y0 = topLeft.y
     let x1 = topRight.x, y1 = topRight.y
     let x2 = bottomRight.x, y2 = bottomRight.y
@@ -81,19 +83,17 @@ public struct QuadCorners: Equatable, Sendable {
     t.m11 = a11
     t.m12 = a12
     t.m14 = a13
-    
     t.m21 = a21
     t.m22 = a22
     t.m24 = a23
-    
     t.m41 = a31
     t.m42 = a32
     
-    return CATransform3DScale(t, 1.0 / bounds.width, 1.0 / bounds.height, 1.0)
+    return t
   }
 }
 
-// MARK: - SwiftUI Animation
+// MARK: - Animatable Conformance
 extension QuadCorners: Animatable {
   public typealias AnimatableData = AnimatablePair<
     AnimatablePair<CGPoint.AnimatableData, CGPoint.AnimatableData>,
@@ -116,9 +116,10 @@ extension QuadCorners: Animatable {
   }
 }
 
+
 public struct QuadProjectionModifier: @MainActor AnimatableModifier {
   public var corners: QuadCorners
-  public var logicalSize: CGSize
+  public var size: CGSize
   
   public var animatableData: QuadCorners.AnimatableData {
     get { corners.animatableData }
@@ -126,12 +127,31 @@ public struct QuadProjectionModifier: @MainActor AnimatableModifier {
   }
   
   public func body(content: Content) -> some View {
-    content.projectionEffect(ProjectionTransform(corners.transformMatrix(for: logicalSize)))
+    content
+    // 1. Render the view at the exact MTG card ratio needed
+      .frame(width: size.width, height: size.height)
+    
+    // 2. Collapse the layout box to 0x0.
+    // This forces SwiftUI's projection anchor point to be exactly (0,0).
+      .frame(width: 0, height: 0, alignment: .topLeading)
+    
+    // 3. Scale the drawing down to a 1x1 unit square
+      .projectionEffect(
+        ProjectionTransform(
+          CGAffineTransform(scaleX: 1.0 / size.width, y: 1.0 / size.height)
+        )
+      )
+    
+    // 4. Apply the homography matrix
+      .projectionEffect(ProjectionTransform(corners.transformMatrix()))
+    
+    // 5. Pin the 0x0 layout box to the absolute top-left of the screen
+      .position(x: 0, y: 0)
   }
 }
 
 public extension View {
-  func projected(to corners: QuadCorners, logicalSize: CGSize) -> some View {
-    self.modifier(QuadProjectionModifier(corners: corners, logicalSize: logicalSize))
+  func projected(to corners: QuadCorners, size: CGSize) -> some View {
+    self.modifier(QuadProjectionModifier(corners: corners, size: size))
   }
 }

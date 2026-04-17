@@ -6,10 +6,13 @@ import CoreImage
 final class OCRViewController: UIViewController {
   var isScanningPaused = false {
     didSet {
-      captureDelegate.isPaused = isScanningPaused
+      // Pass the state down to stop the expensive OCR process
+      captureDelegate.isOCRDisabled = isScanningPaused
+      
+      // If we pause, immediately hide the UIKit yellow overlay
       if isScanningPaused {
         DispatchQueue.main.async { [weak self] in
-//          self?.executeFadeOut()
+          self?.executeFadeOut()
         }
       }
     }
@@ -154,11 +157,11 @@ extension OCRViewController {
   }
 }
 
-// MARK: - Simulator Mock using Actual Vision Detection & Cropping
+// MARK: - Simulator Mock
 #if targetEnvironment(simulator)
 extension OCRViewController {
   private func setupSimulatorEnvironment() {
-    let mockImage = DesignComponentsAsset.simulatorCard.image
+    let mockImage = UIImage(named: "simulatorCard") ?? UIImage()
     
     simulatorImageView = UIImageView(image: mockImage)
     simulatorImageView.contentMode = .scaleAspectFill
@@ -184,7 +187,7 @@ extension OCRViewController {
   }
   
   private func simulateScanTick() {
-    guard !isScanningPaused, let image = simulatorImageView.image else { return }
+    guard let image = simulatorImageView.image else { return }
     
     guard let observation = simulatorVisionObservation else {
       self.didUpdateTrackingCorners?(nil)
@@ -220,7 +223,11 @@ extension OCRViewController {
       bottomLeft: points[3]
     )
     
+    // Always track for SwiftUI
     self.didUpdateTrackingCorners?(quad)
+    
+    // If paused, don't run the OCR or UI logic
+    guard !self.isScanningPaused else { return }
     
     guard self.isMagicTheGatheringRatio(points) else {
       self.scheduleFadeOut()
@@ -268,14 +275,13 @@ extension OCRViewController {
 // MARK: - Corner Handling
 extension OCRViewController {
   private func handleCorners(_ corners: VNRectangleObserver.Corners?) {
-    guard !isScanningPaused else { return }
-    
     DispatchQueue.main.async { [weak self] in
       guard let self else { return }
       
       guard let corners else {
         self.didUpdateTrackingCorners?(nil)
-        self.scheduleFadeOut()
+        // Only trigger delayed fade out if we aren't already hard paused
+        if !self.isScanningPaused { self.scheduleFadeOut() }
         return
       }
       
@@ -287,7 +293,12 @@ extension OCRViewController {
         bottomRight: points[2],
         bottomLeft: points[3]
       )
+      
+      // 1. Always pass tracking data up to SwiftUI
       self.didUpdateTrackingCorners?(quad)
+      
+      // 2. Stop here if we are paused, so the yellow lines don't draw
+      guard !self.isScanningPaused else { return }
       
       guard self.isMagicTheGatheringRatio(points) else {
         self.scheduleFadeOut()
@@ -518,7 +529,7 @@ extension OCRViewController {
     yellowCornerLayer.add(animation.copy() as! CABasicAnimation, forKey: "fadeIn")
   }
   
-  private func scheduleFadeOut() {
+  fileprivate func scheduleFadeOut() {
     guard isOverlayVisible, fadeOutWorkItem == nil else { return }
     let workItem = DispatchWorkItem { [weak self] in
       self?.executeFadeOut()
@@ -528,7 +539,7 @@ extension OCRViewController {
     DispatchQueue.main.asyncAfter(deadline: .now() + fadeOutDelay, execute: workItem)
   }
   
-  private func cancelFadeOut() {
+  fileprivate func cancelFadeOut() {
     fadeOutWorkItem?.cancel()
     fadeOutWorkItem = nil
     guard isOverlayVisible else { return }
@@ -578,7 +589,7 @@ extension OCRViewController {
     return animation
   }
   
-  private func isMagicTheGatheringRatio(_ points: [CGPoint]) -> Bool {
+  fileprivate func isMagicTheGatheringRatio(_ points: [CGPoint]) -> Bool {
     guard points.count == 4 else { return false }
     let topLeft = points[0], topRight = points[1], bottomRight = points[2], bottomLeft = points[3]
     
