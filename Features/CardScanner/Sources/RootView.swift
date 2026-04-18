@@ -221,7 +221,7 @@ public struct RootView: View {
             .glassEffect(.clear.interactive())
             .glassEffectID("center_button", in: morphNamespace)
         } else {
-          Button(action: {}) { Circle().fill(.white).frame(width: 80, height: 80) }
+          Button(action: {}) { Circle().fill(.white).frame(width: 77, height: 77) }
             .frame(width: 89, height: 89)
             .glassEffect(.clear.interactive())
             .glassEffectID("center_button", in: morphNamespace)
