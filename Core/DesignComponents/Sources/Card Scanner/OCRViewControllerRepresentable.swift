@@ -1,24 +1,25 @@
 import SwiftUI
 
 struct OCRViewRepresentable: UIViewControllerRepresentable {
-  var isPaused: Bool
+  var isScanningPaused: Bool
+  var isTrackingPaused: Bool
   var onValidatedScan: (ScannedImage) -> Void
   var onTrackingUpdate: (QuadCorners?) -> Void
   
-  func makeCoordinator() -> Coordinator {
-    Coordinator(onValidatedScan: onValidatedScan)
-  }
-  
   func makeUIViewController(context: Context) -> OCRViewController {
-    let controller = OCRViewController()
-    controller.didDetectResult = { result in context.coordinator.didDetect(result: result) }
-    controller.didUpdateTrackingCorners = { quad in onTrackingUpdate(quad) }
-    return controller
+    let vc = OCRViewController()
+    vc.didDetectResult = onValidatedScan
+    vc.didUpdateTrackingCorners = onTrackingUpdate
+    return vc
   }
   
   func updateUIViewController(_ uiViewController: OCRViewController, context: Context) {
-    uiViewController.isScanningPaused = isPaused
-    context.coordinator.onValidatedScan = onValidatedScan
+    uiViewController.isScanningPaused = isScanningPaused
+    uiViewController.isTrackingPaused = isTrackingPaused
+  }
+  
+  func makeCoordinator() -> Coordinator {
+    Coordinator(onValidatedScan: onValidatedScan)
   }
   
   final class Coordinator {
@@ -42,3 +43,4 @@ struct OCRViewRepresentable: UIViewControllerRepresentable {
     }
   }
 }
+

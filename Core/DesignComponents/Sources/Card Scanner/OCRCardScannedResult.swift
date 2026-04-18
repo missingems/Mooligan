@@ -2,8 +2,6 @@ import Foundation
 import CoreGraphics
 import QuartzCore
 
-import SwiftUI
-
 public struct OCRCardScannedResult: Equatable, Sendable {
   public struct SetCode: Equatable, Sendable {
     public let set: String?
@@ -93,6 +91,8 @@ public struct QuadCorners: Equatable, Sendable {
   }
 }
 
+import SwiftUI
+
 // MARK: - Animatable Conformance
 extension QuadCorners: Animatable {
   public typealias AnimatableData = AnimatablePair<
@@ -116,7 +116,7 @@ extension QuadCorners: Animatable {
   }
 }
 
-
+// MARK: - Modifier
 public struct QuadProjectionModifier: @MainActor AnimatableModifier {
   public var corners: QuadCorners
   public var size: CGSize
@@ -128,28 +128,19 @@ public struct QuadProjectionModifier: @MainActor AnimatableModifier {
   
   public func body(content: Content) -> some View {
     content
-    // 1. Render the view at the exact MTG card ratio needed
       .frame(width: size.width, height: size.height)
-    
-    // 2. Collapse the layout box to 0x0.
-    // This forces SwiftUI's projection anchor point to be exactly (0,0).
       .frame(width: 0, height: 0, alignment: .topLeading)
-    
-    // 3. Scale the drawing down to a 1x1 unit square
       .projectionEffect(
         ProjectionTransform(
           CGAffineTransform(scaleX: 1.0 / size.width, y: 1.0 / size.height)
         )
       )
-    
-    // 4. Apply the homography matrix
       .projectionEffect(ProjectionTransform(corners.transformMatrix()))
-    
-    // 5. Pin the 0x0 layout box to the absolute top-left of the screen
       .position(x: 0, y: 0)
   }
 }
 
+// MARK: - View Extension
 public extension View {
   func projected(to corners: QuadCorners, size: CGSize) -> some View {
     self.modifier(QuadProjectionModifier(corners: corners, size: size))

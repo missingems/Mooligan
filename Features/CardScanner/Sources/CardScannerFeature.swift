@@ -2,7 +2,6 @@ import Foundation
 import UIKit
 import ComposableArchitecture
 import Nuke
-
 import DesignComponents
 import ScryfallKit
 import Networking
@@ -160,7 +159,16 @@ public enum ScannerStatus: Equatable, Sendable {
       return .run { send in
         if let urlString = card.imageUris?.normal, let url = URL(string: urlString) {
           do {
-            let _ = try await ImagePipeline.shared.image(for: url)
+            // ✨ THE FIX: Match the exact processors used in CardRemoteImageView
+            var processors: [any ImageProcessing] = []
+            if card.isLandscape {
+              processors.append(RotationImageProcessor(degrees: 90))
+            }
+            
+            // Fetch using the explicit request so the processed image enters the memory cache
+            let request = ImageRequest(url: url, processors: processors)
+            let _ = try await ImagePipeline.shared.image(for: request)
+            
             await send(.imageDownloadCompleted(card))
           } catch {
             print("Image download failed: \(error)")

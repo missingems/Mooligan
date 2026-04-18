@@ -6,10 +6,10 @@ import CoreImage
 final class OCRViewController: UIViewController {
   var isScanningPaused = false {
     didSet {
-      // Pass the state down to stop the expensive OCR process
-      captureDelegate.isOCRDisabled = isScanningPaused
+      // ✨ ADDED: Ignore redundant SwiftUI layout updates
+      guard isScanningPaused != oldValue else { return }
       
-      // If we pause, immediately hide the UIKit yellow overlay
+      captureDelegate.isOCRDisabled = isScanningPaused
       if isScanningPaused {
         DispatchQueue.main.async { [weak self] in
           self?.executeFadeOut()
@@ -17,6 +17,16 @@ final class OCRViewController: UIViewController {
       }
     }
   }
+  
+  var isTrackingPaused = false {
+    didSet {
+      // ✨ ADDED: Ignore redundant SwiftUI layout updates
+      guard isTrackingPaused != oldValue else { return }
+      
+      captureDelegate.isTrackingDisabled = isTrackingPaused
+    }
+  }
+  
   var didDetectResult: ((ScannedImage) -> Void)?
   var didUpdateTrackingCorners: ((QuadCorners?) -> Void)?
   
@@ -161,7 +171,7 @@ extension OCRViewController {
 #if targetEnvironment(simulator)
 extension OCRViewController {
   private func setupSimulatorEnvironment() {
-    let mockImage = UIImage(named: "simulatorCard") ?? UIImage()
+    let mockImage = DesignComponentsAsset.simulatorCard.image
     
     simulatorImageView = UIImageView(image: mockImage)
     simulatorImageView.contentMode = .scaleAspectFill
@@ -187,11 +197,14 @@ extension OCRViewController {
   }
   
   private func simulateScanTick() {
+    // ✨ ADDED: Hard kill-switch to mirror the real camera delegate and save CPU
+    guard !self.isTrackingPaused else { return }
+    
     guard let image = simulatorImageView.image else { return }
     
     guard let observation = simulatorVisionObservation else {
       self.didUpdateTrackingCorners?(nil)
-      self.scheduleFadeOut()
+      if !self.isScanningPaused { self.scheduleFadeOut() }
       return
     }
     
@@ -223,7 +236,7 @@ extension OCRViewController {
       bottomLeft: points[3]
     )
     
-    // Always track for SwiftUI
+    // Always track for SwiftUI (the kill-switch above handles the full stop)
     self.didUpdateTrackingCorners?(quad)
     
     // If paused, don't run the OCR or UI logic
@@ -294,7 +307,7 @@ extension OCRViewController {
         bottomLeft: points[3]
       )
       
-      // 1. Always pass tracking data up to SwiftUI
+      // 1. Always pass tracking data up to SwiftUI (The delegate killswitch handles full stops)
       self.didUpdateTrackingCorners?(quad)
       
       // 2. Stop here if we are paused, so the yellow lines don't draw
