@@ -4,26 +4,30 @@ import Vision
 import CoreImage
 
 final class OCRViewController: UIViewController {
+  private let minimumCornerLength: CGFloat = 18
+  private let maximumCornerLength: CGFloat = 36
+  
   var isScanningPaused = false {
     didSet {
-      // ✨ ADDED: Ignore redundant SwiftUI layout updates
       guard isScanningPaused != oldValue else { return }
-      
       captureDelegate.isOCRDisabled = isScanningPaused
-      if isScanningPaused {
-        DispatchQueue.main.async { [weak self] in
-          self?.executeFadeOut()
-        }
-      }
     }
   }
   
   var isTrackingPaused = false {
     didSet {
-      // ✨ ADDED: Ignore redundant SwiftUI layout updates
       guard isTrackingPaused != oldValue else { return }
-      
       captureDelegate.isTrackingDisabled = isTrackingPaused
+      
+      if isTrackingPaused {
+        DispatchQueue.main.async { [weak self] in
+          self?.transitionToFullDim()
+        }
+      } else {
+        DispatchQueue.main.async { [weak self] in
+          self?.executeFadeOut()
+        }
+      }
     }
   }
   
@@ -40,12 +44,12 @@ final class OCRViewController: UIViewController {
   private let shadowCornerLayer = CAShapeLayer()
   private let yellowCornerLayer = CAShapeLayer()
   
+  // ✨ ADDED: A dedicated layer for the seamless crossfade to full darkness
+  private let solidDimLayer = CALayer()
+  
   private let fadeOutDelay: TimeInterval = 0.6
   private let fadeOutDuration: TimeInterval = 0.35
   private let snapDuration: TimeInterval = 0.315
-  
-  private let minimumCornerLength: CGFloat = 18
-  private let maximumCornerLength: CGFloat = 36
   
   private var fadeOutWorkItem: DispatchWorkItem?
   private var isOverlayVisible = false
@@ -64,6 +68,19 @@ final class OCRViewController: UIViewController {
     super.viewDidLoad()
     setupCamera()
     setupOverlayLayers()
+  }
+  
+  override func viewDidLayoutSubviews() {
+    super.viewDidLayoutSubviews()
+    
+    // Use optional chaining so it doesn't crash if previewLayer is nil (like in the simulator)
+    previewLayer?.frame = view.bounds
+    solidDimLayer.frame = view.bounds
+    
+#if targetEnvironment(simulator)
+    // Keep the simulator image perfectly framed if the layout changes
+    simulatorImageView?.frame = view.bounds
+#endif
   }
   
   override func viewDidAppear(_ animated: Bool) {
@@ -135,11 +152,13 @@ extension OCRViewController {
     
     previewLayer = AVCaptureVideoPreviewLayer(session: captureSession)
     previewLayer.videoGravity = .resizeAspectFill
-    previewLayer.frame = view.bounds
     view.layer.insertSublayer(previewLayer, at: 0)
   }
   
   private func setupOverlayLayers() {
+    solidDimLayer.backgroundColor = UIColor.black.cgColor
+    solidDimLayer.opacity = 0
+    
     dimmingLayer.fillColor = UIColor.clear.cgColor
     dimmingLayer.shadowColor = UIColor.black.cgColor
     dimmingLayer.shadowRadius = 35
@@ -161,6 +180,8 @@ extension OCRViewController {
     yellowCornerLayer.lineJoin = .round
     yellowCornerLayer.opacity = 0
     
+    // ✨ ADDED: Solid dim layer sits behind the hole layer
+    view.layer.addSublayer(solidDimLayer)
     view.layer.addSublayer(dimmingLayer)
     view.layer.addSublayer(shadowCornerLayer)
     view.layer.addSublayer(yellowCornerLayer)
@@ -197,14 +218,12 @@ extension OCRViewController {
   }
   
   private func simulateScanTick() {
-    // ✨ ADDED: Hard kill-switch to mirror the real camera delegate and save CPU
     guard !self.isTrackingPaused else { return }
-    
     guard let image = simulatorImageView.image else { return }
     
     guard let observation = simulatorVisionObservation else {
       self.didUpdateTrackingCorners?(nil)
-      if !self.isScanningPaused { self.scheduleFadeOut() }
+      if !self.isTrackingPaused { self.scheduleFadeOut() }
       return
     }
     
@@ -236,11 +255,8 @@ extension OCRViewController {
       bottomLeft: points[3]
     )
     
-    // Always track for SwiftUI (the kill-switch above handles the full stop)
     self.didUpdateTrackingCorners?(quad)
-    
-    // If paused, don't run the OCR or UI logic
-    guard !self.isScanningPaused else { return }
+    guard !self.isTrackingPaused else { return }
     
     guard self.isMagicTheGatheringRatio(points) else {
       self.scheduleFadeOut()
@@ -290,11 +306,9 @@ extension OCRViewController {
   private func handleCorners(_ corners: VNRectangleObserver.Corners?) {
     DispatchQueue.main.async { [weak self] in
       guard let self else { return }
-      
       guard let corners else {
         self.didUpdateTrackingCorners?(nil)
-        // Only trigger delayed fade out if we aren't already hard paused
-        if !self.isScanningPaused { self.scheduleFadeOut() }
+        if !self.isTrackingPaused { self.scheduleFadeOut() }
         return
       }
       
@@ -307,11 +321,8 @@ extension OCRViewController {
         bottomLeft: points[3]
       )
       
-      // 1. Always pass tracking data up to SwiftUI (The delegate killswitch handles full stops)
       self.didUpdateTrackingCorners?(quad)
-      
-      // 2. Stop here if we are paused, so the yellow lines don't draw
-      guard !self.isScanningPaused else { return }
+      guard !self.isTrackingPaused else { return }
       
       guard self.isMagicTheGatheringRatio(points) else {
         self.scheduleFadeOut()
@@ -556,21 +567,27 @@ extension OCRViewController {
     fadeOutWorkItem?.cancel()
     fadeOutWorkItem = nil
     guard isOverlayVisible else { return }
+    
     CATransaction.begin()
     CATransaction.setDisableActions(true)
     dimmingLayer.opacity = 1
     shadowCornerLayer.opacity = 1
     yellowCornerLayer.opacity = 1
     CATransaction.commit()
+    
     dimmingLayer.removeAnimation(forKey: "fadeOut")
-    shadowCornerLayer.removeAnimation(forKey: "fadeOut")
-    yellowCornerLayer.removeAnimation(forKey: "fadeOut")
+    shadowCornerLayer.removeAnimation(forKey: "fadeOutBorder")
+    yellowCornerLayer.removeAnimation(forKey: "fadeOutBorder")
   }
   
   fileprivate func executeFadeOut() {
     isOverlayVisible = false
     let animation = opacityAnimation(from: 1.0, to: 0, duration: fadeOutDuration)
     animation.timingFunction = CAMediaTimingFunction(name: .easeIn)
+    
+    let currentSolid = solidDimLayer.presentation()?.opacity ?? solidDimLayer.opacity
+    let solidAnimation = opacityAnimation(from: currentSolid, to: 0, duration: fadeOutDuration)
+    solidAnimation.timingFunction = CAMediaTimingFunction(name: .easeIn)
     
     CATransaction.begin()
     CATransaction.setCompletionBlock { [weak self] in
@@ -586,10 +603,57 @@ extension OCRViewController {
     dimmingLayer.opacity = 0
     shadowCornerLayer.opacity = 0
     yellowCornerLayer.opacity = 0
+    solidDimLayer.opacity = 0
+    
     dimmingLayer.add(animation, forKey: "fadeOut")
-    shadowCornerLayer.add(animation.copy() as! CABasicAnimation, forKey: "fadeOut")
-    yellowCornerLayer.add(animation.copy() as! CABasicAnimation, forKey: "fadeOut")
+    shadowCornerLayer.add(animation.copy() as! CABasicAnimation, forKey: "fadeOutBorder")
+    yellowCornerLayer.add(animation.copy() as! CABasicAnimation, forKey: "fadeOutBorder")
+    solidDimLayer.add(solidAnimation, forKey: "fadeOutSolid")
+    
     CATransaction.commit()
+  }
+  
+  // ✨ FIX: Smooth Crossfade to full darkness without warping geometry
+  fileprivate func transitionToFullDim() {
+    cancelFadeOut()
+    isOverlayVisible = true
+    
+    let currentDimOpacity = dimmingLayer.presentation()?.opacity ?? dimmingLayer.opacity
+    let currentBorderOpacity = yellowCornerLayer.presentation()?.opacity ?? yellowCornerLayer.opacity
+    
+    CATransaction.begin()
+    CATransaction.setDisableActions(true)
+    dimmingLayer.opacity = 0
+    shadowCornerLayer.opacity = 0
+    yellowCornerLayer.opacity = 0
+    solidDimLayer.opacity = 0.45
+    CATransaction.commit()
+    
+    let dimmingFadeOut = CABasicAnimation(keyPath: "opacity")
+    dimmingFadeOut.fromValue = currentDimOpacity
+    dimmingFadeOut.toValue = 0.0
+    dimmingFadeOut.duration = 0.35
+    dimmingFadeOut.fillMode = .forwards
+    dimmingFadeOut.isRemovedOnCompletion = false
+    
+    let borderFadeOut = CABasicAnimation(keyPath: "opacity")
+    borderFadeOut.fromValue = currentBorderOpacity
+    borderFadeOut.toValue = 0.0
+    borderFadeOut.duration = 0.35
+    borderFadeOut.fillMode = .forwards
+    borderFadeOut.isRemovedOnCompletion = false
+    
+    let solidFadeIn = CABasicAnimation(keyPath: "opacity")
+    solidFadeIn.fromValue = 0.0
+    solidFadeIn.toValue = 0.45
+    solidFadeIn.duration = 0.35
+    solidFadeIn.fillMode = .forwards
+    solidFadeIn.isRemovedOnCompletion = false
+    
+    dimmingLayer.add(dimmingFadeOut, forKey: "fadeOutDim")
+    shadowCornerLayer.add(borderFadeOut, forKey: "fadeOutBorder")
+    yellowCornerLayer.add(borderFadeOut, forKey: "fadeOutBorder")
+    solidDimLayer.add(solidFadeIn, forKey: "fadeInSolid")
   }
   
   private func opacityAnimation(from startValue: Float, to endValue: Float, duration: TimeInterval) -> CABasicAnimation {
