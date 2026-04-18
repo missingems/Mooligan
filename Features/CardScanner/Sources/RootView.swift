@@ -216,11 +216,13 @@ public struct RootView: View {
         }
         
         if hasScannedCard {
-          Button(action: {}) { Image(systemName: "plus").font(.title).frame(width: 89, height: 89) }
+          Button(action: {}) { Image(systemName: "plus").font(.title) }
+            .frame(width: 89, height: 89)
             .glassEffect(.clear.interactive())
             .glassEffectID("center_button", in: morphNamespace)
         } else {
-          Button(action: {}) { Circle().fill(.white).frame(width: 83, height: 83).padding(.all, 6.0) }
+          Button(action: {}) { Circle().fill(.white).frame(width: 80, height: 80) }
+            .frame(width: 89, height: 89)
             .glassEffect(.clear.interactive())
             .glassEffectID("center_button", in: morphNamespace)
         }
