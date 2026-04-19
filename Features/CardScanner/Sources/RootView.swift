@@ -7,7 +7,6 @@ import VariableBlur
 import Foundation
 import Networking
 
-// MARK: - Preference Key for Pixel-Perfect Morphing
 struct TargetCardFrameKey: @MainActor PreferenceKey {
   @MainActor static var defaultValue: CGRect = .zero
   static func reduce(value: inout CGRect, nextValue: () -> CGRect) {
@@ -20,16 +19,20 @@ public struct RootView: View {
   @Bindable var store: StoreOf<CardScannerFeature>
   @State private var bottomSafeArea: CGFloat = 0
   @State private var topSafeArea: CGFloat = 0
-  @Namespace private var morphNamespace
   
-  @State private var viewSize: CGSize = UIScreen.main.bounds.size
-  
+  @State private var viewSize: CGSize?
   @State private var lastValidCorners: QuadCorners? = nil
-  @State private var morphAnimationComplete: Bool = false
   @State private var targetCardFrame: CGRect = .zero
+  
+  // Drives the 3D flight animation and triggers the completion block
+  @State private var localIsMorphed: Bool = false
   
   private var hasScannedCard: Bool {
     store.dataSource != nil
+  }
+  
+  public init(store: StoreOf<CardScannerFeature>) {
+    self.store = store
   }
   
   public var body: some View {
@@ -47,7 +50,11 @@ public struct RootView: View {
         
         bottomToolBarLayer
       }
-      .onGeometryChange(for: CGSize.self, of: { proxy in proxy.size }, action: { newValue in self.viewSize = newValue })
+      .onGeometryChange(for: CGSize.self, of: { proxy in proxy.size }, action: { newValue in
+        if self.viewSize != newValue, viewSize == nil {
+          self.viewSize = newValue
+        }
+      })
       .toolbar { navigationToolbar }
       .ignoresSafeArea(.all)
       .task { store.send(.syncCardImageHashDatabase) }
@@ -59,6 +66,18 @@ public struct RootView: View {
       }
     }
     .colorScheme(.dark)
+    // Listens to the TCA Store and drives the UI animation safely
+    .onChange(of: store.isMorphed) { _, isMorphedStoreState in
+      if isMorphedStoreState {
+        withAnimation(.bouncy(duration: 0.6)) {
+          localIsMorphed = true
+        } completion: {
+          store.send(.morphAnimationFinished)
+        }
+      } else {
+        localIsMorphed = false
+      }
+    }
   }
   
   @ViewBuilder
@@ -75,15 +94,14 @@ public struct RootView: View {
   @ViewBuilder
   private var floatingMorphLayer: some View {
     Group {
-      if !morphAnimationComplete {
-        let targetCorners = store.isMorphed
+      if !store.isMorphAnimationComplete, let viewSize {
+        let targetCorners = localIsMorphed
         ? uprightCorners(from: targetCardFrame, fallbackSize: viewSize)
         : (store.latestTrackedCorners ?? lastValidCorners)
         
         if let cornersToDraw = targetCorners, let cardInfo = store.dataSource?.cardDetails.first {
-          let isTracking = store.latestTrackedCorners != nil || store.isMorphed
+          let isTracking = store.latestTrackedCorners != nil || localIsMorphed
           
-          // ✨ DYNAMIC SIZE CALCULATION: Matches the ScrollView destination perfectly
           let containerWidth = viewSize.width - 110
           let configuration = CardView.LayoutConfiguration(
             rotation: cardInfo.card.isLandscape ? .landscape : .portrait,
@@ -91,10 +109,9 @@ public struct RootView: View {
           )
           
           CardView(displayableCard: cardInfo.displayableCardImage, priceVisibility: .hidden)
-          // Use the dynamically calculated size from your LayoutConfiguration
             .projected(to: cornersToDraw, size: configuration.size)
             .ignoresSafeArea()
-            .animation(store.isMorphed ? .bouncy : .easeOut(duration: 0.315), value: cornersToDraw)
+            .animation(localIsMorphed ? .bouncy(duration: 0.6) : .easeOut(duration: 0.315), value: cornersToDraw)
             .opacity(isTracking ? 1.0 : 0.0)
             .animation(isTracking ? .easeOut(duration: 0.2) : .easeIn(duration: 0.35).delay(0.6), value: isTracking)
         }
@@ -103,25 +120,17 @@ public struct RootView: View {
     .onChange(of: store.latestTrackedCorners) { oldValue, newValue in
       if let newValue { lastValidCorners = newValue }
     }
-    .onChange(of: store.isMorphed) { oldValue, newValue in
-      if newValue {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
-          if store.isMorphed { self.morphAnimationComplete = true }
-        }
-      } else {
-        self.morphAnimationComplete = false
-      }
-    }
   }
   
   @ViewBuilder
   private var scrollableCardsLayer: some View {
     ScrollView(.horizontal) {
-      HStack(spacing: 8) {
-        if let cardDetails = store.dataSource?.cardDetails {
+      // ✨ Optimized: LazyHStack ensures 120fps scrolling!
+      LazyHStack(spacing: 8) {
+        if let cardDetails = store.dataSource?.cardDetails, let viewSize {
           let containerWidth = viewSize.width - 110
           
-          ForEach(Array(cardDetails.enumerated()), id: \.element.card.id) { index, cardInfo in
+          ForEach(Array(cardDetails.enumerated()), id: \.element.id) { index, cardInfo in
             scrollableCardItem(index: index, cardInfo: cardInfo, containerWidth: containerWidth)
           }
         }
@@ -138,7 +147,7 @@ public struct RootView: View {
   @ViewBuilder
   private func scrollableCardItem(index: Int, cardInfo: CardInfo, containerWidth: CGFloat) -> some View {
     let isFirst = index == 0
-    let showImage = !(isFirst && !morphAnimationComplete)
+    let showImage = !(isFirst && !store.isMorphAnimationComplete)
     let showDetails = store.isMorphed
     
     let configuration = CardView.LayoutConfiguration(
@@ -151,31 +160,36 @@ public struct RootView: View {
         displayableCard: cardInfo.displayableCardImage,
         layoutConfiguration: configuration,
         priceVisibility: .hidden,
-        shouldShowShadow: false
+        shouldShowShadow: true
       )
       .frame(width: configuration.size.width, height: configuration.size.height)
       .background(
-        GeometryReader { geo in
-          Color.clear.preference(
-            key: TargetCardFrameKey.self,
-            value: isFirst ? geo.frame(in: .named("RootSpace")) : .zero
-          )
+        Group {
+          if isFirst && !store.isMorphAnimationComplete {
+            GeometryReader { geo in
+              Color.clear.preference(
+                key: TargetCardFrameKey.self,
+                value: geo.frame(in: .named("RootSpace"))
+              )
+            }
+          }
         }
       )
       .opacity(showImage ? 1.0 : 0.0)
       
       VStack(alignment: .center, spacing: 5.0) {
-        Text(cardInfo.card.setName)
+        // ✨ Optimized: Using pre-computed properties
+        Text(cardInfo.formattedSetName)
           .font(.headline)
           .multilineTextAlignment(.center)
           .lineLimit(2)
         
         HStack(spacing: 8.0) {
           HStack(alignment: .center, spacing: 3) {
-            IconLazyImage(cardInfo.card.resolvedIconURL).frame(width: 20, height: 20)
-            Text(cardInfo.card.set.uppercased()).fontWidth(.condensed)
+            IconLazyImage(cardInfo.cachedIconURL).frame(width: 20, height: 20)
+            Text(cardInfo.formattedSetCode).fontWidth(.condensed)
           }
-          Text("#\(cardInfo.card.collectorNumber.uppercased())").fontDesign(.serif)
+          Text(cardInfo.formattedCollectorNumber).fontDesign(.serif)
         }
         .multilineTextAlignment(.center)
         .lineLimit(1)
@@ -183,12 +197,14 @@ public struct RootView: View {
         .fontWeight(.medium)
         
         HStack(spacing: 5) {
-          if let usdPrice = cardInfo.card.prices.usd { PillText("$\(usdPrice)").padding(.all, 2) }
-          if let usdFoilPrice = cardInfo.card.prices.usdFoil {
-            PillText("$\(usdFoilPrice)", isFoil: true).foregroundStyle(.black.opacity(0.8)).padding(.all, 2)
+          if let usdPrice = cardInfo.displayPriceUSD {
+            PillText(usdPrice).padding(.all, 2)
           }
-          if let usdEtched = cardInfo.card.prices.usdEtched {
-            PillText("$\(usdEtched)", isFoil: true).foregroundStyle(.black.opacity(0.8)).padding(.all, 2)
+          if let usdFoilPrice = cardInfo.displayPriceUSDFoil {
+            PillText(usdFoilPrice, isFoil: true).foregroundStyle(.black.opacity(0.8)).padding(.all, 2)
+          }
+          if let usdEtched = cardInfo.displayPriceUSDEtched {
+            PillText(usdEtched, isFoil: true).foregroundStyle(.black.opacity(0.8)).padding(.all, 2)
           }
         }
         .foregroundStyle(DesignComponentsAsset.accentColor.swiftUIColor)
@@ -212,25 +228,21 @@ public struct RootView: View {
         if hasScannedCard {
           Button(action: {}) { Image(systemName: "square.grid.2x2.fill").font(.body).frame(width: 55, height: 55) }
             .glassEffect(.clear.interactive())
-            .glassEffectID("grid_button", in: morphNamespace)
         }
         
         if hasScannedCard {
           Button(action: {}) { Image(systemName: "plus").font(.title) }
             .frame(width: 89, height: 89)
             .glassEffect(.clear.interactive())
-            .glassEffectID("center_button", in: morphNamespace)
         } else {
           Button(action: {}) { Circle().fill(.white).frame(width: 77, height: 77) }
             .frame(width: 89, height: 89)
             .glassEffect(.clear.interactive())
-            .glassEffectID("center_button", in: morphNamespace)
         }
         
         if hasScannedCard {
           Button(action: {}) { Image(systemName: "info").font(.body).frame(width: 55, height: 55) }
             .glassEffect(.clear.interactive())
-            .glassEffectID("info_button", in: morphNamespace)
         }
         Spacer()
       }
@@ -277,9 +289,5 @@ public struct RootView: View {
       bottomRight: CGPoint(x: frame.maxX, y: frame.maxY),
       bottomLeft: CGPoint(x: frame.minX, y: frame.maxY)
     )
-  }
-  
-  public init(store: StoreOf<CardScannerFeature>) {
-    self.store = store
   }
 }
