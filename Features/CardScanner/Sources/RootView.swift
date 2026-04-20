@@ -24,7 +24,6 @@ public struct RootView: View {
   @State private var lastValidCorners: QuadCorners? = nil
   @State private var targetCardFrame: CGRect = .zero
   
-  // Drives the 3D flight animation and triggers the completion block
   @State private var localIsMorphed: Bool = false
   
   private var hasScannedCard: Bool {
@@ -66,7 +65,6 @@ public struct RootView: View {
       }
     }
     .colorScheme(.dark)
-    // Listens to the TCA Store and drives the UI animation safely
     .onChange(of: store.isMorphed) { _, isMorphedStoreState in
       if isMorphedStoreState {
         withAnimation(.bouncy(duration: 0.6)) {
@@ -84,6 +82,7 @@ public struct RootView: View {
   private var cameraLayer: some View {
     OCRView(
       isScanningPaused: store.isScanningPaused,
+      isProcessingFrame: store.isProcessingFrame, // ✨ Pushed down to gatekeeper
       isTrackingPaused: store.isMorphed,
       onValidatedScan: { result in store.send(.didScan(result)) },
       onTrackingUpdate: { corners in store.send(.trackingCornersUpdated(corners)) }
@@ -125,7 +124,6 @@ public struct RootView: View {
   @ViewBuilder
   private var scrollableCardsLayer: some View {
     ScrollView(.horizontal) {
-      // ✨ Optimized: LazyHStack ensures 120fps scrolling!
       LazyHStack(spacing: 8) {
         if let cardDetails = store.dataSource?.cardDetails, let viewSize {
           let containerWidth = viewSize.width - 110
@@ -163,22 +161,23 @@ public struct RootView: View {
         shouldShowShadow: true
       )
       .frame(width: configuration.size.width, height: configuration.size.height)
-      .background(
-        Group {
-          if isFirst && !store.isMorphAnimationComplete {
-            GeometryReader { geo in
-              Color.clear.preference(
-                key: TargetCardFrameKey.self,
-                value: geo.frame(in: .named("RootSpace"))
-              )
+      .conditionalModifier(isFirst && !store.isMorphAnimationComplete, transform: { view in
+        view.background(
+          Group {
+            if isFirst && !store.isMorphAnimationComplete {
+              GeometryReader { geo in
+                Color.clear.preference(
+                  key: TargetCardFrameKey.self,
+                  value: geo.frame(in: .named("RootSpace"))
+                )
+              }
             }
           }
-        }
-      )
+        )
+      })
       .opacity(showImage ? 1.0 : 0.0)
       
       VStack(alignment: .center, spacing: 5.0) {
-        // ✨ Optimized: Using pre-computed properties
         Text(cardInfo.formattedSetName)
           .font(.headline)
           .multilineTextAlignment(.center)

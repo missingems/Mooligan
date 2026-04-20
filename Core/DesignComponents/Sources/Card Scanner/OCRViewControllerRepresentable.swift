@@ -2,6 +2,7 @@ import SwiftUI
 
 struct OCRViewRepresentable: UIViewControllerRepresentable {
   var isScanningPaused: Bool
+  var isProcessingFrame: Bool
   var isTrackingPaused: Bool
   var onValidatedScan: (ScannedImage) -> Void
   var onTrackingUpdate: (QuadCorners?) -> Void
@@ -15,6 +16,7 @@ struct OCRViewRepresentable: UIViewControllerRepresentable {
   
   func updateUIViewController(_ uiViewController: OCRViewController, context: Context) {
     uiViewController.isScanningPaused = isScanningPaused
+    uiViewController.isProcessingFrame = isProcessingFrame
     uiViewController.isTrackingPaused = isTrackingPaused
   }
   
@@ -43,4 +45,3 @@ struct OCRViewRepresentable: UIViewControllerRepresentable {
     }
   }
 }
-

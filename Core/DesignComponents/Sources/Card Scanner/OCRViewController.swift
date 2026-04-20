@@ -7,10 +7,20 @@ final class OCRViewController: UIViewController {
   private let minimumCornerLength: CGFloat = 18
   private let maximumCornerLength: CGFloat = 36
   
+  let gatekeeper = ScannerGatekeeper()
+  
   var isScanningPaused = false {
     didSet {
       guard isScanningPaused != oldValue else { return }
+      gatekeeper.isPaused = isScanningPaused
       captureDelegate.isOCRDisabled = isScanningPaused
+    }
+  }
+  
+  var isProcessingFrame = false {
+    didSet {
+      guard isProcessingFrame != oldValue else { return }
+      gatekeeper.isProcessing = isProcessingFrame
     }
   }
   
@@ -43,8 +53,6 @@ final class OCRViewController: UIViewController {
   private let dimmingLayer = CAShapeLayer()
   private let shadowCornerLayer = CAShapeLayer()
   private let yellowCornerLayer = CAShapeLayer()
-  
-  // ✨ ADDED: A dedicated layer for the seamless crossfade to full darkness
   private let solidDimLayer = CALayer()
   
   private let fadeOutDelay: TimeInterval = 0.6
@@ -66,19 +74,17 @@ final class OCRViewController: UIViewController {
   
   override func viewDidLoad() {
     super.viewDidLoad()
+    captureDelegate.gatekeeper = gatekeeper
     setupCamera()
     setupOverlayLayers()
   }
   
   override func viewDidLayoutSubviews() {
     super.viewDidLayoutSubviews()
-    
-    // Use optional chaining so it doesn't crash if previewLayer is nil (like in the simulator)
     previewLayer?.frame = view.bounds
     solidDimLayer.frame = view.bounds
     
 #if targetEnvironment(simulator)
-    // Keep the simulator image perfectly framed if the layout changes
     simulatorImageView?.frame = view.bounds
 #endif
   }
@@ -180,7 +186,6 @@ extension OCRViewController {
     yellowCornerLayer.lineJoin = .round
     yellowCornerLayer.opacity = 0
     
-    // ✨ ADDED: Solid dim layer sits behind the hole layer
     view.layer.addSublayer(solidDimLayer)
     view.layer.addSublayer(dimmingLayer)
     view.layer.addSublayer(shadowCornerLayer)
@@ -223,7 +228,7 @@ extension OCRViewController {
     
     guard let observation = simulatorVisionObservation else {
       self.didUpdateTrackingCorners?(nil)
-      if !self.isTrackingPaused { self.scheduleFadeOut() }
+      self.scheduleFadeOut()
       return
     }
     
@@ -255,13 +260,17 @@ extension OCRViewController {
       bottomLeft: points[3]
     )
     
-    self.didUpdateTrackingCorners?(quad)
-    guard !self.isTrackingPaused else { return }
-    
+    // 🚦 THE GATE for Simulator
     guard self.isMagicTheGatheringRatio(points) else {
+      self.didUpdateTrackingCorners?(nil)
       self.scheduleFadeOut()
       return
     }
+    
+    self.didUpdateTrackingCorners?(quad)
+    
+    // 🚦 LOCK-CHECK-GO for Simulator
+    guard self.gatekeeper.checkAndLockForProcessing() else { return }
     
     self.cancelFadeOut()
     
@@ -306,9 +315,12 @@ extension OCRViewController {
   private func handleCorners(_ corners: VNRectangleObserver.Corners?) {
     DispatchQueue.main.async { [weak self] in
       guard let self else { return }
+      
+      // 🛑 SHIELD: If we are showing the cards list, ignore any stale camera frames.
+      guard !self.isTrackingPaused else { return }
+      
       guard let corners else {
-        self.didUpdateTrackingCorners?(nil)
-        if !self.isTrackingPaused { self.scheduleFadeOut() }
+        self.scheduleFadeOut()
         return
       }
       
@@ -321,13 +333,13 @@ extension OCRViewController {
         bottomLeft: points[3]
       )
       
-      self.didUpdateTrackingCorners?(quad)
-      guard !self.isTrackingPaused else { return }
-      
       guard self.isMagicTheGatheringRatio(points) else {
         self.scheduleFadeOut()
         return
       }
+      
+      // ✅ PASSED: It's an MTG card. Tell TCA where it is!
+      self.didUpdateTrackingCorners?(quad)
       
       self.focusCamera(on: points)
       self.cancelFadeOut()
@@ -613,7 +625,6 @@ extension OCRViewController {
     CATransaction.commit()
   }
   
-  // ✨ FIX: Smooth Crossfade to full darkness without warping geometry
   fileprivate func transitionToFullDim() {
     cancelFadeOut()
     isOverlayVisible = true

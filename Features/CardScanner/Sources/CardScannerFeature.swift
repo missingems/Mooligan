@@ -40,9 +40,11 @@ public enum ScannerStatus: Equatable, Sendable {
     public var isMorphAnimationComplete: Bool = false
     public var isScanningPaused: Bool = false
     
-    public var lastQueriedMatchID: String? = nil
-    public var lastTopMatchDistance: Float = 1.0
+    // Tracking processing
     public var isProcessingFrame: Bool = false
+    
+    // Array-based accumulation for noise reduction
+    public var recentMatchIDs: [String] = []
     
     public init(scannedResult: OCRCardScannedResult?) {
       self.scannedResult = scannedResult
@@ -93,12 +95,13 @@ public enum ScannerStatus: Equatable, Sendable {
       state.isMorphed = false
       state.isMorphAnimationComplete = false
       state.dataSource = nil
-      state.lastQueriedMatchID = nil
       state.isProcessingFrame = false
       state.status = .scanning
       
       state.isScanningPaused = false
       state.latestTrackedCorners = nil
+      
+      state.recentMatchIDs.removeAll()
       
       return .merge(
         .cancel(id: CancelID.networkQuery),
@@ -108,11 +111,12 @@ public enum ScannerStatus: Equatable, Sendable {
       )
       
     case let .didScan(result):
+      guard !state.isScanningPaused else { return .none } // 🚀 Lock out new scans if we found our match
       guard state.dataSource == nil else { return .none }
       guard !state.isProcessingFrame else { return .none }
       state.isProcessingFrame = true
       
-      return .run(priority: .background) { send in
+      return .run { send in
         let bestMatches = await imageHashManager.findBestMatches(for: result.value)
           .map { (id: $0.id, distance: $0.distance) }
         await send(.internalMatchesFound(bestMatches))
@@ -121,16 +125,26 @@ public enum ScannerStatus: Equatable, Sendable {
     case let .internalMatchesFound(matches):
       state.isProcessingFrame = false
       
+      guard !state.isScanningPaused else { return .none } // 🚀 Double check lock
+      
       guard let topMatch = matches.first else {
         if state.dataSource == nil { state.status = .scanning }
+        state.recentMatchIDs.removeAll()
         return .none
       }
       
-      guard state.lastQueriedMatchID == nil else { return .none }
+      if state.recentMatchIDs.last == topMatch.id || state.recentMatchIDs.isEmpty {
+        state.recentMatchIDs.append(topMatch.id)
+      } else {
+        state.recentMatchIDs = [topMatch.id]
+      }
+      
+      guard state.recentMatchIDs.count >= 3 else {
+        return .none
+      }
+      
       if state.dataSource == nil { state.status = .scanFound }
       
-      state.lastQueriedMatchID = topMatch.id
-      state.lastTopMatchDistance = topMatch.distance
       state.isScanningPaused = true
       
       return .run { send in
@@ -170,23 +184,17 @@ public enum ScannerStatus: Equatable, Sendable {
       
     case let .imageDownloadCompleted(card):
       return .run { send in
-        // ✨ INCREASED DELAY: Give the SwiftUI GeometryReader 150ms to
-        // perfectly lock in the targetCardFrame before launching the animation
         try await Task.sleep(nanoseconds: 150_000_000)
         await send(.triggerMorph(card))
       }.cancellable(id: CancelID.delayedMorph, cancelInFlight: true)
       
     case let .triggerMorph(_):
       state.isMorphed = true
-      
-      // ✨ FIX: DO NOT fetch variants here!
-      // Fetching here mutates the state mid-flight and interrupts the SwiftUI animation causing the stutter/snap.
       return .none
       
     case .morphAnimationFinished:
       state.isMorphAnimationComplete = true
       
-      // ✨ FIX: NOW that the card has safely landed, fetch the variants to populate the rest of the list.
       guard let card = state.dataSource?.cardDetails.first?.card else { return .none }
       return .run { send in
         await send(.fetchVariants(card))

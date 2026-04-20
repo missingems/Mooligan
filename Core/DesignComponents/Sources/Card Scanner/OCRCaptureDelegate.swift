@@ -4,13 +4,14 @@ import Vision
 import UIKit
 
 final class OCRCaptureDelegate: NSObject, @unchecked Sendable {
+  var gatekeeper: ScannerGatekeeper?
+  
   var onDrawBox: ((VNRectangleObserver.Corners?) -> Void)?
   var onDetectCard: ((CGImage, VNRectangleObserver.Corners) -> Void)?
   
   var isOCRDisabled = false
   var isTrackingDisabled = false
   
-  private var isProcessing = false
   private let ciContext = CIContext(options: [.cacheIntermediates: false])
   
   private final class SendableImageBuffer: @unchecked Sendable {
@@ -51,31 +52,17 @@ extension OCRCaptureDelegate: AVCaptureVideoDataOutputSampleBufferDelegate {
     didOutput sampleBuffer: CMSampleBuffer,
     from connection: AVCaptureConnection
   ) {
-    guard !isProcessing else { return }
-    isProcessing = true
-    
     // Stop immediately if tracking is disabled to save CPU
-    guard !isTrackingDisabled else {
-      isProcessing = false
-      return
-    }
+    guard !isTrackingDisabled else { return }
     
-    guard let imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else {
-      isProcessing = false
-      return
-    }
-    
+    guard let imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
     let sendableBuffer = SendableImageBuffer(imageBuffer)
-    guard let observer = VNRectangleObserver(imageBuffer: imageBuffer) else {
-      isProcessing = false
-      return
-    }
     
-    guard let corners = observer.process() else {
+    guard let observer = VNRectangleObserver(imageBuffer: imageBuffer),
+          let corners = observer.process() else {
       DispatchQueue.main.async { [weak self] in
         self?.onDrawBox?(nil)
       }
-      isProcessing = false
       return
     }
     
@@ -85,14 +72,15 @@ extension OCRCaptureDelegate: AVCaptureVideoDataOutputSampleBufferDelegate {
     }
     
     // Stop heavy OCR extraction if disabled
-    guard !isOCRDisabled else {
-      isProcessing = false
-      return
+    guard !isOCRDisabled else { return }
+    
+    // 🚦 LOCK-CHECK-GO
+    guard let gatekeeper = gatekeeper, gatekeeper.checkAndLockForProcessing() else {
+      return // Frame dropped cleanly
     }
     
     Task { [weak self] in
       guard let self else { return }
-      defer { self.isProcessing = false }
       
       processOCR(
         on: extractAndFlattenCard(

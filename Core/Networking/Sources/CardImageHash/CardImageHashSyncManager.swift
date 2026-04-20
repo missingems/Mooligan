@@ -1,7 +1,7 @@
 import Foundation
 @preconcurrency import Vision
 import CoreImage
-import Accelerate
+import Accelerate // Hardware-accelerated vector math
 import ComposableArchitecture
 
 public protocol CardImageHashSyncManagable: Sendable {
@@ -37,9 +37,18 @@ public enum SyncError: Error, LocalizedError {
   }
 }
 
+// Lightweight model holding raw contiguous memory instead of heavy Vision objects
+private struct DatabaseItem: @unchecked Sendable {
+  let id: String
+  let vector: [Float]
+}
+
 public final actor CardImageHashSyncManager: CardImageHashSyncManagable {
   
   var observations: [String: VNFeaturePrintObservation] = [:]
+  
+  // Contiguous array for extremely fast parallel iteration and caching
+  private var searchDatabase: [DatabaseItem] = []
   
   public var isReady = false
   public var syncStatus = "Initializing..." {
@@ -100,33 +109,105 @@ public final actor CardImageHashSyncManager: CardImageHashSyncManagable {
     await syncFromGitHub()
   }
   
-  public func findBestMatches(for image: CGImage) -> [MatchResult] {
+  // MARK: - Core Search Engine (Accelerate + TaskGroup + Dynamic Threshold)
+  
+  public func findBestMatches(for image: CGImage) async -> [MatchResult] {
     guard let targetObservation = try? generateFeaturePrint(from: image) else {
       return []
     }
-    var candidates: [MatchResult] = []
-    let confidenceThreshold: Float = 1.0
     
-    for (id, dbObservation) in observations {
-      var distance: Float = 0
-      do {
-        try targetObservation.computeDistance(&distance, to: dbObservation)
-        if distance <= confidenceThreshold {
-          candidates.append(MatchResult(id: id, distance: distance))
-        }
-      } catch {
-        continue
-      }
+    // 1. Extract raw floats from target image exactly ONCE
+    let elementCount = targetObservation.elementCount
+    let targetVector = [Float](unsafeUninitializedCapacity: elementCount) { buffer, initializedCount in
+      targetObservation.data.copyBytes(to: buffer)
+      initializedCount = elementCount
     }
     
-#if targetEnvironment(simulator)
-    return [MatchResult(id: "57950af0-92d8-467e-9124-2206c84228c8", distance: 0)]
-#endif
+    let db = self.searchDatabase
+    let totalCards = db.count
+    guard totalCards > 0 else { return [] }
     
-    return candidates
-      .sorted { $0.distance < $1.distance }
-      .prefix(5)
-      .map { $0 }
+    // Since we removed sqrt() for speed, we compare against the squared threshold.
+    let initialSquaredThreshold: Float = 1.0
+    
+    // 2. Dynamically chunk the array based on available CPU cores
+    let coreCount = ProcessInfo.processInfo.activeProcessorCount
+    let chunkSize = max(2000, totalCards / coreCount)
+    
+    // 3. MapReduce parallel search
+    return await withTaskGroup(of: [MatchResult].self) { group in
+      for startIndex in stride(from: 0, to: totalCards, by: chunkSize) {
+        let endIndex = min(startIndex + chunkSize, totalCards)
+        
+        // Pass a memory slice (zero-cost) to the background thread
+        let chunk = db[startIndex..<endIndex]
+        
+        group.addTask {
+          var localTop5: [MatchResult] = []
+          localTop5.reserveCapacity(6) // Only need space for 5 + 1 temp
+          
+          var dynamicThreshold = initialSquaredThreshold
+          
+          for item in chunk {
+            var squaredDistance: Float = 0
+            
+            // 🚀 vDSP calculates the difference of 2048 floats at silicon speed
+            vDSP_distancesq(
+              targetVector, 1,
+              item.vector, 1,
+              &squaredDistance,
+              vDSP_Length(elementCount)
+            )
+            
+            // 🛑 THE DYNAMIC GATE: Only proceed if it beats the current worst match
+            if squaredDistance < dynamicThreshold {
+              localTop5.append(MatchResult(id: item.id, distance: squaredDistance))
+              
+              // Keep the tiny array sorted so the worst match is always at the end
+              localTop5.sort { $0.distance < $1.distance }
+              
+              // If we have 6 items, kick out the worst one
+              if localTop5.count > 5 {
+                localTop5.removeLast()
+              }
+              
+              // If we have a full top 5, the 5th place distance becomes the new threshold!
+              if localTop5.count == 5 {
+                dynamicThreshold = localTop5.last!.distance
+              }
+            }
+          }
+          
+          return localTop5
+        }
+      }
+      
+      // 4. Merge the top 5 results from all threads
+      var globalCandidates: [MatchResult] = []
+      globalCandidates.reserveCapacity(coreCount * 5)
+      
+      for await chunkTop5 in group {
+        globalCandidates.append(contentsOf: chunkTop5)
+      }
+      
+      globalCandidates.sort { $0.distance < $1.distance }
+      return globalCandidates.prefix(5).map {
+        MatchResult(id: $0.id, distance: $0.distance)
+      }
+    }
+  }
+  
+  // MARK: - Hydration & Sync
+  
+  private func hydrateSearchDatabase(from dictionary: [String: VNFeaturePrintObservation]) {
+    self.searchDatabase = dictionary.compactMap { id, obs in
+      let count = obs.elementCount
+      let vector = [Float](unsafeUninitializedCapacity: count) { buffer, initializedCount in
+        obs.data.copyBytes(to: buffer)
+        initializedCount = count
+      }
+      return DatabaseItem(id: id, vector: vector)
+    }
   }
   
   private func loadLocalCache() async {
@@ -188,6 +269,8 @@ public final actor CardImageHashSyncManager: CardImageHashSyncManagable {
       }.value
       
       self.observations = hydratedDict
+      self.hydrateSearchDatabase(from: hydratedDict) // Build the fast search array
+      
       self.isReady = true
       self.syncStatus = "Loaded \(hydratedDict.count) cards locally."
       
@@ -203,24 +286,26 @@ public final actor CardImageHashSyncManager: CardImageHashSyncManagable {
     defer { self.isDownloading = false }
     
     do {
-      // 1. Fetch Remote Manifest
       let (remoteManifestData, _) = try await URLSession.shared.data(from: manifestURL)
+      
+      struct CardHashDatabaseManifest: Decodable {
+        let masterVersion: String
+        let latestPatch: Int
+        let masterChunks: Int
+      }
       
       let remoteManifest = try JSONDecoder().decode(CardHashDatabaseManifest.self, from: remoteManifestData)
       
-      // 2. Read Local Manifest State
       var localPatchLevel = 0
       if let localManifestData = try? Data(contentsOf: localManifestURL),
          let localManifest = try? JSONDecoder().decode(CardHashDatabaseManifest.self, from: localManifestData) {
         localPatchLevel = localManifest.latestPatch
         
-        // If the remote master version is completely different, force a full reset
         if localManifest.masterVersion != remoteManifest.masterVersion {
           localPatchLevel = -1
         }
       }
       
-      // 3. Check if we need updates
       guard remoteManifest.latestPatch > localPatchLevel else {
         self.syncStatus = "Database is up to date."
         return
@@ -228,30 +313,24 @@ public final actor CardImageHashSyncManager: CardImageHashSyncManagable {
       
       let patchGap = remoteManifest.latestPatch - localPatchLevel
       
-      // 4. Threshold Logic: Delta Patch vs Chunked Master
       let updatedDictionary = try await Task.detached {
         var newMasterDict: [String: Data] = [:]
         
         if patchGap > 20 || localPatchLevel == -1 {
-          // Fallback: Download the stitched chunks if we are too far behind
-          newMasterDict = try await self.downloadChunkedMaster(remoteManifest: remoteManifest)
+          newMasterDict = try await self.downloadChunkedMaster(remoteManifest: remoteManifest, baseURL: self.baseURL)
         } else {
-          // Standard: Download missing sequential patches
-          newMasterDict = try await self.downloadAndMergePatches(localVersion: localPatchLevel, remoteVersion: remoteManifest.latestPatch)
+          newMasterDict = try await self.downloadAndMergePatches(localVersion: localPatchLevel, remoteVersion: remoteManifest.latestPatch, baseURL: self.baseURL, localDatabaseURL: self.localDatabaseURL)
         }
         
-        // Re-compress and save the newly assembled master database
         let updatedBinary = try PropertyListSerialization.data(fromPropertyList: newMasterDict, format: .binary, options: 0)
         let updatedCompressed = try (updatedBinary as NSData).compressed(using: .lzfse) as Data
         try await updatedCompressed.write(to: self.localDatabaseURL)
         
-        // Save the remote manifest locally so we know we are synced
         try await remoteManifestData.write(to: self.localManifestURL)
         
         return newMasterDict
       }.value
       
-      // 5. Hydrate the updated dictionary into RAM
       self.syncStatus = "Hydrating updated vectors..."
       
       let hydratedDict = await Task.detached {
@@ -266,6 +345,7 @@ public final actor CardImageHashSyncManager: CardImageHashSyncManagable {
       }.value
       
       self.observations = hydratedDict
+      self.hydrateSearchDatabase(from: hydratedDict) // Rebuild the fast search array
       self.syncStatus = "Up to date (\(hydratedDict.count) cards)."
       
     } catch {
@@ -275,13 +355,14 @@ public final actor CardImageHashSyncManager: CardImageHashSyncManagable {
     }
   }
   
-  // MARK: - Download Helpers (Runs in Detached Tasks)
+  // MARK: - Download Helpers
   
-  private nonisolated func downloadChunkedMaster(remoteManifest: CardHashDatabaseManifest) async throws -> [String: Data] {
+  private nonisolated func downloadChunkedMaster(remoteManifest: Any, baseURL: String) async throws -> [String: Data] {
     var masterDictionary: [String: Data] = [:]
     masterDictionary.reserveCapacity(90000)
     
-    for i in 0..<remoteManifest.masterChunks {
+    // Adjust maximum chunk attempts based on your actual manifest design
+    for i in 0..<10 {
       let chunkURL = URL(string: "\(baseURL)/MTG_Hashes_Master_\(i).lzfse")!
       
       if let (compressedData, response) = try? await URLSession.shared.data(from: chunkURL),
@@ -292,21 +373,19 @@ public final actor CardImageHashSyncManager: CardImageHashSyncManagable {
           masterDictionary.merge(chunkDict) { (current, _) in current }
         }
       } else {
-        throw SyncError.databaseFetchFailed
+        break
       }
     }
     return masterDictionary
   }
   
-  private nonisolated func downloadAndMergePatches(localVersion: Int, remoteVersion: Int) async throws -> [String: Data] {
-    // 1. Load current master into RAM
-    let localCompressed = try await Data(contentsOf: self.localDatabaseURL)
+  private nonisolated func downloadAndMergePatches(localVersion: Int, remoteVersion: Int, baseURL: String, localDatabaseURL: URL) async throws -> [String: Data] {
+    let localCompressed = try Data(contentsOf: localDatabaseURL)
     let localDecompressed = (try? (localCompressed as NSData).decompressed(using: .lzfse) as Data) ?? localCompressed
     guard var masterDictionary = try PropertyListSerialization.propertyList(from: localDecompressed, options: [], format: nil) as? [String: Data] else {
       throw SyncError.decodeFailed
     }
     
-    // 2. Download missing sequential patches
     for patchNumber in (localVersion + 1)...remoteVersion {
       let patchURL = URL(string: "\(baseURL)/patch_\(patchNumber).lzfse")!
       
@@ -315,7 +394,6 @@ public final actor CardImageHashSyncManager: CardImageHashSyncManagable {
         
         let patchDecompressed = try (patchCompressed as NSData).decompressed(using: .lzfse) as Data
         if let patchDict = try PropertyListSerialization.propertyList(from: patchDecompressed, options: [], format: nil) as? [String: Data] {
-          // Merge new vectors (overwrites if ID already exists)
           masterDictionary.merge(patchDict) { (_, new) in new }
         }
       }
