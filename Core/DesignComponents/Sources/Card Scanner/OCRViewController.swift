@@ -251,6 +251,7 @@ extension OCRViewController {
       convertToViewSpace(observation.bottomRight),
       convertToViewSpace(observation.bottomLeft)
     ]
+    
     let points = Self.sortedCorners(rawPoints)
     
     let quad = QuadCorners(
@@ -260,7 +261,6 @@ extension OCRViewController {
       bottomLeft: points[3]
     )
     
-    // 🚦 THE GATE for Simulator
     guard self.isMagicTheGatheringRatio(points) else {
       self.didUpdateTrackingCorners?(nil)
       self.scheduleFadeOut()
@@ -269,7 +269,6 @@ extension OCRViewController {
     
     self.didUpdateTrackingCorners?(quad)
     
-    // 🚦 LOCK-CHECK-GO for Simulator
     guard self.gatekeeper.checkAndLockForProcessing() else { return }
     
     self.cancelFadeOut()
@@ -295,8 +294,14 @@ extension OCRViewController {
     filter?.setValue(CIVector(cgPoint: CGPoint(x: observation.bottomRight.x * imgSize.width, y: observation.bottomRight.y * imgSize.height)), forKey: "inputBottomRight")
     
     guard let output = filter?.outputImage,
-          let croppedCGImage = ciContext.createCGImage(output, from: output.extent) else {
+          var croppedCGImage = ciContext.createCGImage(output, from: output.extent) else {
       return
+    }
+    
+    if croppedCGImage.width > croppedCGImage.height {
+      if let rotated = croppedCGImage.rotated90() {
+        croppedCGImage = rotated
+      }
     }
     
     let minX = points.map(\.x).min() ?? 0
@@ -315,8 +320,6 @@ extension OCRViewController {
   private func handleCorners(_ corners: VNRectangleObserver.Corners?) {
     DispatchQueue.main.async { [weak self] in
       guard let self else { return }
-      
-      // 🛑 SHIELD: If we are showing the cards list, ignore any stale camera frames.
       guard !self.isTrackingPaused else { return }
       
       guard let corners else {
@@ -338,9 +341,7 @@ extension OCRViewController {
         return
       }
       
-      // ✅ PASSED: It's an MTG card. Tell TCA where it is!
       self.didUpdateTrackingCorners?(quad)
-      
       self.focusCamera(on: points)
       self.cancelFadeOut()
       

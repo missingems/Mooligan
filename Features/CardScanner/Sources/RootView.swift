@@ -7,23 +7,13 @@ import VariableBlur
 import Foundation
 import Networking
 
-struct TargetCardFrameKey: @MainActor PreferenceKey {
-  @MainActor static var defaultValue: CGRect = .zero
-  static func reduce(value: inout CGRect, nextValue: () -> CGRect) {
-    let next = nextValue()
-    if next != .zero { value = next }
-  }
-}
-
 public struct RootView: View {
   @Bindable var store: StoreOf<CardScannerFeature>
   @State private var bottomSafeArea: CGFloat = 0
   @State private var topSafeArea: CGFloat = 0
   
-  @State private var viewSize: CGSize?
+  @State private var viewSize: CGSize = UIScreen.main.bounds.size
   @State private var lastValidCorners: QuadCorners? = nil
-  @State private var targetCardFrame: CGRect = .zero
-  
   @State private var localIsMorphed: Bool = false
   
   private var hasScannedCard: Bool {
@@ -40,17 +30,22 @@ public struct RootView: View {
         ZStack(alignment: .center) {
           cameraLayer
           floatingMorphLayer
-          scrollableCardsLayer
-        }
-        .coordinateSpace(name: "RootSpace")
-        .onPreferenceChange(TargetCardFrameKey.self) { frame in
-          if frame != .zero { self.targetCardFrame = frame }
+          
+          let containerWidth = viewSize.width - 110
+          let cardHeight = containerWidth / (63.0 / 88.0)
+          let topOffset = (viewSize.height / 2) - 40 - (cardHeight / 2)
+          
+          VStack(spacing: 0) {
+            Spacer().frame(height: topOffset)
+            scrollableCardsLayer
+            Spacer(minLength: 0)
+          }
         }
         
         bottomToolBarLayer
       }
       .onGeometryChange(for: CGSize.self, of: { proxy in proxy.size }, action: { newValue in
-        if self.viewSize != newValue, viewSize == nil {
+        if self.viewSize != newValue {
           self.viewSize = newValue
         }
       })
@@ -58,7 +53,9 @@ public struct RootView: View {
       .ignoresSafeArea(.all)
       .task { store.send(.syncCardImageHashDatabase) }
       .onAppear {
-        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene, let window = windowScene.windows.first {
+        if
+          let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+          let window = windowScene.windows.first {
           bottomSafeArea = window.safeAreaInsets.bottom
           topSafeArea = window.safeAreaInsets.top
         }
@@ -82,7 +79,7 @@ public struct RootView: View {
   private var cameraLayer: some View {
     OCRView(
       isScanningPaused: store.isScanningPaused,
-      isProcessingFrame: store.isProcessingFrame, // ✨ Pushed down to gatekeeper
+      isProcessingFrame: store.isProcessingFrame,
       isTrackingPaused: store.isMorphed,
       onValidatedScan: { result in store.send(.didScan(result)) },
       onTrackingUpdate: { corners in store.send(.trackingCornersUpdated(corners)) }
@@ -93,10 +90,16 @@ public struct RootView: View {
   @ViewBuilder
   private var floatingMorphLayer: some View {
     Group {
-      if !store.isMorphAnimationComplete, let viewSize {
-        let targetCorners = localIsMorphed
-        ? uprightCorners(from: targetCardFrame, fallbackSize: viewSize)
-        : (store.latestTrackedCorners ?? lastValidCorners)
+      if !store.isMorphAnimationComplete {
+        let targetCorners: QuadCorners? = {
+          if localIsMorphed {
+            return uprightCorners(fallbackSize: viewSize)
+          } else if let baseCorners = (store.latestTrackedCorners ?? lastValidCorners) {
+            return adjustedCorners(for: baseCorners, orientation: store.matchedOrientation)
+          } else {
+            return nil
+          }
+        }()
         
         if let cornersToDraw = targetCorners, let cardInfo = store.dataSource?.cardDetails.first {
           let isTracking = store.latestTrackedCorners != nil || localIsMorphed
@@ -111,8 +114,6 @@ public struct RootView: View {
             .projected(to: cornersToDraw, size: configuration.size)
             .ignoresSafeArea()
             .animation(localIsMorphed ? .bouncy(duration: 0.6) : .easeOut(duration: 0.315), value: cornersToDraw)
-            .opacity(isTracking ? 1.0 : 0.0)
-            .animation(isTracking ? .easeOut(duration: 0.2) : .easeIn(duration: 0.35).delay(0.6), value: isTracking)
         }
       }
     }
@@ -123,11 +124,11 @@ public struct RootView: View {
   
   @ViewBuilder
   private var scrollableCardsLayer: some View {
+    let containerWidth = viewSize.width - 110
+    
     ScrollView(.horizontal) {
-      LazyHStack(spacing: 8) {
-        if let cardDetails = store.dataSource?.cardDetails, let viewSize {
-          let containerWidth = viewSize.width - 110
-          
+      LazyHStack(alignment: .top, spacing: 8) {
+        if let cardDetails = store.dataSource?.cardDetails {
           ForEach(Array(cardDetails.enumerated()), id: \.element.id) { index, cardInfo in
             scrollableCardItem(index: index, cardInfo: cardInfo, containerWidth: containerWidth)
           }
@@ -138,7 +139,6 @@ public struct RootView: View {
     }
     .scrollTargetBehavior(.viewAligned)
     .scrollIndicators(.hidden)
-    .offset(y: -40)
     .opacity(hasScannedCard ? 1.0 : 0.0)
   }
   
@@ -149,7 +149,7 @@ public struct RootView: View {
     let showDetails = store.isMorphed
     
     let configuration = CardView.LayoutConfiguration(
-      rotation: cardInfo.card.isLandscape ? .landscape : .portrait,
+      rotation: .portrait,
       maxWidth: containerWidth.rounded()
     )
     
@@ -158,23 +158,9 @@ public struct RootView: View {
         displayableCard: cardInfo.displayableCardImage,
         layoutConfiguration: configuration,
         priceVisibility: .hidden,
-        shouldShowShadow: true
+        shouldShowShadow: false
       )
       .frame(width: configuration.size.width, height: configuration.size.height)
-      .conditionalModifier(isFirst && !store.isMorphAnimationComplete, transform: { view in
-        view.background(
-          Group {
-            if isFirst && !store.isMorphAnimationComplete {
-              GeometryReader { geo in
-                Color.clear.preference(
-                  key: TargetCardFrameKey.self,
-                  value: geo.frame(in: .named("RootSpace"))
-                )
-              }
-            }
-          }
-        )
-      })
       .opacity(showImage ? 1.0 : 0.0)
       
       VStack(alignment: .center, spacing: 5.0) {
@@ -185,7 +171,6 @@ public struct RootView: View {
         
         HStack(spacing: 8.0) {
           HStack(alignment: .center, spacing: 3) {
-            IconLazyImage(cardInfo.cachedIconURL).frame(width: 20, height: 20)
             Text(cardInfo.formattedSetCode).fontWidth(.condensed)
           }
           Text(cardInfo.formattedCollectorNumber).fontDesign(.serif)
@@ -213,9 +198,7 @@ public struct RootView: View {
         .fixedSize(horizontal: true, vertical: true)
       }
       .opacity(showDetails ? 1.0 : 0.0)
-      .animation(.easeOut(duration: 0.4), value: showDetails)
       .frame(width: containerWidth)
-      .fixedSize(horizontal: false, vertical: true)
     }
   }
   
@@ -266,27 +249,32 @@ public struct RootView: View {
     }
   }
   
-  private func uprightCorners(from frame: CGRect, fallbackSize: CGSize) -> QuadCorners {
-    guard frame != .zero else {
-      let cardWidth = fallbackSize.width - 110
-      let cardHeight = cardWidth / (63.0 / 88.0)
-      let midX = fallbackSize.width / 2
-      let midY = (fallbackSize.height / 2) - 86.5
-      let halfW = cardWidth / 2
-      let halfH = cardHeight / 2
-      return QuadCorners(
-        topLeft: CGPoint(x: midX - halfW, y: midY - halfH),
-        topRight: CGPoint(x: midX + halfW, y: midY - halfH),
-        bottomRight: CGPoint(x: midX + halfW, y: midY + halfH),
-        bottomLeft: CGPoint(x: midX - halfW, y: midY + halfH)
-      )
-    }
+  private func uprightCorners(fallbackSize: CGSize) -> QuadCorners {
+    let cardWidth = fallbackSize.width - 110
+    let cardHeight = cardWidth / (63.0 / 88.0)
+    let midX = fallbackSize.width / 2
+    let midY = (fallbackSize.height / 2) - 40
     
+    let halfW = cardWidth / 2
+    let halfH = cardHeight / 2
     return QuadCorners(
-      topLeft: CGPoint(x: frame.minX, y: frame.minY),
-      topRight: CGPoint(x: frame.maxX, y: frame.minY),
-      bottomRight: CGPoint(x: frame.maxX, y: frame.maxY),
-      bottomLeft: CGPoint(x: frame.minX, y: frame.maxY)
+      topLeft: CGPoint(x: midX - halfW, y: midY - halfH),
+      topRight: CGPoint(x: midX + halfW, y: midY - halfH),
+      bottomRight: CGPoint(x: midX + halfW, y: midY + halfH),
+      bottomLeft: CGPoint(x: midX - halfW, y: midY + halfH)
     )
+  }
+  
+  private func adjustedCorners(for corners: QuadCorners, orientation: PhysicalOrientation) -> QuadCorners {
+    switch orientation {
+    case .upright:
+      return corners
+    case .tappedRight:
+      return QuadCorners(topLeft: corners.topRight, topRight: corners.bottomRight, bottomRight: corners.bottomLeft, bottomLeft: corners.topLeft)
+    case .upsideDown:
+      return QuadCorners(topLeft: corners.bottomRight, topRight: corners.bottomLeft, bottomRight: corners.topLeft, bottomLeft: corners.topRight)
+    case .tappedLeft:
+      return QuadCorners(topLeft: corners.bottomLeft, topRight: corners.topLeft, bottomRight: corners.topRight, bottomLeft: corners.bottomRight)
+    }
   }
 }

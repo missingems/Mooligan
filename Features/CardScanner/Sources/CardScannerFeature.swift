@@ -6,8 +6,38 @@ import DesignComponents
 import ScryfallKit
 import Networking
 
-// MARK: - Reducer & Status
+// MARK: - Safe Image Rotation
+public extension CGImage {
+  func rotated(by degrees: Int) -> CGImage? {
+    guard degrees % 360 != 0 else { return self }
+    let ciImage = CIImage(cgImage: self)
+    let rotated: CIImage
+    
+    switch degrees {
+    case 90: rotated = ciImage.oriented(.right) // 90 CW
+    case 180: rotated = ciImage.oriented(.down) // 180
+    case 270: rotated = ciImage.oriented(.left) // 90 CCW
+    default: return self
+    }
+    
+    let context = CIContext(options: [.cacheIntermediates: false])
+    return context.createCGImage(rotated, from: rotated.extent)
+  }
+  
+  func rotated90() -> CGImage? {
+    return rotated(by: 90)
+  }
+}
 
+// MARK: - Physical Orientation Logic
+public enum PhysicalOrientation: Sendable, Equatable {
+  case upright
+  case upsideDown
+  case tappedLeft
+  case tappedRight
+}
+
+// MARK: - Reducer & Status
 public enum ScannerStatus: Equatable, Sendable {
   case loading
   case scanning
@@ -34,16 +64,14 @@ public enum ScannerStatus: Equatable, Sendable {
     public var queryWithSetCode: SearchQuery?
     public var queryWithoutSetCode: SearchQuery?
     
-    // UI layout tracking + Morph Image
     public var latestTrackedCorners: QuadCorners? = nil
     public var isMorphed: Bool = false
     public var isMorphAnimationComplete: Bool = false
     public var isScanningPaused: Bool = false
     
-    // Tracking processing
     public var isProcessingFrame: Bool = false
+    public var matchedOrientation: PhysicalOrientation = .upright
     
-    // Array-based accumulation for noise reduction
     public var recentMatchIDs: [String] = []
     
     public init(scannedResult: OCRCardScannedResult?) {
@@ -55,7 +83,7 @@ public enum ScannerStatus: Equatable, Sendable {
     case binding(BindingAction<State>)
     case trackingCornersUpdated(QuadCorners?)
     case didScan(ScannedImage)
-    case internalMatchesFound([(id: String, distance: Float)])
+    case internalMatchesFound([(id: String, distance: Float)], PhysicalOrientation)
     case singleCardFound(Card)
     case fetchVariants(Card)
     case variantsLoaded([Card])
@@ -97,6 +125,7 @@ public enum ScannerStatus: Equatable, Sendable {
       state.dataSource = nil
       state.isProcessingFrame = false
       state.status = .scanning
+      state.matchedOrientation = .upright
       
       state.isScanningPaused = false
       state.latestTrackedCorners = nil
@@ -111,21 +140,43 @@ public enum ScannerStatus: Equatable, Sendable {
       )
       
     case let .didScan(result):
-      guard !state.isScanningPaused else { return .none } // 🚀 Lock out new scans if we found our match
+      guard !state.isScanningPaused else { return .none }
       guard state.dataSource == nil else { return .none }
       guard !state.isProcessingFrame else { return .none }
       state.isProcessingFrame = true
       
       return .run { send in
-        let bestMatches = await imageHashManager.findBestMatches(for: result.value)
-          .map { (id: $0.id, distance: $0.distance) }
-        await send(.internalMatchesFound(bestMatches))
+        async let match0 = imageHashManager.findBestMatches(for: result.value)
+        async let match90 = imageHashManager.findBestMatches(for: result.value.rotated(by: 90) ?? result.value)
+        async let match180 = imageHashManager.findBestMatches(for: result.value.rotated(by: 180) ?? result.value)
+        async let match270 = imageHashManager.findBestMatches(for: result.value.rotated(by: 270) ?? result.value)
+        
+        let results = await [
+          (PhysicalOrientation.upright, match0),
+          (PhysicalOrientation.tappedLeft, match90),
+          (PhysicalOrientation.upsideDown, match180),
+          (PhysicalOrientation.tappedRight, match270)
+        ]
+        
+        var bestOrientation = PhysicalOrientation.upright
+        var bestMatches: [(id: String, distance: Float)] = []
+        var bestDistance: Float = .infinity
+        
+        for (orientation, matches) in results {
+          if let topMatch = matches.first, topMatch.distance < bestDistance {
+            bestDistance = topMatch.distance
+            bestOrientation = orientation
+            bestMatches = matches.map { (id: $0.id, distance: $0.distance) }
+          }
+        }
+        
+        await send(.internalMatchesFound(bestMatches, bestOrientation))
       }
       
-    case let .internalMatchesFound(matches):
+    case let .internalMatchesFound(matches, orientation):
       state.isProcessingFrame = false
       
-      guard !state.isScanningPaused else { return .none } // 🚀 Double check lock
+      guard !state.isScanningPaused else { return .none }
       
       guard let topMatch = matches.first else {
         if state.dataSource == nil { state.status = .scanning }
@@ -143,8 +194,9 @@ public enum ScannerStatus: Equatable, Sendable {
         return .none
       }
       
-      if state.dataSource == nil { state.status = .scanFound }
+      state.matchedOrientation = orientation
       
+      if state.dataSource == nil { state.status = .scanFound }
       state.isScanningPaused = true
       
       return .run { send in
@@ -184,9 +236,9 @@ public enum ScannerStatus: Equatable, Sendable {
       
     case let .imageDownloadCompleted(card):
       return .run { send in
-        try await Task.sleep(nanoseconds: 150_000_000)
         await send(.triggerMorph(card))
-      }.cancellable(id: CancelID.delayedMorph, cancelInFlight: true)
+      }
+      .cancellable(id: CancelID.delayedMorph, cancelInFlight: true)
       
     case let .triggerMorph(_):
       state.isMorphed = true
@@ -203,9 +255,7 @@ public enum ScannerStatus: Equatable, Sendable {
     case let .fetchVariants(card):
       let query = SearchQuery(oracleID: card.oracleId, page: 1, sortMode: .released, sortDirection: .auto)
       return .run { send in
-        let data = try await client.queryCards(
-          query
-        ).data
+        let data = try await client.queryCards(query).data
         await send(.variantsLoaded(data), animation: .default)
       } catch: { error, send in
         print("Variants query failed: \(error)")

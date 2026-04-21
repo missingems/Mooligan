@@ -34,6 +34,7 @@ final class OCRCaptureDelegate: NSObject, @unchecked Sendable {
     guard let pixelBuffer else { return nil }
     
     let ciImage = CIImage(cvPixelBuffer: pixelBuffer).oriented(.right)
+    
     let filter = CIFilter(name: "CIPerspectiveCorrection")
     filter?.setValue(ciImage, forKey: kCIInputImageKey)
     filter?.setValue(CIVector(cgPoint: observation.topLeft.scaled(ciImage.extent.size)), forKey: "inputTopLeft")
@@ -41,8 +42,16 @@ final class OCRCaptureDelegate: NSObject, @unchecked Sendable {
     filter?.setValue(CIVector(cgPoint: observation.bottomLeft.scaled(ciImage.extent.size)), forKey: "inputBottomLeft")
     filter?.setValue(CIVector(cgPoint: observation.bottomRight.scaled(ciImage.extent.size)), forKey: "inputBottomRight")
     
-    guard let output = filter?.outputImage else { return nil }
-    return ciContext.createCGImage(output, from: output.extent)
+    guard let output = filter?.outputImage,
+          let cgImage = ciContext.createCGImage(output, from: output.extent) else {
+      return nil
+    }
+    
+    if cgImage.width > cgImage.height {
+      return cgImage.rotated90() ?? cgImage
+    }
+    
+    return cgImage
   }
 }
 
@@ -52,7 +61,6 @@ extension OCRCaptureDelegate: AVCaptureVideoDataOutputSampleBufferDelegate {
     didOutput sampleBuffer: CMSampleBuffer,
     from connection: AVCaptureConnection
   ) {
-    // Stop immediately if tracking is disabled to save CPU
     guard !isTrackingDisabled else { return }
     
     guard let imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
@@ -60,33 +68,19 @@ extension OCRCaptureDelegate: AVCaptureVideoDataOutputSampleBufferDelegate {
     
     guard let observer = VNRectangleObserver(imageBuffer: imageBuffer),
           let corners = observer.process() else {
-      DispatchQueue.main.async { [weak self] in
-        self?.onDrawBox?(nil)
-      }
+      DispatchQueue.main.async { [weak self] in self?.onDrawBox?(nil) }
       return
     }
     
-    // Pass bounding box up to SwiftUI
-    DispatchQueue.main.async { [weak self] in
-      self?.onDrawBox?(corners)
-    }
+    DispatchQueue.main.async { [weak self] in self?.onDrawBox?(corners) }
     
-    // Stop heavy OCR extraction if disabled
     guard !isOCRDisabled else { return }
-    
-    // 🚦 LOCK-CHECK-GO
-    guard let gatekeeper = gatekeeper, gatekeeper.checkAndLockForProcessing() else {
-      return // Frame dropped cleanly
-    }
+    guard let gatekeeper = gatekeeper, gatekeeper.checkAndLockForProcessing() else { return }
     
     Task { [weak self] in
       guard let self else { return }
-      
       processOCR(
-        on: extractAndFlattenCard(
-          from: sendableBuffer.value,
-          observation: corners
-        ),
+        on: extractAndFlattenCard(from: sendableBuffer.value, observation: corners),
         corners: corners
       )
     }
@@ -96,5 +90,32 @@ extension OCRCaptureDelegate: AVCaptureVideoDataOutputSampleBufferDelegate {
 fileprivate extension CGPoint {
   func scaled(_ size: CGSize) -> CGPoint {
     CGPoint(x: x * size.width, y: y * size.height)
+  }
+}
+
+// MARK: - Safe Image Rotation
+public extension CGImage {
+  func rotated(by degrees: Int) -> CGImage? {
+    guard degrees % 360 != 0 else { return self }
+    let ciImage = CIImage(cgImage: self)
+    let rotated: CIImage
+    
+    switch degrees {
+    case 90: rotated = ciImage.oriented(.right) // 90 CW
+    case 180: rotated = ciImage.oriented(.down) // 180
+    case 270: rotated = ciImage.oriented(.left) // 90 CCW
+    default: return self
+    }
+    
+    let context = CIContext(options: [.cacheIntermediates: false])
+    return context.createCGImage(rotated, from: rotated.extent)
+  }
+  
+  func rotated90() -> CGImage? {
+    return rotated(by: 90)
+  }
+  
+  func rotated180() -> CGImage? {
+    return rotated(by: 180)
   }
 }
