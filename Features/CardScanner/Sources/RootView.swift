@@ -125,7 +125,7 @@ public struct RootView: View {
   @ViewBuilder
   private var scrollableCardsLayer: some View {
     let containerWidth = viewSize.width - 110
-     
+    
     ScrollView(.horizontal) {
       LazyHStack(alignment: .top, spacing: 8) {
         if let cardDetails = store.dataSource?.cardDetails {
