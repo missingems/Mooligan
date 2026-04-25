@@ -58,23 +58,22 @@ public enum ScannerStatus: Equatable, Sendable {
   @ObservableState
   public struct State: Sendable, Equatable {
     public var status: ScannerStatus = .loading
-    
     public var scannedResult: OCRCardScannedResult?
     public var dataSource: CardDataSource?
     public var queryWithSetCode: SearchQuery?
     public var queryWithoutSetCode: SearchQuery?
-    
     public var latestTrackedCorners: QuadCorners? = nil
     public var isMorphed: Bool = false
     public var isMorphAnimationComplete: Bool = false
     public var isScanningPaused: Bool = false
-    
     public var isProcessingFrame: Bool = false
     public var matchedOrientation: PhysicalOrientation = .upright
-    
     public var recentMatchIDs: [String] = []
+    public var viewSize: CGSize? = nil
+    public var topSafeArea: CGFloat = 0
+    public var bottomSafeArea: CGFloat = 0
     
-    public init(scannedResult: OCRCardScannedResult?) {
+    public init(scannedResult: OCRCardScannedResult? = nil) {
       self.scannedResult = scannedResult
     }
   }
@@ -93,6 +92,8 @@ public enum ScannerStatus: Equatable, Sendable {
     case triggerMorph(Card)
     case morphAnimationFinished
     case resetScan
+    case updateViewSize(CGSize)
+    case updateSafeAreas(top: CGFloat, bottom: CGFloat)
   }
   
   @Dependency(\.cardQueryRequestClient) var client
@@ -113,6 +114,17 @@ public enum ScannerStatus: Equatable, Sendable {
   private func coreReduce(into state: inout State, action: Action) -> Effect<Action> {
     switch action {
     case .binding:
+      return .none
+      
+    case let .updateViewSize(size):
+      if state.viewSize != size {
+        state.viewSize = size
+      }
+      return .none
+      
+    case let .updateSafeAreas(top, bottom):
+      state.topSafeArea = top
+      state.bottomSafeArea = bottom
       return .none
       
     case let .trackingCornersUpdated(corners):
@@ -240,9 +252,14 @@ public enum ScannerStatus: Equatable, Sendable {
       }
       .cancellable(id: CancelID.delayedMorph, cancelInFlight: true)
       
-    case let .triggerMorph(_):
+    case .triggerMorph(_):
       state.isMorphed = true
-      return .none
+      
+      return .run { send in
+        try await Task.sleep(nanoseconds: 600_000_000)
+        await send(.morphAnimationFinished)
+      }
+      .cancellable(id: CancelID.delayedMorph, cancelInFlight: true)
       
     case .morphAnimationFinished:
       state.isMorphAnimationComplete = true

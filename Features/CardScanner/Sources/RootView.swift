@@ -9,12 +9,6 @@ import Networking
 
 public struct RootView: View {
   @Bindable var store: StoreOf<CardScannerFeature>
-  @State private var bottomSafeArea: CGFloat = 0
-  @State private var topSafeArea: CGFloat = 0
-  
-  @State private var viewSize: CGSize = UIScreen.main.bounds.size
-  @State private var lastValidCorners: QuadCorners? = nil
-  @State private var localIsMorphed: Bool = false
   
   private var hasScannedCard: Bool {
     store.dataSource != nil
@@ -31,23 +25,23 @@ public struct RootView: View {
           cameraLayer
           floatingMorphLayer
           
-          let containerWidth = viewSize.width - 110
-          let cardHeight = containerWidth / (63.0 / 88.0)
-          let topOffset = (viewSize.height / 2) - 40 - (cardHeight / 2)
-          
-          VStack(spacing: 0) {
-            Spacer().frame(height: topOffset)
-            scrollableCardsLayer
-            Spacer(minLength: 0)
+          if let viewSize = store.viewSize {
+            let containerWidth = viewSize.width - 110
+            let cardHeight = containerWidth / (63.0 / 88.0)
+            let topOffset = (viewSize.height / 2) - 40 - (cardHeight / 2)
+            
+            VStack(spacing: 0) {
+              Spacer(minLength: topOffset)
+              scrollableCardsLayer
+              Spacer(minLength: 0)
+            }
           }
         }
         
         bottomToolBarLayer
       }
       .onGeometryChange(for: CGSize.self, of: { proxy in proxy.size }, action: { newValue in
-        if self.viewSize != newValue {
-          self.viewSize = newValue
-        }
+        store.send(.updateViewSize(newValue))
       })
       .toolbar { navigationToolbar }
       .ignoresSafeArea(.all)
@@ -56,23 +50,14 @@ public struct RootView: View {
         if
           let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
           let window = windowScene.windows.first {
-          bottomSafeArea = window.safeAreaInsets.bottom
-          topSafeArea = window.safeAreaInsets.top
+          store.send(.updateSafeAreas(
+            top: window.safeAreaInsets.top,
+            bottom: window.safeAreaInsets.bottom
+          ))
         }
       }
     }
     .colorScheme(.dark)
-    .onChange(of: store.isMorphed) { _, isMorphedStoreState in
-      if isMorphedStoreState {
-        withAnimation(.bouncy(duration: 0.6)) {
-          localIsMorphed = true
-        } completion: {
-          store.send(.morphAnimationFinished)
-        }
-      } else {
-        localIsMorphed = false
-      }
-    }
   }
   
   @ViewBuilder
@@ -89,57 +74,52 @@ public struct RootView: View {
   
   @ViewBuilder
   private var floatingMorphLayer: some View {
-    Group {
-      if !store.isMorphAnimationComplete {
-        let targetCorners: QuadCorners? = {
-          if localIsMorphed {
-            return uprightCorners(fallbackSize: viewSize)
-          } else if let baseCorners = (store.latestTrackedCorners ?? lastValidCorners) {
-            return adjustedCorners(for: baseCorners, orientation: store.matchedOrientation)
-          } else {
-            return nil
-          }
-        }()
-        
-        if let cornersToDraw = targetCorners, let cardInfo = store.dataSource?.cardDetails.first {
-          let isTracking = store.latestTrackedCorners != nil || localIsMorphed
-          
-          let containerWidth = viewSize.width - 110
-          let configuration = CardView.LayoutConfiguration(
-            rotation: cardInfo.card.isLandscape ? .landscape : .portrait,
-            maxWidth: containerWidth.rounded()
-          )
-          
-          CardView(displayableCard: cardInfo.displayableCardImage, priceVisibility: .hidden)
-            .projected(to: cornersToDraw, size: configuration.size)
-            .ignoresSafeArea()
-            .animation(localIsMorphed ? .bouncy(duration: 0.6) : .easeOut(duration: 0.315), value: cornersToDraw)
+    if !store.isMorphAnimationComplete {
+      let targetCorners: QuadCorners? = {
+        if store.isMorphed, let viewSize = store.viewSize {
+          return uprightCorners(fallbackSize: viewSize)
+        } else if let baseCorners = store.latestTrackedCorners {
+          return adjustedCorners(for: baseCorners, orientation: store.matchedOrientation)
+        } else {
+          return nil
         }
+      }()
+      
+      if let cornersToDraw = targetCorners, let cardInfo = store.dataSource?.cardDetails.first, let viewSize = store.viewSize {
+        let containerWidth = viewSize.width - 110
+        let configuration = CardView.LayoutConfiguration(
+          rotation: cardInfo.card.isLandscape ? .landscape : .portrait,
+          maxWidth: containerWidth.rounded()
+        )
+        
+        CardView(displayableCard: cardInfo.displayableCardImage, priceVisibility: .hidden)
+          .projected(to: cornersToDraw, size: configuration.size)
+          .ignoresSafeArea()
+          .animation(store.isMorphed ? .bouncy(duration: 0.6) : .easeOut(duration: 0.315), value: cornersToDraw)
       }
-    }
-    .onChange(of: store.latestTrackedCorners) { oldValue, newValue in
-      if let newValue { lastValidCorners = newValue }
     }
   }
   
   @ViewBuilder
   private var scrollableCardsLayer: some View {
-    let containerWidth = viewSize.width - 110
-    
-    ScrollView(.horizontal) {
-      LazyHStack(alignment: .top, spacing: 8) {
-        if let cardDetails = store.dataSource?.cardDetails {
-          ForEach(Array(cardDetails.enumerated()), id: \.element.id) { index, cardInfo in
-            scrollableCardItem(index: index, cardInfo: cardInfo, containerWidth: containerWidth)
+    if let viewSize = store.viewSize {
+      let containerWidth = viewSize.width - 110
+      
+      ScrollView(.horizontal) {
+        LazyHStack(alignment: .top, spacing: 8) {
+          if let cardDetails = store.dataSource?.cardDetails {
+            ForEach(Array(cardDetails.enumerated()), id: \.element.id) { index, cardInfo in
+              scrollableCardItem(index: index, cardInfo: cardInfo, containerWidth: containerWidth)
+            }
           }
         }
+        .padding(.horizontal, 55)
+        .scrollTargetLayout()
       }
-      .padding(.horizontal, 55)
-      .scrollTargetLayout()
+      .scrollTargetBehavior(.viewAligned)
+      .scrollIndicators(.hidden)
+      .opacity(hasScannedCard ? 1.0 : 0.0)
     }
-    .scrollTargetBehavior(.viewAligned)
-    .scrollIndicators(.hidden)
-    .opacity(hasScannedCard ? 1.0 : 0.0)
   }
   
   @ViewBuilder
@@ -230,7 +210,7 @@ public struct RootView: View {
       }
       .fontWeight(.semibold)
     }
-    .padding(.bottom, bottomSafeArea + 80)
+    .padding(.bottom, store.bottomSafeArea + 80)
     .animation(.bouncy(duration: 0.5, extraBounce: 0.1), value: hasScannedCard)
   }
   
