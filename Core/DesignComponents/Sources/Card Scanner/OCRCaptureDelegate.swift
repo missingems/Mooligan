@@ -47,10 +47,6 @@ final class OCRCaptureDelegate: NSObject, @unchecked Sendable {
       return nil
     }
     
-    if cgImage.width > cgImage.height {
-      return cgImage.rotated90() ?? cgImage
-    }
-    
     return cgImage
   }
 }
@@ -90,32 +86,5 @@ extension OCRCaptureDelegate: AVCaptureVideoDataOutputSampleBufferDelegate {
 fileprivate extension CGPoint {
   func scaled(_ size: CGSize) -> CGPoint {
     CGPoint(x: x * size.width, y: y * size.height)
-  }
-}
-
-// MARK: - Safe Image Rotation
-public extension CGImage {
-  func rotated(by degrees: Int) -> CGImage? {
-    guard degrees % 360 != 0 else { return self }
-    let ciImage = CIImage(cgImage: self)
-    let rotated: CIImage
-    
-    switch degrees {
-    case 90: rotated = ciImage.oriented(.right) // 90 CW
-    case 180: rotated = ciImage.oriented(.down) // 180
-    case 270: rotated = ciImage.oriented(.left) // 90 CCW
-    default: return self
-    }
-    
-    let context = CIContext(options: [.cacheIntermediates: false])
-    return context.createCGImage(rotated, from: rotated.extent)
-  }
-  
-  func rotated90() -> CGImage? {
-    return rotated(by: 90)
-  }
-  
-  func rotated180() -> CGImage? {
-    return rotated(by: 180)
   }
 }

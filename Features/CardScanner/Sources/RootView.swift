@@ -7,32 +7,55 @@ import VariableBlur
 import Foundation
 import Networking
 
+// MARK: - Layout Constants
+
+private enum Layout {
+  static let cardHorizontalMargin: CGFloat    = 110
+  static let cardHorizontalPadding: CGFloat   = 55
+  static let cardAspectRatio: CGFloat         = 63.0 / 88.0
+  static let verticalCenterAdjustment: CGFloat = 40
+  static let cardItemSpacing: CGFloat         = 8
+  static let cardDetailSpacing: CGFloat       = 13
+  static let toolbarExtraBottomPadding: CGFloat = 80
+  static let toolbarButtonSpacing: CGFloat    = 34
+  static let primaryButtonSize: CGFloat       = 89
+  static let secondaryButtonSize: CGFloat     = 55
+  static let captureButtonInnerSize: CGFloat  = 77
+}
+
+private struct CardLayoutMetrics {
+  let containerWidth: CGFloat
+  let cardHeight: CGFloat
+  let topOffset: CGFloat
+  
+  init(viewSize: CGSize) {
+    containerWidth = viewSize.width - Layout.cardHorizontalMargin
+    cardHeight = containerWidth / Layout.cardAspectRatio
+    topOffset = (viewSize.height / 2) - Layout.verticalCenterAdjustment - (cardHeight / 2)
+  }
+}
+
 public struct RootView: View {
   @Bindable var store: StoreOf<CardScannerFeature>
   
-  private var hasScannedCard: Bool {
-    store.dataSource != nil
-  }
+  private var hasScannedCard: Bool { store.dataSource != nil }
   
   public init(store: StoreOf<CardScannerFeature>) {
     self.store = store
   }
   
   public var body: some View {
-    NavigationView {
+    NavigationStack {
       ZStack(alignment: .bottom) {
         ZStack(alignment: .center) {
           cameraLayer
           floatingMorphLayer
           
           if let viewSize = store.viewSize {
-            let containerWidth = viewSize.width - 110
-            let cardHeight = containerWidth / (63.0 / 88.0)
-            let topOffset = (viewSize.height / 2) - 40 - (cardHeight / 2)
-            
+            let metrics = CardLayoutMetrics(viewSize: viewSize)
             VStack(spacing: 0) {
-              Spacer(minLength: topOffset)
-              scrollableCardsLayer
+              Spacer(minLength: metrics.topOffset)
+              scrollableCardsLayer(metrics: metrics)
               Spacer(minLength: 0)
             }
           }
@@ -40,25 +63,20 @@ public struct RootView: View {
         
         bottomToolBarLayer
       }
-      .onGeometryChange(for: CGSize.self, of: { proxy in proxy.size }, action: { newValue in
-        store.send(.updateViewSize(newValue))
-      })
+      .onGeometryChange(for: CGSize.self, of: { $0.size }) { size in
+        store.send(.updateViewSize(size))
+      }
+      .onGeometryChange(for: EdgeInsets.self, of: { $0.safeAreaInsets }) { insets in
+        store.send(.updateSafeAreas(top: insets.top, bottom: insets.bottom))
+      }
       .toolbar { navigationToolbar }
       .ignoresSafeArea(.all)
       .task { store.send(.syncCardImageHashDatabase) }
-      .onAppear {
-        if
-          let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-          let window = windowScene.windows.first {
-          store.send(.updateSafeAreas(
-            top: window.safeAreaInsets.top,
-            bottom: window.safeAreaInsets.bottom
-          ))
-        }
-      }
     }
     .colorScheme(.dark)
   }
+  
+  // MARK: - Camera
   
   @ViewBuilder
   private var cameraLayer: some View {
@@ -66,27 +84,30 @@ public struct RootView: View {
       isScanningPaused: store.isScanningPaused,
       isProcessingFrame: store.isProcessingFrame,
       isTrackingPaused: store.isMorphed,
-      onValidatedScan: { result in store.send(.didScan(result)) },
-      onTrackingUpdate: { corners in store.send(.trackingCornersUpdated(corners)) }
+      onValidatedScan: { store.send(.didScan($0)) },
+      onTrackingUpdate: { store.send(.trackingCornersUpdated($0)) }
     )
     .background(.black)
   }
   
+  // MARK: - Floating Morph Layer
+  
   @ViewBuilder
   private var floatingMorphLayer: some View {
-    if !store.isMorphAnimationComplete {
-      let targetCorners: QuadCorners? = {
-        if store.isMorphed, let viewSize = store.viewSize {
-          return uprightCorners(fallbackSize: viewSize)
-        } else if let baseCorners = store.latestTrackedCorners {
-          return adjustedCorners(for: baseCorners, orientation: store.matchedOrientation)
-        } else {
-          return nil
-        }
-      }()
+    if !store.isMorphAnimationComplete,
+       let viewSize = store.viewSize,
+       let cardInfo = store.dataSource?.cardDetails.first {
       
-      if let cornersToDraw = targetCorners, let cardInfo = store.dataSource?.cardDetails.first, let viewSize = store.viewSize {
-        let containerWidth = viewSize.width - 110
+      // When morphed, animate to the computed upright position.
+      // Before morphing, show the card projected at the live tracked corners.
+      // If corners haven't been set yet, nothing is shown — avoids a
+      // premature "pop" to the upright position before tracking locks in.
+      let targetCorners: QuadCorners? = store.isMorphed
+      ? uprightCorners(for: viewSize)
+      : store.latestTrackedCorners
+      
+      if let cornersToDraw = targetCorners {
+        let containerWidth = viewSize.width - Layout.cardHorizontalMargin
         let configuration = CardView.LayoutConfiguration(
           rotation: cardInfo.card.isLandscape ? .landscape : .portrait,
           maxWidth: containerWidth.rounded()
@@ -95,37 +116,50 @@ public struct RootView: View {
         CardView(displayableCard: cardInfo.displayableCardImage, priceVisibility: .hidden)
           .projected(to: cornersToDraw, size: configuration.size)
           .ignoresSafeArea()
-          .animation(store.isMorphed ? .bouncy(duration: 0.6) : .easeOut(duration: 0.315), value: cornersToDraw)
+          .animation(
+            store.isMorphed ? .bouncy(duration: 0.6) : .easeOut(duration: 0.315),
+            value: cornersToDraw
+          )
       }
     }
   }
   
+  // MARK: - Scrollable Cards
+  
   @ViewBuilder
-  private var scrollableCardsLayer: some View {
-    if let viewSize = store.viewSize {
-      let containerWidth = viewSize.width - 110
-      
-      ScrollView(.horizontal) {
-        LazyHStack(alignment: .top, spacing: 8) {
-          if let cardDetails = store.dataSource?.cardDetails {
-            ForEach(Array(cardDetails.enumerated()), id: \.element.id) { index, cardInfo in
-              scrollableCardItem(index: index, cardInfo: cardInfo, containerWidth: containerWidth)
-            }
+  private func scrollableCardsLayer(metrics: CardLayoutMetrics) -> some View {
+    ScrollView(.horizontal) {
+      LazyHStack(alignment: .top, spacing: Layout.cardItemSpacing) {
+        if let cardDetails = store.dataSource?.cardDetails {
+          // FIX: was ForEach(Array(cardDetails.enumerated()), id: \.element.id) which
+          // allocates a new heap array on every render pass. ForEach over the
+          // collection directly with card identity avoids that allocation, and
+          // isFirst is derived by comparing against the first element's id.
+          ForEach(cardDetails, id: \.id) { cardInfo in
+            let isFirst = cardInfo.id == cardDetails.first?.id
+            scrollableCardItem(
+              isFirst: isFirst,
+              cardInfo: cardInfo,
+              containerWidth: metrics.containerWidth
+            )
           }
         }
-        .padding(.horizontal, 55)
-        .scrollTargetLayout()
       }
-      .scrollTargetBehavior(.viewAligned)
-      .scrollIndicators(.hidden)
-      .opacity(hasScannedCard ? 1.0 : 0.0)
+      .padding(.horizontal, Layout.cardHorizontalPadding)
+      .scrollTargetLayout()
     }
+    .scrollTargetBehavior(.viewAligned)
+    .scrollIndicators(.hidden)
+    .opacity(hasScannedCard ? 1.0 : 0.0)
   }
   
   @ViewBuilder
-  private func scrollableCardItem(index: Int, cardInfo: CardInfo, containerWidth: CGFloat) -> some View {
-    let isFirst = index == 0
-    let showImage = !(isFirst && !store.isMorphAnimationComplete)
+  private func scrollableCardItem(
+    isFirst: Bool,
+    cardInfo: CardInfo,
+    containerWidth: CGFloat
+  ) -> some View {
+    let showImage   = !(isFirst && !store.isMorphAnimationComplete)
     let showDetails = store.isMorphed
     
     let configuration = CardView.LayoutConfiguration(
@@ -133,7 +167,7 @@ public struct RootView: View {
       maxWidth: containerWidth.rounded()
     )
     
-    VStack(spacing: 13.0) {
+    VStack(spacing: Layout.cardDetailSpacing) {
       CardView(
         displayableCard: cardInfo.displayableCardImage,
         layoutConfiguration: configuration,
@@ -150,9 +184,7 @@ public struct RootView: View {
           .lineLimit(2)
         
         HStack(spacing: 8.0) {
-          HStack(alignment: .center, spacing: 3) {
-            Text(cardInfo.formattedSetCode).fontWidth(.condensed)
-          }
+          Text(cardInfo.formattedSetCode).fontWidth(.condensed)
           Text(cardInfo.formattedCollectorNumber).fontDesign(.serif)
         }
         .multilineTextAlignment(.center)
@@ -165,10 +197,14 @@ public struct RootView: View {
             PillText(usdPrice).padding(.all, 2)
           }
           if let usdFoilPrice = cardInfo.displayPriceUSDFoil {
-            PillText(usdFoilPrice, isFoil: true).foregroundStyle(.black.opacity(0.8)).padding(.all, 2)
+            PillText(usdFoilPrice, isFoil: true)
+              .foregroundStyle(.black.opacity(0.8))
+              .padding(.all, 2)
           }
           if let usdEtched = cardInfo.displayPriceUSDEtched {
-            PillText(usdEtched, isFoil: true).foregroundStyle(.black.opacity(0.8)).padding(.all, 2)
+            PillText(usdEtched, isFoil: true)
+              .foregroundStyle(.black.opacity(0.8))
+              .padding(.all, 2)
           }
         }
         .foregroundStyle(DesignComponentsAsset.accentColor.swiftUIColor)
@@ -182,42 +218,62 @@ public struct RootView: View {
     }
   }
   
+  // MARK: - Bottom Toolbar
+  
   @ViewBuilder
   private var bottomToolBarLayer: some View {
     GlassEffectContainer {
-      HStack(spacing: 34.0) {
+      HStack(spacing: Layout.toolbarButtonSpacing) {
         Spacer()
         if hasScannedCard {
-          Button(action: {}) { Image(systemName: "square.grid.2x2.fill").font(.body).frame(width: 55, height: 55) }
-            .glassEffect(.clear.interactive())
+          Button(action: {}) {
+            Image(systemName: "square.grid.2x2.fill")
+              .font(.body)
+              .frame(width: Layout.secondaryButtonSize, height: Layout.secondaryButtonSize)
+          }
+          .glassEffect(.clear.interactive())
         }
         
         if hasScannedCard {
-          Button(action: {}) { Image(systemName: "plus").font(.title) }
-            .frame(width: 89, height: 89)
-            .glassEffect(.clear.interactive())
+          Button(action: {}) {
+            Image(systemName: "plus").font(.title)
+          }
+          .frame(width: Layout.primaryButtonSize, height: Layout.primaryButtonSize)
+          .glassEffect(.clear.interactive())
         } else {
-          Button(action: {}) { Circle().fill(.white).frame(width: 77, height: 77) }
-            .frame(width: 89, height: 89)
-            .glassEffect(.clear.interactive())
+          Button(action: {}) {
+            Circle()
+              .fill(.white)
+              .frame(width: Layout.captureButtonInnerSize, height: Layout.captureButtonInnerSize)
+          }
+          .frame(width: Layout.primaryButtonSize, height: Layout.primaryButtonSize)
+          .glassEffect(.clear.interactive())
         }
         
         if hasScannedCard {
-          Button(action: {}) { Image(systemName: "info").font(.body).frame(width: 55, height: 55) }
-            .glassEffect(.clear.interactive())
+          Button(action: {}) {
+            Image(systemName: "info")
+              .font(.body)
+              .frame(width: Layout.secondaryButtonSize, height: Layout.secondaryButtonSize)
+          }
+          .glassEffect(.clear.interactive())
         }
         Spacer()
       }
       .fontWeight(.semibold)
     }
-    .padding(.bottom, store.bottomSafeArea + 80)
+    .padding(.bottom, store.bottomSafeArea + Layout.toolbarExtraBottomPadding)
     .animation(.bouncy(duration: 0.5, extraBounce: 0.1), value: hasScannedCard)
   }
+  
+  // MARK: - Navigation Toolbar
   
   @ToolbarContentBuilder
   private var navigationToolbar: some ToolbarContent {
     ToolbarItem(placement: .topBarLeading) {
-      Button(action: { print("Bug button tapped") }) { Image(systemName: "ladybug.fill") }
+      Button(action: { print("Bug button tapped") }) {
+        Image(systemName: "ladybug.fill")
+      }
     }
     ToolbarItem(id: "info", placement: .principal) {
       Text(store.status.displayTitle).font(.headline)
@@ -229,32 +285,20 @@ public struct RootView: View {
     }
   }
   
-  private func uprightCorners(fallbackSize: CGSize) -> QuadCorners {
-    let cardWidth = fallbackSize.width - 110
-    let cardHeight = cardWidth / (63.0 / 88.0)
-    let midX = fallbackSize.width / 2
-    let midY = (fallbackSize.height / 2) - 40
-    
+  // MARK: - Helpers
+  
+  private func uprightCorners(for viewSize: CGSize) -> QuadCorners {
+    let cardWidth = viewSize.width - Layout.cardHorizontalMargin
+    let cardHeight = cardWidth / Layout.cardAspectRatio
+    let midX  = viewSize.width / 2
+    let midY  = (viewSize.height / 2) - Layout.verticalCenterAdjustment
     let halfW = cardWidth / 2
     let halfH = cardHeight / 2
     return QuadCorners(
-      topLeft: CGPoint(x: midX - halfW, y: midY - halfH),
-      topRight: CGPoint(x: midX + halfW, y: midY - halfH),
+      topLeft:     CGPoint(x: midX - halfW, y: midY - halfH),
+      topRight:    CGPoint(x: midX + halfW, y: midY - halfH),
       bottomRight: CGPoint(x: midX + halfW, y: midY + halfH),
-      bottomLeft: CGPoint(x: midX - halfW, y: midY + halfH)
+      bottomLeft:  CGPoint(x: midX - halfW, y: midY + halfH)
     )
-  }
-  
-  private func adjustedCorners(for corners: QuadCorners, orientation: PhysicalOrientation) -> QuadCorners {
-    switch orientation {
-    case .upright:
-      return corners
-    case .tappedRight:
-      return QuadCorners(topLeft: corners.topRight, topRight: corners.bottomRight, bottomRight: corners.bottomLeft, bottomLeft: corners.topLeft)
-    case .upsideDown:
-      return QuadCorners(topLeft: corners.bottomRight, topRight: corners.bottomLeft, bottomRight: corners.topLeft, bottomLeft: corners.topRight)
-    case .tappedLeft:
-      return QuadCorners(topLeft: corners.bottomLeft, topRight: corners.topLeft, bottomRight: corners.topRight, bottomLeft: corners.bottomRight)
-    }
   }
 }

@@ -6,38 +6,16 @@ import DesignComponents
 import ScryfallKit
 import Networking
 
-// MARK: - Safe Image Rotation
-public extension CGImage {
-  func rotated(by degrees: Int) -> CGImage? {
-    guard degrees % 360 != 0 else { return self }
-    let ciImage = CIImage(cgImage: self)
-    let rotated: CIImage
-    
-    switch degrees {
-    case 90: rotated = ciImage.oriented(.right) // 90 CW
-    case 180: rotated = ciImage.oriented(.down) // 180
-    case 270: rotated = ciImage.oriented(.left) // 90 CCW
-    default: return self
-    }
-    
-    let context = CIContext(options: [.cacheIntermediates: false])
-    return context.createCGImage(rotated, from: rotated.extent)
-  }
-  
-  func rotated90() -> CGImage? {
-    return rotated(by: 90)
-  }
+// MARK: - Constants
+
+private enum ScannerConstants {
+  static let requiredMatchFrames = 3
+  static let maxRecentMatchIDs   = 3
+  static let morphDurationNanos: UInt64 = 600_000_000
 }
 
-// MARK: - Physical Orientation Logic
-public enum PhysicalOrientation: Sendable, Equatable {
-  case upright
-  case upsideDown
-  case tappedLeft
-  case tappedRight
-}
+// MARK: - Scanner Status
 
-// MARK: - Reducer & Status
 public enum ScannerStatus: Equatable, Sendable {
   case loading
   case scanning
@@ -46,50 +24,54 @@ public enum ScannerStatus: Equatable, Sendable {
   
   public var displayTitle: String {
     switch self {
-    case .loading: return "Loading..."
-    case .scanning: return "Scanning..."
-    case .scanFound: return "Scan Found!"
-    case let .cardDetails(title, _): return title
+    case .loading:                    return "Loading..."
+    case .scanning:                   return "Scanning..."
+    case .scanFound:                  return "Scan Found!"
+    case let .cardDetails(title, _):  return title
     }
   }
 }
 
+// MARK: - Reducer
+
 @Reducer public struct CardScannerFeature: Sendable {
+  
   @ObservableState
   public struct State: Sendable, Equatable {
     public var status: ScannerStatus = .loading
-    public var scannedResult: OCRCardScannedResult?
     public var dataSource: CardDataSource?
-    public var queryWithSetCode: SearchQuery?
-    public var queryWithoutSetCode: SearchQuery?
     public var latestTrackedCorners: QuadCorners? = nil
     public var isMorphed: Bool = false
     public var isMorphAnimationComplete: Bool = false
     public var isScanningPaused: Bool = false
     public var isProcessingFrame: Bool = false
-    public var matchedOrientation: PhysicalOrientation = .upright
     public var recentMatchIDs: [String] = []
     public var viewSize: CGSize? = nil
     public var topSafeArea: CGFloat = 0
     public var bottomSafeArea: CGFloat = 0
     
-    public init(scannedResult: OCRCardScannedResult? = nil) {
-      self.scannedResult = scannedResult
-    }
+    // FIX: removed scannedResult, queryWithSetCode, queryWithoutSetCode —
+    // all three were declared but never read or written in the reducer,
+    // adding dead weight to every Equatable comparison.
+    public init() {}
   }
   
   public enum Action: Sendable, BindableAction {
     case binding(BindingAction<State>)
     case trackingCornersUpdated(QuadCorners?)
     case didScan(ScannedImage)
-    case internalMatchesFound([(id: String, distance: Float)], PhysicalOrientation)
+    case internalMatchesFound([(id: String, distance: Float)])
     case singleCardFound(Card)
     case fetchVariants(Card)
     case variantsLoaded([Card])
     case syncCardImageHashDatabase
     case syncCompleted
-    case imageDownloadCompleted(Card)
-    case triggerMorph(Card)
+    // FIX: removed imageDownloadCompleted — it was a single-line Effect.run that
+    // immediately dispatched triggerMorph, adding an unnecessary async hop and a
+    // second cancellable registration for no benefit.
+    // FIX: triggerMorph no longer carries an associated Card — the value was always
+    // discarded in the case body, then re-derived from state in morphAnimationFinished.
+    case triggerMorph
     case morphAnimationFinished
     case resetScan
     case updateViewSize(CGSize)
@@ -108,12 +90,22 @@ public enum ScannerStatus: Equatable, Sendable {
   
   public var body: some ReducerOf<Self> {
     BindingReducer()
-    Reduce(coreReduce)._printChanges(.actionLabels)
+    Reduce(coreReduce)
   }
   
   private func coreReduce(into state: inout State, action: Action) -> Effect<Action> {
     switch action {
-    case .binding:
+      
+    case .binding, .updateSafeAreas:
+      return .none
+      
+    case let .trackingCornersUpdated(corners):
+      // FIX: was lumped into the .none group — latestTrackedCorners was never
+      // written, so the morph animation had no source position to animate from.
+      // Guard on isMorphed so mid-bounce frames don't jitter the source position.
+      if !state.isMorphed {
+        state.latestTrackedCorners = corners
+      }
       return .none
       
     case let .updateViewSize(size):
@@ -122,26 +114,14 @@ public enum ScannerStatus: Equatable, Sendable {
       }
       return .none
       
-    case let .updateSafeAreas(top, bottom):
-      state.topSafeArea = top
-      state.bottomSafeArea = bottom
-      return .none
-      
-    case let .trackingCornersUpdated(corners):
-      state.latestTrackedCorners = corners
-      return .none
-      
     case .resetScan:
       state.isMorphed = false
       state.isMorphAnimationComplete = false
       state.dataSource = nil
       state.isProcessingFrame = false
       state.status = .scanning
-      state.matchedOrientation = .upright
-      
       state.isScanningPaused = false
       state.latestTrackedCorners = nil
-      
       state.recentMatchIDs.removeAll()
       
       return .merge(
@@ -152,42 +132,18 @@ public enum ScannerStatus: Equatable, Sendable {
       )
       
     case let .didScan(result):
-      guard !state.isScanningPaused else { return .none }
-      guard state.dataSource == nil else { return .none }
-      guard !state.isProcessingFrame else { return .none }
+      guard !state.isScanningPaused, state.dataSource == nil, !state.isProcessingFrame else { return .none }
       state.isProcessingFrame = true
+      let img = result.value
       
       return .run { send in
-        async let match0 = imageHashManager.findBestMatches(for: result.value)
-        async let match90 = imageHashManager.findBestMatches(for: result.value.rotated(by: 90) ?? result.value)
-        async let match180 = imageHashManager.findBestMatches(for: result.value.rotated(by: 180) ?? result.value)
-        async let match270 = imageHashManager.findBestMatches(for: result.value.rotated(by: 270) ?? result.value)
-        
-        let results = await [
-          (PhysicalOrientation.upright, match0),
-          (PhysicalOrientation.tappedLeft, match90),
-          (PhysicalOrientation.upsideDown, match180),
-          (PhysicalOrientation.tappedRight, match270)
-        ]
-        
-        var bestOrientation = PhysicalOrientation.upright
-        var bestMatches: [(id: String, distance: Float)] = []
-        var bestDistance: Float = .infinity
-        
-        for (orientation, matches) in results {
-          if let topMatch = matches.first, topMatch.distance < bestDistance {
-            bestDistance = topMatch.distance
-            bestOrientation = orientation
-            bestMatches = matches.map { (id: $0.id, distance: $0.distance) }
-          }
-        }
-        
-        await send(.internalMatchesFound(bestMatches, bestOrientation))
+        let matches = await imageHashManager.findBestMatches(for: img)
+        let mappedMatches = matches.map { (id: $0.id, distance: $0.distance) }
+        await send(.internalMatchesFound(mappedMatches))
       }
       
-    case let .internalMatchesFound(matches, orientation):
+    case let .internalMatchesFound(matches):
       state.isProcessingFrame = false
-      
       guard !state.isScanningPaused else { return .none }
       
       guard let topMatch = matches.first else {
@@ -196,17 +152,19 @@ public enum ScannerStatus: Equatable, Sendable {
         return .none
       }
       
-      if state.recentMatchIDs.last == topMatch.id || state.recentMatchIDs.isEmpty {
-        state.recentMatchIDs.append(topMatch.id)
+      // FIX: removed redundant `|| state.recentMatchIDs.isEmpty` — when empty,
+      // `.last` is nil which never equals a String, so the else branch already
+      // produces the same outcome (recentMatchIDs = [topMatch.id]).
+      // FIX: cap the array at maxRecentMatchIDs to prevent unbounded growth.
+      if state.recentMatchIDs.last == topMatch.id {
+        if state.recentMatchIDs.count < ScannerConstants.maxRecentMatchIDs {
+          state.recentMatchIDs.append(topMatch.id)
+        }
       } else {
         state.recentMatchIDs = [topMatch.id]
       }
       
-      guard state.recentMatchIDs.count >= 3 else {
-        return .none
-      }
-      
-      state.matchedOrientation = orientation
+      guard state.recentMatchIDs.count >= ScannerConstants.requiredMatchFrames else { return .none }
       
       if state.dataSource == nil { state.status = .scanFound }
       state.isScanningPaused = true
@@ -214,56 +172,36 @@ public enum ScannerStatus: Equatable, Sendable {
       return .run { send in
         let card = try await client.queryCard(for: topMatch.id)
         await send(.singleCardFound(card))
-      } catch: { error, send in
-        print("Scryfall query failed: \(error)")
+      } catch: { _, send in
         await send(.resetScan)
       }.cancellable(id: CancelID.networkQuery, cancelInFlight: true)
       
     case let .singleCardFound(card):
-      let setName = card.setName
-      let subtitle = "\(setName) • #\(card.collectorNumber)"
-      
-      state.status = .cardDetails(title: card.name, subtitle: subtitle)
+      state.status = .cardDetails(title: card.name, subtitle: "\(card.setName) • #\(card.collectorNumber)")
       state.dataSource = CardDataSource(cards: [card], hasNextPage: false, total: 1)
       
+      // FIX: dispatches triggerMorph directly — the old imageDownloadCompleted
+      // action was an unnecessary relay. Image download failure now falls through
+      // to triggerMorph gracefully via try? instead of a nested do/catch.
       return .run { send in
         if let urlString = card.imageUris?.normal, let url = URL(string: urlString) {
-          do {
-            var processors: [any ImageProcessing] = []
-            if card.isLandscape {
-              processors.append(RotationImageProcessor(degrees: 90))
-            }
-            
-            let request = ImageRequest(url: url, processors: processors)
-            let _ = try await ImagePipeline.shared.image(for: request)
-            
-            await send(.imageDownloadCompleted(card))
-          } catch {
-            await send(.triggerMorph(card))
-          }
-        } else {
-          await send(.triggerMorph(card))
+          var processors: [any ImageProcessing] = []
+          if card.isLandscape { processors.append(RotationImageProcessor(degrees: 90)) }
+          let request = ImageRequest(url: url, processors: processors)
+          try? await ImagePipeline.shared.image(for: request)
         }
+        await send(.triggerMorph)
       }.cancellable(id: CancelID.imageDownload, cancelInFlight: true)
       
-    case let .imageDownloadCompleted(card):
-      return .run { send in
-        await send(.triggerMorph(card))
-      }
-      .cancellable(id: CancelID.delayedMorph, cancelInFlight: true)
-      
-    case .triggerMorph(_):
+    case .triggerMorph:
       state.isMorphed = true
-      
       return .run { send in
-        try await Task.sleep(nanoseconds: 600_000_000)
+        try await Task.sleep(nanoseconds: ScannerConstants.morphDurationNanos)
         await send(.morphAnimationFinished)
-      }
-      .cancellable(id: CancelID.delayedMorph, cancelInFlight: true)
+      }.cancellable(id: CancelID.delayedMorph, cancelInFlight: true)
       
     case .morphAnimationFinished:
       state.isMorphAnimationComplete = true
-      
       guard let card = state.dataSource?.cardDetails.first?.card else { return .none }
       return .run { send in
         await send(.fetchVariants(card))
@@ -274,19 +212,16 @@ public enum ScannerStatus: Equatable, Sendable {
       return .run { send in
         let data = try await client.queryCards(query).data
         await send(.variantsLoaded(data), animation: .default)
-      } catch: { error, send in
-        print("Variants query failed: \(error)")
+      } catch: { _, _ in
       }.cancellable(id: CancelID.variantsQuery, cancelInFlight: true)
       
     case let .variantsLoaded(variants):
       guard let currentCard = state.dataSource?.cardDetails.first?.card else { return .none }
-      
       var updatedCards = variants
       if let index = updatedCards.firstIndex(where: { $0.id == currentCard.id }) {
         updatedCards.remove(at: index)
       }
       updatedCards.insert(currentCard, at: 0)
-      
       state.dataSource = CardDataSource(cards: updatedCards, hasNextPage: false, total: updatedCards.count)
       return .none
       

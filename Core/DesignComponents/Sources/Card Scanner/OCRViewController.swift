@@ -200,11 +200,15 @@ extension OCRViewController {
     let mockImage = DesignComponentsAsset.simulatorCard.image
     
     simulatorImageView = UIImageView(image: mockImage)
-    simulatorImageView.contentMode = .scaleAspectFill
+    simulatorImageView.contentMode = .scaleAspectFit
     simulatorImageView.frame = view.bounds
-    view.layer.insertSublayer(simulatorImageView.layer, at: 0)
     
-    guard let cgImage = mockImage.cgImage else { return }
+    view.insertSubview(simulatorImageView, at: 0)
+    runSimulatorVision(on: mockImage)
+  }
+  
+  private func runSimulatorVision(on image: UIImage) {
+    guard let cgImage = image.cgImage else { return }
     let request = VNDetectRectanglesRequest { [weak self] req, _ in
       self?.simulatorVisionObservation = req.results?.first as? VNRectangleObservation
     }
@@ -294,14 +298,8 @@ extension OCRViewController {
     filter?.setValue(CIVector(cgPoint: CGPoint(x: observation.bottomRight.x * imgSize.width, y: observation.bottomRight.y * imgSize.height)), forKey: "inputBottomRight")
     
     guard let output = filter?.outputImage,
-          var croppedCGImage = ciContext.createCGImage(output, from: output.extent) else {
+          let croppedCGImage = ciContext.createCGImage(output, from: output.extent) else {
       return
-    }
-    
-    if croppedCGImage.width > croppedCGImage.height {
-      if let rotated = croppedCGImage.rotated90() {
-        croppedCGImage = rotated
-      }
     }
     
     let minX = points.map(\.x).min() ?? 0
@@ -313,7 +311,7 @@ extension OCRViewController {
     self.didDetectResult?(ScannedImage(value: croppedCGImage, bounds: rect))
   }
 }
-#endif
+#endif // targetEnvironment(simulator)
 
 // MARK: - Corner Handling
 extension OCRViewController {

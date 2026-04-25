@@ -116,6 +116,10 @@ public final actor CardImageHashSyncManager: CardImageHashSyncManagable {
       return []
     }
     
+#if targetEnvironment(simulator)
+    return [MatchResult(id: "57950af0-92d8-467e-9124-2206c84228c8", distance: 0)]
+#endif
+    
     // 1. Extract raw floats from target image exactly ONCE
     let elementCount = targetObservation.elementCount
     let targetVector = [Float](unsafeUninitializedCapacity: elementCount) { buffer, initializedCount in

@@ -20,7 +20,7 @@ struct MooliganApp: App {
         store: Store(
           initialState: Feature.State(
             sets: .init(selectedSet: nil),
-            scan: .init(scannedResult: nil)
+            scan: .init()
           )
         ) {
           Feature()
