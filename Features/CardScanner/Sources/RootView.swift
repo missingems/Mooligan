@@ -75,7 +75,7 @@ public struct RootView: View {
       // 👇 Listens for the downloaded image and triggers the view-level animation
       .onChange(of: store.transientImage) { oldValue, newImage in
         if newImage != nil && !store.isMorphed {
-          withAnimation(.bouncy) {
+          _ = withAnimation(.spring) {
             store.send(.triggerMorph)
           } completion: {
             // Instantly notify the reducer that the visual pixels have settled
@@ -196,6 +196,7 @@ public struct RootView: View {
           .lineLimit(2)
         
         HStack(spacing: 8.0) {
+          IconLazyImage(cardInfo.cachedIconURL).frame(width: 21, height: 21, alignment: .center)
           Text(cardInfo.formattedSetCode).fontWidth(.condensed)
           Text(cardInfo.formattedCollectorNumber).fontDesign(.serif)
         }
