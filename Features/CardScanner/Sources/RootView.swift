@@ -10,13 +10,12 @@ import Networking
 // MARK: - Layout Constants
 
 private enum Layout {
-  static let cardHorizontalMargin: CGFloat    = 110
-  static let cardHorizontalPadding: CGFloat   = 55
+  static let cardWidthRatio: CGFloat          = 0.75
   static let cardAspectRatio: CGFloat         = 63.0 / 88.0
-  static let verticalCenterAdjustment: CGFloat = 40
+  static let verticalCenterAdjustment: CGFloat = 89
   static let cardItemSpacing: CGFloat         = 8
   static let cardDetailSpacing: CGFloat       = 13
-  static let toolbarExtraBottomPadding: CGFloat = 80
+  static let toolbarExtraBottomPadding: CGFloat = 21
   static let toolbarButtonSpacing: CGFloat    = 34
   static let primaryButtonSize: CGFloat       = 89
   static let secondaryButtonSize: CGFloat     = 55
@@ -27,13 +26,17 @@ private struct CardLayoutMetrics {
   let containerWidth: CGFloat
   let cardHeight: CGFloat
   let topOffset: CGFloat
+  let horizontalPadding: CGFloat
   
   init(viewSize: CGSize) {
-    containerWidth = viewSize.width - Layout.cardHorizontalMargin
+    containerWidth = viewSize.width * Layout.cardWidthRatio
     cardHeight = containerWidth / Layout.cardAspectRatio
     topOffset = (viewSize.height / 2) - Layout.verticalCenterAdjustment - (cardHeight / 2)
+    horizontalPadding = (viewSize.width - containerWidth) / 2
   }
 }
+
+// MARK: - View
 
 public struct RootView: View {
   @Bindable var store: StoreOf<CardScannerFeature>
@@ -66,12 +69,23 @@ public struct RootView: View {
       .onGeometryChange(for: CGSize.self, of: { $0.size }) { size in
         store.send(.updateViewSize(size))
       }
-      .onGeometryChange(for: EdgeInsets.self, of: { $0.safeAreaInsets }) { insets in
-        store.send(.updateSafeAreas(top: insets.top, bottom: insets.bottom))
-      }
       .toolbar { navigationToolbar }
       .ignoresSafeArea(.all)
       .task { store.send(.syncCardImageHashDatabase) }
+      // 👇 Listens for the downloaded image and triggers the view-level animation
+      .onChange(of: store.transientImage) { oldValue, newImage in
+        if newImage != nil && !store.isMorphed {
+          withAnimation(.bouncy) {
+            store.send(.triggerMorph)
+          } completion: {
+            // Instantly notify the reducer that the visual pixels have settled
+            store.send(.morphAnimationFinished)
+          }
+        }
+      }
+    }
+    .onGeometryChange(for: EdgeInsets.self, of: { $0.safeAreaInsets }) { insets in
+      store.send(.updateSafeAreas(top: insets.top, bottom: insets.bottom))
     }
     .colorScheme(.dark)
   }
@@ -97,29 +111,31 @@ public struct RootView: View {
     if !store.isMorphAnimationComplete,
        let viewSize = store.viewSize,
        let cardInfo = store.dataSource?.cardDetails.first {
-      
-      // When morphed, animate to the computed upright position.
-      // Before morphing, show the card projected at the live tracked corners.
-      // If corners haven't been set yet, nothing is shown — avoids a
-      // premature "pop" to the upright position before tracking locks in.
       let targetCorners: QuadCorners? = store.isMorphed
       ? uprightCorners(for: viewSize)
       : store.latestTrackedCorners
       
       if let cornersToDraw = targetCorners {
-        let containerWidth = viewSize.width - Layout.cardHorizontalMargin
+        let containerWidth = viewSize.width * Layout.cardWidthRatio
+        let isLandscape = cardInfo.card.isLandscape
+        
         let configuration = CardView.LayoutConfiguration(
-          rotation: cardInfo.card.isLandscape ? .landscape : .portrait,
+          rotation: isLandscape ? .landscape : .portrait,
           maxWidth: containerWidth.rounded()
         )
         
-        CardView(displayableCard: cardInfo.displayableCardImage, priceVisibility: .hidden)
-          .projected(to: cornersToDraw, size: configuration.size)
-          .ignoresSafeArea()
-          .animation(
-            store.isMorphed ? .bouncy(duration: 0.6) : .easeOut(duration: 0.315),
-            value: cornersToDraw
-          )
+        let cornerRadius = 0.05 * (isLandscape ? configuration.size.height : configuration.size.width)
+        
+        VStack {
+          if let image = store.transientImage {
+            Image(uiImage: image).resizable()
+          } else {
+            Rectangle().fill(.clear)
+          }
+        }
+        .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+        .projected(to: cornersToDraw, size: configuration.size)
+        .ignoresSafeArea()
       }
     }
   }
@@ -131,10 +147,6 @@ public struct RootView: View {
     ScrollView(.horizontal) {
       LazyHStack(alignment: .top, spacing: Layout.cardItemSpacing) {
         if let cardDetails = store.dataSource?.cardDetails {
-          // FIX: was ForEach(Array(cardDetails.enumerated()), id: \.element.id) which
-          // allocates a new heap array on every render pass. ForEach over the
-          // collection directly with card identity avoids that allocation, and
-          // isFirst is derived by comparing against the first element's id.
           ForEach(cardDetails, id: \.id) { cardInfo in
             let isFirst = cardInfo.id == cardDetails.first?.id
             scrollableCardItem(
@@ -145,7 +157,7 @@ public struct RootView: View {
           }
         }
       }
-      .padding(.horizontal, Layout.cardHorizontalPadding)
+      .padding(.horizontal, metrics.horizontalPadding)
       .scrollTargetLayout()
     }
     .scrollTargetBehavior(.viewAligned)
@@ -288,7 +300,7 @@ public struct RootView: View {
   // MARK: - Helpers
   
   private func uprightCorners(for viewSize: CGSize) -> QuadCorners {
-    let cardWidth = viewSize.width - Layout.cardHorizontalMargin
+    let cardWidth = viewSize.width * Layout.cardWidthRatio
     let cardHeight = cardWidth / Layout.cardAspectRatio
     let midX  = viewSize.width / 2
     let midY  = (viewSize.height / 2) - Layout.verticalCenterAdjustment

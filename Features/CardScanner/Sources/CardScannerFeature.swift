@@ -2,9 +2,9 @@ import Foundation
 import UIKit
 import ComposableArchitecture
 import Nuke
-import DesignComponents
 import ScryfallKit
 import Networking
+import DesignComponents
 
 // MARK: - Constants
 
@@ -40,8 +40,10 @@ public enum ScannerStatus: Equatable, Sendable {
   public struct State: Sendable, Equatable {
     public var status: ScannerStatus = .loading
     public var dataSource: CardDataSource?
+    public var pendingVariants: [Card]? = nil
     public var latestTrackedCorners: QuadCorners? = nil
     public var isMorphed: Bool = false
+    public var transientImage: PlatformImage?
     public var isMorphAnimationComplete: Bool = false
     public var isScanningPaused: Bool = false
     public var isProcessingFrame: Bool = false
@@ -50,9 +52,6 @@ public enum ScannerStatus: Equatable, Sendable {
     public var topSafeArea: CGFloat = 0
     public var bottomSafeArea: CGFloat = 0
     
-    // FIX: removed scannedResult, queryWithSetCode, queryWithoutSetCode —
-    // all three were declared but never read or written in the reducer,
-    // adding dead weight to every Equatable comparison.
     public init() {}
   }
   
@@ -62,15 +61,11 @@ public enum ScannerStatus: Equatable, Sendable {
     case didScan(ScannedImage)
     case internalMatchesFound([(id: String, distance: Float)])
     case singleCardFound(Card)
-    case fetchVariants(Card)
     case variantsLoaded([Card])
+    case mergePendingVariants
     case syncCardImageHashDatabase
     case syncCompleted
-    // FIX: removed imageDownloadCompleted — it was a single-line Effect.run that
-    // immediately dispatched triggerMorph, adding an unnecessary async hop and a
-    // second cancellable registration for no benefit.
-    // FIX: triggerMorph no longer carries an associated Card — the value was always
-    // discarded in the case body, then re-derived from state in morphAnimationFinished.
+    case imageDownloaded(PlatformImage)
     case triggerMorph
     case morphAnimationFinished
     case resetScan
@@ -80,6 +75,7 @@ public enum ScannerStatus: Equatable, Sendable {
   
   @Dependency(\.cardQueryRequestClient) var client
   @Dependency(\.cardImageHashSyncManager) var imageHashManager
+  @Dependency(\.continuousClock) var clock
   
   private enum CancelID {
     case networkQuery
@@ -96,13 +92,15 @@ public enum ScannerStatus: Equatable, Sendable {
   private func coreReduce(into state: inout State, action: Action) -> Effect<Action> {
     switch action {
       
-    case .binding, .updateSafeAreas:
+    case .binding:
+      return .none
+      
+    case let .updateSafeAreas(top, bottom):
+      state.topSafeArea = top
+      state.bottomSafeArea = bottom
       return .none
       
     case let .trackingCornersUpdated(corners):
-      // FIX: was lumped into the .none group — latestTrackedCorners was never
-      // written, so the morph animation had no source position to animate from.
-      // Guard on isMorphed so mid-bounce frames don't jitter the source position.
       if !state.isMorphed {
         state.latestTrackedCorners = corners
       }
@@ -118,11 +116,13 @@ public enum ScannerStatus: Equatable, Sendable {
       state.isMorphed = false
       state.isMorphAnimationComplete = false
       state.dataSource = nil
+      state.pendingVariants = nil
       state.isProcessingFrame = false
       state.status = .scanning
       state.isScanningPaused = false
       state.latestTrackedCorners = nil
       state.recentMatchIDs.removeAll()
+      state.transientImage = nil
       
       return .merge(
         .cancel(id: CancelID.networkQuery),
@@ -152,10 +152,6 @@ public enum ScannerStatus: Equatable, Sendable {
         return .none
       }
       
-      // FIX: removed redundant `|| state.recentMatchIDs.isEmpty` — when empty,
-      // `.last` is nil which never equals a String, so the else branch already
-      // produces the same outcome (recentMatchIDs = [topMatch.id]).
-      // FIX: cap the array at maxRecentMatchIDs to prevent unbounded growth.
       if state.recentMatchIDs.last == topMatch.id {
         if state.recentMatchIDs.count < ScannerConstants.maxRecentMatchIDs {
           state.recentMatchIDs.append(topMatch.id)
@@ -180,49 +176,68 @@ public enum ScannerStatus: Equatable, Sendable {
       state.status = .cardDetails(title: card.name, subtitle: "\(card.setName) • #\(card.collectorNumber)")
       state.dataSource = CardDataSource(cards: [card], hasNextPage: false, total: 1)
       
-      // FIX: dispatches triggerMorph directly — the old imageDownloadCompleted
-      // action was an unnecessary relay. Image download failure now falls through
-      // to triggerMorph gracefully via try? instead of a nested do/catch.
-      return .run { send in
+      // 1. Image Download Effect
+      let imageEffect: Effect<Action> = .run { send in
         if let urlString = card.imageUris?.normal, let url = URL(string: urlString) {
           var processors: [any ImageProcessing] = []
-          if card.isLandscape { processors.append(RotationImageProcessor(degrees: 90)) }
+          if card.isLandscape {
+            processors.append(RotationImageProcessor(degrees: 90))
+          }
           let request = ImageRequest(url: url, processors: processors)
-          try? await ImagePipeline.shared.image(for: request)
+          if let image = try? await ImagePipeline.shared.image(for: request) {
+            await send(.imageDownloaded(image))
+          }
         }
-        await send(.triggerMorph)
       }.cancellable(id: CancelID.imageDownload, cancelInFlight: true)
       
-    case .triggerMorph:
-      state.isMorphed = true
-      return .run { send in
-        try await Task.sleep(nanoseconds: ScannerConstants.morphDurationNanos)
-        await send(.morphAnimationFinished)
-      }.cancellable(id: CancelID.delayedMorph, cancelInFlight: true)
-      
-    case .morphAnimationFinished:
-      state.isMorphAnimationComplete = true
-      guard let card = state.dataSource?.cardDetails.first?.card else { return .none }
-      return .run { send in
-        await send(.fetchVariants(card))
-      }.cancellable(id: CancelID.variantsQuery, cancelInFlight: true)
-      
-    case let .fetchVariants(card):
-      let query = SearchQuery(oracleID: card.oracleId, page: 1, sortMode: .released, sortDirection: .auto)
-      return .run { send in
+      // 2. Variants Query Effect (Runs in parallel!)
+      let variantsEffect: Effect<Action> = .run { send in
+        let query = SearchQuery(oracleID: card.oracleId, page: 1, sortMode: .released, sortDirection: .auto)
         let data = try await client.queryCards(query).data
-        await send(.variantsLoaded(data), animation: .default)
+        await send(.variantsLoaded(data))
       } catch: { _, _ in
       }.cancellable(id: CancelID.variantsQuery, cancelInFlight: true)
       
+      return .merge(imageEffect, variantsEffect)
+      
+    case let .imageDownloaded(image):
+      state.transientImage = image
+      return .none
+      
+    case .triggerMorph:
+      state.isMorphed = true
+      return .none
+      
+    case .morphAnimationFinished:
+      state.isMorphAnimationComplete = true
+      
+      return .run { send in
+        // ⏳ Fully testable UX delay handled by the feature
+        try await clock.sleep(for: .milliseconds(100))
+        
+        await send(.mergePendingVariants, animation: .default)
+      }
+      
     case let .variantsLoaded(variants):
-      guard let currentCard = state.dataSource?.cardDetails.first?.card else { return .none }
+      state.pendingVariants = variants
+      return .send(.mergePendingVariants, animation: .default)
+      
+    case .mergePendingVariants:
+      // Sync Point: only merge if both tasks have finished
+      guard state.isMorphAnimationComplete,
+              let variants = state.pendingVariants,
+            let currentCard = state.dataSource?.cardDetails.first?.card else {
+        return .none
+      }
+      
       var updatedCards = variants
       if let index = updatedCards.firstIndex(where: { $0.id == currentCard.id }) {
         updatedCards.remove(at: index)
       }
       updatedCards.insert(currentCard, at: 0)
+      
       state.dataSource = CardDataSource(cards: updatedCards, hasNextPage: false, total: updatedCards.count)
+      state.pendingVariants = nil
       return .none
       
     case .syncCardImageHashDatabase:

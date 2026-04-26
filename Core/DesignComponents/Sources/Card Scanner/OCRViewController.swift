@@ -200,7 +200,7 @@ extension OCRViewController {
     let mockImage = DesignComponentsAsset.simulatorCard.image
     
     simulatorImageView = UIImageView(image: mockImage)
-    simulatorImageView.contentMode = .scaleAspectFit
+    simulatorImageView.contentMode = .scaleAspectFill
     simulatorImageView.frame = view.bounds
     
     view.insertSubview(simulatorImageView, at: 0)
