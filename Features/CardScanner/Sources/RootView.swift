@@ -7,37 +7,6 @@ import VariableBlur
 import Foundation
 import Networking
 
-// MARK: - Layout Constants
-
-private enum Layout {
-  static let cardWidthRatio: CGFloat          = 0.75
-  static let cardAspectRatio: CGFloat         = 63.0 / 88.0
-  static let verticalCenterAdjustment: CGFloat = 89
-  static let cardItemSpacing: CGFloat         = 8
-  static let cardDetailSpacing: CGFloat       = 13
-  static let toolbarExtraBottomPadding: CGFloat = 21
-  static let toolbarButtonSpacing: CGFloat    = 34
-  static let primaryButtonSize: CGFloat       = 89
-  static let secondaryButtonSize: CGFloat     = 55
-  static let captureButtonInnerSize: CGFloat  = 77
-}
-
-private struct CardLayoutMetrics {
-  let containerWidth: CGFloat
-  let cardHeight: CGFloat
-  let topOffset: CGFloat
-  let horizontalPadding: CGFloat
-  
-  init(viewSize: CGSize) {
-    containerWidth = viewSize.width * Layout.cardWidthRatio
-    cardHeight = containerWidth / Layout.cardAspectRatio
-    topOffset = (viewSize.height / 2) - Layout.verticalCenterAdjustment - (cardHeight / 2)
-    horizontalPadding = (viewSize.width - containerWidth) / 2
-  }
-}
-
-// MARK: - View
-
 public struct RootView: View {
   @Bindable var store: StoreOf<CardScannerFeature>
   
@@ -72,13 +41,11 @@ public struct RootView: View {
       .toolbar { navigationToolbar }
       .ignoresSafeArea(.all)
       .task { store.send(.syncCardImageHashDatabase) }
-      // 👇 Listens for the downloaded image and triggers the view-level animation
       .onChange(of: store.transientImage) { oldValue, newImage in
         if newImage != nil && !store.isMorphed {
-          _ = withAnimation(.spring) {
+          _ = withAnimation(.bouncy) {
             store.send(.triggerMorph)
           } completion: {
-            // Instantly notify the reducer that the visual pixels have settled
             store.send(.morphAnimationFinished)
           }
         }
@@ -116,7 +83,7 @@ public struct RootView: View {
       : store.latestTrackedCorners
       
       if let cornersToDraw = targetCorners {
-        let containerWidth = viewSize.width * Layout.cardWidthRatio
+        let containerWidth = viewSize.width * 0.75
         let isLandscape = cardInfo.card.isLandscape
         
         let configuration = CardView.LayoutConfiguration(
@@ -145,10 +112,11 @@ public struct RootView: View {
   @ViewBuilder
   private func scrollableCardsLayer(metrics: CardLayoutMetrics) -> some View {
     ScrollView(.horizontal) {
-      LazyHStack(alignment: .top, spacing: Layout.cardItemSpacing) {
+      LazyHStack(alignment: .top, spacing: 8.0) {
         if let cardDetails = store.dataSource?.cardDetails {
           ForEach(cardDetails, id: \.id) { cardInfo in
             let isFirst = cardInfo.id == cardDetails.first?.id
+            
             scrollableCardItem(
               isFirst: isFirst,
               cardInfo: cardInfo,
@@ -162,7 +130,6 @@ public struct RootView: View {
     }
     .scrollTargetBehavior(.viewAligned)
     .scrollIndicators(.hidden)
-    .opacity(hasScannedCard ? 1.0 : 0.0)
   }
   
   @ViewBuilder
@@ -179,7 +146,7 @@ public struct RootView: View {
       maxWidth: containerWidth.rounded()
     )
     
-    VStack(spacing: Layout.cardDetailSpacing) {
+    VStack(spacing: 13) {
       CardView(
         displayableCard: cardInfo.displayableCardImage,
         layoutConfiguration: configuration,
@@ -194,36 +161,44 @@ public struct RootView: View {
           .font(.headline)
           .multilineTextAlignment(.center)
           .lineLimit(2)
+          .padding(.horizontal, 13.0)
         
-        HStack(spacing: 8.0) {
-          IconLazyImage(cardInfo.cachedIconURL).frame(width: 21, height: 21, alignment: .center)
-          Text(cardInfo.formattedSetCode).fontWidth(.condensed)
-          Text(cardInfo.formattedCollectorNumber).fontDesign(.serif)
+        HStack(spacing: 3.0) {
+          IconLazyImage(cardInfo.cachedIconURL, tintColor: .primary)
+            .frame(width: 13, height: 13)
+          
+          Text(cardInfo.formattedSetCode.uppercased())
+            .font(.subheadline)
+            .fontWidth(.condensed)
+          
+          Text(cardInfo.formattedCollectorNumber)
+            .font(.subheadline)
+            .fontDesign(.serif)
         }
         .multilineTextAlignment(.center)
         .lineLimit(1)
-        .font(.caption)
-        .fontWeight(.medium)
         
         HStack(spacing: 5) {
           if let usdPrice = cardInfo.displayPriceUSD {
-            PillText(usdPrice).padding(.all, 2)
+            PillText(usdPrice)
+              .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 8.0))
           }
           if let usdFoilPrice = cardInfo.displayPriceUSDFoil {
             PillText(usdFoilPrice, isFoil: true)
               .foregroundStyle(.black.opacity(0.8))
-              .padding(.all, 2)
+              .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 8.0))
           }
           if let usdEtched = cardInfo.displayPriceUSDEtched {
             PillText(usdEtched, isFoil: true)
               .foregroundStyle(.black.opacity(0.8))
-              .padding(.all, 2)
+              .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 8.0))
           }
         }
         .foregroundStyle(DesignComponentsAsset.accentColor.swiftUIColor)
         .font(.caption)
         .fontWeight(.medium)
         .monospaced()
+        .padding(.top, 5.0)
         .fixedSize(horizontal: true, vertical: true)
       }
       .opacity(showDetails ? 1.0 : 0.0)
@@ -231,18 +206,16 @@ public struct RootView: View {
     }
   }
   
-  // MARK: - Bottom Toolbar
-  
   @ViewBuilder
   private var bottomToolBarLayer: some View {
     GlassEffectContainer {
-      HStack(spacing: Layout.toolbarButtonSpacing) {
+      HStack(spacing: 21.0) {
         Spacer()
         if hasScannedCard {
           Button(action: {}) {
             Image(systemName: "square.grid.2x2.fill")
               .font(.body)
-              .frame(width: Layout.secondaryButtonSize, height: Layout.secondaryButtonSize)
+              .frame(width: 55, height: 55)
           }
           .glassEffect(.clear.interactive())
         }
@@ -251,15 +224,15 @@ public struct RootView: View {
           Button(action: {}) {
             Image(systemName: "plus").font(.title)
           }
-          .frame(width: Layout.primaryButtonSize, height: Layout.primaryButtonSize)
+          .frame(width: 89, height: 89)
           .glassEffect(.clear.interactive())
         } else {
           Button(action: {}) {
             Circle()
               .fill(.white)
-              .frame(width: Layout.captureButtonInnerSize, height: Layout.captureButtonInnerSize)
+              .frame(width: 77, height: 77)
           }
-          .frame(width: Layout.primaryButtonSize, height: Layout.primaryButtonSize)
+          .frame(width: 89, height: 89)
           .glassEffect(.clear.interactive())
         }
         
@@ -267,7 +240,7 @@ public struct RootView: View {
           Button(action: {}) {
             Image(systemName: "info")
               .font(.body)
-              .frame(width: Layout.secondaryButtonSize, height: Layout.secondaryButtonSize)
+              .frame(width: 55, height: 55)
           }
           .glassEffect(.clear.interactive())
         }
@@ -275,11 +248,9 @@ public struct RootView: View {
       }
       .fontWeight(.semibold)
     }
-    .padding(.bottom, store.bottomSafeArea + Layout.toolbarExtraBottomPadding)
-    .animation(.bouncy(duration: 0.5, extraBounce: 0.1), value: hasScannedCard)
+    .padding(.bottom, store.bottomSafeArea + 13.0)
+    .animation(.default, value: hasScannedCard)
   }
-  
-  // MARK: - Navigation Toolbar
   
   @ToolbarContentBuilder
   private var navigationToolbar: some ToolbarContent {
@@ -288,9 +259,11 @@ public struct RootView: View {
         Image(systemName: "ladybug.fill")
       }
     }
+    
     ToolbarItem(id: "info", placement: .principal) {
       Text(store.status.displayTitle).font(.headline)
     }
+    
     ToolbarItem(placement: .topBarTrailing) {
       if hasScannedCard {
         Button(role: .close) { store.send(.resetScan) }
@@ -298,20 +271,35 @@ public struct RootView: View {
     }
   }
   
-  // MARK: - Helpers
-  
   private func uprightCorners(for viewSize: CGSize) -> QuadCorners {
-    let cardWidth = viewSize.width * Layout.cardWidthRatio
-    let cardHeight = cardWidth / Layout.cardAspectRatio
+    let cardWidth = viewSize.width * 0.75
+    let cardHeight = cardWidth / MagicCardImageRatio.widthToHeight.rawValue
     let midX  = viewSize.width / 2
-    let midY  = (viewSize.height / 2) - Layout.verticalCenterAdjustment
+    let midY  = (viewSize.height / 2) - 89
     let halfW = cardWidth / 2
     let halfH = cardHeight / 2
+    
     return QuadCorners(
-      topLeft:     CGPoint(x: midX - halfW, y: midY - halfH),
-      topRight:    CGPoint(x: midX + halfW, y: midY - halfH),
+      topLeft: CGPoint(x: midX - halfW, y: midY - halfH),
+      topRight: CGPoint(x: midX + halfW, y: midY - halfH),
       bottomRight: CGPoint(x: midX + halfW, y: midY + halfH),
-      bottomLeft:  CGPoint(x: midX - halfW, y: midY + halfH)
+      bottomLeft: CGPoint(x: midX - halfW, y: midY + halfH)
     )
+  }
+}
+
+extension RootView {
+  private struct CardLayoutMetrics {
+    let containerWidth: CGFloat
+    let cardHeight: CGFloat
+    let topOffset: CGFloat
+    let horizontalPadding: CGFloat
+    
+    init(viewSize: CGSize) {
+      containerWidth = viewSize.width * 0.75
+      cardHeight = containerWidth / MagicCardImageRatio.widthToHeight.rawValue
+      topOffset = (viewSize.height / 2) - 89 - (cardHeight / 2)
+      horizontalPadding = (viewSize.width - containerWidth) / 2
+    }
   }
 }

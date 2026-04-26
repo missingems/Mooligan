@@ -65,6 +65,7 @@ public enum ScannerStatus: Equatable, Sendable {
     case mergePendingVariants
     case syncCardImageHashDatabase
     case syncCompleted
+    case updateMorphAnimation(isCompleted: Bool)
     case imageDownloaded(PlatformImage)
     case triggerMorph
     case morphAnimationFinished
@@ -131,6 +132,10 @@ public enum ScannerStatus: Equatable, Sendable {
         .cancel(id: CancelID.delayedMorph)
       )
       
+    case let .updateMorphAnimation(isCompleted):
+      state.isMorphAnimationComplete = isCompleted
+      return .none
+      
     case let .didScan(result):
       guard !state.isScanningPaused, state.dataSource == nil, !state.isProcessingFrame else { return .none }
       state.isProcessingFrame = true
@@ -176,7 +181,6 @@ public enum ScannerStatus: Equatable, Sendable {
       state.status = .cardDetails(title: card.name, subtitle: "\(card.setName) • #\(card.collectorNumber)")
       state.dataSource = CardDataSource(cards: [card], hasNextPage: false, total: 1)
       
-      // 1. Image Download Effect
       let imageEffect: Effect<Action> = .run { send in
         if let urlString = card.imageUris?.normal, let url = URL(string: urlString) {
           var processors: [any ImageProcessing] = []
@@ -190,9 +194,14 @@ public enum ScannerStatus: Equatable, Sendable {
         }
       }.cancellable(id: CancelID.imageDownload, cancelInFlight: true)
       
-      // 2. Variants Query Effect (Runs in parallel!)
       let variantsEffect: Effect<Action> = .run { send in
-        let query = SearchQuery(oracleID: card.oracleId, page: 1, sortMode: .released, sortDirection: .auto)
+        let query = SearchQuery(
+          oracleID: card.oracleId,
+          page: 1,
+          sortMode: .released,
+          sortDirection: .auto
+        )
+        
         let data = try await client.queryCards(query).data
         await send(.variantsLoaded(data))
       } catch: { _, _ in
@@ -209,12 +218,8 @@ public enum ScannerStatus: Equatable, Sendable {
       return .none
       
     case .morphAnimationFinished:
-      state.isMorphAnimationComplete = true
-      
       return .run { send in
-        // ⏳ Fully testable UX delay handled by the feature
-        try await clock.sleep(for: .milliseconds(100))
-        
+        await send(.updateMorphAnimation(isCompleted: true))
         await send(.mergePendingVariants, animation: .default)
       }
       
@@ -223,10 +228,11 @@ public enum ScannerStatus: Equatable, Sendable {
       return .send(.mergePendingVariants, animation: .default)
       
     case .mergePendingVariants:
-      // Sync Point: only merge if both tasks have finished
-      guard state.isMorphAnimationComplete,
-              let variants = state.pendingVariants,
-            let currentCard = state.dataSource?.cardDetails.first?.card else {
+      guard
+        state.isMorphAnimationComplete,
+        let variants = state.pendingVariants,
+        let currentCard = state.dataSource?.cardDetails.first?.card
+      else {
         return .none
       }
       
