@@ -209,7 +209,7 @@ public struct RootView: View {
   @ViewBuilder
   private var bottomToolBarLayer: some View {
     GlassEffectContainer {
-      HStack(spacing: 21.0) {
+      HStack(spacing: 34) {
         Spacer()
         if hasScannedCard {
           Button(action: {}) {
@@ -248,7 +248,7 @@ public struct RootView: View {
       }
       .fontWeight(.semibold)
     }
-    .padding(.bottom, store.bottomSafeArea + 13.0)
+    .padding(.bottom, store.bottomSafeArea + 21)
     .animation(.default, value: hasScannedCard)
   }
   
