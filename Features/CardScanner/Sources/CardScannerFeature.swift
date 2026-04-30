@@ -76,7 +76,6 @@ public enum ScannerStatus: Equatable, Sendable {
   
   @Dependency(\.cardQueryRequestClient) var client
   @Dependency(\.cardImageHashSyncManager) var imageHashManager
-  @Dependency(\.continuousClock) var clock
   
   private enum CancelID {
     case networkQuery
