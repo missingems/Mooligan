@@ -38,12 +38,12 @@ struct FlipImageProcessor: ImageProcessing {
 }
 
 
-struct RotationImageProcessor: ImageProcessing {
-  func process(_ image: Nuke.PlatformImage) -> Nuke.PlatformImage? {
+public struct RotationImageProcessor: ImageProcessing {
+  public func process(_ image: Nuke.PlatformImage) -> Nuke.PlatformImage? {
     return rotate(image: image, degrees: degrees)
   }
   
-  var identifier = "com.missingems.mooligan.rotationImageProcessor"
+  public var identifier = "com.missingems.mooligan.rotationImageProcessor"
   private let degrees: CGFloat
   
   public init(degrees: CGFloat) {

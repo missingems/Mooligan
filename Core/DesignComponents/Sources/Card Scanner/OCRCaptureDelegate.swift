@@ -1,130 +1,30 @@
 import AVFoundation
 import CoreImage
 import Vision
+import UIKit
 
-final class OCRCaptureDelegate: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate, @unchecked Sendable {
-  var onDrawBox: ((VNRectangleObserver.Corners?) -> Void)?
-  var onDetectCard: ((OCRCardScannedResult) -> Void)?
+final class OCRCaptureDelegate: NSObject, @unchecked Sendable {
+  var gatekeeper: ScannerGatekeeper?
   
-  private var isProcessing = false
-  private let ciContext = CIContext()
+  var onDrawBox: ((VNRectangleObserver.Corners?) -> Void)?
+  var onDetectCard: ((CGImage, VNRectangleObserver.Corners) -> Void)?
+  
+  var isOCRDisabled = false
+  var isTrackingDisabled = false
+  
+  private let ciContext = CIContext(options: [.cacheIntermediates: false])
   
   private final class SendableImageBuffer: @unchecked Sendable {
     let value: CVImageBuffer
     init(_ value: CVImageBuffer) { self.value = value }
   }
   
-  func captureOutput(
-    _ output: AVCaptureOutput,
-    didOutput sampleBuffer: CMSampleBuffer,
-    from connection: AVCaptureConnection
-  ) {
-    guard !isProcessing else {
-      return
-    }
-    
-    defer {
-      isProcessing = false
-    }
-    
-    isProcessing = true
-    
-    guard let imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else {
-      return
-    }
-    
-    let sendableBuffer = SendableImageBuffer(imageBuffer)
-    
-    guard let observer = VNRectangleObserver(imageBuffer: imageBuffer) else { return }
-    
-    guard let corners = observer.process() else {
-      DispatchQueue.main.async {
-        [weak self] in self?.onDrawBox?(nil)
-      }
-      
-      return
-    }
-    
-    DispatchQueue.main.async { [weak self] in
-      self?.onDrawBox?(corners)
-    }
-    
-    processOCR(
-      on: extractAndFlattenCard(
-        from: sendableBuffer.value,
-        observation: corners
-      )
-    )
-  }
-  
-  private func processOCR(on cardImage: CGImage?) {
-    guard let cardImage else {
-      return
-    }
-    
-    let width = CGFloat(cardImage.width)
-    let height = CGFloat(cardImage.height)
-    
-    let titleRect = CGRect(x: 0, y: 0, width: width, height: height * 0.15)
-    let setRect = CGRect(x: 0, y: height * 0.92, width: width * 0.5, height: height * 0.08)
-    
-    guard
-      let titleImg = cardImage.cropping(to: titleRect),
-      let setImg = cardImage.cropping(to: setRect)
-    else {
-      return
-    }
-    
-    let titleReq = VNRecognizeTextRequest()
-    titleReq.recognitionLevel = .accurate
-    
-    let setReq = VNRecognizeTextRequest()
-    setReq.recognitionLevel = .accurate
-    
-    try? VNImageRequestHandler(cgImage: titleImg, options: [:]).perform([titleReq])
-    try? VNImageRequestHandler(cgImage: setImg, options: [:]).perform([setReq])
-    
-    let title = titleReq.results?.first?.topCandidates(1).first?.string ?? ""
-    let parsedSetAndCode = parseSetAndCode(setReq.results?.compactMap { $0.topCandidates(1).first?.string } ?? [])
-    
-    guard !title.isEmpty else { return }
-    
+  private func processOCR(on cardImage: CGImage?, corners: VNRectangleObserver.Corners) {
+    guard let cardImage else { return }
     let callback = onDetectCard
     DispatchQueue.main.async {
-      callback?(
-        OCRCardScannedResult(
-          title: title,
-          set: parsedSetAndCode?.set,
-          code: parsedSetAndCode?.code
-        )
-      )
+      callback?(cardImage, corners)
     }
-  }
-  
-  private func parseSetAndCode(_ strings: [String]) -> (set: String, code: String)? {
-    let fullText = strings.joined(separator: " ")
-    let words = fullText.components(separatedBy: .whitespaces)
-    
-    var code = ""
-    var set = ""
-    
-    for word in words {
-      let cleaned = word.trimmingCharacters(in: CharacterSet(charactersIn: "•.,"))
-      
-      if set.isEmpty, cleaned.range(of: "^[A-Z][A-Z0-9]{2}$", options: .regularExpression) != nil {
-        set = cleaned
-      }
-      
-      if code.isEmpty {
-        let parts = cleaned.components(separatedBy: "/")
-        if let firstPart = parts.first, firstPart.range(of: "^\\d{3,4}$", options: .regularExpression) != nil {
-          code = firstPart
-        }
-      }
-    }
-    
-    if set.isEmpty || code.isEmpty { return nil }
-    return (set, code)
   }
   
   private func extractAndFlattenCard(
@@ -134,6 +34,7 @@ final class OCRCaptureDelegate: NSObject, AVCaptureVideoDataOutputSampleBufferDe
     guard let pixelBuffer else { return nil }
     
     let ciImage = CIImage(cvPixelBuffer: pixelBuffer).oriented(.right)
+    
     let filter = CIFilter(name: "CIPerspectiveCorrection")
     filter?.setValue(ciImage, forKey: kCIInputImageKey)
     filter?.setValue(CIVector(cgPoint: observation.topLeft.scaled(ciImage.extent.size)), forKey: "inputTopLeft")
@@ -141,8 +42,44 @@ final class OCRCaptureDelegate: NSObject, AVCaptureVideoDataOutputSampleBufferDe
     filter?.setValue(CIVector(cgPoint: observation.bottomLeft.scaled(ciImage.extent.size)), forKey: "inputBottomLeft")
     filter?.setValue(CIVector(cgPoint: observation.bottomRight.scaled(ciImage.extent.size)), forKey: "inputBottomRight")
     
-    guard let output = filter?.outputImage else { return nil }
-    return ciContext.createCGImage(output, from: output.extent)
+    guard let output = filter?.outputImage,
+          let cgImage = ciContext.createCGImage(output, from: output.extent) else {
+      return nil
+    }
+    
+    return cgImage
+  }
+}
+
+extension OCRCaptureDelegate: AVCaptureVideoDataOutputSampleBufferDelegate {
+  func captureOutput(
+    _ output: AVCaptureOutput,
+    didOutput sampleBuffer: CMSampleBuffer,
+    from connection: AVCaptureConnection
+  ) {
+    guard !isTrackingDisabled else { return }
+    
+    guard let imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
+    let sendableBuffer = SendableImageBuffer(imageBuffer)
+    
+    guard let observer = VNRectangleObserver(imageBuffer: imageBuffer),
+          let corners = observer.process() else {
+      DispatchQueue.main.async { [weak self] in self?.onDrawBox?(nil) }
+      return
+    }
+    
+    DispatchQueue.main.async { [weak self] in self?.onDrawBox?(corners) }
+    
+    guard !isOCRDisabled else { return }
+    guard let gatekeeper = gatekeeper, gatekeeper.checkAndLockForProcessing() else { return }
+    
+    Task { [weak self] in
+      guard let self else { return }
+      processOCR(
+        on: extractAndFlattenCard(from: sendableBuffer.value, observation: corners),
+        corners: corners
+      )
+    }
   }
 }
 

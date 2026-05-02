@@ -1,4 +1,5 @@
 import ScryfallKit
+import Foundation
 
 extension Card.Rarity {
   public var colorNames: [String]? {

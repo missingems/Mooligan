@@ -20,11 +20,11 @@ struct MooliganApp: App {
         store: Store(
           initialState: Feature.State(
             sets: .init(selectedSet: nil),
-            scan: .init(scannedResult: nil)
+            scan: .init()
           )
         ) {
-        Feature()
-      })
+          Feature()
+        })
     }
   }
 }
@@ -33,9 +33,9 @@ struct RootView: View {
   @Bindable var store: StoreOf<Feature>
   
   var body: some View {
-    TabView {
+    TabView(selection: $store.selectedTab) {
       ForEach(Feature.TabInfo.allCases) { info in
-        Tab(info.title, systemImage: info.systemIconName) {
+        Tab(info.title, systemImage: info.systemIconName, value: info) {
           switch info {
           case .sets:
             NavigationStack(path: $store.scope(state: \.path, action: \.path)) {
@@ -53,7 +53,6 @@ struct RootView: View {
               }
             }
             
-            
           case .collection:
             Text(info.title)
             
@@ -64,6 +63,9 @@ struct RootView: View {
                 action: \.scan
               )
             )
+            .toolbarColorScheme(.dark, for: .tabBar)
+            .toolbarBackground(.black, for: .tabBar)
+            .toolbarBackground(.visible, for: .tabBar)
           }
         }
       }

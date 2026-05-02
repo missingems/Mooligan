@@ -28,13 +28,3 @@ public struct CardDataSource: Equatable, Sendable {
     )
   }
 }
-
-public struct CardInfo: Equatable, Sendable {
-  public let card: Card
-  public let displayableCardImage: DisplayableCardImage?
-  
-  public init(card: Card) {
-    self.card = card
-    self.displayableCardImage = DisplayableCardImage(card)
-  }
-}

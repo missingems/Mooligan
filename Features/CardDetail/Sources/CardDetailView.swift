@@ -228,7 +228,9 @@ struct CardDetailView: View {
     .onGeometryChange(for: CGFloat.self, of: { proxy in
       proxy.size.width
     }, action: { newValue in
-      maxWidth = newValue
+      if maxWidth == nil {
+        maxWidth = newValue
+      }
     })
     .background {
       ZStack {

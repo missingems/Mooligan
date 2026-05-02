@@ -14,7 +14,11 @@ public extension Card {
   }
   
   var hasMultipleColumns: Bool {
-    layout == .split || layout == .adventure
+    if layout == .unknown, isTransformable == false {
+      return cardFaces?.count ?? 0 > 1
+    } else {
+      return layout == .split || layout == .adventure
+    }
   }
   
   var isPhyrexian: Bool {

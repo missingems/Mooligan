@@ -67,7 +67,9 @@ public struct CardRemoteImageView: View {
         proxy.size
       },
       action: { newValue in
-        cornerRadius = 5 / 100 * (isLandscape ? newValue.height : newValue.width)
+        if cornerRadius == nil {
+          cornerRadius = 5 / 100 * (isLandscape ? newValue.height : newValue.width)
+        }
       }
     )
     .clipShape(
