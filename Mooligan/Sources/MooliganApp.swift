@@ -33,10 +33,8 @@ struct RootView: View {
   @Bindable var store: StoreOf<Feature>
   
   var body: some View {
-    // 1. Bind to the store's selection
     TabView(selection: $store.selectedTab) {
       ForEach(Feature.TabInfo.allCases) { info in
-        // 2. Pass 'value: info' so the binding maps correctly
         Tab(info.title, systemImage: info.systemIconName, value: info) {
           switch info {
           case .sets:
