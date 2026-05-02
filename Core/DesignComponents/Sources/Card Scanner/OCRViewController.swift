@@ -531,18 +531,15 @@ extension OCRViewController {
       animation.toValue = newPath
       animation.duration = snapDuration
       animation.timingFunction = CAMediaTimingFunction(name: .easeOut)
-      animation.fillMode = .forwards
-      animation.isRemovedOnCompletion = false
       return animation
     }
-    
-    CATransaction.begin()
-    CATransaction.setDisableActions(true)
     
     let currentShadowPath = dimmingLayer.presentation()?.shadowPath ?? dimmingLayer.shadowPath
     let currentShadowCorners = shadowCornerLayer.presentation()?.path ?? shadowCornerLayer.path
     let currentYellowCorners = yellowCornerLayer.presentation()?.path ?? yellowCornerLayer.path
     
+    CATransaction.begin()
+    CATransaction.setDisableActions(true)
     dimmingLayer.shadowPath = newDimmingPath
     shadowCornerLayer.path = newCornersPath
     yellowCornerLayer.path = newCornersPath
@@ -555,13 +552,7 @@ extension OCRViewController {
   
   private func fadeIn() {
     isOverlayVisible = true
-    let animation = opacityAnimation(from: 0, to: 1.0, duration: 0.2)
-    dimmingLayer.opacity = 1
-    shadowCornerLayer.opacity = 1
-    yellowCornerLayer.opacity = 1
-    dimmingLayer.add(animation, forKey: "fadeIn")
-    shadowCornerLayer.add(animation.copy() as! CABasicAnimation, forKey: "fadeIn")
-    yellowCornerLayer.add(animation.copy() as! CABasicAnimation, forKey: "fadeIn")
+    animateOpacity(to: 1.0, duration: 0.2)
   }
   
   fileprivate func scheduleFadeOut() {
@@ -577,31 +568,12 @@ extension OCRViewController {
   fileprivate func cancelFadeOut() {
     fadeOutWorkItem?.cancel()
     fadeOutWorkItem = nil
-    guard isOverlayVisible else { return }
-    
-    CATransaction.begin()
-    CATransaction.setDisableActions(true)
-    dimmingLayer.opacity = 1
-    shadowCornerLayer.opacity = 1
-    yellowCornerLayer.opacity = 1
-    CATransaction.commit()
-    
-    dimmingLayer.removeAnimation(forKey: "fadeOut")
-    shadowCornerLayer.removeAnimation(forKey: "fadeOutBorder")
-    yellowCornerLayer.removeAnimation(forKey: "fadeOutBorder")
   }
   
   fileprivate func executeFadeOut() {
     isOverlayVisible = false
-    let animation = opacityAnimation(from: 1.0, to: 0, duration: fadeOutDuration)
-    animation.timingFunction = CAMediaTimingFunction(name: .easeIn)
     
-    let currentSolid = solidDimLayer.presentation()?.opacity ?? solidDimLayer.opacity
-    let solidAnimation = opacityAnimation(from: currentSolid, to: 0, duration: fadeOutDuration)
-    solidAnimation.timingFunction = CAMediaTimingFunction(name: .easeIn)
-    
-    CATransaction.begin()
-    CATransaction.setCompletionBlock { [weak self] in
+    animateOpacity(to: 0.0, duration: fadeOutDuration) { [weak self] in
       guard let self, !self.isOverlayVisible else { return }
       CATransaction.begin()
       CATransaction.setDisableActions(true)
@@ -611,69 +583,68 @@ extension OCRViewController {
       CATransaction.commit()
     }
     
-    dimmingLayer.opacity = 0
-    shadowCornerLayer.opacity = 0
-    yellowCornerLayer.opacity = 0
+    let currentSolid = solidDimLayer.presentation()?.opacity ?? solidDimLayer.opacity
+    CATransaction.begin()
+    CATransaction.setDisableActions(true)
     solidDimLayer.opacity = 0
-    
-    dimmingLayer.add(animation, forKey: "fadeOut")
-    shadowCornerLayer.add(animation.copy() as! CABasicAnimation, forKey: "fadeOutBorder")
-    yellowCornerLayer.add(animation.copy() as! CABasicAnimation, forKey: "fadeOutBorder")
-    solidDimLayer.add(solidAnimation, forKey: "fadeOutSolid")
-    
     CATransaction.commit()
+    
+    let solidAnimation = CABasicAnimation(keyPath: "opacity")
+    solidAnimation.fromValue = currentSolid
+    solidAnimation.toValue = 0.0
+    solidAnimation.duration = fadeOutDuration
+    solidAnimation.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+    solidDimLayer.add(solidAnimation, forKey: "fadeOutSolid")
   }
   
   fileprivate func transitionToFullDim() {
     cancelFadeOut()
     isOverlayVisible = true
     
-    let currentDimOpacity = dimmingLayer.presentation()?.opacity ?? dimmingLayer.opacity
-    let currentBorderOpacity = yellowCornerLayer.presentation()?.opacity ?? yellowCornerLayer.opacity
+    animateOpacity(to: 0.0, duration: 0.35)
     
+    let currentSolid = solidDimLayer.presentation()?.opacity ?? solidDimLayer.opacity
     CATransaction.begin()
     CATransaction.setDisableActions(true)
-    dimmingLayer.opacity = 0
-    shadowCornerLayer.opacity = 0
-    yellowCornerLayer.opacity = 0
     solidDimLayer.opacity = 0.45
     CATransaction.commit()
     
-    let dimmingFadeOut = CABasicAnimation(keyPath: "opacity")
-    dimmingFadeOut.fromValue = currentDimOpacity
-    dimmingFadeOut.toValue = 0.0
-    dimmingFadeOut.duration = 0.35
-    dimmingFadeOut.fillMode = .forwards
-    dimmingFadeOut.isRemovedOnCompletion = false
-    
-    let borderFadeOut = CABasicAnimation(keyPath: "opacity")
-    borderFadeOut.fromValue = currentBorderOpacity
-    borderFadeOut.toValue = 0.0
-    borderFadeOut.duration = 0.35
-    borderFadeOut.fillMode = .forwards
-    borderFadeOut.isRemovedOnCompletion = false
-    
     let solidFadeIn = CABasicAnimation(keyPath: "opacity")
-    solidFadeIn.fromValue = 0.0
+    solidFadeIn.fromValue = currentSolid
     solidFadeIn.toValue = 0.45
     solidFadeIn.duration = 0.35
-    solidFadeIn.fillMode = .forwards
-    solidFadeIn.isRemovedOnCompletion = false
-    
-    dimmingLayer.add(dimmingFadeOut, forKey: "fadeOutDim")
-    shadowCornerLayer.add(borderFadeOut, forKey: "fadeOutBorder")
-    yellowCornerLayer.add(borderFadeOut, forKey: "fadeOutBorder")
+    solidFadeIn.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
     solidDimLayer.add(solidFadeIn, forKey: "fadeInSolid")
   }
   
-  private func opacityAnimation(from startValue: Float, to endValue: Float, duration: TimeInterval) -> CABasicAnimation {
+  // MARK: - Centralized Opacity Helper
+  private func animateOpacity(to targetOpacity: Float, duration: TimeInterval, completion: (() -> Void)? = nil) {
+    let currentOpacity = dimmingLayer.presentation()?.opacity ?? dimmingLayer.opacity
+    guard currentOpacity != targetOpacity else { return }
+    
+    CATransaction.begin()
+    if let completion = completion {
+      CATransaction.setCompletionBlock(completion)
+    }
+    
+    CATransaction.begin()
+    CATransaction.setDisableActions(true)
+    dimmingLayer.opacity = targetOpacity
+    shadowCornerLayer.opacity = targetOpacity
+    yellowCornerLayer.opacity = targetOpacity
+    CATransaction.commit()
+    
     let animation = CABasicAnimation(keyPath: "opacity")
-    animation.fromValue = startValue
-    animation.toValue = endValue
+    animation.fromValue = currentOpacity
+    animation.toValue = targetOpacity
     animation.duration = duration
-    animation.fillMode = .forwards
-    animation.isRemovedOnCompletion = false
-    return animation
+    animation.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+    
+    dimmingLayer.add(animation, forKey: "opacityTransition")
+    shadowCornerLayer.add(animation, forKey: "opacityTransition")
+    yellowCornerLayer.add(animation, forKey: "opacityTransition")
+    
+    CATransaction.commit()
   }
   
   fileprivate func isMagicTheGatheringRatio(_ points: [CGPoint]) -> Bool {
