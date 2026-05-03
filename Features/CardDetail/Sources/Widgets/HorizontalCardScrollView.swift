@@ -44,10 +44,7 @@ struct HorizontalCardScrollView: View {
       
       ScrollView(.horizontal, showsIndicators: false) {
         LazyHStack(spacing: 8.0) {
-          ForEach(Array(zip(cards.cardDetails, cards.cardDetails.indices)), id: \.0.card.id) { value in
-            let cardInfo = value.0
-            let index = value.1
-            
+          ForEach(cards.cardDetails, id: \.card.id) { cardInfo in
             Button(
               action: {
                 send(.didSelectCard(cardInfo.card))
@@ -66,7 +63,9 @@ struct HorizontalCardScrollView: View {
             .frame(width: 183)
             .buttonStyle(.sinkableButtonStyle)
             .task {
-              send(.didShowCardAtIndex(index))
+              if let index = cards.cardDetails.firstIndex(where: { $0.card.id == cardInfo.card.id }) {
+                send(.didShowCardAtIndex(index))
+              }
             }
           }
         }

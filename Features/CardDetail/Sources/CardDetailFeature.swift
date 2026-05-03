@@ -15,26 +15,28 @@ import ScryfallKit
         
       case let .didShowVariant(index):
         guard
-          let content = state.content,
-          content.variants.state.value?.hasNextPage == true,
-          index == content.variants.state.value?.cardDetails.count ?? 0 - 1
+          state.content.variants.state.value?.hasNextPage == true,
+          index == state.content.variants.state.value?.cardDetails.count ?? 0 - 1
         else {
           return .none
         }
         
         return .run { send in
-          await send(.fetchVariants(card: content.card, page: content.variants.page + 1))
+//          await send(.fetchVariants(card: state.content.card, page: state.content.variants.page + 1))
         }
         
-      case .dismissRulingsTapped:
-        state.showRulings = nil
-        return .none
-        
       case let .fetchVariants(card, page):
-        return .run { [existingVariants = state.content?.variants.state.value] send in
+        return .run { [existingVariants = state.content.variants.state.value] send in
           let result = try await client.getVariants(of: card, page: page)
           var _existingVariants = existingVariants
-          _existingVariants?.append(cards: result.data.filter { $0.id != card.id })
+          
+          let existingIDs = Set(_existingVariants?.cardDetails.map(\.id) ?? [])
+          
+          let newCards = result.data.filter {
+            $0.id != card.id && !existingIDs.contains($0.id)  // dedupe against existing
+          }
+          
+          _existingVariants?.append(cards: newCards)
           _existingVariants?.hasNextPage = result.hasMore ?? false
           _existingVariants?.total = result.totalCards ?? 0
           
@@ -42,7 +44,7 @@ import ScryfallKit
             .updateVariants(
               _existingVariants ??
               CardDataSource(
-                cards: result.data,
+                cards: newCards,
                 hasNextPage: result.hasMore ?? false,
                 total: result.totalCards ?? 0
               ),
@@ -54,7 +56,14 @@ import ScryfallKit
       case let .fetchAdditionalInformation(card):
         var effects: [EffectOf<Self>] = []
         
-        if state.content?.setIconURL == nil {
+        // Wait ~400ms so the navigation push animation finishes before firing parallel network calls
+        effects.append(
+          .run { _ in
+            try await Task.sleep(for: .milliseconds(400))
+          }
+        )
+        
+        if state.content.setIconURL == nil {
           effects.append(
             .run { send in
               try await send(.updateSetIconURL(URL(string: client.getSet(of: card).iconSvgUri)))
@@ -95,9 +104,9 @@ import ScryfallKit
         return .concatenate(effects)
         
       case .descriptionCallToActionTapped:
-        switch state.content?.displayableCardImage {
+        switch state.content.displayableCardImage {
         case let .transformable(direction, frontImageURL, backImageURL, callToActionIconName, id):
-          state.content?.displayableCardImage = .transformable(
+          state.content.displayableCardImage = .transformable(
             direction: direction.toggled(),
             frontImageURL: frontImageURL,
             backImageURL: backImageURL,
@@ -106,7 +115,7 @@ import ScryfallKit
           )
           
         case let .flippable(direction, displayingImageURL, callToActionIconName, id):
-          state.content?.displayableCardImage = .flippable(
+          state.content.displayableCardImage = .flippable(
             direction: direction.toggled(),
             displayingImageURL: displayingImageURL,
             callToActionIconName: callToActionIconName,
@@ -168,34 +177,25 @@ import ScryfallKit
         }
         
       case let .updateSetIconURL(value):
-        state.content?.setIconURL = value
+        state.content.setIconURL = value
         return .none
         
       case let .updateVariants(value, page):
-        if var content = state.content {
-          state.content?.variants = content.variants.updating(page: page, state: .data(value))
-        }
-        
+        state.content.variants = state.content.variants.updating(page: page, state: .data(value))
         return .none
         
       case let .updateMeldPieces(value):
-        if var content = state.content {
-          state.content?.relatedMeldPieces = content.relatedMeldPieces?.updating(
-            page: 1,
-            state: .data(value)
-          )
-        }
-        
+        state.content.relatedMeldPieces = state.content.relatedMeldPieces?.updating(
+          page: 1,
+          state: .data(value)
+        )
         return .none
         
       case let .updateMeldResult(value):
-        if var content = state.content {
-          state.content?.relatedMeldResult = content.relatedMeldResult?.updating(
-            page: 1,
-            state: .data(value)
-          )
-        }
-        
+        state.content.relatedMeldResult = state.content.relatedMeldResult?.updating(
+          page: 1,
+          state: .data(value)
+        )
         return .none
         
       case let .viewAppeared(action):
@@ -204,75 +204,23 @@ import ScryfallKit
         }
         
       case .viewRulingsTapped:
-        if let card = state.content?.card {
-          state.showRulings = RulingFeature.State(
-            card: card,
-            title: "Rulings"
-          )
-        }
-        
+        // Handled by parent
         return .none
         
-      case let .setupContentIfNeeded(card, queryType):
-        guard state.content == nil else {
-          return .none
-        }
-        
-        return .run { send in
-          await send(
-            .updateContent(
-              Content(
-                card: card,
-                queryType: queryType
-              )
-            )
-          )
-        }
-        
       case let .updateRelatedTokens(value):
-        if var content = state.content {
-          state.content?.relatedTokens = content.relatedTokens?.updating(
-            page: 1,
-            state: .data(value)
-          )
-        }
-        
+        state.content.relatedTokens = state.content.relatedTokens?.updating(
+          page: 1,
+          state: .data(value)
+        )
         return .none
         
       case let .updateComboPieces(value):
-        if var content = state.content {
-          state.content?.relatedComboPieces = content.relatedComboPieces?.updating(
-            page: 1,
-            state: .data(value)
-          )
-        }
-        
-        return .none
-        
-      case let .updateContent(value):
-        state.content = value
-        
-        return .run { send in
-          await send(.fetchAdditionalInformation(card: value.card))
-        }
-        
-      case let .showRulings(.presented(action)):
-        switch action {
-        case .dismissTapped:
-          state.showRulings = nil
-          break
-          
-        default:
-          break
-        }
-        return .none
-        
-      case .showRulings:
+        state.content.relatedComboPieces = state.content.relatedComboPieces?.updating(
+          page: 1,
+          state: .data(value)
+        )
         return .none
       }
-    }
-    .ifLet(\.$showRulings, action: \.showRulings) {
-      RulingFeature()
     }
   }
   
@@ -280,27 +228,22 @@ import ScryfallKit
 }
 
 public extension CardDetailFeature {
-  @ObservableState struct State: Equatable {
-    @Presents var showRulings: RulingFeature.State?
+  @ObservableState struct State: Equatable, Identifiable {
     public let id: UUID
-    var content: Content?
-    let start: Action
+    var content: Content  // non-optional, no more IfLetCore
     
     public init(card: Card, queryType: QueryType) {
       self.id = card.id
-      start = .setupContentIfNeeded(card: card, queryType: queryType)
+      self.content = Content(card: card, queryType: queryType)
     }
   }
   
   @CasePathable indirect enum Action: Equatable, Sendable {
     case didSelectVariant(card: Card, queryType: QueryType)
-    case dismissRulingsTapped
     case fetchAdditionalInformation(card: Card)
     case descriptionCallToActionTapped
     case updateSetIconURL(URL?)
     case updateVariants(CardDataSource, page: Int)
-    case updateRelatedTokens(CardDataSource)
-    case updateComboPieces(CardDataSource)
     case updateMeldPieces(CardDataSource)
     case updateMeldResult(CardDataSource)
     case didShowVariant(index: Int)
@@ -311,8 +254,7 @@ public extension CardDetailFeature {
     case fetchRelatedMeldResult(card: Card)
     case viewAppeared(initialAction: Action)
     case viewRulingsTapped
-    case setupContentIfNeeded(card: Card, queryType: QueryType)
-    case updateContent(Content)
-    case showRulings(PresentationAction<RulingFeature.Action>)
+    case updateRelatedTokens(CardDataSource)
+    case updateComboPieces(CardDataSource)
   }
 }

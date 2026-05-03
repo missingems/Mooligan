@@ -1,5 +1,5 @@
 {
-  "originHash" : "d5da31c8340a9b453fba0b49418d25ad9db707f2cbed90039a1a64a6e18a4707",
+  "originHash" : "851771901650d378b201bb74217734860d508b483c40ae7c4281e4047367a4dc",
   "pins" : [
     {
       "identity" : "apollo-ios",
@@ -78,8 +78,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/pointfreeco/swift-composable-architecture",
       "state" : {
-        "revision" : "74a5fa0d02b17ba5bbd9743dc49b4d7f3bbbed96",
-        "version" : "1.24.1"
+        "revision" : "1eaa6fa2ee57ac42843283b9fd3457af408c858d",
+        "version" : "1.25.5"
       }
     },
     {

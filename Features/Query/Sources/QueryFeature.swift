@@ -50,7 +50,7 @@ public struct QueryFeature: Sendable {
     var isShowingSortOptions: Bool
     var isShowingColorTypeOptions: Bool
     var isShowingCardTypeOptions: Bool
-    var dataSource: CardDataSource?
+    public internal(set) var dataSource: CardDataSource?
     let availableColorTypeOptions: [Card.Color]
     let availableCardType: [SearchQuery.CardType]
     let availableSortModes: [SortMode]
