@@ -14,17 +14,14 @@ public struct CardPagerView: View {
     ScrollView(.horizontal, showsIndicators: false) {
       LazyHStack(spacing: 0) {
         ForEach(cardPairs, id: \.0) { id, childStore in
-          DeferredCardDetailView(store: childStore)
+          CardDetailView(store: childStore)
+            .containerRelativeFrame(.horizontal)
         }
       }
       .scrollTargetLayout()
     }
     .scrollTargetBehavior(.paging)
     .scrollPosition(id: $store.selectedId)
-    .navigationTitle(
-      store.cards[id: store.selectedId ?? UUID()]?.content.card.name ?? ""
-    )
-    .navigationBarTitleDisplayMode(.inline)
     .sheet(
       item: $store.scope(state: \.showRulings, action: \.showRulings)
     ) { rulingStore in
@@ -36,20 +33,5 @@ public struct CardPagerView: View {
   
   public init(store: StoreOf<CardPagerFeature>) {
     self.store = store
-  }
-}
-
-private struct DeferredCardDetailView: View {
-  let store: StoreOf<CardDetailFeature>
-  @State private var isReady = false
-  
-  var body: some View {
-    ZStack {
-      if isReady {
-        CardDetailView(store: store)
-      }
-    }
-    .containerRelativeFrame(.horizontal)
-    .task { isReady = true }
   }
 }
