@@ -19,7 +19,7 @@ public struct CardDetailView: View {
     let content = store.content
     ZStack(alignment: .bottom) {
       ScrollView(.vertical) {
-        LazyVStack(spacing: 0) {
+        VStack(spacing: 0) {
           let cardImageWidth = content.card.isLandscape ? 2.5 / 3.0 * maxWidth : 2.0 / 3.0 * maxWidth
           
           let configuration = CardView.LayoutConfiguration(

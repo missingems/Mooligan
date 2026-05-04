@@ -73,7 +73,6 @@ struct RootView: View {
         }
       }
     }
-    .tabBarMinimizeBehavior(.onScrollDown)
     .tint(DesignComponentsAsset.accentColor.swiftUIColor)
   }
 }

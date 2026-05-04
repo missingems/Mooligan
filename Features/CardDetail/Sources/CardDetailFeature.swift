@@ -21,8 +21,8 @@ import ScryfallKit
           return .none
         }
         
-        return .run { send in
-//          await send(.fetchVariants(card: state.content.card, page: state.content.variants.page + 1))
+        return .run { [card = state.content.card, page = state.content.variants.page] send in
+          await send(.fetchVariants(card: card, page: page + 1))
         }
         
       case let .fetchVariants(card, page):
@@ -55,13 +55,6 @@ import ScryfallKit
         
       case let .fetchAdditionalInformation(card):
         var effects: [EffectOf<Self>] = []
-        
-        // Wait ~400ms so the navigation push animation finishes before firing parallel network calls
-        effects.append(
-          .run { _ in
-            try await Task.sleep(for: .milliseconds(400))
-          }
-        )
         
         if state.content.setIconURL == nil {
           effects.append(
@@ -101,7 +94,14 @@ import ScryfallKit
           }.cancellable(id: "fetchRelatedMeldResult: \(card.id.uuidString)", cancelInFlight: true)
         )
         
-        return .concatenate(effects)
+        return .concatenate(
+          .merge(effects),
+          .send(.additionalInfosLoaded)
+        )
+        
+      case .additionalInfosLoaded:
+        state.hasAppeared = true
+        return .none
         
       case .descriptionCallToActionTapped:
         switch state.content.displayableCardImage {
@@ -199,12 +199,14 @@ import ScryfallKit
         return .none
         
       case let .viewAppeared(action):
+        // Guard to prevent fetching again if already loaded
+        guard !state.hasAppeared else { return .none }
+        
         return .run { send in
           await send(action)
         }
         
       case .viewRulingsTapped:
-        // Handled by parent
         return .none
         
       case let .updateRelatedTokens(value):
@@ -231,6 +233,7 @@ public extension CardDetailFeature {
   @ObservableState struct State: Equatable, Identifiable {
     public let id: UUID
     var content: Content
+    var hasAppeared: Bool = false
     
     public init(card: Card, queryType: QueryType) {
       self.id = card.id
@@ -256,5 +259,6 @@ public extension CardDetailFeature {
     case viewRulingsTapped
     case updateRelatedTokens(CardDataSource)
     case updateComboPieces(CardDataSource)
+    case additionalInfosLoaded
   }
 }
