@@ -199,7 +199,6 @@ import ScryfallKit
         return .none
         
       case let .viewAppeared(action):
-        // Guard to prevent fetching again if already loaded
         guard !state.hasAppeared else { return .none }
         
         return .run { send in

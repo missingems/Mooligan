@@ -11,15 +11,17 @@ public struct CardPagerView: View {
   }
   
   public var body: some View {
-    TabView(selection: $store.selectedId) {
-      ForEach(cardPairs, id: \.0) { id, childStore in
-        CardDetailView(store: childStore)
-          .tag(id) // Required to sync the selectedId with the TabView
+    ScrollView(.horizontal, showsIndicators: false) {
+      LazyHStack(spacing: 0) {
+        ForEach(cardPairs, id: \.0) { _, childStore in
+          CardDetailView(store: childStore)
+            .containerRelativeFrame(.horizontal)
+        }
       }
+      .scrollTargetLayout()
     }
-    // Use .page(indexDisplayMode: .never) if you want to hide the page indicator dots,
-    // which matches your original `showsIndicators: false`.
-    .tabViewStyle(.page(indexDisplayMode: .never))
+    .scrollTargetBehavior(.paging)
+    .scrollPosition(id: $store.selectedId)
     .sheet(
       item: $store.scope(state: \.showRulings, action: \.showRulings)
     ) { rulingStore in
