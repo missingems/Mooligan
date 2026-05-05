@@ -1,3 +1,4 @@
+import DesignComponents
 import Networking
 import SwiftUI
 
@@ -8,7 +9,8 @@ struct CardDetailTableView: View {
     VStack(spacing: 0) {
       ForEach(sections.indices, id: \.self) { index in
         if index != 0 {
-          Divider().safeAreaPadding(.leading, nil)
+          VibrantDivider()
+            .safeAreaPadding(.leading, nil)
         }
         
         let section = sections[index]
@@ -39,7 +41,7 @@ struct CardDetailTableView: View {
             .padding(EdgeInsets(top: 13.0, leading: 0, bottom: 8.0, trailing: 0))
             
             if let name2, let manaCost2 {
-              Divider()
+              VibrantDivider()
               
               TitleView(
                 name: name2,
@@ -60,7 +62,7 @@ struct CardDetailTableView: View {
             TypelineView(text1).padding(edgeInsets)
             
             if let text2 {
-              Divider()
+              VibrantDivider()
               
               TypelineView(text2).padding(edgeInsets)
             }
@@ -89,7 +91,7 @@ struct CardDetailTableView: View {
             }
             
             if text2.isEmpty == false || flavor2?.isEmptyOrNil() == false {
-              Divider()
+              VibrantDivider()
               
               VStack(alignment: .leading, spacing: 8) {
                 DescriptionView(text2)
@@ -108,9 +110,9 @@ struct CardDetailTableView: View {
   init?(descriptions: [Content.Description]) {
     if descriptions.count == 1, let main = descriptions.first {
       self.sections = [
-          .title(main.name, main.manaCost),
-          .typeline(main.typeline),
-          .description(main.textElements, main.flavorText),
+        .title(main.name, main.manaCost),
+        .typeline(main.typeline),
+        .description(main.textElements, main.flavorText),
       ]
     } else if descriptions.count == 2, let main = descriptions.first, let alternate = descriptions.last {
       self.sections = [
@@ -123,6 +125,24 @@ struct CardDetailTableView: View {
     }
   }
 }
+
+// MARK: - Subviews
+struct VibrantDivider: View {
+  @Environment(\.colorScheme) private var colorScheme
+  
+  var body: some View {
+    Divider()
+      .opacity(0) // Hide the default system gray line completely
+      .overlay(
+        Rectangle()
+        // Use white for dark mode (to brighten) and black for light mode (to darken)
+          .fill(colorScheme == .dark ? Color.white.opacity(0.169) : Color.black.opacity(0.225))
+          .blendMode(colorScheme == .dark ? .plusLighter : .plusDarker)
+      )
+  }
+}
+
+// MARK: - Extensions
 
 extension CardDetailTableView {
   enum SectionType: Identifiable, Hashable {

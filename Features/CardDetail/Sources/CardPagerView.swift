@@ -22,6 +22,7 @@ public struct CardPagerView: View {
     }
     .scrollTargetBehavior(.paging)
     .scrollPosition(id: $store.selectedId)
+    .scrollEdgeEffectHidden()
     .sheet(
       item: $store.scope(state: \.showRulings, action: \.showRulings)
     ) { rulingStore in

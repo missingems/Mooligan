@@ -10,7 +10,7 @@ struct InformationView: View {
   private var strokeScale: CGFloat { max(displayScale, 1) }
   
   var body: some View {
-    Divider().safeAreaPadding(.leading, nil)
+    VibrantDivider().safeAreaPadding(.leading, nil)
     
     VStack(alignment: .leading, spacing: 8.0) {
       Text(title).font(.headline)

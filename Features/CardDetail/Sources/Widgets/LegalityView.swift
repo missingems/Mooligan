@@ -9,7 +9,7 @@ struct LegalityView: View {
   let numberOfColumns = 2
   
   var body: some View {
-    Divider().safeAreaPadding(.leading, nil)
+    VibrantDivider().safeAreaPadding(.leading, nil)
     
     VStack(alignment: .leading, spacing: 5.0) {
       Text(title).font(.headline)

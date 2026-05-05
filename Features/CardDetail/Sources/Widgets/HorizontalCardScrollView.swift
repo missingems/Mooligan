@@ -17,22 +17,15 @@ struct HorizontalCardScrollView: View {
   let send: (Action) -> Void
   
   var body: some View {
-    Divider().safeAreaPadding(.leading, nil)
+    VibrantDivider().safeAreaPadding(.leading, nil)
     
     VStack(alignment: .leading, spacing: 5.0) {
       HStack {
-        VStack(alignment: .leading) {
+        VStack(alignment: .leading, spacing: 5.0) {
           Text(title).font(.headline)
           Text(subtitle)
             .font(.caption)
             .foregroundStyle(.secondary)
-            .shimmering(
-              active: isInitial,
-              gradient: Gradient(
-                colors: [.secondary, .primary, .secondary]
-              ),
-              mode: .mask
-            )
         }
         
         Spacer()

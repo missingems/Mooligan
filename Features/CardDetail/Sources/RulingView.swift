@@ -36,7 +36,7 @@ struct RulingView: View {
                 }
                 .safeAreaPadding(.horizontal, nil)
                 
-                Divider().safeAreaPadding(.leading, nil)
+                VibrantDivider().safeAreaPadding(.leading, nil)
               }
             }
           }

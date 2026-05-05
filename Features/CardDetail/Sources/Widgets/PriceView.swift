@@ -9,7 +9,7 @@ struct PriceView: View {
   private let models: [Model]
   
   var body: some View {
-    Divider()
+    VibrantDivider()
       .safeAreaPadding(.leading, nil)
     
     VStack(alignment: .leading, spacing: 5.0) {

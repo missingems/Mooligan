@@ -5,7 +5,7 @@ struct SelectionView: View {
   let items: [Item]
   
   var body: some View {
-    Divider().safeAreaPadding(.leading, nil)
+    VibrantDivider().safeAreaPadding(.leading, nil)
     
     VStack(alignment: .leading, spacing: 8.0) {
       Text("Related").font(.headline)
@@ -89,7 +89,7 @@ extension SelectionView {
       .padding(.vertical, 13.0)
       
       if shouldShowSeparator {
-        Divider().safeAreaPadding(.leading, nil)
+        VibrantDivider().safeAreaPadding(.leading, nil)
       }
     }
   }
