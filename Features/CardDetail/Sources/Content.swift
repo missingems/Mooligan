@@ -200,6 +200,7 @@ extension Content {
     }
     
     mutating func updating(page: Int, state: State) -> Self {
+      self.page = page
       self.state = state
       return self
     }

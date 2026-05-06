@@ -10,6 +10,8 @@ struct HorizontalCardScrollView: View {
     case didShowCardAtIndex(Int)
   }
   
+  private static let cardWidth: CGFloat = 183
+  
   let title: String
   let subtitle: String
   let cards: CardDataSource
@@ -37,13 +39,20 @@ struct HorizontalCardScrollView: View {
       
       ScrollView(.horizontal, showsIndicators: false) {
         LazyHStack(spacing: 8.0) {
-          ForEach(cards.cardDetails, id: \.card.id) { cardInfo in
+          ForEach(Array(cards.cardDetails.enumerated()), id: \.element.id) { index, cardInfo in
+            let rotation: CardView.LayoutConfiguration.Rotation = cardInfo.card.isLandscape
+            ? .landscape
+            : .portrait
+            
             Button(
-              action: {
-                send(.didSelectCard(cardInfo.card))
-              }, label: {
+              action: { send(.didSelectCard(cardInfo.card)) },
+              label: {
                 CardView(
                   displayableCard: cardInfo.displayableCardImage,
+                  layoutConfiguration: CardView.LayoutConfiguration(
+                    rotation: rotation,
+                    maxWidth: Self.cardWidth
+                  ),
                   priceVisibility: .displaySet(
                     cardInfo.card.setName,
                     usdFoil: cardInfo.card.prices.usdFoil,
@@ -53,13 +62,9 @@ struct HorizontalCardScrollView: View {
                 )
               }
             )
-            .frame(width: 183)
+            .frame(width: Self.cardWidth)
             .buttonStyle(.sinkableButtonStyle)
-            .task {
-              if let index = cards.cardDetails.firstIndex(where: { $0.card.id == cardInfo.card.id }) {
-                send(.didShowCardAtIndex(index))
-              }
-            }
+            .task { send(.didShowCardAtIndex(index)) }
           }
         }
       }

@@ -19,7 +19,9 @@ public struct CardDetailView: View {
     let content = store.content
     ScrollView(.vertical) {
       VStack(spacing: 0) {
-        let cardImageWidth = content.card.isLandscape ? 2.5 / 3.0 * maxWidth : 2.0 / 3.0 * maxWidth
+        let cardImageWidth = content.card.isLandscape
+        ? 2.5 / 3.0 * maxWidth
+        : 2.0 / 3.0 * maxWidth
         
         let configuration = CardView.LayoutConfiguration(
           rotation: content.card.isLandscape ? .landscape : .portrait,
@@ -36,12 +38,7 @@ public struct CardDetailView: View {
           store.send(.descriptionCallToActionTapped, animation: .bouncy)
         }
         .padding(
-          EdgeInsets(
-            top: 13,
-            leading: 55,
-            bottom: 21,
-            trailing: 55
-          )
+          EdgeInsets(top: 13, leading: 55, bottom: 21, trailing: 55)
         )
         .zIndex(1)
         
@@ -76,9 +73,7 @@ public struct CardDetailView: View {
             .foregroundStyle(DesignComponentsAsset.invertedPrimary.swiftUIColor)
             .frame(maxWidth: .infinity, minHeight: 34)
             .padding(.vertical, 5.0)
-            .background(
-              DesignComponentsAsset.accentColor.swiftUIColor
-            )
+            .background(DesignComponentsAsset.accentColor.swiftUIColor)
             .clipShape(RoundedRectangle(cornerRadius: 13))
             .overlay(
               RoundedRectangle(cornerRadius: 13)
@@ -109,94 +104,109 @@ public struct CardDetailView: View {
           purchaseVendor: PurchaseVendor(purchaseURIs: content.card.purchaseUris)
         )
         
-        if let state = content.variants.state.value {
-          HorizontalCardScrollView(
-            title: content.variants.title,
-            subtitle: content.variants.subtitle,
-            cards: state,
-            isInitial: content.variants.state.isInitial
-          ) { action in
-            switch action {
-            case let .didSelectCard(card):
-              store.send(
-                .didSelectVariant(
-                  card: card,
-                  queryType: content.queryType
-                )
-              )
-            case let .didShowCardAtIndex(index):
-              store.send(.didShowVariant(index: index))
+        let variantCards = content.variants.state.value
+        Group {
+          if let cards = variantCards {
+            HorizontalCardScrollView(
+              title: content.variants.title,
+              subtitle: content.variants.subtitle,
+              cards: cards,
+              isInitial: content.variants.state.isInitial
+            ) { action in
+              switch action {
+              case let .didSelectCard(card):
+                store.send(.didSelectVariant(card: card, queryType: content.queryType))
+              case let .didShowCardAtIndex(index):
+                store.send(.didShowVariant(index: index))
+              }
             }
           }
         }
+        .animation(.smooth(duration: 0.3), value: variantCards != nil)
         
-        if let relatedTokensSection = content.relatedTokens,
-           let state = relatedTokensSection.state.value {
-          HorizontalCardScrollView(
-            title: relatedTokensSection.title,
-            subtitle: relatedTokensSection.subtitle,
-            cards: state,
-            isInitial: relatedTokensSection.state.isInitial
-          ) { action in
-            switch action {
-            case let .didSelectCard(card):
-              print(card)
-            case let .didShowCardAtIndex(index):
-              print(index)
+        let relatedTokenCards = content.relatedTokens?.state.value
+        Group {
+          if let relatedTokensSection = content.relatedTokens,
+             let cards = relatedTokenCards {
+            HorizontalCardScrollView(
+              title: relatedTokensSection.title,
+              subtitle: relatedTokensSection.subtitle,
+              cards: cards,
+              isInitial: relatedTokensSection.state.isInitial
+            ) { action in
+              switch action {
+              case let .didSelectCard(card):
+                print(card)
+              case let .didShowCardAtIndex(index):
+                print(index)
+              }
             }
           }
         }
+        .animation(.smooth(duration: 0.3), value: relatedTokenCards != nil)
         
-        if let relatedComboPiecesSection = content.relatedComboPieces,
-           let state = relatedComboPiecesSection.state.value {
-          HorizontalCardScrollView(
-            title: relatedComboPiecesSection.title,
-            subtitle: relatedComboPiecesSection.subtitle,
-            cards: state,
-            isInitial: relatedComboPiecesSection.state.isInitial
-          ) { action in
-            switch action {
-            case let .didSelectCard(card):
-              print(card)
-            case let .didShowCardAtIndex(index):
-              print(index)
+        let relatedComboPieceCards = content.relatedComboPieces?.state.value
+        Group {
+          if let relatedComboPiecesSection = content.relatedComboPieces,
+             let cards = relatedComboPieceCards {
+            HorizontalCardScrollView(
+              title: relatedComboPiecesSection.title,
+              subtitle: relatedComboPiecesSection.subtitle,
+              cards: cards,
+              isInitial: relatedComboPiecesSection.state.isInitial
+            ) { action in
+              switch action {
+              case let .didSelectCard(card):
+                print(card)
+              case let .didShowCardAtIndex(index):
+                print(index)
+              }
             }
           }
         }
+        .animation(.smooth(duration: 0.3), value: relatedComboPieceCards != nil)
         
-        if let relatedMeldPiecesSection = content.relatedMeldPieces,
-           let state = relatedMeldPiecesSection.state.value {
-          HorizontalCardScrollView(
-            title: relatedMeldPiecesSection.title,
-            subtitle: relatedMeldPiecesSection.subtitle,
-            cards: state,
-            isInitial: relatedMeldPiecesSection.state.isInitial
-          ) { action in
-            switch action {
-            case let .didSelectCard(card):
-              print(card)
-            case let .didShowCardAtIndex(index):
-              print(index)
+        let relatedMeldPieceCards = content.relatedMeldPieces?.state.value
+        Group {
+          if let relatedMeldPiecesSection = content.relatedMeldPieces,
+             let cards = relatedMeldPieceCards {
+            HorizontalCardScrollView(
+              title: relatedMeldPiecesSection.title,
+              subtitle: relatedMeldPiecesSection.subtitle,
+              cards: cards,
+              isInitial: relatedMeldPiecesSection.state.isInitial
+            ) { action in
+              switch action {
+              case let .didSelectCard(card):
+                print(card)
+              case let .didShowCardAtIndex(index):
+                print(index)
+              }
             }
           }
         }
+        .animation(.smooth(duration: 0.3), value: relatedMeldPieceCards != nil)
         
-        if let relatedMeldResultSection = content.relatedMeldResult,
-           let state = relatedMeldResultSection.state.value {
-          HorizontalCardScrollView(
-            title: relatedMeldResultSection.title,
-            subtitle: relatedMeldResultSection.subtitle,
-            cards: state,
-            isInitial: relatedMeldResultSection.state.isInitial
-          ) { action in
-            switch action {
-            case let .didSelectCard(card):
-              print(card)
-            case let .didShowCardAtIndex(index):
-              print(index)
+        let relatedMeldResultCards = content.relatedMeldResult?.state.value
+        Group {
+          if let relatedMeldResultSection = content.relatedMeldResult,
+             let cards = relatedMeldResultCards {
+            HorizontalCardScrollView(
+              title: relatedMeldResultSection.title,
+              subtitle: relatedMeldResultSection.subtitle,
+              cards: cards,
+              isInitial: relatedMeldResultSection.state.isInitial
+            ) { action in
+              switch action {
+              case let .didSelectCard(card):
+                print(card)
+              case let .didShowCardAtIndex(index):
+                print(index)
+              }
             }
           }
         }
+        .animation(.smooth(duration: 0.3), value: relatedMeldResultCards != nil)
         
         SelectionView(
           items: [
@@ -256,7 +266,7 @@ public struct CardDetailView: View {
       ZStack {
         VariableBlurView(maxBlurRadius: 2.0, direction: .blurredBottomClearTop, startOffset: 0)
         LinearGradient(
-          colors: [.clear, DesignComponentsAsset.invertedPrimary.swiftUIColor.opacity(0.62)], // Adjust opacity/colors as needed
+          colors: [.clear, DesignComponentsAsset.invertedPrimary.swiftUIColor.opacity(0.62)],
           startPoint: .top,
           endPoint: .bottom
         )
@@ -268,7 +278,7 @@ public struct CardDetailView: View {
       ZStack {
         VariableBlurView(maxBlurRadius: 2.0, direction: .blurredTopClearBottom, startOffset: 0)
         LinearGradient(
-          colors: [DesignComponentsAsset.invertedPrimary.swiftUIColor.opacity(0.62), .clear], // Adjust opacity/colors as needed
+          colors: [DesignComponentsAsset.invertedPrimary.swiftUIColor.opacity(0.62), .clear],
           startPoint: .top,
           endPoint: .bottom
         )
