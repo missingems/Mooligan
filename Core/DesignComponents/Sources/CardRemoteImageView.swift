@@ -6,8 +6,7 @@ import SwiftUI
 public struct CardRemoteImageView: View {
   public let url: URL
   @Environment(\.displayScale) private var displayScale
-  
-  private let cornerRadius: CGFloat
+  @State private var cornerRadius: CGFloat?
   private let transformers: [ImageProcessing]
   private let size: CGSize?
   private let isLandscape: Bool
@@ -25,15 +24,27 @@ public struct CardRemoteImageView: View {
     self.size = size
     self.id = id
     
-    if let size {
-      self.cornerRadius = (5.0 / 100.0) * (isLandscape ? size.height : size.width)
-    } else {
-      self.cornerRadius = 0
+    var transformers: [ImageProcessing] = []
+    
+    // 1. Tell Nuke to resize the downloaded image to save memory
+    if let targetSize = size {
+      transformers.append(
+        ImageProcessors.Resize(size: targetSize)
+      )
     }
     
-    var transformers: [ImageProcessing] = []
-    if isLandscape { transformers.append(RotationImageProcessor(degrees: 90)) }
-    if isTransformed { transformers.append(FlipImageProcessor()) }
+    if isLandscape {
+      transformers.append(
+        RotationImageProcessor(degrees: 90)
+      )
+    }
+    
+    if isTransformed {
+      transformers.append(
+        FlipImageProcessor()
+      )
+    }
+    
     self.transformers = transformers
   }
   
@@ -54,13 +65,29 @@ public struct CardRemoteImageView: View {
             .blur(radius: 34.0)
         }
       }
-      .aspectRatio(MagicCardImageRatio.widthToHeight.rawValue, contentMode: .fit)
     }
     .aspectRatio(MagicCardImageRatio.widthToHeight.rawValue, contentMode: .fit)
-    .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+    .frame(width: size?.width, height: size?.height)
+    .onGeometryChange(
+      for: CGSize.self,
+      of: { proxy in
+        proxy.size
+      },
+      action: { newValue in
+        if cornerRadius == nil {
+          cornerRadius = 5 / 100 * (isLandscape ? newValue.height : newValue.width)
+        }
+      }
+    )
+    .clipShape(
+      RoundedRectangle(cornerRadius: cornerRadius ?? 0)
+    )
     .overlay(
-      RoundedRectangle(cornerRadius: cornerRadius)
-        .strokeBorder(.separator, lineWidth: 1 / displayScale)
+      RoundedRectangle(cornerRadius: cornerRadius ?? 0)
+        .strokeBorder(
+          .separator,
+          lineWidth: 1 / displayScale
+        )
     )
   }
 }
