@@ -33,24 +33,30 @@ struct CardDetailTableView: View {
           .safeAreaPadding(.horizontal, nil)
           
         case let .titles(name1, manaCost1, name2, manaCost2):
-          HStack(alignment: .top, spacing: 8.0) {
+          HStack(alignment: .top, spacing: 16.0) { // Bumped spacing to accommodate the overlay line
             TitleView(
               name: name1,
               manaCost: manaCost1
             )
             .padding(EdgeInsets(top: 13.0, leading: 0, bottom: 8.0, trailing: 0))
+            .frame(maxWidth: .infinity, alignment: .leading)
             
             if let name2, let manaCost2 {
-              VibrantDivider()
-              
               TitleView(
                 name: name2,
                 manaCost: manaCost2
               )
               .padding(EdgeInsets(top: 13.0, leading: 0, bottom: 8, trailing: 0))
+              .frame(maxWidth: .infinity, alignment: .leading)
             }
           }
           .safeAreaPadding(.horizontal, nil)
+          // Draw the divider here instead of inside the HStack
+          .overlay {
+            if name2 != nil {
+              VibrantVerticalDivider()
+            }
+          }
           
         case let .typeline(value):
           TypelineView(value)
@@ -58,16 +64,24 @@ struct CardDetailTableView: View {
             .safeAreaPadding(.horizontal, nil)
           
         case let .typelines(text1, text2):
-          HStack(alignment: .top, spacing: 8.0) {
-            TypelineView(text1).padding(edgeInsets)
+          HStack(alignment: .top, spacing: 16.0) {
+            TypelineView(text1)
+              .padding(edgeInsets)
+              .frame(maxWidth: .infinity, alignment: .leading)
             
             if let text2 {
-              VibrantDivider()
-              
-              TypelineView(text2).padding(edgeInsets)
+              TypelineView(text2)
+                .padding(edgeInsets)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
           }
           .safeAreaPadding(.horizontal, nil)
+          // Draw the divider here instead of inside the HStack
+          .overlay {
+            if text2 != nil {
+              VibrantVerticalDivider()
+            }
+          }
           
         case let .description(text, flavor):
           if text.isEmpty == false || flavor?.isEmptyOrNil() == false {
@@ -80,7 +94,7 @@ struct CardDetailTableView: View {
           }
           
         case let .descriptions(text1, flavor1, text2, flavor2):
-          HStack(alignment: .top, spacing: 8.0) {
+          HStack(alignment: .top, spacing: 16.0) {
             if text1.isEmpty == false || flavor1?.isEmptyOrNil() == false {
               VStack(alignment: .leading, spacing: 8) {
                 DescriptionView(text1)
@@ -88,20 +102,26 @@ struct CardDetailTableView: View {
                 FlavorView(flavor1)
               }
               .padding(edgeInsets)
+              .frame(maxWidth: .infinity, alignment: .topLeading)
             }
             
             if text2.isEmpty == false || flavor2?.isEmptyOrNil() == false {
-              VibrantDivider()
-              
               VStack(alignment: .leading, spacing: 8) {
                 DescriptionView(text2)
                   .frame(maxWidth: .infinity)
                 FlavorView(flavor2)
               }
               .padding(edgeInsets)
+              .frame(maxWidth: .infinity, alignment: .topLeading)
             }
           }
           .safeAreaPadding(.horizontal, nil)
+          // Draw the divider here instead of inside the HStack
+          .overlay {
+            if text2.isEmpty == false || flavor2?.isEmptyOrNil() == false {
+              VibrantVerticalDivider()
+            }
+          }
         }
       }
     }
@@ -127,18 +147,30 @@ struct CardDetailTableView: View {
 }
 
 // MARK: - Subviews
+
 struct VibrantDivider: View {
   @Environment(\.colorScheme) private var colorScheme
   
   var body: some View {
     Divider()
-      .opacity(0) // Hide the default system gray line completely
+      .opacity(0)
       .overlay(
         Rectangle()
-        // Use white for dark mode (to brighten) and black for light mode (to darken)
           .fill(colorScheme == .dark ? Color.white.opacity(0.169) : Color.black.opacity(0.225))
           .blendMode(colorScheme == .dark ? .plusLighter : .plusDarker)
       )
+  }
+}
+
+// 👇 NEW: Dedicated vertical divider that avoids system `Divider()` bugs
+struct VibrantVerticalDivider: View {
+  @Environment(\.colorScheme) private var colorScheme
+  
+  var body: some View {
+    Rectangle()
+      .fill(colorScheme == .dark ? Color.white.opacity(0.169) : Color.black.opacity(0.225))
+      .blendMode(colorScheme == .dark ? .plusLighter : .plusDarker)
+      .frame(width: 1 / 2) // strictly limits it to a 1px vertical line
   }
 }
 

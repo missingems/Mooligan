@@ -21,17 +21,8 @@ public struct CardRemoteImageView: View {
   ) {
     self.isLandscape = isLandscape
     self.url = url
-    self.size = size
-    self.id = id
     
     var transformers: [ImageProcessing] = []
-    
-    // 1. Tell Nuke to resize the downloaded image to save memory
-    if let targetSize = size {
-      transformers.append(
-        ImageProcessors.Resize(size: targetSize)
-      )
-    }
     
     if isLandscape {
       transformers.append(
@@ -46,6 +37,8 @@ public struct CardRemoteImageView: View {
     }
     
     self.transformers = transformers
+    self.size = size
+    self.id = id
   }
   
   public var body: some View {
@@ -65,9 +58,9 @@ public struct CardRemoteImageView: View {
             .blur(radius: 34.0)
         }
       }
+      .aspectRatio(MagicCardImageRatio.widthToHeight.rawValue, contentMode: .fit)
     }
     .aspectRatio(MagicCardImageRatio.widthToHeight.rawValue, contentMode: .fit)
-    .frame(width: size?.width, height: size?.height)
     .onGeometryChange(
       for: CGSize.self,
       of: { proxy in
