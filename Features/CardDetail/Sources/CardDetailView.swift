@@ -243,7 +243,7 @@ public struct CardDetailView: View {
           transaction: Transaction(animation: .smooth)
         ) { state in
           if let image = state.image {
-            image.resizable().blur(radius: 89)
+            image.resizable().blur(radius: 89, opaque: true)
           }
         }
         .opacity((content.displayableCardImage?.faceDirection == .front) ? 1 : 0)
@@ -253,7 +253,7 @@ public struct CardDetailView: View {
           transaction: Transaction(animation: .smooth)
         ) { state in
           if let image = state.image {
-            image.resizable().blur(radius: 89)
+            image.resizable().blur(radius: 89, opaque: true)
           }
         }
         .opacity((content.displayableCardImage?.faceDirection == .back) ? 1 : 0)
