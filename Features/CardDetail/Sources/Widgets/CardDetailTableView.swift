@@ -162,15 +162,15 @@ struct VibrantDivider: View {
   }
 }
 
-// 👇 NEW: Dedicated vertical divider that avoids system `Divider()` bugs
 struct VibrantVerticalDivider: View {
   @Environment(\.colorScheme) private var colorScheme
+  @Environment(\.displayScale) var displayScale
   
   var body: some View {
     Rectangle()
       .fill(colorScheme == .dark ? Color.white.opacity(0.169) : Color.black.opacity(0.225))
       .blendMode(colorScheme == .dark ? .plusLighter : .plusDarker)
-      .frame(width: 1 / 2) // strictly limits it to a 1px vertical line
+      .frame(width: 1 / displayScale)
   }
 }
 
