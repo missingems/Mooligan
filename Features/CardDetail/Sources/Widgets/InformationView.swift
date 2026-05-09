@@ -10,7 +10,7 @@ struct InformationView: View {
   private var strokeScale: CGFloat { max(displayScale, 1) }
   
   var body: some View {
-    VibrantDivider().safeAreaPadding(.leading, nil)
+    VibrantDivider().safeAreaPadding(.leading, systemHorizontalMargin)
     
     VStack(alignment: .leading, spacing: 8.0) {
       Text(title).font(.headline)
@@ -22,7 +22,7 @@ struct InformationView: View {
       }
       .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
     }
-    .safeAreaPadding(.horizontal, nil)
+    .safeAreaPadding(.horizontal, systemHorizontalMargin)
     .padding(.vertical, 13.0)
   }
   

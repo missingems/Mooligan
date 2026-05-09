@@ -40,6 +40,7 @@ struct QueryView: View {
               }
             }
             .animation(.default, value: store.query)
+            .padding(.horizontal, systemHorizontalMargin - 8.0)
             .padding(.bottom, 8)
           }
         }
@@ -47,7 +48,7 @@ struct QueryView: View {
     }
     .contentMargins(
       .all,
-      EdgeInsets(top: 0, leading: 16, bottom: 13.0, trailing: 16),
+      EdgeInsets(top: 0, leading: 5, bottom: 13.0, trailing: 5),
       for: .scrollContent
     )
     .scrollDisabled(store.mode.isScrollable == false)
@@ -77,6 +78,8 @@ struct QueryView: View {
       let cardInfo = value.0
       let index = value.1
       
+      let tiltDegrees = Double(abs(cardInfo.id.hashValue) % 60 - 30) / 10.0
+      
       Button {
         store.send(.didSelectCard(cardInfo.card, store.queryType))
       } label: {
@@ -91,7 +94,6 @@ struct QueryView: View {
           shouldShowShadow: false,
           send: nil
         )
-        .padding(.bottom, 8.0)
       }
       .disabled(store.mode.isScrollable == false)
       .buttonStyle(.sinkableButtonStyle)
@@ -361,10 +363,10 @@ struct QueryView: View {
           VStack(spacing: 0) {
             section.0.body
               .padding(.vertical, 11.0)
-              .safeAreaPadding(.horizontal, nil)
+              .safeAreaPadding(.horizontal, systemHorizontalMargin)
             
             if section.1 != store.queryType.sections.count - 1 {
-              Divider().safeAreaPadding(.leading, nil)
+              Divider().safeAreaPadding(.leading, systemHorizontalMargin)
             }
           }
         }

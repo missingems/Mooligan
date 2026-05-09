@@ -5,7 +5,7 @@ struct SelectionView: View {
   let items: [Item]
   
   var body: some View {
-    VibrantDivider().safeAreaPadding(.leading, nil)
+    VibrantDivider().safeAreaPadding(.leading, systemHorizontalMargin)
     
     VStack(alignment: .leading, spacing: 8.0) {
       Text("Related").font(.headline)
@@ -26,7 +26,7 @@ struct SelectionView: View {
       .background(Color(.systemFill))
       .clipShape(RoundedRectangle(cornerRadius: 21))
     }
-    .safeAreaPadding(.horizontal, nil)
+    .safeAreaPadding(.horizontal, systemHorizontalMargin)
     .padding(.vertical, 13.0)
   }
 }
@@ -85,11 +85,11 @@ extension SelectionView {
             .tint(DesignComponentsAsset.accentColor.swiftUIColor.secondary)
         }
       }
-      .safeAreaPadding(.horizontal, nil)
+      .safeAreaPadding(.horizontal, systemHorizontalMargin)
       .padding(.vertical, 13.0)
       
       if shouldShowSeparator {
-        VibrantDivider().safeAreaPadding(.leading, nil)
+        VibrantDivider().safeAreaPadding(.leading, systemHorizontalMargin)
       }
     }
   }

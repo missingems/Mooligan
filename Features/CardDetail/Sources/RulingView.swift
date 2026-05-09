@@ -34,9 +34,9 @@ struct RulingView: View {
                     paragraphSpacing: 8.0
                   )
                 }
-                .safeAreaPadding(.horizontal, nil)
+                .safeAreaPadding(.horizontal, systemHorizontalMargin)
                 
-                VibrantDivider().safeAreaPadding(.leading, nil)
+                VibrantDivider().safeAreaPadding(.leading, systemHorizontalMargin)
               }
             }
           }

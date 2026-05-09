@@ -6,12 +6,10 @@ struct CardDetailTableView: View {
   let sections: [SectionType]
   
   var body: some View {
-    VStack(spacing: 0) {
+    LazyVStack(spacing: 0) {
       ForEach(sections.indices, id: \.self) { index in
-        if index != 0 {
-          VibrantDivider()
-            .safeAreaPadding(.leading, nil)
-        }
+        VibrantDivider()
+          .safeAreaPadding(.leading, systemHorizontalMargin)
         
         let section = sections[index]
         let isLast = index == sections.count - 1
@@ -29,16 +27,16 @@ struct CardDetailTableView: View {
             name: name1,
             manaCost: manaCost1
           )
-          .padding(EdgeInsets(top: 13.0, leading: 0, bottom: 8.0, trailing: 0))
-          .safeAreaPadding(.horizontal, nil)
+          .padding(edgeInsets)
+          .safeAreaPadding(.horizontal, systemHorizontalMargin)
           
         case let .titles(name1, manaCost1, name2, manaCost2):
-          HStack(alignment: .top, spacing: 16.0) { // Bumped spacing to accommodate the overlay line
+          HStack(alignment: .top, spacing: 16.0) {
             TitleView(
               name: name1,
               manaCost: manaCost1
             )
-            .padding(EdgeInsets(top: 13.0, leading: 0, bottom: 8.0, trailing: 0))
+            .padding(edgeInsets)
             .frame(maxWidth: .infinity, alignment: .leading)
             
             if let name2, let manaCost2 {
@@ -46,12 +44,11 @@ struct CardDetailTableView: View {
                 name: name2,
                 manaCost: manaCost2
               )
-              .padding(EdgeInsets(top: 13.0, leading: 0, bottom: 8, trailing: 0))
+              .padding(edgeInsets)
               .frame(maxWidth: .infinity, alignment: .leading)
             }
           }
-          .safeAreaPadding(.horizontal, nil)
-          // Draw the divider here instead of inside the HStack
+          .safeAreaPadding(.horizontal, systemHorizontalMargin)
           .overlay {
             if name2 != nil {
               VibrantVerticalDivider()
@@ -61,7 +58,7 @@ struct CardDetailTableView: View {
         case let .typeline(value):
           TypelineView(value)
             .padding(edgeInsets)
-            .safeAreaPadding(.horizontal, nil)
+            .safeAreaPadding(.horizontal, systemHorizontalMargin)
           
         case let .typelines(text1, text2):
           HStack(alignment: .top, spacing: 16.0) {
@@ -75,7 +72,7 @@ struct CardDetailTableView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
           }
-          .safeAreaPadding(.horizontal, nil)
+          .safeAreaPadding(.horizontal, systemHorizontalMargin)
           // Draw the divider here instead of inside the HStack
           .overlay {
             if text2 != nil {
@@ -90,7 +87,7 @@ struct CardDetailTableView: View {
               FlavorView(flavor)
             }
             .padding(edgeInsets)
-            .safeAreaPadding(.horizontal, nil)
+            .safeAreaPadding(.horizontal, systemHorizontalMargin)
           }
           
         case let .descriptions(text1, flavor1, text2, flavor2):
@@ -115,8 +112,7 @@ struct CardDetailTableView: View {
               .frame(maxWidth: .infinity, alignment: .topLeading)
             }
           }
-          .safeAreaPadding(.horizontal, nil)
-          // Draw the divider here instead of inside the HStack
+          .safeAreaPadding(.horizontal, systemHorizontalMargin)
           .overlay {
             if text2.isEmpty == false || flavor2?.isEmptyOrNil() == false {
               VibrantVerticalDivider()
@@ -136,41 +132,26 @@ struct CardDetailTableView: View {
       ]
     } else if descriptions.count == 2, let main = descriptions.first, let alternate = descriptions.last {
       self.sections = [
-        .titles(title1: main.name, manaCost1: main.manaCost, title2: alternate.name, manaCost2: alternate.manaCost),
-        .typelines(typeline1: main.typeline, typeline2: alternate.typeline),
-        .descriptions(description1: main.textElements, flavorText1: main.flavorText, description2: alternate.textElements, flavorText2: alternate.flavorText),
+        .titles(
+          title1: main.name,
+          manaCost1: main.manaCost,
+          title2: alternate.name,
+          manaCost2: alternate.manaCost
+        ),
+        .typelines(
+          typeline1: main.typeline,
+          typeline2: alternate.typeline
+        ),
+        .descriptions(
+          description1: main.textElements,
+          flavorText1: main.flavorText,
+          description2: alternate.textElements,
+          flavorText2: alternate.flavorText
+        ),
       ]
     } else {
       return nil
     }
-  }
-}
-
-// MARK: - Subviews
-
-struct VibrantDivider: View {
-  @Environment(\.colorScheme) private var colorScheme
-  
-  var body: some View {
-    Divider()
-      .opacity(0)
-      .overlay(
-        Rectangle()
-          .fill(colorScheme == .dark ? Color.white.opacity(0.169) : Color.black.opacity(0.225))
-          .blendMode(colorScheme == .dark ? .plusLighter : .plusDarker)
-      )
-  }
-}
-
-struct VibrantVerticalDivider: View {
-  @Environment(\.colorScheme) private var colorScheme
-  @Environment(\.displayScale) var displayScale
-  
-  var body: some View {
-    Rectangle()
-      .fill(colorScheme == .dark ? Color.white.opacity(0.169) : Color.black.opacity(0.225))
-      .blendMode(colorScheme == .dark ? .plusLighter : .plusDarker)
-      .frame(width: 1 / displayScale)
   }
 }
 
