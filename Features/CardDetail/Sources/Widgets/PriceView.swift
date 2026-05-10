@@ -9,8 +9,8 @@ struct PriceView: View {
   private let models: [Model]
   
   var body: some View {
-    Divider()
-      .safeAreaPadding(.leading, nil)
+    VibrantDivider()
+      .safeAreaPadding(.leading, systemHorizontalMargin)
     
     VStack(alignment: .leading, spacing: 5.0) {
       Text(title)
@@ -25,7 +25,7 @@ struct PriceView: View {
       }
       .padding(.top, 3.0)
     }
-    .safeAreaPadding(.horizontal, nil)
+    .safeAreaPadding(.horizontal, systemHorizontalMargin)
     .padding(.vertical, 13.0)
   }
   

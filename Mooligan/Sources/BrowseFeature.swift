@@ -9,6 +9,7 @@ import CardScanner
 
 @Reducer enum Path {
   case showCardDetail(CardDetailFeature)
+  case showCardPager(CardPagerFeature)
   case showSetDetail(QueryFeature)
 }
 
@@ -57,7 +58,6 @@ import CardScanner
     var path = StackState<Path.State>()
   }
   
-  // 2. Adopt BindableAction to allow automatic UI binding
   enum Action: BindableAction {
     case binding(BindingAction<State>)
     case sets(Browse.BrowseFeature.Action)
@@ -66,7 +66,7 @@ import CardScanner
   }
   
   var body: some ReducerOf<Self> {
-    BindingReducer() // 3. Handles mutations for BindableActions automatically
+    BindingReducer()
     
     Scope(state: \.sets, action: \.sets) {
       BindingReducer()
@@ -77,83 +77,103 @@ import CardScanner
       CardScannerFeature()
     }
     
-    Reduce { state, action in
-      switch action {
-      case .binding: // 4. Ignore or handle binding changes
-        return .none
+    // 1. Pass the function into Reduce, and attach .forEach here in the body!
+    Reduce(coreReduce)
+      .forEach(\.path, action: \.path)
+  }
+  
+  private func coreReduce(into state: inout State, action: Action) -> Effect<Action> {
+    switch action {
+    case .binding:
+      return .none
+      
+    case let .sets(action):
+      if case let .didSelectSet(value) = action {
+        state.selectedSet = value
         
-      case let .sets(action):
-        if case let .didSelectSet(value) = action {
-          state.selectedSet = value
-          
-          state.path.append(
-            .showSetDetail(
-              Query.QueryFeature.State(
-                mode: .placeholder,
-                queryType: .querySet(
-                  value,
-                  SearchQuery(setCode: value.code, page: 1, sortMode: .name, sortDirection: .asc)
-                )
+        state.path.append(
+          .showSetDetail(
+            Query.QueryFeature.State(
+              mode: .placeholder,
+              queryType: .querySet(
+                value,
+                SearchQuery(setCode: value.code, page: 1, sortMode: .name, sortDirection: .asc)
               )
             )
           )
-        }
-        
-        return .none
-        
-      case .scan:
-        return .none
-        
-      case let .path(value):
-        switch value {
-        case let .element(_, action):
-          switch action {
-          case let .showSetDetail(value):
-            switch value {
-            case .binding:
-              break
-              
-            case .didSelectShowInfo:
-              break
-              
-            case let .didSelectCard(card, queryType):
-              state.path.append(.showCardDetail(CardDetailFeature.State(card: card, queryType: queryType)))
-              
-            case .loadMoreCardsIfNeeded:
-              break
-              
-            case .updateCards(_, _, _):
-              break
-              
-            case .viewAppeared:
-              break
-              
-            case .scrollToTop:
-              break
+        )
+      }
+      
+      return .none
+      
+    case .scan:
+      return .none
+      
+    case let .path(value):
+      switch value {
+      case let .element(id, action):
+        switch action {
+        case let .showSetDetail(value):
+          switch value {
+          case .binding:
+            break
+            
+          case .didSelectShowInfo:
+            break
+            
+          case let .didSelectCard(card, queryType):
+            guard
+              case let .showSetDetail(queryState) = state.path[id: id],
+              let dataSource = queryState.dataSource
+            else {
+              return .none
             }
             
-          case let .showCardDetail(value):
-            switch value {
-            case let .didSelectVariant(card, queryType):
-              state.path.append(
-                .showCardDetail(CardDetailFeature.State(card: card, queryType: queryType))
-              )
-              
-            default:
-              break
-            }
+            let pagerState = CardPagerFeature.State(
+              cards: dataSource.cardDetails.map(\.card),
+              initialSelectedCard: card,
+              queryType: queryType
+            )
+            
+            state.path.append(.showCardPager(pagerState))
+            return .none
+            
+          case .loadMoreCardsIfNeeded:
+            break
+            
+          case .updateCards(_, _, _):
+            break
+            
+          case .viewAppeared:
+            break
+            
+          case .scrollToTop:
+            break
           }
           
-        case .popFrom:
+        case let .showCardPager(value):
           break
           
-        case .push:
-          break
+        case let .showCardDetail(value):
+          switch value {
+          case let .didSelectVariant(card, queryType):
+            state.path.append(
+              .showCardDetail(CardDetailFeature.State(card: card, queryType: queryType))
+            )
+            
+          default:
+            break
+          }
         }
         
-        return .none
+      case .popFrom:
+        break
+        
+      case .push:
+        break
       }
+      
+      return .none
     }
-    .forEach(\.path, action: \.path)
   }
 }

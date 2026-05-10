@@ -45,6 +45,9 @@ struct RootView: View {
                 .toolbarTitleDisplayMode(.inlineLarge)
             } destination: { store in
               switch store.case {
+              case let .showCardPager(value):
+                CardDetail.CardPagerView(store: value)
+                
               case let .showCardDetail(value):
                 CardDetail.RootView(store: value)
                 
@@ -70,7 +73,6 @@ struct RootView: View {
         }
       }
     }
-    .tabBarMinimizeBehavior(.onScrollDown)
     .tint(DesignComponentsAsset.accentColor.swiftUIColor)
   }
 }

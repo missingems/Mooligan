@@ -10,6 +10,8 @@ struct HorizontalCardScrollView: View {
     case didShowCardAtIndex(Int)
   }
   
+  private static let cardWidth: CGFloat = 183
+  
   let title: String
   let subtitle: String
   let cards: CardDataSource
@@ -17,22 +19,15 @@ struct HorizontalCardScrollView: View {
   let send: (Action) -> Void
   
   var body: some View {
-    Divider().safeAreaPadding(.leading, nil)
+    VibrantDivider().safeAreaPadding(.leading, systemHorizontalMargin)
     
     VStack(alignment: .leading, spacing: 5.0) {
       HStack {
-        VStack(alignment: .leading) {
+        VStack(alignment: .leading, spacing: 5.0) {
           Text(title).font(.headline)
           Text(subtitle)
             .font(.caption)
             .foregroundStyle(.secondary)
-            .shimmering(
-              active: isInitial,
-              gradient: Gradient(
-                colors: [.secondary, .primary, .secondary]
-              ),
-              mode: .mask
-            )
         }
         
         Spacer()
@@ -44,16 +39,20 @@ struct HorizontalCardScrollView: View {
       
       ScrollView(.horizontal, showsIndicators: false) {
         LazyHStack(spacing: 8.0) {
-          ForEach(Array(zip(cards.cardDetails, cards.cardDetails.indices)), id: \.0.card.id) { value in
-            let cardInfo = value.0
-            let index = value.1
+          ForEach(Array(cards.cardDetails.enumerated()), id: \.element.id) { index, cardInfo in
+            let rotation: CardView.LayoutConfiguration.Rotation = cardInfo.card.isLandscape
+            ? .landscape
+            : .portrait
             
             Button(
-              action: {
-                send(.didSelectCard(cardInfo.card))
-              }, label: {
+              action: { send(.didSelectCard(cardInfo.card)) },
+              label: {
                 CardView(
                   displayableCard: cardInfo.displayableCardImage,
+                  layoutConfiguration: CardView.LayoutConfiguration(
+                    rotation: rotation,
+                    maxWidth: Self.cardWidth
+                  ),
                   priceVisibility: .displaySet(
                     cardInfo.card.setName,
                     usdFoil: cardInfo.card.prices.usdFoil,
@@ -63,11 +62,9 @@ struct HorizontalCardScrollView: View {
                 )
               }
             )
-            .frame(width: 183)
+            .frame(width: Self.cardWidth)
             .buttonStyle(.sinkableButtonStyle)
-            .task {
-              send(.didShowCardAtIndex(index))
-            }
+            .task { send(.didShowCardAtIndex(index)) }
           }
         }
       }
@@ -75,7 +72,7 @@ struct HorizontalCardScrollView: View {
       .padding(.top, 3.0)
       .scrollClipDisabled(true)
     }
-    .safeAreaPadding(.horizontal, nil)
+    .safeAreaPadding(.horizontal, systemHorizontalMargin)
     .padding(.vertical, 13.0)
   }
   
