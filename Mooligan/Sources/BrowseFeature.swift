@@ -51,7 +51,7 @@ import CardScanner
   }
   
   @ObservableState struct State {
-    var selectedTab: TabInfo = .sets // 1. Added selection state
+    var selectedTab: TabInfo = .sets
     var sets: Browse.BrowseFeature.State
     var scan: CardScannerFeature.State
     var selectedSet: MTGSet?
@@ -63,6 +63,7 @@ import CardScanner
     case sets(Browse.BrowseFeature.Action)
     case scan(CardScannerFeature.Action)
     case path(StackActionOf<Path>)
+    case cardPagerStatePrepared(CardPagerFeature.State)
   }
   
   var body: some ReducerOf<Self> {
@@ -77,7 +78,6 @@ import CardScanner
       CardScannerFeature()
     }
     
-    // 1. Pass the function into Reduce, and attach .forEach here in the body!
     Reduce(coreReduce)
       .forEach(\.path, action: \.path)
   }
@@ -109,6 +109,10 @@ import CardScanner
     case .scan:
       return .none
       
+    case let .cardPagerStatePrepared(pagerState):
+      state.path.append(.showCardPager(pagerState))
+      return .none
+      
     case let .path(value):
       switch value {
       case let .element(id, action):
@@ -129,14 +133,17 @@ import CardScanner
               return .none
             }
             
-            let pagerState = CardPagerFeature.State(
-              cards: dataSource.cardDetails.map(\.card),
-              initialSelectedCard: card,
-              queryType: queryType
-            )
+            let cardDetails = dataSource.cardDetails
             
-            state.path.append(.showCardPager(pagerState))
-            return .none
+            return .run { send in
+              let cards = cardDetails.map(\.card)
+              let pagerState = CardPagerFeature.State(
+                cards: cards,
+                initialSelectedCard: card,
+                queryType: queryType
+              )
+              await send(.cardPagerStatePrepared(pagerState))
+            }
             
           case .loadMoreCardsIfNeeded:
             break
@@ -151,7 +158,7 @@ import CardScanner
             break
           }
           
-        case let .showCardPager(value):
+        case .showCardPager:
           break
           
         case let .showCardDetail(value):

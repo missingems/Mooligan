@@ -59,7 +59,6 @@ import ScryfallKit
         let needsSetIcon = state.content.setIconURL == nil
         
         return .run { send in
-          // 1. Fire all requests concurrently using `async let`
           async let fetchedSetIconURL: URL? = needsSetIcon
           ? URL(string: client.getSet(of: card).iconSvgUri)
           : nil
@@ -246,7 +245,6 @@ public extension CardDetailFeature {
     case updateComboPieces(CardDataSource)
     case additionalInfosLoaded
     
-    // NEW BATcHED ACTION
     case additionalInfosBatchedLoaded(
       setIconURL: URL?,
       variants: CardDataSource?,
