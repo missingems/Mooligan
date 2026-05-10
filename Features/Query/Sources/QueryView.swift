@@ -8,9 +8,10 @@ import NukeUI
 
 struct QueryView: View {
   @Bindable private var store: StoreOf<QueryFeature>
+  var zoomAnimation: Namespace.ID
   private let gridItems: [GridItem]
   
-  init(store: StoreOf<QueryFeature>) {
+  init(store: StoreOf<QueryFeature>, zoomAnimation: Namespace.ID) {
     self.store = store
     gridItems = [GridItem](
       repeating: GridItem(
@@ -19,6 +20,8 @@ struct QueryView: View {
       ),
       count: Int(store.numberOfColumns)
     )
+    
+    self.zoomAnimation = zoomAnimation
   }
   
   var body: some View {
@@ -78,9 +81,8 @@ struct QueryView: View {
       let cardInfo = value.0
       let index = value.1
       
-      let tiltDegrees = Double(abs(cardInfo.id.hashValue) % 60 - 30) / 10.0
-      
       Button {
+        print("Jun 1 - ", cardInfo.card.id)
         store.send(.didSelectCard(cardInfo.card, store.queryType))
       } label: {
         CardView(
@@ -94,6 +96,7 @@ struct QueryView: View {
           shouldShowShadow: false,
           send: nil
         )
+        .matchedTransitionSource(id: cardInfo.card.id, in: zoomAnimation)
       }
       .disabled(store.mode.isScrollable == false)
       .buttonStyle(.sinkableButtonStyle)

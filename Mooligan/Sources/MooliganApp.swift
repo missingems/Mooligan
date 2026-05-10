@@ -31,6 +31,7 @@ struct MooliganApp: App {
 
 struct RootView: View {
   @Bindable var store: StoreOf<Feature>
+  @Namespace var zoomAnimation
   
   var body: some View {
     TabView(selection: $store.selectedTab) {
@@ -46,13 +47,13 @@ struct RootView: View {
             } destination: { store in
               switch store.case {
               case let .showCardPager(value):
-                CardDetail.CardPagerView(store: value)
+                CardDetail.CardPagerView(store: value, zoomAnimation: zoomAnimation)
                 
               case let .showCardDetail(value):
                 CardDetail.RootView(store: value)
                 
               case let .showSetDetail(value):
-                Query.RootView(store: value)
+                Query.RootView(store: value, zoomAnimation: zoomAnimation)
               }
             }
             
