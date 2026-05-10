@@ -24,7 +24,7 @@ struct QueryView: View {
   var body: some View {
     ScrollView(.vertical) {
       if let dataSource = store.dataSource {
-        LazyVGrid(columns: gridItems, spacing: 5.0, pinnedViews: .sectionHeaders) {
+        LazyVGrid(columns: gridItems, spacing: 8.0, pinnedViews: .sectionHeaders) {
           Section {
             contentScrollView(dataSource: dataSource)
               .blur(radius: store.mode == .loading ? 8.0 : 0)
@@ -48,7 +48,7 @@ struct QueryView: View {
     }
     .contentMargins(
       .all,
-      EdgeInsets(top: 0, leading: 5, bottom: 13.0, trailing: 5),
+      EdgeInsets(top: 0, leading: 8, bottom: 13.0, trailing: 8),
       for: .scrollContent
     )
     .scrollDisabled(store.mode.isScrollable == false)
