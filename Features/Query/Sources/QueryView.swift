@@ -82,7 +82,6 @@ struct QueryView: View {
       let index = value.1
       
       Button {
-        print("Jun 1 - ", cardInfo.card.id)
         store.send(.didSelectCard(cardInfo.card, store.queryType))
       } label: {
         CardView(
