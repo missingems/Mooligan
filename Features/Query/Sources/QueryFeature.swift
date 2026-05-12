@@ -57,7 +57,7 @@ public struct QueryFeature: Sendable {
     let availableSortOrders: [SortDirection]
     var query: SearchQuery
     var scrollPosition: ScrollPosition
-    var numberOfColumns: Double = 2
+    var numberOfColumns: Double = 3
     let searchPrompt: String
     public let id: UUID
     

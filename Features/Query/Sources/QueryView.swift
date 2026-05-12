@@ -11,49 +11,44 @@ struct QueryView: View {
   var zoomAnimation: Namespace.ID
   private let gridItems: [GridItem]
   
+  @State private var cardSize: CGSize = .zero
+  
   init(store: StoreOf<QueryFeature>, zoomAnimation: Namespace.ID) {
     self.store = store
-    gridItems = [GridItem](
+    self.gridItems = [GridItem](
       repeating: GridItem(
-        spacing: 5.0,
+        spacing: 3.0,
         alignment: .center
       ),
       count: Int(store.numberOfColumns)
     )
-    
     self.zoomAnimation = zoomAnimation
   }
   
   var body: some View {
     ScrollView(.vertical) {
       if let dataSource = store.dataSource {
-        LazyVGrid(columns: gridItems, spacing: 8.0, pinnedViews: .sectionHeaders) {
+        LazyVGrid(columns: gridItems, spacing: 3.0, pinnedViews: .sectionHeaders) {
           Section {
             contentScrollView(dataSource: dataSource)
               .blur(radius: store.mode == .loading ? 8.0 : 0)
               .scaleEffect(store.mode == .loading ? 0.97 : 1)
               .opacity(store.mode == .loading ? 0.2 : 1)
               .placeholder(store.mode.isPlaceholder)
-          } header: {
-            GlassEffectContainer {
-              HStack(spacing: 8.0) {
-                colorTypeItems
-                typesMenuItems
-                sortView
-              }
-            }
-            .animation(.default, value: store.query)
-            .padding(.horizontal, systemHorizontalMargin - 8.0)
-            .padding(.bottom, 8)
           }
         }
       }
     }
     .contentMargins(
       .all,
-      EdgeInsets(top: 0, leading: 8, bottom: 13.0, trailing: 8),
+      EdgeInsets(top: 0, leading: 5, bottom: 13.0, trailing: 5),
       for: .scrollContent
     )
+    .onGeometryChange(for: CGFloat.self) { proxy in
+      proxy.size.width
+    } action: { newWidth in
+      calculateCardSize(availableWidth: newWidth)
+    }
     .scrollDisabled(store.mode.isScrollable == false)
     .scrollPosition($store.scrollPosition)
     .scrollBounceBehavior(.basedOnSize)
@@ -65,15 +60,29 @@ struct QueryView: View {
       }
     }
     .searchable(text: $store.query.name, placement: .toolbar)
-    .searchToolbarBehavior(.minimize)
     .overlay {
       ProgressView {
         Text("Loading...")
       }
       .opacity(store.mode == .loading ? 1 : 0)
     }
-    .background(Color(.systemGroupedBackground))
+    .background(Color(.secondarySystemGroupedBackground))
     .task { store.send(.viewAppeared) }
+  }
+  
+  private func calculateCardSize(availableWidth: CGFloat) {
+    let columns = CGFloat(store.numberOfColumns)
+    guard columns > 0 else { return }
+    
+    let horizontalPadding: CGFloat = 10.0
+    let spacing: CGFloat = 3.0
+    let totalSpacing = spacing * (columns - 1)
+    
+    let usableWidth = availableWidth - horizontalPadding - totalSpacing
+    let itemWidth = max(0, usableWidth / columns)
+    let itemHeight = itemWidth * MagicCardImageRatio.heightToWidth.rawValue
+    
+    self.cardSize = CGSize(width: itemWidth.rounded(), height: itemHeight.rounded())
   }
   
   @ViewBuilder private func contentScrollView(dataSource: CardDataSource) -> some View {
@@ -86,15 +95,14 @@ struct QueryView: View {
       } label: {
         CardView(
           displayableCard: cardInfo.displayableCardImage,
-          layoutConfiguration: nil,
+          layoutConfiguration: .init(rotation: .portrait, maxWidth: cardSize.width),
           callToActionHorizontalOffset: -3.0,
-          priceVisibility: .display(
-            usdFoil: cardInfo.card.getPrice(for: .usdFoil),
-            usd: cardInfo.card.getPrice(for: .usd)
-          ),
+          priceVisibility: .hidden,
           shouldShowShadow: false,
           send: nil
         )
+        .frame(width: cardSize.width > 0 ? cardSize.width : nil,
+               height: cardSize.height > 0 ? cardSize.height : nil)
         .matchedTransitionSource(id: cardInfo.card.id, in: zoomAnimation)
       }
       .disabled(store.mode.isScrollable == false)
@@ -411,4 +419,3 @@ private extension QueryType.Section {
     }
   }
 }
-

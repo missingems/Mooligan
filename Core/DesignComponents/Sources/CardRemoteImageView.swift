@@ -36,6 +36,10 @@ public struct CardRemoteImageView: View {
       )
     }
     
+    if let size {
+      transformers.append(ImageProcessors.Resize(size: size, unit: .points, contentMode: .aspectFit, crop: false, upscale: false))
+    }
+    
     self.transformers = transformers
     self.size = size
     self.id = id
@@ -60,7 +64,7 @@ public struct CardRemoteImageView: View {
       }
       .aspectRatio(MagicCardImageRatio.widthToHeight.rawValue, contentMode: .fit)
     }
-    .aspectRatio(MagicCardImageRatio.widthToHeight.rawValue, contentMode: .fit)
+    .frame(width: size?.width, height: size?.height, alignment: .center)
     .onGeometryChange(
       for: CGSize.self,
       of: { proxy in
