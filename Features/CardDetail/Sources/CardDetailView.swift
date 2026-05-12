@@ -201,10 +201,6 @@ public struct CardDetailView: View {
             ) {
               store.send(.viewRulingsTapped)
             },
-            SelectionView.Item(
-              icon: content.relatedSelectionIcon,
-              title: content.relatedSelectionLabel
-            ) {},
           ]
         )
       }
