@@ -38,7 +38,7 @@ public struct CardDetailView: View {
           store.send(.descriptionCallToActionTapped, animation: .bouncy)
         }
         .padding(
-          EdgeInsets(top: 13, leading: 55, bottom: 21, trailing: 55)
+          EdgeInsets(top: 13, leading: 55, bottom: 34, trailing: 55)
         )
         .zIndex(1)
         
