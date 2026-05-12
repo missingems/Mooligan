@@ -36,10 +36,6 @@ public struct CardRemoteImageView: View {
       )
     }
     
-    if let size {
-      transformers.append(ImageProcessors.Resize(size: size, unit: .points, contentMode: .aspectFit, crop: false, upscale: false))
-    }
-    
     self.transformers = transformers
     self.size = size
     self.id = id
@@ -62,9 +58,8 @@ public struct CardRemoteImageView: View {
             .blur(radius: 34.0)
         }
       }
-      .aspectRatio(MagicCardImageRatio.widthToHeight.rawValue, contentMode: .fit)
     }
-    .frame(width: size?.width, height: size?.height, alignment: .center)
+    .aspectRatio(MagicCardImageRatio.widthToHeight.rawValue, contentMode: .fit)
     .onGeometryChange(
       for: CGSize.self,
       of: { proxy in
@@ -78,13 +73,6 @@ public struct CardRemoteImageView: View {
     )
     .clipShape(
       RoundedRectangle(cornerRadius: cornerRadius ?? 0)
-    )
-    .overlay(
-      RoundedRectangle(cornerRadius: cornerRadius ?? 0)
-        .strokeBorder(
-          .separator,
-          lineWidth: 1 / displayScale
-        )
     )
   }
 }

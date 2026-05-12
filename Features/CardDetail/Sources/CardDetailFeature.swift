@@ -82,7 +82,7 @@ import ScryfallKit
           if let result = variantsResult {
             let newCards = result.data.filter { $0.id != card.id }
             variantsDataSource = CardDataSource(
-              cards: newCards,
+              cards: [card] + newCards,
               hasNextPage: result.hasMore ?? false,
               total: result.totalCards ?? 0
             )

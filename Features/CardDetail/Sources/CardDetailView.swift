@@ -94,9 +94,17 @@ public struct CardDetailView: View {
           legalities: content.card.legalities.all
         )
         
-        let variantCards = content.variants.state.value
+        PriceView(
+          title: content.priceLabel,
+          subtitle: content.priceSubtitleLabel,
+          prices: content.card.prices,
+          usdLabel: content.usdLabel,
+          usdFoilLabel: content.usdFoilLabel,
+          tixLabel: content.tixLabel,
+          purchaseVendor: PurchaseVendor(purchaseURIs: content.card.purchaseUris)
+        )
         
-        if let cards = variantCards {
+        if let cards = content.variants.state.value {
           HorizontalCardScrollView(
             title: content.variants.title,
             subtitle: content.variants.subtitle,
