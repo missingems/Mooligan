@@ -137,6 +137,7 @@ import CardScanner
             
             return .run { send in
               let cards = cardDetails.map(\.card)
+              
               let pagerState = CardPagerFeature.State(
                 cards: cards,
                 initialSelectedCard: card,
