@@ -35,7 +35,7 @@ struct PriceView: View {
     prices: Card.Prices,
     usdLabel: String,
     usdFoilLabel: String,
-    tixLabel: String,
+    usdEtchedLabel: String,
     purchaseVendor: PurchaseVendor
   ) {
     self.title = title
@@ -62,11 +62,11 @@ struct PriceView: View {
       ),
       Model(
         action: .didSelectUSDPrice,
-        isDisabled: prices.tix == nil,
-        label: tixLabel,
-        price: prices.tix ?? "0.00",
-        isFoil: false,
-        purchaseLinks: [purchaseVendor.cardHoarder].compactMap { $0 }
+        isDisabled: prices.usdEtched == nil,
+        label: usdEtchedLabel,
+        price: prices.usdEtched ?? "0.00",
+        isFoil: true,
+        purchaseLinks: [purchaseVendor.tcgPlayer, purchaseVendor.cardMarket].compactMap { $0 }
       ),
     ]
   }

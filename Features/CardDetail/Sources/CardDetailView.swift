@@ -100,7 +100,7 @@ public struct CardDetailView: View {
           prices: content.card.prices,
           usdLabel: content.usdLabel,
           usdFoilLabel: content.usdFoilLabel,
-          tixLabel: content.tixLabel,
+          usdEtchedLabel: content.usdEtchedLabel,
           purchaseVendor: PurchaseVendor(purchaseURIs: content.card.purchaseUris)
         )
         
