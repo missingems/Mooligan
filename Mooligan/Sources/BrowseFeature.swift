@@ -134,7 +134,6 @@ import CardScanner
             }
             
             let cardDetails = dataSource.cardDetails
-            
             return .run { send in
               let cards = cardDetails.map(\.card)
               
