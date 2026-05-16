@@ -10,7 +10,7 @@ struct QueryView: View {
   @Bindable private var store: StoreOf<QueryFeature>
   var zoomAnimation: Namespace.ID
   private let gridItems: [GridItem]
-  
+  @Environment(\.colorScheme) var colorScheme
   @State private var cardSize: CGSize = .zero
   
   init(store: StoreOf<QueryFeature>, zoomAnimation: Namespace.ID) {
@@ -66,8 +66,9 @@ struct QueryView: View {
       }
       .opacity(store.mode == .loading ? 1 : 0)
     }
-    .background(Color(.secondarySystemGroupedBackground))
+    .background(colorScheme == .light ? Color(.systemGroupedBackground) : Color(.secondarySystemBackground))
     .task { store.send(.viewAppeared) }
+    .navigationTransition(.zoom(sourceID: store.state.id, in: zoomAnimation))
   }
   
   private func calculateCardSize(availableWidth: CGFloat) {
@@ -99,7 +100,11 @@ struct QueryView: View {
           callToActionHorizontalOffset: -3.0,
           priceVisibility: .hidden,
           shouldShowShadow: false,
-          send: nil
+          send: { action in
+            if action == .toggledFaceDirection {
+              store.send(.cardFaceToggled(id: cardInfo.card.id))
+            }
+          }
         )
         .frame(width: cardSize.width > 0 ? cardSize.width : nil,
                height: cardSize.height > 0 ? cardSize.height : nil)
