@@ -5,15 +5,17 @@ import ScryfallKit
 
 @Reducer public struct BrowseFeature: Sendable {
   @Dependency(\.gameSetRequestClient) var client
+  @Dependency(\.continuousClock) var clock
   
   public var body: some ReducerOf<Self> {
     Reduce { state, action in
       switch action {
       case .binding(\.query):
         return .run { [query = state.query, sets = state.sets] send in
+          try await clock.sleep(for: .milliseconds(300))
           await send(.searchSets(.name(query, sets)))
         }
-        .debounce(id: "queryDebounce", for: .milliseconds(300), scheduler: DispatchQueue.main)
+        .cancellable(id: "queryDebounce", cancelInFlight: true)
         
       case .binding:
         return .none
@@ -60,9 +62,7 @@ public extension BrowseFeature {
     var query = ""
     var queryPlaceholder = String(localized: "Enter set name...")
     
-    public init(
-      selectedSet: MTGSet?
-    ) {
+    public init(selectedSet: MTGSet? = nil) {
       self.selectedSet = selectedSet
     }
   }
