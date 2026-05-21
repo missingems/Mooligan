@@ -6,9 +6,7 @@ import ScryfallKit
 
 struct SetsView: View {
   @Bindable private var store: StoreOf<BrowseFeature>
-  @Environment(\.horizontalSizeClass) private var horizontalSizeClass
   
-  // 1. Add selectedSet parameter to the helper
   static func viewModel(
     sets: [MTGSet],
     selectedSet: MTGSet?,
@@ -31,11 +29,43 @@ struct SetsView: View {
     
     return SetRow.ViewModel(
       set: set,
-      selectedSet: selectedSet, // 2. Pass it to the ViewModel
+      selectedSet: selectedSet,
       highlightedText: highlightedText,
       isLast: isLast,
       index: index
     )
+  }
+  
+  func setRow(
+    sets: [MTGSet],
+    selectedSet: MTGSet?,
+    highlightedText: String?,
+    index: Int,
+    onSelect: @escaping () -> Void
+  ) -> some View {
+    let set = sets[index]
+    let nextIndex = index + 1
+    let isLast: Bool
+    
+    if let nextSet = sets[safe: nextIndex] {
+      if nextSet.parentSetCode == nil {
+        isLast = true
+      } else {
+        isLast = false
+      }
+    } else {
+      isLast = true
+    }
+    
+    let viewModel = SetRow.ViewModel(
+      set: set,
+      selectedSet: selectedSet,
+      highlightedText: highlightedText,
+      isLast: isLast,
+      index: index
+    )
+    
+    return SetRow(viewModel: viewModel, onSelect)
   }
   
   var body: some View {
@@ -88,7 +118,7 @@ struct SetsView: View {
               SetRow(
                 viewModel: Self.viewModel(
                   sets: value.sets,
-                  selectedSet: store.selectedSet, // 3. Read from TCA State!
+                  selectedSet: store.selectedSet,
                   highlightedText: store.query,
                   index: index
                 )
