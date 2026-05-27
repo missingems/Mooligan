@@ -7,58 +7,63 @@ import Networking
 import Foundation
 import CardScanner
 
-@Reducer enum Path {
-  case showCardDetail(CardDetailFeature)
-  case showCardPager(CardPagerFeature)
-  case showSetDetail(QueryFeature)
-}
-
-@Reducer struct Feature {
-  enum TabInfo: Equatable, CaseIterable, Identifiable {
+@Reducer
+public struct Feature {
+  @Reducer
+  public enum Path {
+    case showCardDetail(CardDetailFeature)
+    case showCardPager(CardPagerFeature)
+    case showSetDetail(QueryFeature)
+  }
+  
+  public enum TabInfo: Equatable, CaseIterable, Identifiable {
     case sets
     case scan
     case collection
     
-    var title: String {
+    public var title: String {
       switch self {
-      case .sets:
-        return String(localized: "Sets")
-        
-      case .scan:
-        return String(localized: "Scan")
-        
-      case .collection:
-        return String(localized: "Collection")
+      case .sets: return String(localized: "Sets")
+      case .scan: return String(localized: "Scan")
+      case .collection: return String(localized: "Collection")
       }
     }
     
-    var systemIconName: String {
+    public var systemIconName: String {
       switch self {
-      case .sets:
-        return "text.page"
-        
-      case .scan:
-        return "camera.fill"
-        
-      case .collection:
-        return "folder"
+      case .sets: return "text.page"
+      case .scan: return "camera.fill"
+      case .collection: return "folder"
       }
     }
     
-    nonisolated var id: Self {
-      return self
+    public nonisolated var id: Self { self }
+  }
+  
+  @ObservableState
+  public struct State {
+    public var selectedTab: TabInfo = .sets
+    public var sets: Browse.BrowseFeature.State
+    public var scan: CardScannerFeature.State
+    public var selectedSet: MTGSet?
+    public var path: StackState<Path.State>
+    
+    public init(
+      selectedTab: TabInfo = .sets,
+      sets: Browse.BrowseFeature.State = .init(),
+      scan: CardScannerFeature.State = .init(),
+      selectedSet: MTGSet? = nil,
+      path: StackState<Path.State> = .init()
+    ) {
+      self.selectedTab = selectedTab
+      self.sets = sets
+      self.scan = scan
+      self.selectedSet = selectedSet
+      self.path = path
     }
   }
   
-  @ObservableState struct State {
-    var selectedTab: TabInfo = .sets
-    var sets: Browse.BrowseFeature.State
-    var scan: CardScannerFeature.State
-    var selectedSet: MTGSet?
-    var path = StackState<Path.State>()
-  }
-  
-  enum Action: BindableAction {
+  public enum Action: BindableAction {
     case binding(BindingAction<State>)
     case sets(Browse.BrowseFeature.Action)
     case scan(CardScannerFeature.Action)
@@ -66,11 +71,10 @@ import CardScanner
     case cardPagerStatePrepared(CardPagerFeature.State)
   }
   
-  var body: some ReducerOf<Self> {
+  public var body: some ReducerOf<Self> {
     BindingReducer()
     
     Scope(state: \.sets, action: \.sets) {
-      BindingReducer()
       Browse.BrowseFeature()
     }
     
@@ -81,6 +85,8 @@ import CardScanner
     Reduce(coreReduce)
       .forEach(\.path, action: \.path)
   }
+  
+  public init() {}
   
   private func coreReduce(into state: inout State, action: Action) -> Effect<Action> {
     switch action {
@@ -103,7 +109,6 @@ import CardScanner
           )
         )
       }
-      
       return .none
       
     case .scan:
@@ -119,12 +124,6 @@ import CardScanner
         switch action {
         case let .showSetDetail(value):
           switch value {
-          case .binding:
-            break
-            
-          case .didSelectShowInfo:
-            break
-            
           case let .didSelectCard(card, queryType):
             guard
               case let .showSetDetail(queryState) = state.path[id: id],
@@ -134,27 +133,17 @@ import CardScanner
             }
             
             let cardDetails = dataSource.cardDetails
-            
             return .run { send in
-              let cards = cardDetails.map(\.card)
+              // Pass the full cardDetails to retain the flip states
               let pagerState = CardPagerFeature.State(
-                cards: cards,
+                cardDetails: cardDetails,
                 initialSelectedCard: card,
                 queryType: queryType
               )
               await send(.cardPagerStatePrepared(pagerState))
             }
             
-          case .loadMoreCardsIfNeeded:
-            break
-            
-          case .updateCards(_, _, _):
-            break
-            
-          case .viewAppeared:
-            break
-            
-          case .scrollToTop:
+          default:
             break
           }
           
@@ -167,7 +156,6 @@ import CardScanner
             state.path.append(
               .showCardDetail(CardDetailFeature.State(card: card, queryType: queryType))
             )
-            
           default:
             break
           }

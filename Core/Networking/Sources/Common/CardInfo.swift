@@ -3,7 +3,7 @@ import Foundation
 
 public struct CardInfo: Equatable, Sendable, Identifiable {
   public let card: Card
-  public let displayableCardImage: DisplayableCardImage?
+  public var displayableCardImage: DisplayableCardImage?
   public let id: UUID
   public let formattedSetName: String
   public let formattedSetCode: String

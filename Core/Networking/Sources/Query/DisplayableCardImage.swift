@@ -77,3 +77,29 @@ public enum DisplayableCardImage: Equatable, Sendable {
     }
   }
 }
+
+import Foundation
+
+extension DisplayableCardImage {
+  public func toggled() -> DisplayableCardImage {
+    switch self {
+    case let .transformable(direction, frontImageURL, backImageURL, callToActionIconName, id):
+      return .transformable(
+        direction: direction == .front ? .back : .front,
+        frontImageURL: frontImageURL,
+        backImageURL: backImageURL,
+        callToActionIconName: callToActionIconName,
+        id: id
+      )
+    case let .flippable(direction, displayingImageURL, callToActionIconName, id):
+      return .flippable(
+        direction: direction == .front ? .back : .front,
+        displayingImageURL: displayingImageURL,
+        callToActionIconName: callToActionIconName,
+        id: id
+      )
+    case .single:
+      return self
+    }
+  }
+}

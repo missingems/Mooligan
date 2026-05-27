@@ -33,6 +33,9 @@ public struct CardPagerView: View {
         RulingView(store: rulingStore).toolbarTitleDisplayMode(.inline)
       }
     }
+    .task {
+      store.send(.task)
+    }
   }
   
   public init(store: StoreOf<CardPagerFeature>, zoomAnimation: Namespace.ID) {

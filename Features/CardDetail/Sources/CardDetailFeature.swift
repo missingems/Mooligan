@@ -19,9 +19,7 @@ import ScryfallKit
         guard
           state.content.variants.state.value?.hasNextPage == true,
           index == state.content.variants.state.value?.cardDetails.count ?? 0 - 1
-        else {
-          return .none
-        }
+        else { return .none }
         
         return .run { [card = state.content.card, page = state.content.variants.page] send in
           await send(.fetchVariants(card: card, page: page + 1))
@@ -44,8 +42,7 @@ import ScryfallKit
           
           await send(
             .updateVariants(
-              _existingVariants ??
-              CardDataSource(
+              _existingVariants ?? CardDataSource(
                 cards: newCards,
                 hasNextPage: result.hasMore ?? false,
                 total: result.totalCards ?? 0
@@ -70,12 +67,7 @@ import ScryfallKit
           async let fetchedMeldResult = try? client.getRelatedCardsIfNeeded(of: card, for: .meldResult)
           
           let (iconURL, variantsResult, tokens, combos, meldPieces, meldResult) = try await (
-            fetchedSetIconURL,
-            fetchedVariants,
-            fetchedTokens,
-            fetchedCombos,
-            fetchedMeldPieces,
-            fetchedMeldResult
+            fetchedSetIconURL, fetchedVariants, fetchedTokens, fetchedCombos, fetchedMeldPieces, fetchedMeldResult
           )
           
           var variantsDataSource: CardDataSource?
@@ -89,34 +81,18 @@ import ScryfallKit
           }
           
           await send(.additionalInfosBatchedLoaded(
-            setIconURL: iconURL,
-            variants: variantsDataSource,
-            relatedTokens: tokens,
-            comboPieces: combos,
-            meldPieces: meldPieces,
-            meldResult: meldResult
+            setIconURL: iconURL, variants: variantsDataSource, relatedTokens: tokens,
+            comboPieces: combos, meldPieces: meldPieces, meldResult: meldResult
           ))
         }.cancellable(id: "fetchAdditional: \(card.id.uuidString)", cancelInFlight: true)
         
       case let .additionalInfosBatchedLoaded(setIconURL, variants, tokens, combos, meldPieces, meldResult):
-        if let setIconURL {
-          state.content.setIconURL = setIconURL
-        }
-        if let variants {
-          state.content.variants = state.content.variants.updating(page: 1, state: .data(variants))
-        }
-        if let tokens {
-          state.content.relatedTokens = state.content.relatedTokens?.updating(page: 1, state: .data(tokens))
-        }
-        if let combos {
-          state.content.relatedComboPieces = state.content.relatedComboPieces?.updating(page: 1, state: .data(combos))
-        }
-        if let meldPieces {
-          state.content.relatedMeldPieces = state.content.relatedMeldPieces?.updating(page: 1, state: .data(meldPieces))
-        }
-        if let meldResult {
-          state.content.relatedMeldResult = state.content.relatedMeldResult?.updating(page: 1, state: .data(meldResult))
-        }
+        if let setIconURL { state.content.setIconURL = setIconURL }
+        if let variants { state.content.variants = state.content.variants.updating(page: 1, state: .data(variants)) }
+        if let tokens { state.content.relatedTokens = state.content.relatedTokens?.updating(page: 1, state: .data(tokens)) }
+        if let combos { state.content.relatedComboPieces = state.content.relatedComboPieces?.updating(page: 1, state: .data(combos)) }
+        if let meldPieces { state.content.relatedMeldPieces = state.content.relatedMeldPieces?.updating(page: 1, state: .data(meldPieces)) }
+        if let meldResult { state.content.relatedMeldResult = state.content.relatedMeldResult?.updating(page: 1, state: .data(meldResult)) }
         
         state.hasAppeared = true
         return .none
@@ -129,25 +105,19 @@ import ScryfallKit
         switch state.content.displayableCardImage {
         case let .transformable(direction, frontImageURL, backImageURL, callToActionIconName, id):
           state.content.displayableCardImage = .transformable(
-            direction: direction.toggled(),
-            frontImageURL: frontImageURL,
-            backImageURL: backImageURL,
-            callToActionIconName: callToActionIconName,
-            id: id
+            direction: direction.toggled(), frontImageURL: frontImageURL,
+            backImageURL: backImageURL, callToActionIconName: callToActionIconName, id: id
           )
           
         case let .flippable(direction, displayingImageURL, callToActionIconName, id):
           state.content.displayableCardImage = .flippable(
-            direction: direction.toggled(),
-            displayingImageURL: displayingImageURL,
-            callToActionIconName: callToActionIconName,
-            id: id
+            direction: direction.toggled(), displayingImageURL: displayingImageURL,
+            callToActionIconName: callToActionIconName, id: id
           )
           
         default:
           fatalError("descriptionCallToActionTapped isn't available to single face card.")
         }
-        
         return .none
         
       case let .fetchRelatedTokens(card):
@@ -214,14 +184,20 @@ import ScryfallKit
 }
 
 public extension CardDetailFeature {
-  @ObservableState struct State: Equatable, Identifiable {
+  // Requires Sendable conformance
+  @ObservableState struct State: Equatable, Identifiable, Sendable {
     public let id: UUID
-    var content: Content
-    var hasAppeared: Bool = false
+    public var content: Content
+    public var hasAppeared: Bool = false
     
-    public init(card: Card, queryType: QueryType) {
+    // Inject the prepopulated flipped state
+    public init(card: Card, displayableCardImage: DisplayableCardImage? = nil, queryType: QueryType) {
       self.id = card.id
       self.content = Content(card: card, queryType: queryType)
+      
+      if let displayableCardImage {
+        self.content.displayableCardImage = displayableCardImage
+      }
     }
   }
   
@@ -244,14 +220,9 @@ public extension CardDetailFeature {
     case updateRelatedTokens(CardDataSource)
     case updateComboPieces(CardDataSource)
     case additionalInfosLoaded
-    
     case additionalInfosBatchedLoaded(
-      setIconURL: URL?,
-      variants: CardDataSource?,
-      relatedTokens: CardDataSource?,
-      comboPieces: CardDataSource?,
-      meldPieces: CardDataSource?,
-      meldResult: CardDataSource?
+      setIconURL: URL?, variants: CardDataSource?, relatedTokens: CardDataSource?,
+      comboPieces: CardDataSource?, meldPieces: CardDataSource?, meldResult: CardDataSource?
     )
   }
 }
