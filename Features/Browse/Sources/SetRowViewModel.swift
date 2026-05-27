@@ -21,6 +21,7 @@ extension SetRow {
       set: MTGSet,
       selectedSet: MTGSet?,
       highlightedText: String? = nil,
+      isFirst: Bool,
       isLast: Bool,
       index: Int
     ) {
@@ -46,46 +47,9 @@ extension SetRow {
       } else {
         attributedTitle = AttributedString(set.name)
       }
-      
-      self.isFirst = set.parentSetCode == nil
+      self.isFirst = isFirst
       self.isLast = isLast
     }
-  }
-}
-
-extension Array where Element == MTGSet {
-  func mappedToSetRowViewModels(
-    highlightedText: String?
-  ) -> [SetRow.ViewModel] {
-    let zipped = zip(self, self.indices)
-    var data: [SetRow.ViewModel] = []
-    for value in zipped {
-      let set = value.0
-      let index = value.1
-      let nextIndex = index
-      let isLast: Bool
-      
-      if let nextSet = self[safe: nextIndex] {
-        if nextSet.parentSetCode != nil {
-          isLast = true
-        } else {
-          isLast = false
-        }
-      } else {
-        isLast = true
-      }
-      
-      let viewModel = SetRow.ViewModel(
-        set: set,
-        selectedSet: nil,
-        highlightedText: highlightedText,
-        isLast: isLast,
-        index: index
-      )
-      data.append(viewModel)
-    }
-    
-    return data
   }
 }
 

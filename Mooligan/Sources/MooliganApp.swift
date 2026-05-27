@@ -54,7 +54,7 @@ struct RootView: View {
       } content: {
         switch store.selectedTab {
         case .sets:
-          Browse.RootView(store: store.scope(state: \.sets, action: \.sets), zoomAnimation: zoomAnimation)
+          Browse.RootView(store: store.scope(state: \.sets, action: \.sets))
             .navigationTitle(Feature.TabInfo.sets.title)
           
         case .collection:
@@ -95,7 +95,7 @@ struct RootView: View {
             case .sets:
               NavigationStack(path: $store.scope(state: \.path, action: \.path)) {
                 Browse
-                  .RootView(store: store.scope(state: \.sets, action: \.sets), zoomAnimation: zoomAnimation)
+                  .RootView(store: store.scope(state: \.sets, action: \.sets))
                   .navigationTitle(info.title)
                   .toolbarTitleDisplayMode(.inlineLarge)
               } destination: { destinationStore in

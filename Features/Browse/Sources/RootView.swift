@@ -4,14 +4,12 @@ import SwiftUI
 
 public struct RootView: View {
   public var store: StoreOf<BrowseFeature>
-  public var zoomAnimation: Namespace.ID
   
   public var body: some View {
-    SetsView(store: store, zoomAnimation: zoomAnimation)
+    SetsView(store: store)
   }
   
-  public init(store: StoreOf<BrowseFeature>, zoomAnimation: Namespace.ID) {
+  public init(store: StoreOf<BrowseFeature>) {
     self.store = store
-    self.zoomAnimation = zoomAnimation
   }
 }

@@ -31,41 +31,10 @@ struct SetsView: View {
       set: set,
       selectedSet: selectedSet,
       highlightedText: highlightedText,
+      isFirst: set.parentSetCode == nil || sets[safe: index - 1] == nil,
       isLast: isLast,
       index: index
     )
-  }
-  
-  func setRow(
-    sets: [MTGSet],
-    selectedSet: MTGSet?,
-    highlightedText: String?,
-    index: Int,
-    onSelect: @escaping () -> Void
-  ) -> some View {
-    let set = sets[index]
-    let nextIndex = index + 1
-    let isLast: Bool
-    
-    if let nextSet = sets[safe: nextIndex] {
-      if nextSet.parentSetCode == nil {
-        isLast = true
-      } else {
-        isLast = false
-      }
-    } else {
-      isLast = true
-    }
-    
-    let viewModel = SetRow.ViewModel(
-      set: set,
-      selectedSet: selectedSet,
-      highlightedText: highlightedText,
-      isLast: isLast,
-      index: index
-    )
-    
-    return SetRow(viewModel: viewModel, onSelect)
   }
   
   var body: some View {
