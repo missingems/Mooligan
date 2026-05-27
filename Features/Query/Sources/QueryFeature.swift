@@ -10,7 +10,7 @@ public struct QueryFeature: Sendable {
   @Dependency(\.cardQueryRequestClient) var client
   
   @ObservableState
-  public struct State : Sendable{
+  public struct State: Sendable {
     public enum Mode: Equatable, Sendable {
       case placeholder
       case data
@@ -103,6 +103,7 @@ public struct QueryFeature: Sendable {
     case updateCards(CardDataSource?, SearchQuery, State.Mode)
     case scrollToTop
     case viewAppeared
+    case cardFaceToggled(id: UUID)
   }
   
   public var body: some ReducerOf<Self> {
@@ -206,7 +207,7 @@ public struct QueryFeature: Sendable {
                           number: min(10, set.cardCount)
                         ),
                         hasNextPage: false,
-                        total: set.cardCount,
+                        total: set.cardCount
                       ),
                       state.query,
                       .placeholder
@@ -237,6 +238,15 @@ public struct QueryFeature: Sendable {
             }
           ]
         )
+        
+      case let .cardFaceToggled(id):
+        guard let index = state.dataSource?.cardDetails.firstIndex(where: { $0.card.id == id }),
+              let currentImage = state.dataSource?.cardDetails[index].displayableCardImage else {
+          return .none
+        }
+        
+        state.dataSource?.cardDetails[index].displayableCardImage = currentImage.toggled()
+        return .none
       }
     }
   }

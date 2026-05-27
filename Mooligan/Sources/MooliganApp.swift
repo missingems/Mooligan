@@ -36,10 +36,7 @@ struct RootView: View {
   
   var body: some View {
     if horizontalSizeClass == .regular {
-      // MARK: - Pure iPad Layout (3-Column Split View)
       NavigationSplitView {
-        // 1. LEFT COLUMN (Sidebar / Tabs)
-        // We use a custom binding to bridge TCA's non-optional state to the optional List selection.
         List(selection: Binding(
           get: { store.selectedTab },
           set: { newValue in
@@ -55,10 +52,9 @@ struct RootView: View {
         }
         .navigationTitle("Mooligan")
       } content: {
-        // 2. MIDDLE COLUMN (Content / Sets List)
         switch store.selectedTab {
         case .sets:
-          Browse.RootView(store: store.scope(state: \.sets, action: \.sets))
+          Browse.RootView(store: store.scope(state: \.sets, action: \.sets), zoomAnimation: zoomAnimation)
             .navigationTitle(Feature.TabInfo.sets.title)
           
         case .collection:
@@ -70,7 +66,6 @@ struct RootView: View {
             .navigationTitle(Feature.TabInfo.scan.title)
         }
       } detail: {
-        // 3. RIGHT COLUMN (Detail / Query View)
         NavigationStack(path: $store.scope(state: \.path, action: \.path)) {
           ContentUnavailableView(
             "Select an Item",
@@ -93,7 +88,6 @@ struct RootView: View {
       .tint(DesignComponentsAsset.accentColor.swiftUIColor)
       
     } else {
-      // MARK: - Standard iPhone Layout (Tab View)
       TabView(selection: $store.selectedTab) {
         ForEach(Feature.TabInfo.allCases) { info in
           Tab(info.title, systemImage: info.systemIconName, value: info) {
@@ -101,7 +95,7 @@ struct RootView: View {
             case .sets:
               NavigationStack(path: $store.scope(state: \.path, action: \.path)) {
                 Browse
-                  .RootView(store: store.scope(state: \.sets, action: \.sets))
+                  .RootView(store: store.scope(state: \.sets, action: \.sets), zoomAnimation: zoomAnimation)
                   .navigationTitle(info.title)
                   .toolbarTitleDisplayMode(.inlineLarge)
               } destination: { destinationStore in
