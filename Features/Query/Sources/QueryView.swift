@@ -68,7 +68,6 @@ struct QueryView: View {
     }
     .background(colorScheme == .light ? Color(.systemGroupedBackground) : Color(.secondarySystemBackground))
     .task { store.send(.viewAppeared) }
-    .navigationTransition(.zoom(sourceID: store.state.id, in: zoomAnimation))
   }
   
   private func calculateCardSize(availableWidth: CGFloat) {
