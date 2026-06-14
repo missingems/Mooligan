@@ -33,6 +33,8 @@ extension SortMode: @retroactive Identifiable {
       return String(localized: "EDHREC Ranking")
     case .artist:
       return String(localized: "Artist")
+    case .spoiled:
+      return String(localized: "Spoiled")
     }
   }
 }

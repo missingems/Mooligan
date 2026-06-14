@@ -28,7 +28,18 @@ public extension Card {
         vintage: nil,
         penny: nil,
         commander: nil,
-        brawl: nil
+        brawl: nil,
+        future: nil,
+        timeless: nil,
+        gladiator: nil,
+        oathbreaker: nil,
+        standardbrawl: nil,
+        alchemy: nil,
+        paupercommander: nil,
+        duel: nil,
+        oldschool: nil,
+        premodern: nil,
+        predh: nil
       ),
       name: "",
       oversized: false,
@@ -153,3 +164,4 @@ public struct MockCardDetailRequestClient: MagicCardDetailRequestClient {
     )
   }
 }
+

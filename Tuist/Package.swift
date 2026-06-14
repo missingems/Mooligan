@@ -14,12 +14,11 @@ let packageSettings = PackageSettings(
 let package = Package(
   name: "Mooligan",
   dependencies: [
-    .package(url: "https://github.com/JacobHearst/ScryfallKit", from: "5.15.0"),
-    .package(url: "https://github.com/pointfreeco/swift-composable-architecture", from: "1.24.5"),
-    .package(url: "https://github.com/kean/Nuke", from: "12.9.0"),
+    .package(url: "https://github.com/JacobHearst/ScryfallKit", from: "6.2.0"),
+    .package(url: "https://github.com/pointfreeco/swift-composable-architecture", from: "1.26.0"),
+    .package(url: "https://github.com/kean/Nuke", from: "13.0.6"),
     .package(url: "https://github.com/exyte/SVGView.git", from: "1.0.6"),
     .package(url: "https://github.com/markiv/SwiftUI-Shimmer", from: "1.5.1"),
-    .package(url: "https://github.com/apollographql/apollo-ios.git", .upToNextMajor(from: "2.0.6")),
     .package(url: "https://github.com/nikstar/VariableBlur.git", .upToNextMajor(from: "1.3.0")),
   ]
 )
