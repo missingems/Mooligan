@@ -18,9 +18,7 @@ let project = Project(
       bundleId: "com.missingems.MTGJson",
       sources: ["MTGJson/Sources/**"],
       resources: ["MTGJson/Resources/**"],
-      dependencies: [
-        .external(name: "Apollo")
-      ]
+      dependencies: []
     )
   ]
 )

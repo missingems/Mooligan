@@ -14,7 +14,7 @@ public extension Card {
   }
   
   var hasMultipleColumns: Bool {
-    if layout == .unknown, isTransformable == false {
+    if case .unknown = layout, isTransformable == false {
       return cardFaces?.count ?? 0 > 1
     } else {
       return layout == .split || layout == .adventure
