@@ -81,7 +81,7 @@ public struct RootView: View {
        let cardInfo = store.dataSource?.cardDetails.first {
       let targetCorners: QuadCorners? = store.isMorphed
       ? uprightCorners(for: viewSize)
-      : store.latestTrackedCorners`
+      : store.latestTrackedCorners
       
       if let cornersToDraw = targetCorners {
         let containerWidth = viewSize.width * 0.75
