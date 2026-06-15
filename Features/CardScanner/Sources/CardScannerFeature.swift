@@ -224,7 +224,9 @@ public enum ScannerStatus: Equatable, Sendable {
       
     case let .variantsLoaded(variants):
       state.pendingVariants = variants
-      return .send(.mergePendingVariants, animation: .default)
+      return .run { send in
+        await send(.mergePendingVariants, animation: .default)
+      }
       
     case .mergePendingVariants:
       guard

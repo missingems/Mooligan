@@ -50,6 +50,7 @@ public struct RootView: View {
           }
         }
       }
+      .scrollEdgeEffectStyle(.soft, for: .all)
     }
     .onGeometryChange(for: EdgeInsets.self, of: { $0.safeAreaInsets }) { insets in
       store.send(.updateSafeAreas(top: insets.top, bottom: insets.bottom))
@@ -80,7 +81,7 @@ public struct RootView: View {
        let cardInfo = store.dataSource?.cardDetails.first {
       let targetCorners: QuadCorners? = store.isMorphed
       ? uprightCorners(for: viewSize)
-      : store.latestTrackedCorners
+      : store.latestTrackedCorners`
       
       if let cornersToDraw = targetCorners {
         let containerWidth = viewSize.width * 0.75
