@@ -112,10 +112,10 @@ struct SetsView: View {
             .padding(.bottom, 3.0)
         }
       }
+      .scrollEdgeEffectStyle(.soft, for: .all)
       .listStyle(.plain)
       .listSectionSeparator(.hidden)
       .searchable(text: $store.query)
-      .searchToolbarBehavior(.minimize)
       .background { Color(.systemGroupedBackground).ignoresSafeArea() }
       .redacted(reason: store.mode.isPlaceholder ? .placeholder : [])
       .scrollDisabled(store.mode.isPlaceholder)
