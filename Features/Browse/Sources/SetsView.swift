@@ -115,7 +115,9 @@ struct SetsView: View {
       .scrollEdgeEffectStyle(.soft, for: .all)
       .listStyle(.plain)
       .listSectionSeparator(.hidden)
-      .searchable(text: $store.query)
+      .conditionalModifier(store.mode.isScrollable, transform: { view in
+          view.searchable(text: $store.query)
+      })
       .background { Color(.systemGroupedBackground).ignoresSafeArea() }
       .redacted(reason: store.mode.isPlaceholder ? .placeholder : [])
       .scrollDisabled(store.mode.isPlaceholder)

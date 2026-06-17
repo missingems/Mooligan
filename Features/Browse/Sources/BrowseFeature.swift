@@ -31,8 +31,7 @@ import ScryfallKit
           let value = try await client.getSets(queryType: query)
           
           await send(
-            .updateSetSections(sections: value.0, flattened: value.1),
-            animation: .default
+            .updateSetSections(sections: value.0, flattened: value.1)
           )
         }.cancellable(id: "searchSets", cancelInFlight: true)
         
