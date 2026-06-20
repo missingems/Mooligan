@@ -7,9 +7,6 @@ import ScryfallKit
 struct SetsView: View {
   @Bindable private var store: StoreOf<BrowseFeature>
   
-  // Local state for the picker (defaults to English as requested)
-  @State private var selectedLanguage: SearchLanguage = .english
-  
   static func viewModel(
     sets: [MTGSet],
     selectedSet: MTGSet?,
@@ -84,22 +81,6 @@ struct SetsView: View {
     .task {
       store.send(.viewAppeared)
     }
-    .toolbar {
-      Menu {
-        Picker("Language", selection: $selectedLanguage) {
-          ForEach(SearchLanguage.allCases) { language in
-            Text(language.rawValue).tag(language)
-          }
-        }
-      } label: {
-        HStack(spacing: 3.0) {
-          Image(systemName: "globe")
-          Text(selectedLanguage.shortCode)
-            .font(.body)
-            .fontWeight(.semibold)
-        }.padding(.horizontal, 5.0)
-      }
-    }
   }
   
   @ViewBuilder
@@ -155,16 +136,11 @@ struct SetsView: View {
           .listRowVerticalInsets(top: insets.top, bottom: insets.bottom)
         }
       } header: {
-        HStack(spacing: 5.0) {
-          if value.isUpcomingSet {
-            Image(systemName: "hourglass")
-          }
-          Text(value.displayDate)
-        }
-        .padding(.horizontal, 13.0)
-        .padding(.vertical, 5.0)
-        .glassEffect()
-        .padding(.bottom, 3.0)
+        Text(value.displayDate)
+          .padding(.horizontal, 13.0)
+          .padding(.vertical, 5.0)
+          .glassEffect()
+          .padding(.bottom, 3.0)
       }
     }
     .scrollEdgeEffectStyle(.soft, for: .all)
@@ -186,39 +162,5 @@ struct SetsView: View {
   
   init(store: StoreOf<BrowseFeature>) {
     self.store = store
-  }
-}
-
-enum SearchLanguage: String, CaseIterable, Identifiable {
-  case all = "All languages"
-  case english = "English (English)"
-  case spanish = "Spanish (Español)"
-  case french = "French (Français)"
-  case german = "German (Deutsch)"
-  case italian = "Italian (Italiano)"
-  case portuguese = "Portuguese (Português)"
-  case japanese = "Japanese (日本語)"
-  case korean = "Korean (한국어)"
-  case russian = "Russian (русский язык)"
-  case simplifiedChinese = "Simplified Chinese (简体中文)"
-  case traditionalChinese = "Traditional Chinese (繁體中文)"
-  
-  var id: String { rawValue }
-  
-  var shortCode: String {
-    switch self {
-    case .all: return "All"
-    case .english: return "En"
-    case .spanish: return "Es"
-    case .french: return "Fr"
-    case .german: return "De"
-    case .italian: return "It"
-    case .portuguese: return "Pt"
-    case .japanese: return "日語"
-    case .korean: return "한국어"
-    case .russian: return "Ru"
-    case .simplifiedChinese: return "简体"
-    case .traditionalChinese: return "繁體"
-    }
   }
 }
