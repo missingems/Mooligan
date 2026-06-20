@@ -56,27 +56,23 @@ struct SetsView: View {
           .blur(radius: 12.0)
           
           ContentUnavailableView {
-            Label("Failed to load", systemImage: "exclamationmark.triangle.fill")
+            Label("Failed to load", systemImage: "wifi.slash")
           } description: {
             Text(message)
           } actions: {
             Button {
-              store.send(.retry)
+              let _ = withAnimation {
+                store.send(.retry)
+              }
             } label: {
               Text("Retry")
                 .font(.body)
                 .fontWeight(.semibold)
-                .foregroundStyle(DesignComponentsAsset.invertedPrimary.swiftUIColor)
-                .frame(maxWidth: .infinity, minHeight: 34)
-                .padding(.vertical, 5.0)
                 .padding(.horizontal, 13.0)
-                .background(DesignComponentsAsset.accentColor.swiftUIColor)
-                .clipShape(RoundedRectangle(cornerRadius: 13))
-                .overlay(
-                  RoundedRectangle(cornerRadius: 13)
-                )
+                .padding(.vertical, 5.0)
+                .glassEffect()
+                .padding(.bottom, 3.0)
             }
-            .buttonStyle(.sinkableButtonStyle)
           }
           .background(.ultraThinMaterial)
         }
