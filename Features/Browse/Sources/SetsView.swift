@@ -136,6 +136,17 @@ struct SetsView: View {
           .listRowVerticalInsets(top: insets.top, bottom: insets.bottom)
         }
       } header: {
+        HStack(spacing: 5.0) {
+          if value.isUpcomingSet {
+            Image(systemName: "hourglass")
+          }
+          Text(value.displayDate)
+        }
+        .padding(.horizontal, 13.0)
+        .padding(.vertical, 5.0)
+        .glassEffect()
+        .padding(.bottom, 3.0)
+        
         Text(value.displayDate)
           .padding(.horizontal, 13.0)
           .padding(.vertical, 5.0)
