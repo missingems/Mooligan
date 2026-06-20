@@ -38,96 +38,136 @@ struct SetsView: View {
   }
   
   var body: some View {
-    switch store.mode {
-    case let .data(sections), let .placeholder(sections):
-      List(sections) { value in
-        Section {
-          ForEach(
-            Array(zip(value.sets, value.sets.indices)),
-            id: \.0.id
-          ) { innerValue in
-            let set = innerValue.0
-            let index = innerValue.1
-            let isFirstOfSection = index == 0
-            let isLastOfSection = index == value.sets.count - 1
-            
-            var hasSeparator: Bool {
-              if isFirstOfSection, isLastOfSection {
-                return false
+    Group {
+      switch store.mode {
+      case let .data(sections):
+        setList(sections: sections, isPlaceholder: false, isScrollable: true)
+        
+      case let .placeholder(sections):
+        setList(sections: sections, isPlaceholder: true, isScrollable: false)
+        
+      case let .error(message):
+        ZStack {
+          setList(
+            sections: IdentifiedArrayOf(uniqueElements: MockGameSetRequestClient.mocksSetSections),
+            isPlaceholder: true,
+            isScrollable: false
+          )
+          .blur(radius: 12.0)
+          
+          ContentUnavailableView {
+            Label("Failed to load", systemImage: "wifi.slash")
+          } description: {
+            Text(message)
+          } actions: {
+            Button {
+              let _ = withAnimation {
+                store.send(.retry)
               }
-              
-              if isFirstOfSection, set.parentSetCode == nil {
-                return false
-              }
-              
-              if set.parentSetCode == nil {
-                return false
-              } else {
-                return true
-              }
+            } label: {
+              Text("Retry")
+                .font(.body)
+                .fontWeight(.semibold)
+                .padding(.horizontal, 13.0)
+                .padding(.vertical, 5.0)
+                .glassEffect()
+                .padding(.bottom, 3.0)
             }
-            
-            var insets: EdgeInsets {
-              if isFirstOfSection, isLastOfSection {
-                return EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)
-              }
-              
-              if isFirstOfSection, set.parentSetCode == nil {
-                return EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)
-              }
-              
-              if set.parentSetCode == nil {
-                return EdgeInsets(top: 8, leading: 0, bottom: 0, trailing: 0)
-              } else {
-                return EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)
-              }
-            }
-            
-            ZStack(alignment: .top) {
-              SetRow(
-                viewModel: Self.viewModel(
-                  sets: value.sets,
-                  selectedSet: store.selectedSet,
-                  highlightedText: store.query,
-                  index: index
-                )
-              ) {
-                store.send(.didSelectSet(set))
-              }
-              .shimmering(active: store.mode.isPlaceholder)
-              
-              if hasSeparator {
-                Divider().padding(.leading, 60.0)
-              }
-            }
-            .listRowSeparator(.hidden)
-            .listRowBackground(Color.clear)
-            .listRowVerticalInsets(top: insets.top, bottom: insets.bottom)
           }
-        } header: {
-          Text(value.displayDate)
-            .padding(.horizontal, 13.0)
-            .padding(.vertical, 5.0)
-            .glassEffect()
-            .padding(.bottom, 3.0)
+          .background(.ultraThinMaterial)
         }
       }
-      .scrollEdgeEffectStyle(.soft, for: .all)
-      .listStyle(.plain)
-      .listSectionSeparator(.hidden)
-      .searchable(text: $store.query)
-      .background { Color(.systemGroupedBackground).ignoresSafeArea() }
-      .redacted(reason: store.mode.isPlaceholder ? .placeholder : [])
-      .scrollDisabled(store.mode.isPlaceholder)
-      .allowsHitTesting(store.mode.isPlaceholder == false)
-      .contentMargins(.top, 0, for: .scrollContent)
-      .listSectionSpacing(13.0)
-      .refreshable {
-        await store.send(.searchSets(.all)).finish()
+    }
+    .task {
+      store.send(.viewAppeared)
+    }
+  }
+  
+  @ViewBuilder
+  private func setList(
+    sections: IdentifiedArrayOf<ScryfallClient.SetsSection>,
+    isPlaceholder: Bool,
+    isScrollable: Bool
+  ) -> some View {
+    List(sections) { value in
+      Section {
+        ForEach(
+          Array(zip(value.sets, value.sets.indices)),
+          id: \.0.id
+        ) { innerValue in
+          let set = innerValue.0
+          let index = innerValue.1
+          let isFirstOfSection = index == 0
+          let isLastOfSection = index == value.sets.count - 1
+          
+          var hasSeparator: Bool {
+            if isFirstOfSection, isLastOfSection { return false }
+            if isFirstOfSection, set.parentSetCode == nil { return false }
+            if set.parentSetCode == nil { return false }
+            else { return true }
+          }
+          
+          var insets: EdgeInsets {
+            if isFirstOfSection, isLastOfSection { return EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0) }
+            if isFirstOfSection, set.parentSetCode == nil { return EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0) }
+            if set.parentSetCode == nil { return EdgeInsets(top: 8, leading: 0, bottom: 0, trailing: 0) }
+            else { return EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0) }
+          }
+          
+          ZStack(alignment: .top) {
+            SetRow(
+              viewModel: Self.viewModel(
+                sets: value.sets,
+                selectedSet: store.selectedSet,
+                highlightedText: store.query,
+                index: index
+              )
+            ) {
+              store.send(.didSelectSet(set))
+            }
+            .shimmering(active: isPlaceholder)
+            
+            if hasSeparator {
+              Divider().padding(.leading, 60.0)
+            }
+          }
+          .listRowSeparator(.hidden)
+          .listRowBackground(Color.clear)
+          .listRowVerticalInsets(top: insets.top, bottom: insets.bottom)
+        }
+      } header: {
+        HStack(spacing: 5.0) {
+          if value.isUpcomingSet {
+            Image(systemName: "hourglass")
+          }
+          Text(value.displayDate)
+        }
+        .padding(.horizontal, 13.0)
+        .padding(.vertical, 5.0)
+        .glassEffect()
+        .padding(.bottom, 3.0)
+        
+        Text(value.displayDate)
+          .padding(.horizontal, 13.0)
+          .padding(.vertical, 5.0)
+          .glassEffect()
+          .padding(.bottom, 3.0)
       }
-      .task {
-        store.send(.viewAppeared)
-      }
+    }
+    .scrollEdgeEffectStyle(.soft, for: .all)
+    .listStyle(.plain)
+    .listSectionSeparator(.hidden)
+    .conditionalModifier(isScrollable, transform: { view in
+      view.searchable(text: $store.query)
+    })
+    .background { Color(.systemGroupedBackground).ignoresSafeArea() }
+    .redacted(reason: isPlaceholder ? .placeholder : [])
+    .scrollDisabled(isPlaceholder)
+    .allowsHitTesting(isPlaceholder == false)
+    .contentMargins(.top, 0, for: .scrollContent)
+    .listSectionSpacing(13.0)
+    .refreshable {
+      await store.send(.searchSets(.all)).finish()
     }
   }
   

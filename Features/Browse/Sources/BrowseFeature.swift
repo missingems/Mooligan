@@ -29,12 +29,28 @@ import ScryfallKit
       case let .searchSets(query):
         return .run { send in
           let value = try await client.getSets(queryType: query)
-          
-          await send(
-            .updateSetSections(sections: value.0, flattened: value.1),
-            animation: .default
-          )
+          await send(.updateSetSections(sections: value.0, flattened: value.1))
+        } catch: { error, send in
+          await send(.fetchFailed(error.localizedDescription))
         }.cancellable(id: "searchSets", cancelInFlight: true)
+        
+      case let .fetchFailed(errorMessage):
+        state.mode = .error(errorMessage)
+        return .none
+        
+      case .retry:
+        state.mode = .placeholder(.init(uniqueElements: MockGameSetRequestClient.mocksSetSections))
+        
+        let query = state.query
+        let sets = state.sets
+        
+        return .run { send in
+          if query.isEmpty {
+            await send(.searchSets(.all))
+          } else {
+            await send(.searchSets(.name(query, sets)))
+          }
+        }
         
       case .viewAppeared:
         return if state.mode.isPlaceholder {
@@ -73,6 +89,8 @@ public extension BrowseFeature {
     case binding(BindingAction<State>)
     case didSelectSet(MTGSet)
     case searchSets(GameSetQueryType)
+    case fetchFailed(String)
+    case retry
     case viewAppeared
     case updateSetSections(sections: [ScryfallClient.SetsSection], flattened: [MTGSet])
   }
@@ -82,34 +100,27 @@ public extension BrowseFeature.State {
   enum Mode: Equatable {
     case placeholder(IdentifiedArrayOf<ScryfallClient.SetsSection>)
     case data(IdentifiedArrayOf<ScryfallClient.SetsSection>)
+    case error(String)
     
     var isPlaceholder: Bool {
       switch self {
-      case .placeholder:
-        return true
-        
-      case .data:
-        return false
+      case .placeholder: return true
+      case .data, .error: return false
       }
     }
     
     var isScrollable: Bool {
       switch self {
-      case .placeholder:
-        return false
-        
-      case .data:
-        return true
+      case .data: return true
+      case .placeholder, .error: return false
       }
     }
     
     var data: IdentifiedArrayOf<ScryfallClient.SetsSection> {
       switch self {
-      case let .placeholder(value):
-        return value
-        
-      case let .data(value):
-        return value
+      case let .placeholder(value): return value
+      case let .data(value): return value
+      case .error: return []
       }
     }
   }
