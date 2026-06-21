@@ -35,6 +35,19 @@ struct QueryView: View {
               .scaleEffect(store.mode == .loading ? 0.97 : 1)
               .opacity(store.mode == .loading ? 0.2 : 1)
               .placeholder(store.mode.isPlaceholder)
+          } header: {
+            GlassEffectContainer {
+              ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8.0) {
+                  colorTypeItems
+                  typesMenuItems
+                  sortView
+                }
+              }
+            }
+            .animation(.default, value: store.query)
+            .padding(.horizontal, systemHorizontalMargin - 8.0)
+            .padding(.bottom, 8)
           }
         }
       }
@@ -60,7 +73,6 @@ struct QueryView: View {
         infoView(query: store.queryType)
       }
     }
-    .searchable(text: $store.query.name, placement: .toolbar)
     .overlay {
       ProgressView {
         Text("Loading...")
@@ -106,8 +118,10 @@ struct QueryView: View {
             }
           }
         )
-        .frame(width: cardSize.width > 0 ? cardSize.width : nil,
-               height: cardSize.height > 0 ? cardSize.height : nil)
+        .frame(
+          width: cardSize.width > 0 ? cardSize.width : nil,
+          height: cardSize.height > 0 ? cardSize.height : nil
+        )
         .matchedTransitionSource(id: cardInfo.card.id, in: zoomAnimation)
       }
       .disabled(store.mode.isScrollable == false)
@@ -117,6 +131,13 @@ struct QueryView: View {
           store.send(.loadMoreCardsIfNeeded(displayingIndex: index))
         }
       }
+    }
+  }
+  
+  @ViewBuilder private var searchItem: some View {
+    Button {
+    } label: {
+      
     }
   }
   
