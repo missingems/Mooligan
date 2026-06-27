@@ -18,27 +18,17 @@ public struct QueryFeature: Sendable {
       
       var isPlaceholder: Bool {
         switch self {
-        case .placeholder:
-          return true
-          
-        case .data:
-          return false
-          
-        case .loading:
-          return false
+        case .placeholder: return true
+        case .data: return false
+        case .loading: return false
         }
       }
       
       var isScrollable: Bool {
         switch self {
-        case .placeholder:
-          return false
-          
-        case .data:
-          return true
-          
-        case .loading:
-          return false
+        case .placeholder: return false
+        case .data: return true
+        case .loading: return false
         }
       }
     }
@@ -60,6 +50,10 @@ public struct QueryFeature: Sendable {
     var numberOfColumns: Double = 2
     let searchPrompt: String
     public let id: UUID
+    
+    // MARK: - Search Bar State
+    var searchBarText: String
+    var isSearchExpanded: Bool
     
     public init(
       mode: Mode,
@@ -88,6 +82,10 @@ public struct QueryFeature: Sendable {
       isShowingCardTypeOptions = false
       isShowingSortOptions = false
       availableColorTypeOptions = Card.Color.allCases
+      
+      // Initialize Search State
+      searchBarText = ""
+      isSearchExpanded = false
     }
     
     func shouldLoadMore(at index: Int) -> Bool {

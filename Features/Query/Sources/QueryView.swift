@@ -10,8 +10,11 @@ struct QueryView: View {
   @Bindable private var store: StoreOf<QueryFeature>
   var zoomAnimation: Namespace.ID
   private let gridItems: [GridItem]
+  
   @Environment(\.colorScheme) var colorScheme
   @State private var cardSize: CGSize = .zero
+  
+  @FocusState private var isSearchFocused: Bool
   
   init(store: StoreOf<QueryFeature>, zoomAnimation: Namespace.ID) {
     self.store = store
@@ -28,29 +31,30 @@ struct QueryView: View {
   var body: some View {
     ScrollView(.vertical) {
       if let dataSource = store.dataSource {
-        LazyVGrid(columns: gridItems, spacing: 3.0, pinnedViews: .sectionHeaders) {
-          Section {
-            contentScrollView(dataSource: dataSource)
-              .blur(radius: store.mode == .loading ? 8.0 : 0)
-              .scaleEffect(store.mode == .loading ? 0.97 : 1)
-              .opacity(store.mode == .loading ? 0.2 : 1)
-              .placeholder(store.mode.isPlaceholder)
-          } header: {
-            GlassEffectContainer {
-              ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8.0) {
-                  colorTypeItems
-                  typesMenuItems
-                  sortView
-                }
-              }
-            }
-            .animation(.default, value: store.query)
-            .padding(.horizontal, systemHorizontalMargin - 8.0)
-            .padding(.bottom, 8)
-          }
+        LazyVGrid(columns: gridItems, spacing: 3.0) {
+          contentScrollView(dataSource: dataSource)
+            .blur(radius: store.mode == .loading ? 8.0 : 0)
+            .scaleEffect(store.mode == .loading ? 0.97 : 1)
+            .opacity(store.mode == .loading ? 0.2 : 1)
+            .placeholder(store.mode.isPlaceholder)
         }
       }
+    }
+    .safeAreaBar(edge: .top) {
+      HStack(spacing: 8.0) {
+        if !store.isSearchExpanded {
+          colorTypeItems
+          typesMenuItems
+          sortView
+        }
+        
+        searchBarItem
+      }
+      .padding(.horizontal, 8)
+      .padding(.vertical, 8)
+      .frame(maxWidth: .infinity, alignment: .trailing)
+      .animation(.spring(response: 0.35, dampingFraction: 0.8), value: store.isSearchExpanded)
+      .animation(.default, value: store.query)
     }
     .scrollEdgeEffectStyle(.soft, for: .all)
     .contentMargins(
@@ -134,11 +138,64 @@ struct QueryView: View {
     }
   }
   
-  @ViewBuilder private var searchItem: some View {
-    Button {
-    } label: {
+  @ViewBuilder private var searchBarItem: some View {
+    HStack(spacing: 8) {
+      Button {
+        if !store.isSearchExpanded {
+          store.isSearchExpanded = true
+          isSearchFocused = true
+        }
+      } label: {
+        HStack(spacing: 6) {
+          Image(systemName: "magnifyingglass")
+            .resizable()
+            .scaledToFit()
+            .frame(width: 16, height: 28)
+            .foregroundColor(store.isSearchExpanded ? .secondary : .primary)
+          
+          if store.isSearchExpanded {
+            TextField(String(localized: "Search..."), text: $store.searchBarText)
+              .focused($isSearchFocused)
+              .textFieldStyle(.plain)
+              .autocorrectionDisabled()
+              .submitLabel(.search)
+              .id("searchTextField")
+              .frame(maxWidth: .infinity)
+            
+            if !store.searchBarText.isEmpty {
+              Button {
+                store.searchBarText = ""
+              } label: {
+                Image(systemName: "xmark.circle.fill")
+                  .foregroundColor(.secondary)
+              }
+              .buttonStyle(.plain)
+            }
+          }
+        }
+        .padding(EdgeInsets(top: 8, leading: 14, bottom: 8, trailing: 14))
+      }
+      .buttonStyle(.plain)
+      .glassEffect(.regular.interactive())
+      .frame(maxWidth: store.isSearchExpanded ? .infinity : nil)
       
+      if store.isSearchExpanded {
+        Button {
+          store.isSearchExpanded = false
+          store.searchBarText = ""
+          isSearchFocused = false
+        } label: {
+          Image(systemName: "xmark")
+            .font(.system(size: 15, weight: .semibold))
+            .foregroundColor(.primary)
+            .frame(width: 14, height: 28)
+        }
+        .padding(EdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12))
+        .glassEffect(.regular.interactive())
+        .transition(.scale.combined(with: .opacity))
+      }
     }
+    .frame(maxWidth: store.isSearchExpanded ? .infinity : nil)
   }
   
   @ViewBuilder private var colorTypeItems: some View {
@@ -158,14 +215,7 @@ struct QueryView: View {
         }
       }
       .frame(maxWidth: .infinity)
-      .padding(
-        EdgeInsets(
-          top: 8,
-          leading: 8,
-          bottom: 8,
-          trailing: 8
-        )
-      )
+      .padding(EdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8))
     }
     .glassEffect(.regular.interactive())
     .popover(
@@ -220,11 +270,7 @@ struct QueryView: View {
             .renderingMode(.template)
             .resizable()
             .scaledToFit()
-            .frame(
-              width: 18,
-              height: 28,
-              alignment: .center
-            )
+            .frame(width: 18, height: 28, alignment: .center)
         }
         
         if store.query.cardType.count == 1, let value = store.query.cardType.first {
@@ -237,14 +283,7 @@ struct QueryView: View {
         }
       }
       .frame(maxWidth: .infinity)
-      .padding(
-        EdgeInsets(
-          top: 8,
-          leading: 8,
-          bottom: 8,
-          trailing: 8
-        )
-      )
+      .padding(EdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8))
     }
     .glassEffect(.regular.interactive())
     .popover(
@@ -310,14 +349,7 @@ struct QueryView: View {
           .multilineTextAlignment(.leading)
       }
       .frame(maxWidth: .infinity)
-      .padding(
-        EdgeInsets(
-          top: 8,
-          leading: 0,
-          bottom: 8,
-          trailing: 0
-        )
-      )
+      .padding(EdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8))
     }
     .glassEffect(.regular.interactive())
     .popover(
