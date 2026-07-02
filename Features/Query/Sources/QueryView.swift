@@ -10,10 +10,8 @@ struct QueryView: View {
   @Bindable private var store: StoreOf<QueryFeature>
   var zoomAnimation: Namespace.ID
   private let gridItems: [GridItem]
-  
   @Environment(\.colorScheme) var colorScheme
   @State private var cardSize: CGSize = .zero
-  
   @FocusState private var isSearchFocused: Bool
   
   init(store: StoreOf<QueryFeature>, zoomAnimation: Namespace.ID) {
@@ -50,9 +48,8 @@ struct QueryView: View {
         
         searchBarItem
       }
-      .padding(.horizontal, 8)
-      .padding(.vertical, 8)
-      .frame(maxWidth: .infinity, alignment: .trailing)
+      .padding(.bottom, 13)
+      .padding(.horizontal, systemHorizontalMargin)
       .animation(.spring(response: 0.35, dampingFraction: 0.8), value: store.isSearchExpanded)
       .animation(.default, value: store.query)
     }
@@ -154,7 +151,7 @@ struct QueryView: View {
             .foregroundColor(store.isSearchExpanded ? .secondary : .primary)
           
           if store.isSearchExpanded {
-            TextField(String(localized: "Search..."), text: $store.searchBarText)
+            TextField(String(localized: "Search..."), text: $store.query.name)
               .focused($isSearchFocused)
               .textFieldStyle(.plain)
               .autocorrectionDisabled()
@@ -162,9 +159,9 @@ struct QueryView: View {
               .id("searchTextField")
               .frame(maxWidth: .infinity)
             
-            if !store.searchBarText.isEmpty {
+            if !store.query.name.isEmpty {
               Button {
-                store.searchBarText = ""
+//                store.query.name = ""
               } label: {
                 Image(systemName: "xmark.circle.fill")
                   .foregroundColor(.secondary)
@@ -173,16 +170,15 @@ struct QueryView: View {
             }
           }
         }
-        .padding(EdgeInsets(top: 8, leading: 14, bottom: 8, trailing: 14))
+        .padding(EdgeInsets(top: 8, leading: 15, bottom: 8, trailing: 15))
       }
-      .buttonStyle(.plain)
-      .glassEffect(.regular.interactive())
+//      .buttonStyle(.plain)
+//      .glassEffect(.regular)
       .frame(maxWidth: store.isSearchExpanded ? .infinity : nil)
       
       if store.isSearchExpanded {
         Button {
           store.isSearchExpanded = false
-          store.searchBarText = ""
           isSearchFocused = false
         } label: {
           Image(systemName: "xmark")
@@ -202,7 +198,7 @@ struct QueryView: View {
     Button {
       store.isShowingColorTypeOptions.toggle()
     } label: {
-      HStack(spacing: -3) {
+      HStack(spacing: -5) {
         ForEach(
           store.query.colorIdentities.isEmpty ? store.availableColorTypeOptions : Array(store.query.colorIdentities).sorted(),
           id: \.rawValue
@@ -215,7 +211,7 @@ struct QueryView: View {
         }
       }
       .frame(maxWidth: .infinity)
-      .padding(EdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8))
+      .padding(EdgeInsets(top: 8, leading: 13, bottom: 8, trailing: 13))
     }
     .glassEffect(.regular.interactive())
     .popover(

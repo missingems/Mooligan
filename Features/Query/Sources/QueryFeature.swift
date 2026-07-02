@@ -50,9 +50,6 @@ public struct QueryFeature: Sendable {
     var numberOfColumns: Double = 2
     let searchPrompt: String
     public let id: UUID
-    
-    // MARK: - Search Bar State
-    var searchBarText: String
     var isSearchExpanded: Bool
     
     public init(
@@ -82,9 +79,6 @@ public struct QueryFeature: Sendable {
       isShowingCardTypeOptions = false
       isShowingSortOptions = false
       availableColorTypeOptions = Card.Color.allCases
-      
-      // Initialize Search State
-      searchBarText = ""
       isSearchExpanded = false
     }
     
