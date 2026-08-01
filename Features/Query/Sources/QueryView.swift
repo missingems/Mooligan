@@ -30,23 +30,34 @@ struct QueryView: View {
     ScrollView(.vertical) {
       if let dataSource = store.dataSource {
         LazyVGrid(columns: gridItems, spacing: 3.0) {
-          contentScrollView(dataSource: dataSource)
-            .blur(radius: store.mode == .loading ? 8.0 : 0)
-            .scaleEffect(store.mode == .loading ? 0.97 : 1)
-            .opacity(store.mode == .loading ? 0.2 : 1)
-            .placeholder(store.mode.isPlaceholder)
+          CardGridContentView(
+            store: store,
+            dataSource: dataSource,
+            cardSize: cardSize,
+            zoomAnimation: zoomAnimation
+          )
+          .blur(radius: store.mode == .loading ? 8.0 : 0)
+          .scaleEffect(store.mode == .loading ? 0.97 : 1)
+          .opacity(store.mode == .loading ? 0.2 : 1)
+          .placeholder(store.mode.isPlaceholder)
         }
       }
     }
     .safeAreaBar(edge: .top) {
-      HStack(spacing: 8.0) {
-        if !store.isSearchExpanded {
-          colorTypeItems
-          typesMenuItems
-          sortView
+      GlassEffectContainer {
+        HStack(spacing: 8.0) {
+          if !store.isSearchExpanded {
+            ColorTypeItemsView(store: store)
+            CardTypeItemsView(store: store)
+            SortOptionsView(store: store)
+          }
+          
+          SearchBar(
+            text: $store.query.name,
+            isExpanded: $store.isSearchExpanded,
+            placeholder: "Search messages..."
+          )
         }
-        
-        searchBarItem
       }
       .padding(.bottom, 13)
       .padding(.horizontal, systemHorizontalMargin)
@@ -71,7 +82,7 @@ struct QueryView: View {
     .navigationBarTitleDisplayMode(.inline)
     .toolbar {
       ToolbarItem(id: "info", placement: .principal) {
-        infoView(query: store.queryType)
+        QueryInfoView(store: store)
       }
     }
     .overlay {
@@ -97,379 +108,5 @@ struct QueryView: View {
     let itemHeight = itemWidth * MagicCardImageRatio.heightToWidth.rawValue
     
     self.cardSize = CGSize(width: itemWidth.rounded(), height: itemHeight.rounded())
-  }
-  
-  @ViewBuilder private func contentScrollView(dataSource: CardDataSource) -> some View {
-    ForEach(Array(zip(dataSource.cardDetails, dataSource.cardDetails.indices)), id: \.0.card.id) { value in
-      let cardInfo = value.0
-      let index = value.1
-      
-      Button {
-        store.send(.didSelectCard(cardInfo.card, store.queryType))
-      } label: {
-        CardView(
-          displayableCard: cardInfo.displayableCardImage,
-          layoutConfiguration: .init(rotation: .portrait, maxWidth: cardSize.width),
-          callToActionHorizontalOffset: -3.0,
-          priceVisibility: .hidden,
-          shouldShowShadow: false,
-          send: { action in
-            if action == .toggledFaceDirection {
-              store.send(.cardFaceToggled(id: cardInfo.card.id))
-            }
-          }
-        )
-        .frame(
-          width: cardSize.width > 0 ? cardSize.width : nil,
-          height: cardSize.height > 0 ? cardSize.height : nil
-        )
-        .matchedTransitionSource(id: cardInfo.card.id, in: zoomAnimation)
-      }
-      .disabled(store.mode.isScrollable == false)
-      .buttonStyle(.sinkableButtonStyle)
-      .task {
-        if store.state.shouldLoadMore(at: index) {
-          store.send(.loadMoreCardsIfNeeded(displayingIndex: index))
-        }
-      }
-    }
-  }
-  
-  @ViewBuilder private var searchBarItem: some View {
-    HStack(spacing: 8) {
-      Button {
-        if !store.isSearchExpanded {
-          store.isSearchExpanded = true
-          isSearchFocused = true
-        }
-      } label: {
-        HStack(spacing: 6) {
-          Image(systemName: "magnifyingglass")
-            .resizable()
-            .scaledToFit()
-            .frame(width: 16, height: 28)
-            .foregroundColor(store.isSearchExpanded ? .secondary : .primary)
-          
-          if store.isSearchExpanded {
-            TextField(String(localized: "Search..."), text: $store.query.name)
-              .focused($isSearchFocused)
-              .textFieldStyle(.plain)
-              .autocorrectionDisabled()
-              .submitLabel(.search)
-              .id("searchTextField")
-              .frame(maxWidth: .infinity)
-            
-            if !store.query.name.isEmpty {
-              Button {
-//                store.query.name = ""
-              } label: {
-                Image(systemName: "xmark.circle.fill")
-                  .foregroundColor(.secondary)
-              }
-              .buttonStyle(.plain)
-            }
-          }
-        }
-        .padding(EdgeInsets(top: 8, leading: 15, bottom: 8, trailing: 15))
-      }
-//      .buttonStyle(.plain)
-//      .glassEffect(.regular)
-      .frame(maxWidth: store.isSearchExpanded ? .infinity : nil)
-      
-      if store.isSearchExpanded {
-        Button {
-          store.isSearchExpanded = false
-          isSearchFocused = false
-        } label: {
-          Image(systemName: "xmark")
-            .font(.system(size: 15, weight: .semibold))
-            .foregroundColor(.primary)
-            .frame(width: 14, height: 28)
-        }
-        .padding(EdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12))
-        .glassEffect(.regular.interactive())
-        .transition(.scale.combined(with: .opacity))
-      }
-    }
-    .frame(maxWidth: store.isSearchExpanded ? .infinity : nil)
-  }
-  
-  @ViewBuilder private var colorTypeItems: some View {
-    Button {
-      store.isShowingColorTypeOptions.toggle()
-    } label: {
-      HStack(spacing: -5) {
-        ForEach(
-          store.query.colorIdentities.isEmpty ? store.availableColorTypeOptions : Array(store.query.colorIdentities).sorted(),
-          id: \.rawValue
-        ) { value in
-          value.image.resizable()
-            .aspectRatio(contentMode: .fit)
-            .frame(width: 19, height: 28)
-            .offset(x: 0, y: -0.5)
-            .background { Circle().fill(.black).offset(x: -0.75, y: 1) }
-        }
-      }
-      .frame(maxWidth: .infinity)
-      .padding(EdgeInsets(top: 8, leading: 13, bottom: 8, trailing: 13))
-    }
-    .glassEffect(.regular.interactive())
-    .popover(
-      isPresented: $store.isShowingColorTypeOptions,
-      attachmentAnchor: .rect(.bounds),
-      arrowEdge: .top
-    ) {
-      VStack(alignment: .leading, spacing: 2.0) {
-        ForEach(store.availableColorTypeOptions, id: \.rawValue) { value in
-          Button {
-            store.query.colorIdentities.toggleSelection(for: value)
-          } label: {
-            HStack {
-              value.image.resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(width: 19, height: 21)
-                .offset(x: 0, y: -0.5)
-                .background {
-                  Circle().fill(.black).offset(x: -0.75, y: 1)
-                }
-              
-              Text(value.name)
-              
-              Spacer(minLength: 34)
-              
-              Image(systemName: "checkmark.circle.fill")
-                .opacity(store.query.colorIdentities.contains(value) ? 1 : 0)
-            }
-            .padding(EdgeInsets(top: 8.0, leading: 11, bottom: 8.0, trailing: 11))
-            .background(
-              store.query.colorIdentities.contains(value) ? Color(.systemFill) : .clear,
-              in: .capsule
-            )
-          }
-        }
-      }
-      .padding(EdgeInsets(top: 11.0, leading: 8.0, bottom: 11.0, trailing: 8.0))
-      .presentationCompactAdaptation(.popover)
-    }
-  }
-  
-  @ViewBuilder private var typesMenuItems: some View {
-    Button {
-      store.isShowingCardTypeOptions.toggle()
-    } label: {
-      HStack(spacing: 2) {
-        ForEach(
-          Array(store.query.cardType).sorted(),
-          id: \.rawValue
-        ) { value in
-          value.image
-            .renderingMode(.template)
-            .resizable()
-            .scaledToFit()
-            .frame(width: 18, height: 28, alignment: .center)
-        }
-        
-        if store.query.cardType.count == 1, let value = store.query.cardType.first {
-          Text(value.title)
-            .font(.subheadline)
-            .fontWeight(.medium)
-            .multilineTextAlignment(.leading)
-            .lineLimit(1)
-            .padding(.leading, 3)
-        }
-      }
-      .frame(maxWidth: .infinity)
-      .padding(EdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8))
-    }
-    .glassEffect(.regular.interactive())
-    .popover(
-      isPresented: $store.isShowingCardTypeOptions,
-      attachmentAnchor: .rect(.bounds),
-      arrowEdge: .top
-    ) {
-      VStack(alignment: .leading, spacing: 2.0) {
-        ForEach(store.availableCardType) { value in
-          Button {
-            store.query.cardType.toggleSelection(for: value)
-          } label: {
-            HStack {
-              Group {
-                value.image
-                  .renderingMode(.template)
-                  .resizable()
-                  .scaledToFit()
-                  .frame(width: value == .all ? 15.0 : 21.0, height: 21, alignment: .center)
-              }
-              .frame(width: 21.0, height: 21, alignment: .center)
-              
-              Text(value.title)
-              
-              Spacer(minLength: 34)
-              
-              Image(systemName: "checkmark.circle.fill")
-                .opacity(store.query.cardType.contains(value) ? 1 : 0)
-            }
-            .padding(EdgeInsets(top: 8.0, leading: 11, bottom: 8.0, trailing: 11))
-            .background(
-              store.query.cardType.contains(value) ? Color(.systemFill) : .clear,
-              in: .capsule
-            )
-          }
-        }
-      }
-      .padding(EdgeInsets(top: 11.0, leading: 8.0, bottom: 11.0, trailing: 8.0))
-      .presentationCompactAdaptation(.popover)
-    }
-  }
-  
-  @ViewBuilder private var sortView: some View {
-    Button {
-      store.isShowingSortOptions.toggle()
-    } label: {
-      HStack(spacing: 5.0) {
-        Group {
-          switch store.query.sortDirection {
-          case .asc:
-            Image(systemName: "arrow.up").resizable().scaledToFit()
-          case .desc:
-            Image(systemName: "arrow.down").resizable().scaledToFit()
-          default:
-            Image(systemName: "wand.and.sparkles").resizable().scaledToFit()
-          }
-        }
-        .frame(width: 15, height: 28, alignment: .center)
-        
-        Text(store.query.sortMode.description)
-          .font(.subheadline)
-          .fontWeight(.medium)
-          .multilineTextAlignment(.leading)
-      }
-      .frame(maxWidth: .infinity)
-      .padding(EdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8))
-    }
-    .glassEffect(.regular.interactive())
-    .popover(
-      isPresented: $store.isShowingSortOptions,
-      attachmentAnchor: .rect(.bounds),
-      arrowEdge: .top
-    ) {
-      VStack(alignment: .leading, spacing: 2.0) {
-        ForEach(store.availableSortModes, id: \.rawValue) { value in
-          Button {
-            store.query.sortMode = value
-          } label: {
-            HStack {
-              Text(value.description)
-              
-              Spacer(minLength: 34)
-              
-              Image(systemName: "checkmark.circle.fill")
-                .opacity(store.query.sortMode == value ? 1 : 0)
-            }
-            .padding(EdgeInsets(top: 8.0, leading: 11, bottom: 8.0, trailing: 11))
-            .background(
-              store.query.sortMode == value ? Color(.systemFill) : .clear,
-              in: .capsule
-            )
-          }
-        }
-        
-        Divider()
-          .padding(EdgeInsets(top: 8.0, leading: 11, bottom: 8.0, trailing: 11))
-        
-        ForEach(store.availableSortOrders, id: \.rawValue) { value in
-          Button {
-            store.query.sortDirection = value
-          } label: {
-            HStack {
-              Text(value.description)
-              
-              Spacer(minLength: 34)
-              
-              Image(systemName: "checkmark.circle.fill")
-                .opacity(store.query.sortDirection == value ? 1 : 0)
-            }
-            .padding(EdgeInsets(top: 8.0, leading: 11, bottom: 8.0, trailing: 11))
-            .background(
-              store.query.sortDirection == value ? Color(.systemFill) : .clear,
-              in: .capsule
-            )
-          }
-        }
-      }
-      .padding(EdgeInsets(top: 11.0, leading: 8.0, bottom: 11.0, trailing: 8.0))
-      .presentationCompactAdaptation(.popover)
-    }
-  }
-  
-  @ViewBuilder private func infoView(query: QueryType) -> some View {
-    Button {
-      store.send(.didSelectShowInfo)
-    } label: {
-      switch store.queryType {
-      case let .querySet(set, _):
-        HStack(spacing: 8.0) {
-          IconLazyImage(URL(string: set.iconSvgUri)).frame(width: 25, height: 25, alignment: .center)
-          Text(store.title).multilineTextAlignment(.leading).font(.headline).lineLimit(1)
-        }
-        .frame(minHeight: 44.0, alignment: .center)
-        .padding(EdgeInsets(top: 0, leading: 13.0, bottom: 0, trailing: 16))
-        .glassEffect(.regular.interactive())
-        
-      case .search:
-        Text("")
-      }
-    }
-    .buttonStyle(.plain)
-    .popover(isPresented: $store.isShowingInfo, attachmentAnchor: .rect(.bounds)) {
-      VStack(spacing: 0) {
-        ForEach(Array(zip(store.queryType.sections, store.queryType.sections.indices)), id: \.0.id) { section in
-          VStack(spacing: 0) {
-            section.0.body
-              .padding(.vertical, 11.0)
-              .safeAreaPadding(.horizontal, systemHorizontalMargin)
-            
-            if section.1 != store.queryType.sections.count - 1 {
-              Divider().safeAreaPadding(.leading, systemHorizontalMargin)
-            }
-          }
-        }
-      }
-      .padding(.vertical, 11)
-      .presentationCompactAdaptation(.popover)
-    }
-  }
-}
-
-private extension QueryType.Section {
-  @MainActor var body: some View {
-    Group {
-      switch self {
-      case .titleDetail(let title, let detail):
-        HStack {
-          Text(title)
-          Spacer(minLength: 55)
-          Text(detail ?? "").foregroundStyle(.secondary)
-        }
-        
-      case .titleIcon(let title, let iconURL):
-        HStack {
-          Text(title)
-          Spacer(minLength: 55)
-          IconLazyImage(
-            iconURL,
-            tintColor: .secondary
-          )
-          .frame(width: 21, height: 21, alignment: .center)
-        }
-        
-      case .titleCode(let title, let code):
-        HStack {
-          Text(title)
-          Spacer(minLength: 55)
-          Text(code.uppercased()).foregroundStyle(.secondary).fontWidth(.condensed)
-        }
-      }
-    }
   }
 }
