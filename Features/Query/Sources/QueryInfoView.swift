@@ -18,6 +18,7 @@ struct QueryInfoView: View {
         }
         .frame(minHeight: 44.0, alignment: .center)
         .padding(EdgeInsets(top: 0, leading: 13.0, bottom: 0, trailing: 16))
+        .contentShape(Rectangle())
         .glassEffect(.regular.interactive())
         
       case .search:

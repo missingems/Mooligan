@@ -28,7 +28,7 @@ public struct SearchBar: View {
           .id("searchTextField")
           .frame(maxWidth: .infinity, minHeight: 28.0)
           .padding(EdgeInsets(top: 8, leading: 13, bottom: 8, trailing: 13))
-          .glassEffect()
+          .glassEffect(.regular.interactive())
         
         Button {
           isExpanded = false
@@ -52,7 +52,7 @@ public struct SearchBar: View {
             .frame(minWidth: 28, minHeight: 28)
             .padding(EdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8))
         }
-        .glassEffect()
+        .glassEffect(.regular.interactive())
       }
     }
   }

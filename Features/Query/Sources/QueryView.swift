@@ -55,7 +55,7 @@ struct QueryView: View {
           SearchBar(
             text: $store.query.name,
             isExpanded: $store.isSearchExpanded,
-            placeholder: "Search messages..."
+            placeholder: "Search for Magic cards..."
           )
         }
       }
@@ -64,6 +64,7 @@ struct QueryView: View {
       .animation(.spring(response: 0.35, dampingFraction: 0.8), value: store.isSearchExpanded)
       .animation(.default, value: store.query)
     }
+    .toolbarMinimizationBehavior(.onScrollDown, for: .navigationBar)
     .scrollEdgeEffectStyle(.soft, for: .all)
     .contentMargins(
       .all,
