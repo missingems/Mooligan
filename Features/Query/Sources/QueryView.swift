@@ -55,7 +55,7 @@ struct QueryView: View {
           SearchBar(
             text: $store.query.name,
             isExpanded: $store.isSearchExpanded,
-            placeholder: "Search for Magic cards..."
+            placeholder: store.searchPrompt
           )
         }
       }
@@ -92,7 +92,7 @@ struct QueryView: View {
       }
       .opacity(store.mode == .loading ? 1 : 0)
     }
-    .background(colorScheme == .light ? Color(.systemGroupedBackground) : Color(.secondarySystemBackground))
+    .background(DesignComponentsAsset.backgroundColor.swiftUIColor)
     .task { store.send(.viewAppeared) }
   }
   

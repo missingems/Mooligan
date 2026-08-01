@@ -53,7 +53,7 @@ struct SetRow: View {
             style: .continuous
           )
           .foregroundStyle(
-            colorScheme == .light ? Color(.systemBackground) : Color(.secondarySystemGroupedBackground)
+            DesignComponentsAsset.setRowColor.swiftUIColor
           )
         }
       }

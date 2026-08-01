@@ -20,15 +20,21 @@ public struct SearchBar: View {
   public var body: some View {
     HStack(spacing: 8.0) {
       if isExpanded {
-        TextField(placeholder, text: $text)
-          .focused($isSearchFocused)
-          .textFieldStyle(.plain)
-          .autocorrectionDisabled()
-          .submitLabel(.search)
-          .id("searchTextField")
-          .frame(maxWidth: .infinity, minHeight: 28.0)
-          .padding(EdgeInsets(top: 8, leading: 13, bottom: 8, trailing: 13))
-          .glassEffect(.regular.interactive())
+        HStack {
+          Image(systemName: "magnifyingglass")
+            .font(.system(size: 15, weight: .semibold))
+            .foregroundColor(.primary)
+          
+          TextField(placeholder, text: $text)
+            .focused($isSearchFocused)
+            .textFieldStyle(.plain)
+            .autocorrectionDisabled()
+            .submitLabel(.search)
+            .id("searchTextField")
+            .frame(maxWidth: .infinity, minHeight: 28.0)
+        }
+        .padding(EdgeInsets(top: 8, leading: 13, bottom: 8, trailing: 13))
+        .glassEffect(.regular.interactive())
         
         Button {
           isExpanded = false

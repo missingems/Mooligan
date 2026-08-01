@@ -141,6 +141,13 @@ public struct QueryFeature: Sendable {
           cancelInFlight: true
         )
         
+      case .binding(\.isSearchExpanded):
+        if !state.isSearchExpanded {
+          state.query.name = ""
+        }
+        
+        return .none
+        
       case .binding:
         return .none
         

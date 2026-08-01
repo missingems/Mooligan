@@ -155,12 +155,13 @@ struct SetsView: View {
       }
     }
     .scrollEdgeEffectStyle(.soft, for: .all)
+    .toolbarMinimizationBehavior(.onScrollDown, for: .navigationBar)
     .listStyle(.plain)
     .listSectionSeparator(.hidden)
     .conditionalModifier(isScrollable, transform: { view in
       view.searchable(text: $store.query)
     })
-    .background { Color(.systemGroupedBackground).ignoresSafeArea() }
+    .background(DesignComponentsAsset.backgroundColor.swiftUIColor.ignoresSafeArea())
     .redacted(reason: isPlaceholder ? .placeholder : [])
     .scrollDisabled(isPlaceholder)
     .allowsHitTesting(isPlaceholder == false)
