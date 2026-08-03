@@ -8,14 +8,10 @@ public struct CardPagerView: View {
   @State var isAppeared: Bool = false
   var zoomAnimation: Namespace.ID
   
-  private var cardPairs: [(UUID, StoreOf<CardDetailFeature>)] {
-    Array(zip(store.cards.ids, store.scope(state: \.cards, action: \.cards)))
-  }
-  
   public var body: some View {
     ScrollView(.horizontal, showsIndicators: false) {
       LazyHStack(spacing: 0) {
-        ForEach(cardPairs, id: \.0) { id, childStore in
+        ForEach(store.scope(state: \.cards, action: \.cards), id: \.state.id) { childStore in
           CardDetailView(store: childStore)
             .containerRelativeFrame(.horizontal)
         }
@@ -34,7 +30,7 @@ public struct CardPagerView: View {
       }
     }
     .task {
-      store.send(.task)
+      store.send(.viewAppeared)
     }
   }
   

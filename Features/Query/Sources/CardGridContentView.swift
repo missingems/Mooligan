@@ -21,7 +21,7 @@ struct CardGridContentView: View {
           displayableCard: cardInfo.displayableCardImage,
           layoutConfiguration: .init(rotation: .portrait, maxWidth: cardSize.width),
           callToActionHorizontalOffset: -3.0,
-          priceVisibility: .hidden,
+          priceVisibility: .display(usdFoil: cardInfo.displayPriceUSDFoil, usd: cardInfo.displayPriceUSD),
           shouldShowShadow: false,
           send: { action in
             if action == .toggledFaceDirection {
