@@ -62,7 +62,7 @@ public struct CardView: View {
         }
       }
       
-      accessoryView.offset(x: 13.0, y: -13.0)
+      accessoryView.offset(x: 8, y: -8)
     }
   }
   
@@ -109,8 +109,8 @@ public struct CardView: View {
   @ViewBuilder private var accessoryView: some View {
     switch accessoryInfo {
     case let .display(usdFoilPrice, usdPrice):
-      if let a = usdFoilPrice ?? usdPrice {
-        PriceTag(displayPrice: a)
+      if let price = usdPrice ?? usdFoilPrice {
+        PriceTag(displayPrice: price)
       }
       
     case let .displaySet(set, usdFoilPrice, usdPrice):

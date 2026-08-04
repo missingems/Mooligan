@@ -21,7 +21,7 @@ public struct PriceTag: View {
         .aspectRatio(contentMode: .fit)
         .opacity(0.9)
         .frame(height: 28, alignment: .center)
-        .shadow(color: .black.opacity(0.25), radius: 1, x: 0, y: 1)
+        .shadow(color: .black.opacity(0.618), radius: 1, x: 0, y: 1)
       
       Text(displayPrice)
         .font(.system(size: 11))
