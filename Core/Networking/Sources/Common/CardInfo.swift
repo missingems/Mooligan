@@ -23,9 +23,9 @@ public struct CardInfo: Equatable, Sendable, Identifiable {
     self.formattedCollectorNumber = "#\(card.collectorNumber.uppercased())"
     self.cachedIconURL = card.resolvedIconURL
     
-    self.displayPriceUSD = card.prices.usd != nil ? "$\(card.prices.usd!)" : nil
-    self.displayPriceUSDFoil = card.prices.usdFoil != nil ? "$\(card.prices.usdFoil!)" : nil
-    self.displayPriceUSDEtched = card.prices.usdEtched != nil ? "$\(card.prices.usdEtched!)" : nil
+    self.displayPriceUSD = card.prices.usd != nil ? card.prices.usd : nil
+    self.displayPriceUSDFoil = card.prices.usdFoil != nil ? card.prices.usdFoil : nil
+    self.displayPriceUSDEtched = card.prices.usdEtched != nil ? card.prices.usdEtched : nil
     self.id = card.id
   }
 }

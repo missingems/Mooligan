@@ -29,10 +29,6 @@ struct CardGridContentView: View {
             }
           }
         )
-        .frame(
-          width: cardSize.width > 0 ? cardSize.width : nil,
-          height: cardSize.height > 0 ? cardSize.height : nil
-        )
         .matchedTransitionSource(id: cardInfo.card.id, in: zoomAnimation)
       }
       .disabled(store.mode.isScrollable == false)
