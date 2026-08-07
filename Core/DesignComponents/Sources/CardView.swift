@@ -47,7 +47,7 @@ public struct CardView: View {
   private var strokeScale: CGFloat { max(displayScale, 1) }
   
   public var body: some View {
-    ZStack(alignment: .bottomLeading) {
+    VStack(spacing: 5) {
       ZStack(alignment: .trailing) {
         switch displayableCard {
         case let .transformable(direction, frontImageURL, backImageURL, callToActionIconName, id):
@@ -61,8 +61,9 @@ public struct CardView: View {
             .conditionalModifier(shouldShowShadow) { $0.shadow(radius: 21, x: 0, y: 5) }
         }
       }
+      .zIndex(1)
       
-      accessoryView.offset(x: 8, y: -8)
+      accessoryView.zIndex(0)
     }
   }
   
@@ -108,10 +109,11 @@ public struct CardView: View {
   
   @ViewBuilder private var accessoryView: some View {
     switch accessoryInfo {
-    case let .display(usdFoilPrice, usdPrice):
-      if let price = usdPrice ?? usdFoilPrice {
-        PriceTag(displayPrice: price)
-      }
+    case let .display(foilPrice, usdPrice):
+      Text("$\(usdPrice ?? foilPrice ?? "0.00")")
+        .underline()
+        .foregroundStyle(DesignComponentsAsset.accentColor.swiftUIColor)
+        .font(.caption).fontWeight(.medium).fontWidth(.compressed).monospaced().frame(height: 21.0)
       
     case let .displaySet(set, usdFoilPrice, usdPrice):
       VStack(alignment: .center, spacing: 5.0) {
@@ -139,3 +141,4 @@ public struct CardView: View {
     self.send = send
   }
 }
+

@@ -162,7 +162,7 @@ public struct QueryFeature: Sendable {
         guard
           displayingIndex == (state.dataSource?.cardDetails.count ?? 1) - 1,
           state.dataSource?.hasNextPage == true
-        else {
+            else {
           return .none
         }
         

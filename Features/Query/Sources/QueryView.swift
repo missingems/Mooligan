@@ -9,37 +9,36 @@ import NukeUI
 struct QueryView: View {
   @Bindable private var store: StoreOf<QueryFeature>
   var zoomAnimation: Namespace.ID
-  private let gridItems: [GridItem]
+  @Namespace private var searchMorph
   @Environment(\.colorScheme) var colorScheme
   @State private var cardSize: CGSize = .zero
-  @FocusState private var isSearchFocused: Bool
   
   init(store: StoreOf<QueryFeature>, zoomAnimation: Namespace.ID) {
     self.store = store
-    self.gridItems = [GridItem](
-      repeating: GridItem(
-        spacing: 3.0,
-        alignment: .center
-      ),
-      count: Int(store.numberOfColumns)
-    )
     self.zoomAnimation = zoomAnimation
+  }
+  
+  private var gridItems: [GridItem] {
+    [GridItem](
+      repeating: GridItem(spacing: 8.0, alignment: .center),
+      count: max(1, Int(store.numberOfColumns))
+    )
   }
   
   var body: some View {
     ScrollView(.vertical) {
-      if let dataSource = store.dataSource {
-        LazyVGrid(columns: gridItems, spacing: 3.0) {
+      if store.dataSource != nil {
+        LazyVGrid(columns: gridItems, spacing: 8.0) {
           CardGridContentView(
             store: store,
-            dataSource: dataSource,
             cardSize: cardSize,
             zoomAnimation: zoomAnimation
           )
-          .blur(radius: store.mode == .loading ? 8.0 : 0)
-          .scaleEffect(store.mode == .loading ? 0.97 : 1)
-          .opacity(store.mode == .loading ? 0.2 : 1)
-          .placeholder(store.mode.isPlaceholder)
+        }
+        .overlay {
+          if store.mode == .loading {
+            LoadingGridOverlay()
+          }
         }
       }
     }
@@ -57,6 +56,7 @@ struct QueryView: View {
             isExpanded: $store.isSearchExpanded,
             placeholder: store.searchPrompt
           )
+          .glassEffectID("searchBar", in: searchMorph)
         }
       }
       .padding(.bottom, 13)
@@ -67,14 +67,9 @@ struct QueryView: View {
     .scrollEdgeEffectStyle(.soft, for: .all)
     .contentMargins(
       .all,
-      EdgeInsets(top: 0, leading: 5, bottom: 13.0, trailing: 5),
+      EdgeInsets(top: 0, leading: systemHorizontalMargin, bottom: 13.0, trailing: systemHorizontalMargin),
       for: .scrollContent
     )
-    .onGeometryChange(for: CGFloat.self) { proxy in
-      proxy.size.width
-    } action: { newWidth in
-      calculateCardSize(availableWidth: newWidth)
-    }
     .scrollDisabled(store.mode.isScrollable == false)
     .scrollPosition($store.scrollPosition)
     .scrollBounceBehavior(.basedOnSize)
@@ -85,28 +80,18 @@ struct QueryView: View {
         QueryInfoView(store: store)
       }
     }
-    .overlay {
-      ProgressView {
-        Text("Loading...")
-      }
-      .opacity(store.mode == .loading ? 1 : 0)
-    }
     .background(DesignComponentsAsset.backgroundColor.swiftUIColor)
     .task { store.send(.viewAppeared) }
   }
-  
-  private func calculateCardSize(availableWidth: CGFloat) {
-    let columns = CGFloat(store.numberOfColumns)
-    guard columns > 0 else { return }
-    
-    let horizontalPadding: CGFloat = 10.0
-    let spacing: CGFloat = 3.0
-    let totalSpacing = spacing * (columns - 1)
-    
-    let usableWidth = availableWidth - horizontalPadding - totalSpacing
-    let itemWidth = max(0, usableWidth / columns)
-    let itemHeight = itemWidth * MagicCardImageRatio.heightToWidth.rawValue
-    
-    self.cardSize = CGSize(width: itemWidth.rounded(), height: itemHeight.rounded())
+}
+
+private struct LoadingGridOverlay: View {
+  var body: some View {
+    ProgressView {
+      Text("Loading...")
+    }
+    .frame(maxWidth: .infinity, maxHeight: .infinity)
+    .background(.ultraThinMaterial)
+    .transition(.opacity)
   }
 }

@@ -13,7 +13,9 @@ import ScryfallKit
     Reduce { state, action in
       coreReduce(into: &state, action: action)
     }
+#if DEBUG
     ._printChanges(.actionLabels)
+#endif
   }
   
   private func coreReduce(into state: inout State, action: Action) -> Effect<Action> {
@@ -24,7 +26,6 @@ import ScryfallKit
     case let .didShowVariant(index):
       guard
         state.content.variants.state.value?.hasNextPage == true,
-        // FIX: Added parentheses to ensure correct operator precedence
         index == (state.content.variants.state.value?.cardDetails.count ?? 0) - 1
           else { return .none }
       
@@ -36,7 +37,6 @@ import ScryfallKit
       state.markAsAppeared()
       let needsSetIcon = state.content.setIconURL == nil
       
-      // Split side effects into decoupled, concurrent requests
       return .merge(
         needsSetIcon ? .send(.fetchSetIcon(card: card)) : .none,
         .send(.fetchVariants(card: card, page: 1)),

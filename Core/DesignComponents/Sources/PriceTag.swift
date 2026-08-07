@@ -1,18 +1,11 @@
-//
-//  PriceTag.swift
-//  DesignComponents
-//
-//  Created by Jun on 7/12/25.
-//
-
 import SwiftUI
 
 public struct PriceTag: View {
   let displayPrice: String
   
-  private let rotation = Double.random(in: -3...3)
-  private let offsetX = CGFloat.random(in: -2...2)
-  private let offsetY = CGFloat.random(in: -2...2)
+  @State private var rotation: Double = .random(in: -3...3)
+  @State private var offsetX: CGFloat = .random(in: -2...2)
+  @State private var offsetY: CGFloat = .random(in: -2...2)
   
   public var body: some View {
     ZStack {
