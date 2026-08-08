@@ -15,7 +15,7 @@ public struct ConditionalFrameModifier: ViewModifier {
 }
 
 public extension View {
-  @ViewBuilder
+  @ContentBuilder
   func conditionalModifier<Content: View>(
     _ condition: Bool,
     transform: (Self) -> Content
@@ -29,7 +29,7 @@ public extension View {
 }
 
 public extension View {
-  @ViewBuilder
+  @ContentBuilder
   func ifLet<Content: View, AnyValue>(
     _ value: AnyValue?,
     transform: (Self, AnyValue) -> Content

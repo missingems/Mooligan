@@ -59,12 +59,12 @@ struct QueryView: View {
           .glassEffectID("searchBar", in: searchMorph)
         }
       }
-      .padding(.bottom, 13)
+      .padding(.bottom, 21)
       .padding(.horizontal, systemHorizontalMargin)
-      .animation(.spring(response: 0.35, dampingFraction: 0.8), value: store.isSearchExpanded)
+      .animation(.default, value: store.isSearchExpanded)
       .animation(.default, value: store.query)
     }
-    .scrollEdgeEffectStyle(.soft, for: .all)
+    .scrollEdgeEffectStyle(.soft, for: .top)
     .contentMargins(
       .all,
       EdgeInsets(top: 0, leading: systemHorizontalMargin, bottom: 13.0, trailing: systemHorizontalMargin),

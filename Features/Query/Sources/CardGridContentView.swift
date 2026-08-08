@@ -19,7 +19,11 @@ struct CardGridContentView: View {
             layoutConfiguration: .init(rotation: .portrait, maxWidth: cardSize.width),
             callToActionHorizontalOffset: -3.0,
             priceVisibility: .display(usdFoil: cardInfo.displayPriceUSDFoil, usd: cardInfo.displayPriceUSD),
-            shouldShowShadow: false,
+            shadowConfiguration: .custom(
+              color: Color(.sRGBLinear, white: 0, opacity: 0.33),
+              radius: 2.5,
+              offset: CGPoint(x: 0, y: 2.5)
+            ),
             send: { action in
               if action == .toggledFaceDirection {
                 store.send(.cardFaceToggled(id: cardInfo.card.id))

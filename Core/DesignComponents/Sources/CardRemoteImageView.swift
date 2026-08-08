@@ -77,5 +77,9 @@ public struct CardRemoteImageView: View {
     .clipShape(
       RoundedRectangle(cornerRadius: cornerRadius ?? 0)
     )
+    .overlay(
+      RoundedRectangle(cornerRadius: cornerRadius ?? 0)
+        .stroke(.white.opacity(0.168), lineWidth: 1 / displayScale)
+    )
   }
 }

@@ -1,7 +1,7 @@
 import SwiftUI
 
 public extension View {
-  @ViewBuilder
+  @ContentBuilder
   func listRowVerticalInsets(
     top: CGFloat = 0,
     bottom: CGFloat = 0

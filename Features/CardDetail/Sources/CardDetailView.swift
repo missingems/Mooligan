@@ -33,7 +33,7 @@ public struct CardDetailView: View {
           layoutConfiguration: configuration,
           callToActionHorizontalOffset: 21.0,
           priceVisibility: .hidden,
-          shouldShowShadow: true
+          shadowConfiguration: .default
         ) { action in
           store.send(.descriptionCallToActionTapped, animation: .bouncy)
         }
