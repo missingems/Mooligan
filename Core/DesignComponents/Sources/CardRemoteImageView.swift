@@ -51,7 +51,7 @@ public struct CardRemoteImageView: View {
         processors: transformers,
         priority: priority
       ),
-      transaction: Transaction(animation: nil)
+      transaction: Transaction(animation: .easeInOut(duration: 0.125))
     ) { state in
       Group {
         if let image = state.image {
@@ -59,6 +59,7 @@ public struct CardRemoteImageView: View {
         } else {
           Color.primary.opacity(0.3)
             .shimmering()
+            .blur(radius: 34.0)
         }
       }
     }
