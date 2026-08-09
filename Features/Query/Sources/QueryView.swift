@@ -19,7 +19,7 @@ struct QueryView: View {
   
   private var gridItems: [GridItem] {
     [GridItem](
-      repeating: GridItem(spacing: 13.0, alignment: .center),
+      repeating: GridItem(spacing: 8.0, alignment: .center),
       count: max(1, Int(store.numberOfColumns))
     )
   }

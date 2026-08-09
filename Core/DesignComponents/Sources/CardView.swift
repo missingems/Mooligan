@@ -85,6 +85,7 @@ public struct CardView: View {
   private let displayableCard: DisplayableCardImage
   private let accessoryInfo: AccessoryInfo
   private let send: ((Action) -> Void)?
+  @State private var isImageLoaded: Bool = false
   
   @Environment(\.displayScale) private var displayScale
   private var strokeScale: CGFloat { max(displayScale, 1) }
@@ -116,7 +117,8 @@ public struct CardView: View {
             isLandscape: layoutConfiguration?.rotation == .landscape,
             isTransformed: false,
             size: layoutConfiguration?.size,
-            id: id
+            id: id,
+            isImageLoaded: $isImageLoaded
           )
           .ifLet(
             shadowConfiguration,
@@ -133,7 +135,9 @@ public struct CardView: View {
       }
       .zIndex(1)
       
-      accessoryView.zIndex(0)
+      accessoryView
+        .zIndex(0)
+        .redacted(reason: isImageLoaded ? [] : .placeholder)
     }
   }
   
@@ -149,7 +153,8 @@ public struct CardView: View {
       isLandscape: layoutConfiguration?.rotation == .landscape,
       isTransformed: true,
       size: layoutConfiguration?.size,
-      id: id
+      id: id,
+      isImageLoaded: $isImageLoaded
     )
     .ifLet(
       shadowConfiguration,
@@ -172,7 +177,8 @@ public struct CardView: View {
       isLandscape: layoutConfiguration?.rotation == .landscape,
       isTransformed: false,
       size: layoutConfiguration?.size,
-      id: id
+      id: id,
+      isImageLoaded: $isImageLoaded
     )
     .ifLet(
       shadowConfiguration,
@@ -213,7 +219,8 @@ public struct CardView: View {
       isLandscape: layoutConfiguration?.rotation == .landscape,
       isTransformed: false,
       size: layoutConfiguration?.size,
-      id: id
+      id: id,
+      isImageLoaded: $isImageLoaded
     )
     .ifLet(
       shadowConfiguration,
@@ -281,4 +288,3 @@ public struct CardView: View {
     self.send = send
   }
 }
-
