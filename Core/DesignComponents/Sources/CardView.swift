@@ -3,6 +3,46 @@ import SwiftUI
 import Networking
 
 public struct CardView: View {
+  public enum ShadowConfiguration {
+    case `default`
+    
+    case custom(
+      color: Color,
+      radius: CGFloat,
+      offset: CGPoint
+    )
+    
+    var color: Color {
+      switch self {
+      case .default:
+        return Color(.sRGBLinear, white: 0, opacity: 0.33)
+        
+      case let .custom(color, _, _):
+        return color
+      }
+    }
+    
+    var radius: CGFloat {
+      switch self {
+      case .default:
+        return 21.0
+        
+      case let .custom(_, radius, _):
+        return radius
+      }
+    }
+    
+    var offset: CGPoint {
+      switch self {
+      case .default:
+        return CGPoint(x: 0, y: 10)
+        
+      case let .custom(_, _, offset):
+        return offset
+      }
+    }
+  }
+  
   public enum Action: Equatable {
     case toggledFaceDirection
   }
@@ -20,8 +60,11 @@ public struct CardView: View {
       
       public var ratio: CGFloat {
         switch self {
-        case .landscape: return MagicCardImageRatio.heightToWidth.rawValue
-        case .portrait: return MagicCardImageRatio.widthToHeight.rawValue
+        case .landscape:
+          return MagicCardImageRatio.heightToWidth.rawValue
+          
+        case .portrait:
+          return MagicCardImageRatio.widthToHeight.rawValue
         }
       }
     }
@@ -36,7 +79,7 @@ public struct CardView: View {
     }
   }
   
-  private let shouldShowShadow: Bool
+  private let shadowConfiguration: ShadowConfiguration?
   private let layoutConfiguration: LayoutConfiguration?
   private let callToActionHorizontalOffset: CGFloat
   private let displayableCard: DisplayableCardImage
@@ -47,18 +90,45 @@ public struct CardView: View {
   private var strokeScale: CGFloat { max(displayScale, 1) }
   
   public var body: some View {
-    VStack(spacing: 5) {
+    VStack(spacing: 3) {
       ZStack(alignment: .trailing) {
         switch displayableCard {
         case let .transformable(direction, frontImageURL, backImageURL, callToActionIconName, id):
-          transformableCardView(direction: direction, frontImageURL: frontImageURL, backImageURL: backImageURL, callToActionIconName: callToActionIconName, id: id)
+          transformableCardView(
+            direction: direction,
+            frontImageURL: frontImageURL,
+            backImageURL: backImageURL,
+            callToActionIconName: callToActionIconName,
+            id: id
+          )
           
         case let .flippable(direction, displayingImageURL, callToActionIconName, id):
-          flippableCardView(direction: direction, displayingImageURL: displayingImageURL, callToActionIconName: callToActionIconName, id: id)
+          flippableCardView(
+            direction: direction,
+            displayingImageURL: displayingImageURL,
+            callToActionIconName: callToActionIconName,
+            id: id
+          )
           
         case let .single(displayingImageURL, id):
-          CardRemoteImageView(url: displayingImageURL, isLandscape: layoutConfiguration?.rotation == .landscape, isTransformed: false, size: layoutConfiguration?.size, id: id)
-            .conditionalModifier(shouldShowShadow) { $0.shadow(radius: 21, x: 0, y: 5) }
+          CardRemoteImageView(
+            url: displayingImageURL,
+            isLandscape: layoutConfiguration?.rotation == .landscape,
+            isTransformed: false,
+            size: layoutConfiguration?.size,
+            id: id
+          )
+          .ifLet(
+            shadowConfiguration,
+            transform: { view, value in
+              view.shadow(
+                color: value.color,
+                radius: value.radius,
+                x: value.offset.x,
+                y: value.offset.y
+              )
+            }
+          )
         }
       }
       .zIndex(1)
@@ -67,35 +137,98 @@ public struct CardView: View {
     }
   }
   
-  @ViewBuilder private func transformableCardView(direction: MagicCardFaceDirection, frontImageURL: URL, backImageURL: URL, callToActionIconName: String, id: String) -> some View {
-    CardRemoteImageView(url: backImageURL, isLandscape: layoutConfiguration?.rotation == .landscape, isTransformed: true, size: layoutConfiguration?.size, id: id)
-      .conditionalModifier(shouldShowShadow) { $0.shadow(radius: 21, x: 0, y: 5) }
-      .opacity(direction == .back ? 1 : 0)
-      .rotation3DEffect(.degrees(direction == .back ? 180 : 0), axis: (x: 0, y: 1, z: 0))
-      .zIndex(direction == .back ? 2 : 1)
-      .animation(.bouncy, value: direction)
+  @ContentBuilder private func transformableCardView(
+    direction: MagicCardFaceDirection,
+    frontImageURL: URL,
+    backImageURL: URL,
+    callToActionIconName: String,
+    id: String
+  ) -> some View {
+    CardRemoteImageView(
+      url: backImageURL,
+      isLandscape: layoutConfiguration?.rotation == .landscape,
+      isTransformed: true,
+      size: layoutConfiguration?.size,
+      id: id
+    )
+    .ifLet(
+      shadowConfiguration,
+      transform: { view, value in
+        view.shadow(
+          color: value.color,
+          radius: value.radius,
+          x: value.offset.x,
+          y: value.offset.y
+        )
+      }
+    )
+    .opacity(direction == .back ? 1 : 0)
+    .rotation3DEffect(.degrees(direction == .back ? 180 : 0), axis: (x: 0, y: 1, z: 0))
+    .zIndex(direction == .back ? 2 : 1)
+    .animation(.bouncy, value: direction)
     
-    CardRemoteImageView(url: frontImageURL, isLandscape: layoutConfiguration?.rotation == .landscape, isTransformed: false, size: layoutConfiguration?.size, id: id)
-      .conditionalModifier(shouldShowShadow) { $0.shadow(radius: 21, x: 0, y: 5) }
-      .opacity(direction == .front ? 1 : 0)
-      .rotation3DEffect(.degrees(direction == .front ? 0 : 180), axis: (x: 0, y: 1, z: 0))
-      .zIndex(direction == .front ? 2 : 1)
-      .animation(.bouncy, value: direction)
+    CardRemoteImageView(
+      url: frontImageURL,
+      isLandscape: layoutConfiguration?.rotation == .landscape,
+      isTransformed: false,
+      size: layoutConfiguration?.size,
+      id: id
+    )
+    .ifLet(
+      shadowConfiguration,
+      transform: { view, value in
+        view.shadow(
+          color: value.color,
+          radius: value.radius,
+          x: value.offset.x,
+          y: value.offset.y
+        )
+      }
+    )
+    .opacity(direction == .front ? 1 : 0)
+    .rotation3DEffect(.degrees(direction == .front ? 0 : 180), axis: (x: 0, y: 1, z: 0))
+    .zIndex(direction == .front ? 2 : 1)
+    .animation(.bouncy, value: direction)
     
-    Button { send?(.toggledFaceDirection) } label: { Image(systemName: callToActionIconName).fontWeight(.semibold) }
-      .tint(DesignComponentsAsset.accentColor.swiftUIColor)
-      .frame(width: 44.0, height: 44.0)
-      .glassEffect(.regular.interactive(true))
-      .offset(x: callToActionHorizontalOffset, y: -13)
-      .zIndex(3)
+    Button {
+      send?(.toggledFaceDirection)
+    } label: {
+      Image(systemName: callToActionIconName).fontWeight(.semibold)
+    }
+    .tint(DesignComponentsAsset.accentColor.swiftUIColor)
+    .frame(width: 44.0, height: 44.0)
+    .glassEffect(.regular.interactive(true))
+    .offset(x: callToActionHorizontalOffset, y: -13)
+    .zIndex(3)
   }
   
-  @ViewBuilder private func flippableCardView(direction: MagicCardFaceDirection, displayingImageURL: URL, callToActionIconName: String, id: String) -> some View {
-    CardRemoteImageView(url: displayingImageURL, isLandscape: layoutConfiguration?.rotation == .landscape, isTransformed: false, size: layoutConfiguration?.size, id: id)
-      .conditionalModifier(shouldShowShadow) { $0.shadow(radius: 21, x: 0, y: 5) }
-      .rotationEffect(.degrees(direction == .front ? 0 : 180))
-      .zIndex(2)
-      .animation(.bouncy, value: direction)
+  @ContentBuilder private func flippableCardView(
+    direction: MagicCardFaceDirection,
+    displayingImageURL: URL,
+    callToActionIconName: String,
+    id: String
+  ) -> some View {
+    CardRemoteImageView(
+      url: displayingImageURL,
+      isLandscape: layoutConfiguration?.rotation == .landscape,
+      isTransformed: false,
+      size: layoutConfiguration?.size,
+      id: id
+    )
+    .ifLet(
+      shadowConfiguration,
+      transform: { view, value in
+        view.shadow(
+          color: value.color,
+          radius: value.radius,
+          x: value.offset.x,
+          y: value.offset.y
+        )
+      }
+    )
+    .rotationEffect(.degrees(direction == .front ? 0 : 180))
+    .zIndex(2)
+    .animation(.bouncy, value: direction)
     
     Button { send?(.toggledFaceDirection) } label: { Image(systemName: callToActionIconName).fontWeight(.semibold) }
       .tint(DesignComponentsAsset.accentColor.swiftUIColor)
@@ -107,16 +240,12 @@ public struct CardView: View {
       .zIndex(3)
   }
   
-  @ViewBuilder private var accessoryView: some View {
+  @ContentBuilder private var accessoryView: some View {
     switch accessoryInfo {
-    case let .display(usdFoilPrice, usdPrice):
-      HStack(spacing: 5) {
-        if let usdPrice { PillText("$\(usdPrice)") }
-        if let usdFoilPrice { PillText("$\(usdFoilPrice)", isFoil: true).foregroundStyle(.black.opacity(0.8)) }
-        if usdPrice == nil && usdFoilPrice == nil { PillText("$0.00").unavailable(true) }
-      }
-      .foregroundStyle(DesignComponentsAsset.accentColor.swiftUIColor)
-      .font(.caption).fontWeight(.medium).fontWidth(.compressed).monospaced().frame(height: 21.0)
+    case let .display(foilPrice, usdPrice):
+      Text("$\(usdPrice ?? foilPrice ?? "0.00")")
+        .foregroundStyle(DesignComponentsAsset.accentColor.swiftUIColor)
+        .font(.caption).fontWeight(.medium).fontWidth(.compressed).monospaced().frame(height: 21.0)
       
     case let .displaySet(set, usdFoilPrice, usdPrice):
       VStack(alignment: .center, spacing: 5.0) {
@@ -129,18 +258,27 @@ public struct CardView: View {
         .foregroundStyle(DesignComponentsAsset.accentColor.swiftUIColor)
         .font(.caption).fontWeight(.medium).monospaced().frame(height: 21.0)
       }
+      
     case .hidden:
       EmptyView()
     }
   }
   
-  public init?(displayableCard: DisplayableCardImage?, layoutConfiguration: LayoutConfiguration? = nil, callToActionHorizontalOffset: CGFloat = 5.0, priceVisibility: AccessoryInfo, shouldShowShadow: Bool = false, send: ((Action) -> Void)? = nil) {
+  public init?(
+    displayableCard: DisplayableCardImage?,
+    layoutConfiguration: LayoutConfiguration? = nil,
+    callToActionHorizontalOffset: CGFloat = 5.0,
+    priceVisibility: AccessoryInfo,
+    shadowConfiguration: ShadowConfiguration? = nil,
+    send: ((Action) -> Void)? = nil
+  ) {
     guard let displayableCard else { return nil }
     self.displayableCard = displayableCard
     self.accessoryInfo = priceVisibility
     self.layoutConfiguration = layoutConfiguration
     self.callToActionHorizontalOffset = callToActionHorizontalOffset
-    self.shouldShowShadow = shouldShowShadow
+    self.shadowConfiguration = shadowConfiguration
     self.send = send
   }
 }
+

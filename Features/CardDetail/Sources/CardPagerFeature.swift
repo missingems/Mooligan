@@ -10,8 +10,6 @@ public struct CardPagerFeature: Sendable {
     public var cards: IdentifiedArrayOf<CardDetailFeature.State>
     public var selectedId: UUID?
     @Presents public var showRulings: RulingFeature.State?
-    
-    // Store the raw data to be mapped lazily off the main thread
     var rawCardDetails: [CardInfo]
     var queryType: QueryType
     
@@ -20,7 +18,6 @@ public struct CardPagerFeature: Sendable {
       self.queryType = queryType
       self.selectedId = initialSelectedCard.id
       
-      // FAST PATH: Only initialize the tapped card right now.
       if let initialInfo = cardDetails.first(where: { $0.card.id == initialSelectedCard.id }) {
         self.cards = [
           CardDetailFeature.State(
@@ -39,10 +36,8 @@ public struct CardPagerFeature: Sendable {
     case binding(BindingAction<State>)
     case cards(IdentifiedActionOf<CardDetailFeature>)
     case showRulings(PresentationAction<RulingFeature.Action>)
-    
-    // Lazy Loading actions
-    case task
-    case _setRemainingCards(IdentifiedArrayOf<CardDetailFeature.State>)
+    case viewAppeared
+    case setRemainingCards(IdentifiedArrayOf<CardDetailFeature.State>)
   }
   
   public var body: some ReducerOf<Self> {
@@ -52,15 +47,13 @@ public struct CardPagerFeature: Sendable {
       case .binding:
         return .none
         
-      case .task:
-        // Prevent re-mapping if we've already loaded the full list
+      case .viewAppeared:
         guard state.cards.count < state.rawCardDetails.count else { return .none }
         
         let rawDetails = state.rawCardDetails
         let query = state.queryType
         
         return .run { send in
-          // Map the rest of the cards off the main thread
           let mapped = rawDetails.map { info in
             CardDetailFeature.State(
               card: info.card,
@@ -69,11 +62,13 @@ public struct CardPagerFeature: Sendable {
             )
           }
           
-          await send(._setRemainingCards(IdentifiedArray(uniqueElements: mapped)))
+          await send(.setRemainingCards(IdentifiedArray(uniqueElements: mapped)))
         }
         
-      case let ._setRemainingCards(fullArray):
-        // Silently swap the array
+      case var .setRemainingCards(fullArray):
+        for existingCard in state.cards {
+          fullArray[id: existingCard.id] = existingCard
+        }
         state.cards = fullArray
         return .none
         

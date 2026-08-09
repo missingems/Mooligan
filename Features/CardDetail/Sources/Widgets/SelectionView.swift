@@ -48,7 +48,7 @@ extension SelectionView {
 }
 
 extension SelectionView {
-  @ViewBuilder func makeRow(
+  @ContentBuilder func makeRow(
     icon: Image,
     title: String,
     detail: String?,

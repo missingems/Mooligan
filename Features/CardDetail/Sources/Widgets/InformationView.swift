@@ -125,7 +125,7 @@ private struct Widget: Identifiable, View {
 }
 
 private extension Widget {
-  @ViewBuilder private func powerToughnessView(
+  @ContentBuilder private func powerToughnessView(
     power: String?,
     toughness: String?
   ) -> some View {
@@ -160,7 +160,7 @@ private extension Widget {
     }
   }
 
-  @ViewBuilder private func manaIdentityView(_ identity: [String]) -> some View {
+  @ContentBuilder private func manaIdentityView(_ identity: [String]) -> some View {
     if identity.isEmpty == false {
       VStack(alignment: .center, spacing: 3.0) {
         Self.wrappedContent {
@@ -176,7 +176,7 @@ private extension Widget {
     }
   }
 
-  @ViewBuilder private func loyaltyWidgetView(_ counters: String?) -> some View {
+  @ContentBuilder private func loyaltyWidgetView(_ counters: String?) -> some View {
     if let counters {
       VStack(alignment: .center, spacing: 3.0) {
         Self.wrappedContent {
@@ -206,7 +206,7 @@ private extension Widget {
     }
   }
 
-  @ViewBuilder private func collectionNumberView(_ collectorNumber: String?) -> some View {
+  @ContentBuilder private func collectionNumberView(_ collectorNumber: String?) -> some View {
     if let collectorNumber {
       VStack(alignment: .center, spacing: 3.0) {
         Self.wrappedContent {
@@ -222,7 +222,7 @@ private extension Widget {
     }
   }
 
-  @ViewBuilder private func setCodeView(
+  @ContentBuilder private func setCodeView(
     _ code: String?,
     rarity: Card.Rarity,
     iconURL: URL?
@@ -265,7 +265,7 @@ private extension Widget {
     }
   }
 
-  @ViewBuilder private func manaValueView(_ manaValue: String?) -> some View {
+  @ContentBuilder private func manaValueView(_ manaValue: String?) -> some View {
     if let manaValue {
       VStack(alignment: .center, spacing: 3.0) {
         Self.wrappedContent {
@@ -285,7 +285,7 @@ private extension Widget {
 }
 
 extension Widget {
-  @ViewBuilder private static func wrappedContent(@ViewBuilder content: () -> some View) -> some View {
+  @ContentBuilder private static func wrappedContent(@ContentBuilder content: () -> some View) -> some View {
     HStack(spacing: 5.0) {
       content()
     }

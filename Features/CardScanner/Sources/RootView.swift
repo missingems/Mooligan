@@ -50,7 +50,7 @@ public struct RootView: View {
           }
         }
       }
-      .scrollEdgeEffectStyle(.soft, for: .all)
+      .scrollEdgeEffectStyle(.soft, for: .top)
     }
     .onGeometryChange(for: EdgeInsets.self, of: { $0.safeAreaInsets }) { insets in
       store.send(.updateSafeAreas(top: insets.top, bottom: insets.bottom))
@@ -60,7 +60,7 @@ public struct RootView: View {
   
   // MARK: - Camera
   
-  @ViewBuilder
+  @ContentBuilder
   private var cameraLayer: some View {
     OCRView(
       isScanningPaused: store.isScanningPaused,
@@ -74,7 +74,7 @@ public struct RootView: View {
   
   // MARK: - Floating Morph Layer
   
-  @ViewBuilder
+  @ContentBuilder
   private var floatingMorphLayer: some View {
     if !store.isMorphAnimationComplete,
        let viewSize = store.viewSize,
@@ -110,7 +110,7 @@ public struct RootView: View {
   
   // MARK: - Scrollable Cards
   
-  @ViewBuilder
+  @ContentBuilder
   private func scrollableCardsLayer(metrics: CardLayoutMetrics) -> some View {
     ScrollView(.horizontal) {
       LazyHStack(alignment: .top, spacing: 8.0) {
@@ -133,7 +133,7 @@ public struct RootView: View {
     .scrollIndicators(.hidden)
   }
   
-  @ViewBuilder
+  @ContentBuilder
   private func scrollableCardItem(
     isFirst: Bool,
     cardInfo: CardInfo,
@@ -152,7 +152,7 @@ public struct RootView: View {
         displayableCard: cardInfo.displayableCardImage,
         layoutConfiguration: configuration,
         priceVisibility: .hidden,
-        shouldShowShadow: false
+        shadowConfiguration: nil
       )
       .frame(width: configuration.size.width, height: configuration.size.height)
       .opacity(showImage ? 1.0 : 0.0)
@@ -207,7 +207,7 @@ public struct RootView: View {
     }
   }
   
-  @ViewBuilder
+  @ContentBuilder
   private var bottomToolBarLayer: some View {
     GlassEffectContainer {
       HStack(spacing: 34) {

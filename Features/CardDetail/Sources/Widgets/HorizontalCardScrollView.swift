@@ -54,7 +54,7 @@ struct HorizontalCardScrollView: View {
                     usdFoil: cardInfo.card.prices.usdFoil,
                     usd: cardInfo.card.prices.usd
                   ),
-                  shouldShowShadow: false
+                  shadowConfiguration: nil
                 )
                 .frame(width: Self.cardWidth)
               }

@@ -83,7 +83,7 @@ struct SetsView: View {
     }
   }
   
-  @ViewBuilder
+  @ContentBuilder
   private func setList(
     sections: IdentifiedArrayOf<ScryfallClient.SetsSection>,
     isPlaceholder: Bool,
@@ -128,7 +128,7 @@ struct SetsView: View {
             .shimmering(active: isPlaceholder)
             
             if hasSeparator {
-              Divider().padding(.leading, 60.0)
+              VibrantDivider().padding(.leading, 60.0)
             }
           }
           .listRowSeparator(.hidden)
@@ -154,7 +154,7 @@ struct SetsView: View {
           .padding(.bottom, 3.0)
       }
     }
-    .scrollEdgeEffectStyle(.soft, for: .all)
+    .scrollEdgeEffectStyle(.soft, for: .top)
     .toolbarMinimizationBehavior(.onScrollDown, for: .navigationBar)
     .listStyle(.plain)
     .listSectionSeparator(.hidden)

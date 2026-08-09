@@ -11,13 +11,15 @@ public struct CardRemoteImageView: View {
   private let size: CGSize?
   private let isLandscape: Bool
   private let id: String
+  private let priority: ImageRequest.Priority
   
   public init(
     url: URL,
     isLandscape: Bool = false,
     isTransformed: Bool = false,
     size: CGSize? = nil,
-    id: String
+    id: String,
+    priority: ImageRequest.Priority = .normal
   ) {
     self.isLandscape = isLandscape
     self.url = url
@@ -39,15 +41,17 @@ public struct CardRemoteImageView: View {
     self.transformers = transformers
     self.size = size
     self.id = id
+    self.priority = priority
   }
   
   public var body: some View {
     LazyImage(
       request: ImageRequest(
         url: url,
-        processors: transformers
+        processors: transformers,
+        priority: priority
       ),
-      transaction: Transaction(animation: .default)
+      transaction: Transaction(animation: nil)
     ) { state in
       Group {
         if let image = state.image {
@@ -55,7 +59,6 @@ public struct CardRemoteImageView: View {
         } else {
           Color.primary.opacity(0.3)
             .shimmering()
-            .blur(radius: 34.0)
         }
       }
     }
@@ -73,6 +76,10 @@ public struct CardRemoteImageView: View {
     )
     .clipShape(
       RoundedRectangle(cornerRadius: cornerRadius ?? 0)
+    )
+    .overlay(
+      RoundedRectangle(cornerRadius: cornerRadius ?? 0)
+        .stroke(.white.opacity(0.168), lineWidth: 1 / displayScale)
     )
   }
 }

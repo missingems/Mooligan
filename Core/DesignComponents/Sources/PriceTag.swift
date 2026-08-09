@@ -1,18 +1,11 @@
-//
-//  PriceTag.swift
-//  DesignComponents
-//
-//  Created by Jun on 7/12/25.
-//
-
 import SwiftUI
 
 public struct PriceTag: View {
   let displayPrice: String
   
-  private let rotation = Double.random(in: -3...3)
-  private let offsetX = CGFloat.random(in: -2...2)
-  private let offsetY = CGFloat.random(in: -2...2)
+  @State private var rotation: Double = .random(in: -3...3)
+  @State private var offsetX: CGFloat = .random(in: -2...2)
+  @State private var offsetY: CGFloat = .random(in: -2...2)
   
   public var body: some View {
     ZStack {
@@ -21,7 +14,7 @@ public struct PriceTag: View {
         .aspectRatio(contentMode: .fit)
         .opacity(0.9)
         .frame(height: 28, alignment: .center)
-        .shadow(color: .black.opacity(0.25), radius: 1, x: 0, y: 1)
+        .shadow(color: .black.opacity(0.618), radius: 1, x: 0, y: 1)
       
       Text(displayPrice)
         .font(.system(size: 11))

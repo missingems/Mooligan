@@ -114,7 +114,7 @@ struct LegalityView: View {
     self.legalities = legalities
   }
   
-  @ViewBuilder private func legalityRow(
+  @ContentBuilder private func legalityRow(
     index: Int,
     numberOfColumns: Int,
     legality: MagicCardLegalitiesValue
