@@ -5,8 +5,11 @@ import SwiftUI
 
 public struct CardRemoteImageView: View {
   public let url: URL
+  
   @Environment(\.displayScale) private var displayScale
   @State private var cornerRadius: CGFloat?
+  @Binding var isImageLoaded: Bool
+  
   private let transformers: [ImageProcessing]
   private let size: CGSize?
   private let isLandscape: Bool
@@ -19,29 +22,27 @@ public struct CardRemoteImageView: View {
     isTransformed: Bool = false,
     size: CGSize? = nil,
     id: String,
-    priority: ImageRequest.Priority = .normal
+    priority: ImageRequest.Priority = .normal,
+    isImageLoaded: Binding<Bool> // 2. Add to init
   ) {
-    self.isLandscape = isLandscape
     self.url = url
-    
-    var transformers: [ImageProcessing] = []
-    
-    if isLandscape {
-      transformers.append(
-        RotationImageProcessor(degrees: 90)
-      )
-    }
-    
-    if isTransformed {
-      transformers.append(
-        FlipImageProcessor()
-      )
-    }
-    
-    self.transformers = transformers
+    self.isLandscape = isLandscape
     self.size = size
     self.id = id
     self.priority = priority
+    
+    self._isImageLoaded = isImageLoaded
+    var transformers: [ImageProcessing] = []
+    
+    if isLandscape {
+      transformers.append(RotationImageProcessor(degrees: 90))
+    }
+    
+    if isTransformed {
+      transformers.append(FlipImageProcessor())
+    }
+    
+    self.transformers = transformers
   }
   
   public var body: some View {
@@ -56,6 +57,11 @@ public struct CardRemoteImageView: View {
       Group {
         if let image = state.image {
           image.resizable()
+            .onAppear {
+              if isImageLoaded != true {
+                isImageLoaded = true
+              }
+            }
         } else {
           Color.primary.opacity(0.3)
             .shimmering()

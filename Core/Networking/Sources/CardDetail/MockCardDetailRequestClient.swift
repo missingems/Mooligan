@@ -64,7 +64,7 @@ public extension Card {
       ),
       prices: .init(
         tix: nil,
-        usd: "120.90",
+        usd: "0.00",
         usdFoil: "240.90",
         eur: "100"
       ),
