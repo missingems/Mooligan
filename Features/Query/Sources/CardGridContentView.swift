@@ -5,7 +5,6 @@ import Networking
 
 struct CardGridContentView: View {
   @Bindable var store: StoreOf<QueryFeature>
-  let cardSize: CGSize
   var zoomAnimation: Namespace.ID
   
   var body: some View {
@@ -16,13 +15,13 @@ struct CardGridContentView: View {
         } label: {
           CardView(
             displayableCard: cardInfo.displayableCardImage,
-            layoutConfiguration: .init(rotation: .portrait, maxWidth: cardSize.width),
+            layoutConfiguration: nil,
             callToActionHorizontalOffset: -3.0,
             priceVisibility: .display(usdFoil: cardInfo.displayPriceUSDFoil, usd: cardInfo.displayPriceUSD),
             shadowConfiguration: .custom(
               color: Color(.sRGBLinear, white: 0, opacity: 0.33),
-              radius: 2.5,
-              offset: CGPoint(x: 0, y: 2.5)
+              radius: 3.0,
+              offset: CGPoint(x: 0, y: 3.0)
             ),
             send: { action in
               if action == .toggledFaceDirection {

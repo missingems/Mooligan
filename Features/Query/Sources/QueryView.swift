@@ -11,7 +11,6 @@ struct QueryView: View {
   var zoomAnimation: Namespace.ID
   @Namespace private var searchMorph
   @Environment(\.colorScheme) var colorScheme
-  @State private var cardSize: CGSize = .zero
   
   init(store: StoreOf<QueryFeature>, zoomAnimation: Namespace.ID) {
     self.store = store
@@ -20,7 +19,7 @@ struct QueryView: View {
   
   private var gridItems: [GridItem] {
     [GridItem](
-      repeating: GridItem(spacing: 8.0, alignment: .center),
+      repeating: GridItem(spacing: 13.0, alignment: .center),
       count: max(1, Int(store.numberOfColumns))
     )
   }
@@ -31,7 +30,6 @@ struct QueryView: View {
         LazyVGrid(columns: gridItems, spacing: 8.0) {
           CardGridContentView(
             store: store,
-            cardSize: cardSize,
             zoomAnimation: zoomAnimation
           )
         }
@@ -59,7 +57,7 @@ struct QueryView: View {
           .glassEffectID("searchBar", in: searchMorph)
         }
       }
-      .padding(.bottom, 21)
+      .padding(.bottom, 13.0)
       .padding(.horizontal, systemHorizontalMargin)
       .animation(.default, value: store.isSearchExpanded)
       .animation(.default, value: store.query)

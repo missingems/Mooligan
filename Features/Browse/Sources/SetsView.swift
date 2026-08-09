@@ -128,7 +128,7 @@ struct SetsView: View {
             .shimmering(active: isPlaceholder)
             
             if hasSeparator {
-              Divider().padding(.leading, 60.0)
+              VibrantDivider().padding(.leading, 60.0)
             }
           }
           .listRowSeparator(.hidden)

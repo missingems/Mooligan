@@ -19,35 +19,33 @@ public struct SearchBar: View {
   }
   
   public var body: some View {
-    HStack(spacing: 8) {
-      if isExpanded {
-        HStack {
-          Image(systemName: "magnifyingglass")
-            .font(.system(size: 15, weight: .semibold))
-            .foregroundColor(.primary)
-          
-          TextField(placeholder, text: $text)
-            .focused($isFocused)
-            .textFieldStyle(.plain)
-            .autocorrectionDisabled()
-            .submitLabel(.search)
-            .autocorrectionDisabled()
-            .frame(maxWidth: .infinity, minHeight: 28.0)
-        }
-        .padding(EdgeInsets(top: 8, leading: 13, bottom: 8, trailing: 13))
-        .glassEffect(.regular.interactive())
+    if isExpanded {
+      HStack {
+        Image(systemName: "magnifyingglass")
+          .font(.system(size: 15, weight: .semibold))
+          .foregroundColor(.primary)
+        
+        TextField(placeholder, text: $text)
+          .focused($isFocused)
+          .textFieldStyle(.plain)
+          .autocorrectionDisabled()
+          .submitLabel(.search)
+          .autocorrectionDisabled()
+          .frame(maxWidth: .infinity, minHeight: 28.0)
       }
-      
-      Button {
-        isExpanded.toggle()
-        text = ""
-      } label: {
-        Image(systemName: isExpanded ? "xmark" : "magnifyingglass")
-          .fontWeight(.semibold)
-      }
-      .frame(width: 44, height: 44)
+      .padding(EdgeInsets(top: 8, leading: 13, bottom: 8, trailing: 13))
       .glassEffect(.regular.interactive())
     }
+    
+    Button {
+      isExpanded.toggle()
+      text = ""
+    } label: {
+      Image(systemName: isExpanded ? "xmark" : "magnifyingglass")
+        .fontWeight(.semibold)
+    }
+    .frame(width: 44, height: 44)
+    .glassEffect(.regular.interactive())
   }
 }
 
