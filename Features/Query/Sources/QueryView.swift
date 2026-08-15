@@ -11,6 +11,7 @@ struct QueryView: View {
   var zoomAnimation: Namespace.ID
   @Namespace private var searchMorph
   @Environment(\.colorScheme) var colorScheme
+  @State private var cardLayoutConfig: CardView.LayoutConfiguration?
   
   init(store: StoreOf<QueryFeature>, zoomAnimation: Namespace.ID) {
     self.store = store
@@ -30,7 +31,8 @@ struct QueryView: View {
         LazyVGrid(columns: gridItems, spacing: 8.0) {
           CardGridContentView(
             store: store,
-            zoomAnimation: zoomAnimation
+            zoomAnimation: zoomAnimation,
+            layoutConfiguration: cardLayoutConfig
           )
         }
         .overlay {
@@ -40,6 +42,21 @@ struct QueryView: View {
         }
       }
     }
+    .onGeometryChange(
+      for: CGFloat.self,
+      of: { proxy in proxy.size.width },
+      action: { width in
+        let columns = CGFloat(max(1, store.numberOfColumns))
+        let totalSpacing = 8.0 * (columns - 1)
+        
+        let availableWidth = width - (systemHorizontalMargin * 2) - totalSpacing
+        let columnWidth = (availableWidth / columns).rounded(.down)
+        
+        if columnWidth > 0, cardLayoutConfig?.size.width != columnWidth {
+          cardLayoutConfig = CardView.LayoutConfiguration(rotation: .portrait, maxWidth: columnWidth)
+        }
+      }
+    )
     .safeAreaBar(edge: .top) {
       GlassEffectContainer {
         HStack(spacing: 8.0) {

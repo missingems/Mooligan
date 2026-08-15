@@ -60,7 +60,6 @@ struct HorizontalCardScrollView: View {
               }
             )
             .buttonStyle(.sinkableButtonStyle)
-//            .task { send(.didShowCardAtIndex(<#T##Int#>)) }
           }
         }
       }

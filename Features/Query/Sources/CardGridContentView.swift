@@ -6,6 +6,7 @@ import Networking
 struct CardGridContentView: View {
   @Bindable var store: StoreOf<QueryFeature>
   var zoomAnimation: Namespace.ID
+  var layoutConfiguration: CardView.LayoutConfiguration?
   
   var body: some View {
     if let dataSource = store.dataSource {
@@ -15,20 +16,17 @@ struct CardGridContentView: View {
         } label: {
           CardView(
             displayableCard: cardInfo.displayableCardImage,
-            layoutConfiguration: nil,
+            layoutConfiguration: layoutConfiguration, // 2. Pass to the individual card
             callToActionHorizontalOffset: -3.0,
             priceVisibility: .display(usdFoil: cardInfo.displayPriceUSDFoil, usd: cardInfo.displayPriceUSD),
-            shadowConfiguration: .custom(
-              color: Color(.sRGBLinear, white: 0, opacity: 0.33),
-              radius: 3.0,
-              offset: CGPoint(x: 0, y: 3.0)
-            ),
+            shadowConfiguration: nil,
             send: { action in
               if action == .toggledFaceDirection {
                 store.send(.cardFaceToggled(id: cardInfo.card.id))
               }
             }
           )
+          .geometryGroup()
           .matchedTransitionSource(id: cardInfo.card.id, in: zoomAnimation)
         }
         .disabled(store.mode.isScrollable == false)

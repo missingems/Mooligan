@@ -91,7 +91,7 @@ public struct CardView: View {
   private var strokeScale: CGFloat { max(displayScale, 1) }
   
   public var body: some View {
-    VStack(spacing: 3) {
+    VStack(spacing: 5.0) {
       ZStack(alignment: .trailing) {
         switch displayableCard {
         case let .transformable(direction, frontImageURL, backImageURL, callToActionIconName, id):
@@ -135,9 +135,9 @@ public struct CardView: View {
       }
       .zIndex(1)
       
-      accessoryView
-        .zIndex(0)
-        .redacted(reason: isImageLoaded ? [] : .placeholder)
+//      accessoryView
+//        .zIndex(0)
+//        .redacted(reason: isImageLoaded ? [] : .placeholder)
     }
   }
   
@@ -252,7 +252,7 @@ public struct CardView: View {
     case let .display(foilPrice, usdPrice):
       Text("$\(usdPrice ?? foilPrice ?? "0.00")")
         .foregroundStyle(DesignComponentsAsset.accentColor.swiftUIColor)
-        .font(.caption).fontWeight(.medium).fontWidth(.compressed).monospaced().frame(height: 21.0)
+        .font(.system(size: 13.0)).fontWeight(.medium).fontWidth(.compressed).monospaced().frame(height: 15)
       
     case let .displaySet(set, usdFoilPrice, usdPrice):
       VStack(alignment: .center, spacing: 5.0) {
@@ -263,7 +263,7 @@ public struct CardView: View {
           if usdPrice == nil && usdFoilPrice == nil { PillText("$0.00").unavailable(true) }
         }
         .foregroundStyle(DesignComponentsAsset.accentColor.swiftUIColor)
-        .font(.caption).fontWeight(.medium).monospaced().frame(height: 21.0)
+        .font(.caption).fontWeight(.medium).monospaced().frame(height: 15)
       }
       
     case .hidden:

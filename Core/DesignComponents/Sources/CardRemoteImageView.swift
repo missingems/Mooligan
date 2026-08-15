@@ -5,7 +5,7 @@ import SwiftUI
 
 public struct CardRemoteImageView: View {
   public let url: URL
-  
+  @Environment(\.colorScheme) private var colorScheme
   @Environment(\.displayScale) private var displayScale
   @State private var cornerRadius: CGFloat?
   @Binding var isImageLoaded: Bool
@@ -23,7 +23,7 @@ public struct CardRemoteImageView: View {
     size: CGSize? = nil,
     id: String,
     priority: ImageRequest.Priority = .normal,
-    isImageLoaded: Binding<Bool> // 2. Add to init
+    isImageLoaded: Binding<Bool>
   ) {
     self.url = url
     self.isLandscape = isLandscape
@@ -69,7 +69,8 @@ public struct CardRemoteImageView: View {
         }
       }
     }
-    .aspectRatio(MagicCardImageRatio.widthToHeight.rawValue, contentMode: .fit)
+    .frame(width: size?.width, height: size?.height)
+    .aspectRatio(size == nil ? MagicCardImageRatio.widthToHeight.rawValue : nil, contentMode: .fit)
     .onGeometryChange(
       for: CGSize.self,
       of: { proxy in
@@ -86,7 +87,14 @@ public struct CardRemoteImageView: View {
     )
     .overlay(
       RoundedRectangle(cornerRadius: cornerRadius ?? 0)
-        .stroke(.white.opacity(0.168), lineWidth: 1 / displayScale)
+        .stroke(
+          (colorScheme == .dark ? Color.white.opacity(0.169) : Color.black.opacity(0.225)).blendMode(
+            colorScheme == .dark ? .plusLighter : .plusDarker
+          ),
+          lineWidth: 1 / displayScale
+        )
+        
     )
+    .compositingGroup()
   }
 }
