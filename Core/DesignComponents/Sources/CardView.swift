@@ -71,16 +71,18 @@ public struct CardView: View {
     
     public let rotation: Rotation
     public let size: CGSize
+    public let cornerRadius: CGFloat
     
     public init(rotation: Rotation, maxWidth: CGFloat) {
       self.rotation = rotation
       let imageHeight = (maxWidth / rotation.ratio).rounded()
       size = CGSize(width: maxWidth, height: imageHeight)
+      cornerRadius = 5 / 100 * (rotation == .landscape ? size.height : size.width)
     }
   }
   
   private let shadowConfiguration: ShadowConfiguration?
-  private let layoutConfiguration: LayoutConfiguration?
+  private let layoutConfiguration: LayoutConfiguration
   private let callToActionHorizontalOffset: CGFloat
   private let displayableCard: DisplayableCardImage
   private let accessoryInfo: AccessoryInfo
@@ -114,9 +116,9 @@ public struct CardView: View {
         case let .single(displayingImageURL, id):
           CardRemoteImageView(
             url: displayingImageURL,
-            isLandscape: layoutConfiguration?.rotation == .landscape,
+            isLandscape: layoutConfiguration.rotation == .landscape,
             isTransformed: false,
-            size: layoutConfiguration?.size,
+            size: layoutConfiguration.size,
             id: id,
             isImageLoaded: $isImageLoaded
           )
@@ -135,9 +137,9 @@ public struct CardView: View {
       }
       .zIndex(1)
       
-//      accessoryView
-//        .zIndex(0)
-//        .redacted(reason: isImageLoaded ? [] : .placeholder)
+      accessoryView
+        .zIndex(0)
+        .redacted(reason: isImageLoaded ? [] : .placeholder)
     }
   }
   
@@ -150,9 +152,9 @@ public struct CardView: View {
   ) -> some View {
     CardRemoteImageView(
       url: backImageURL,
-      isLandscape: layoutConfiguration?.rotation == .landscape,
+      isLandscape: layoutConfiguration.rotation == .landscape,
       isTransformed: true,
-      size: layoutConfiguration?.size,
+      size: layoutConfiguration.size,
       id: id,
       isImageLoaded: $isImageLoaded
     )
@@ -174,9 +176,9 @@ public struct CardView: View {
     
     CardRemoteImageView(
       url: frontImageURL,
-      isLandscape: layoutConfiguration?.rotation == .landscape,
+      isLandscape: layoutConfiguration.rotation == .landscape,
       isTransformed: false,
-      size: layoutConfiguration?.size,
+      size: layoutConfiguration.size,
       id: id,
       isImageLoaded: $isImageLoaded
     )
@@ -216,9 +218,9 @@ public struct CardView: View {
   ) -> some View {
     CardRemoteImageView(
       url: displayingImageURL,
-      isLandscape: layoutConfiguration?.rotation == .landscape,
+      isLandscape: layoutConfiguration.rotation == .landscape,
       isTransformed: false,
-      size: layoutConfiguration?.size,
+      size: layoutConfiguration.size,
       id: id,
       isImageLoaded: $isImageLoaded
     )
@@ -252,7 +254,7 @@ public struct CardView: View {
     case let .display(foilPrice, usdPrice):
       Text("$\(usdPrice ?? foilPrice ?? "0.00")")
         .foregroundStyle(DesignComponentsAsset.accentColor.swiftUIColor)
-        .font(.system(size: 13.0)).fontWeight(.medium).fontWidth(.compressed).monospaced().frame(height: 15)
+        .font(.system(size: 11.0)).fontWeight(.medium).fontWidth(.compressed).monospaced().frame(height: 15)
       
     case let .displaySet(set, usdFoilPrice, usdPrice):
       VStack(alignment: .center, spacing: 5.0) {
@@ -273,7 +275,7 @@ public struct CardView: View {
   
   public init?(
     displayableCard: DisplayableCardImage?,
-    layoutConfiguration: LayoutConfiguration? = nil,
+    layoutConfiguration: LayoutConfiguration,
     callToActionHorizontalOffset: CGFloat = 5.0,
     priceVisibility: AccessoryInfo,
     shadowConfiguration: ShadowConfiguration? = nil,

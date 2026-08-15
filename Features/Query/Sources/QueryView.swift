@@ -29,11 +29,13 @@ struct QueryView: View {
     ScrollView(.vertical) {
       if store.dataSource != nil {
         LazyVGrid(columns: gridItems, spacing: 8.0) {
-          CardGridContentView(
-            store: store,
-            zoomAnimation: zoomAnimation,
-            layoutConfiguration: cardLayoutConfig
-          )
+          if let cardLayoutConfig {
+            CardGridContentView(
+              store: store,
+              zoomAnimation: zoomAnimation,
+              layoutConfiguration: cardLayoutConfig
+            )
+          }
         }
         .overlay {
           if store.mode == .loading {

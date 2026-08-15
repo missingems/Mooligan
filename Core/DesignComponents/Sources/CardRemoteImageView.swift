@@ -93,7 +93,6 @@ public struct CardRemoteImageView: View {
           ),
           lineWidth: 1 / displayScale
         )
-        
     )
     .compositingGroup()
   }
