@@ -88,7 +88,7 @@ struct QueryView: View {
       for: .scrollContent
     )
     .scrollDisabled(store.mode.isScrollable == false)
-    .scrollPosition($store.scrollPosition)
+//    .scrollPosition($store.scrollPosition)
     .scrollBounceBehavior(.basedOnSize)
     .navigationTitle(store.title)
     .navigationBarTitleDisplayMode(.inline)

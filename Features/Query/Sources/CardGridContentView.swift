@@ -17,9 +17,15 @@ struct CardGridContentView: View {
           store.send(.didSelectCard(cardInfo.card, store.queryType))
         } label: {
           ZStack(alignment: .top) {
-            Color.primary.opacity(0.1)
-              .clipShape(
+            Color.clear
+              .overlay(
                 RoundedRectangle(cornerRadius: layoutConfiguration.cornerRadius)
+                  .stroke(
+                    (colorScheme == .dark ? Color.white.opacity(0.169) : Color.black.opacity(0.225)).blendMode(
+                      colorScheme == .dark ? .plusLighter : .plusDarker
+                    ),
+                    lineWidth: 1 / displayScale
+                  )
               )
               .frame(width: layoutConfiguration.size.width, height: layoutConfiguration.size.height, alignment: .center)
             
