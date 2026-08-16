@@ -248,6 +248,7 @@ public struct QueryFeature: Sendable {
         return .none
       }
     }
+    ._printChanges()
   }
   
   public init() {}
