@@ -215,7 +215,7 @@ public struct CardDetailView: View {
     .background {
       ZStack {
         LazyImage(
-          url: content.card.getImageURL(type: .artCrop),
+          url: content.card.getImageURL(type: .normal),
           transaction: Transaction(animation: .smooth)
         ) { state in
           if let image = state.image {
@@ -227,7 +227,7 @@ public struct CardDetailView: View {
         .opacity((content.displayableCardImage?.faceDirection == .front) ? 1 : 0)
         
         LazyImage(
-          url: content.card.getImageURL(type: .artCrop, getSecondFace: true),
+          url: content.card.getImageURL(type: .normal, getSecondFace: true),
           transaction: Transaction(animation: .smooth)
         ) { state in
           if let image = state.image {
