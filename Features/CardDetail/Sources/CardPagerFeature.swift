@@ -92,7 +92,6 @@ public struct CardPagerFeature: Sendable {
     .ifLet(\.$showRulings, action: \.showRulings) {
       RulingFeature()
     }
-    ._printChanges()
   }
   
   public init() {}

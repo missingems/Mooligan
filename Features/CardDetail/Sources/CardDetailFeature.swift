@@ -13,9 +13,6 @@ import ScryfallKit
     Reduce { state, action in
       coreReduce(into: &state, action: action)
     }
-#if DEBUG
-    ._printChanges(.actionLabels)
-#endif
   }
   
   private func coreReduce(into state: inout State, action: Action) -> Effect<Action> {

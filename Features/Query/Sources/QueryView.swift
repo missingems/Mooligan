@@ -27,20 +27,13 @@ struct QueryView: View {
   
   var body: some View {
     ScrollView(.vertical) {
-      if store.dataSource != nil {
-        LazyVGrid(columns: gridItems, spacing: 8.0) {
-          if let cardLayoutConfig {
-            CardGridContentView(
-              store: store,
-              zoomAnimation: zoomAnimation,
-              layoutConfiguration: cardLayoutConfig
-            )
-          }
-        }
-        .overlay {
-          if store.mode == .loading {
-            LoadingGridOverlay()
-          }
+      LazyVGrid(columns: gridItems, spacing: 8.0) {
+        if let cardLayoutConfig {
+          CardGridContentView(
+            store: store,
+            zoomAnimation: zoomAnimation,
+            layoutConfiguration: cardLayoutConfig
+          )
         }
       }
     }
@@ -88,7 +81,9 @@ struct QueryView: View {
       for: .scrollContent
     )
     .scrollDisabled(store.mode.isScrollable == false)
-//    .scrollPosition($store.scrollPosition)
+    .scrollPosition(.init(get: {
+      store.scrollPosition
+    }, set:  { _ in }))
     .scrollBounceBehavior(.basedOnSize)
     .navigationTitle(store.title)
     .navigationBarTitleDisplayMode(.inline)

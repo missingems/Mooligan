@@ -84,7 +84,6 @@ public struct Feature {
     
     Reduce(coreReduce)
       .forEach(\.path, action: \.path)
-      ._printChanges()
   }
   
   public init() {}

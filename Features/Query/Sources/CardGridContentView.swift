@@ -21,7 +21,8 @@ struct CardGridContentView: View {
               .overlay(
                 RoundedRectangle(cornerRadius: layoutConfiguration.cornerRadius)
                   .stroke(
-                    (colorScheme == .dark ? Color.white.opacity(0.169) : Color.black.opacity(0.225)).blendMode(
+                    (
+                      colorScheme == .dark ? Color.white.opacity(0.169) : Color.black.opacity(0.225)).blendMode(
                       colorScheme == .dark ? .plusLighter : .plusDarker
                     ),
                     lineWidth: 1 / displayScale
