@@ -67,7 +67,6 @@ import ScryfallKit
         return .none
       }
     }
-    ._printChanges()
   }
   
   public init() {}
