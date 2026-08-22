@@ -64,6 +64,7 @@ struct QueryView: View {
           SearchBar(
             text: $store.query.name,
             isExpanded: $store.isSearchExpanded,
+            isLoading: store.mode.isLoading,
             placeholder: store.searchPrompt
           )
           .glassEffectID("searchBar", in: searchMorph)
