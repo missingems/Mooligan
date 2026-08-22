@@ -31,6 +31,14 @@ public struct QueryFeature: Sendable {
         case .loading: return false
         }
       }
+      
+      var isLoading: Bool {
+        switch self {
+        case .placeholder: return false
+        case .data: return false
+        case .loading: return true
+        }
+      }
     }
     
     var mode: Mode
@@ -96,17 +104,21 @@ public struct QueryFeature: Sendable {
     case scrollToTop
     case viewAppeared
     case cardFaceToggled(id: UUID)
+    case performSearch
   }
   
   public var body: some ReducerOf<Self> {
     BindingReducer()
+      .onChange(of: \.query) { oldValue, newValue in
+        return .send(.performSearch)
+      }
     
     Reduce { state, action in
       switch action {
-      case .binding(\.isShowingColorTypeOptions):
+      case .binding:
         return .none
         
-      case .binding(\.query):
+      case .performSearch:
         return .concatenate(
           [
             .run { [state] send in
@@ -140,16 +152,6 @@ public struct QueryFeature: Sendable {
           id: "query",
           cancelInFlight: true
         )
-        
-      case .binding(\.isSearchExpanded):
-        if !state.isSearchExpanded {
-          state.query.name = ""
-        }
-        
-        return .none
-        
-      case .binding:
-        return .none
         
       case .didSelectCard:
         return .none
