@@ -5,19 +5,33 @@ public struct FilterOptionRow<Icon: View>: View {
   
   let title: String
   let isSelected: Bool
+  let isPreviousSelected: Bool
+  let isNextSelected: Bool
   let action: () -> Void
   let icon: () -> Icon
   
   public init(
     title: String,
     isSelected: Bool,
+    isPreviousSelected: Bool = false,
+    isNextSelected: Bool = false,
     action: @escaping () -> Void,
     @ViewBuilder icon: @escaping () -> Icon = { EmptyView() }
   ) {
     self.title = title
     self.isSelected = isSelected
+    self.isPreviousSelected = isPreviousSelected
+    self.isNextSelected = isNextSelected
     self.action = action
     self.icon = icon
+  }
+  
+  private var topRadius: CGFloat {
+    isPreviousSelected ? 8 : 21
+  }
+  
+  private var bottomRadius: CGFloat {
+    isNextSelected ? 8 : 21
   }
   
   public var body: some View {
@@ -32,15 +46,22 @@ public struct FilterOptionRow<Icon: View>: View {
       .frame(maxWidth: .infinity, alignment: .leading)
       .padding(EdgeInsets(top: 8.0, leading: 11, bottom: 8.0, trailing: 11))
       .background {
-        Capsule()
-          .fill(colorScheme == .dark ? Color.white : Color.black)
-          .opacity(0.12)
-          .blendMode(colorScheme == .dark ? .plusLighter : .plusDarker)
-          .opacity(isSelected ? 1 : 0)
+        UnevenRoundedRectangle(
+          topLeadingRadius: topRadius,
+          bottomLeadingRadius: bottomRadius,
+          bottomTrailingRadius: bottomRadius,
+          topTrailingRadius: topRadius,
+          style: .continuous
+        )
+        .fill(.black)
+        .opacity(colorScheme == .dark ? 0.32 : 0.12)
+        .opacity(isSelected ? 1 : 0)
       }
       .contentShape(.rect)
     }
-    .buttonStyle(.plain)
+    .buttonStyle(.sinkableButtonStyle)
     .animation(.smooth, value: isSelected)
+    .animation(.smooth, value: isPreviousSelected)
+    .animation(.smooth, value: isNextSelected)
   }
 }

@@ -24,10 +24,22 @@ struct ColorTypeItemsView: View {
         }
       }
     } content: {
-      ForEach(store.availableColorTypeOptions, id: \.rawValue) { value in
+      let options = store.availableColorTypeOptions
+      
+      ForEach(Array(options.enumerated()), id: \.element.rawValue) { index, value in
+        let isSelected = store.query.colorIdentities.contains(value)
+        let isPreviousSelected = isSelected
+        && index > 0
+        && store.query.colorIdentities.contains(options[index - 1])
+        let isNextSelected = isSelected
+        && index < options.count - 1
+        && store.query.colorIdentities.contains(options[index + 1])
+        
         FilterOptionRow(
           title: value.name,
-          isSelected: store.query.colorIdentities.contains(value),
+          isSelected: isSelected,
+          isPreviousSelected: isPreviousSelected,
+          isNextSelected: isNextSelected,
           action: { store.query.colorIdentities.toggleSelection(for: value) }
         ) {
           value.image

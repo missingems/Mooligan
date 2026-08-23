@@ -31,7 +31,7 @@ public struct FilterMenuButton<Label: View, Content: View>: View {
       VStack(alignment: .leading, spacing: 2.0) {
         content()
       }
-      .padding(EdgeInsets(top: 11.0, leading: 13.0, bottom: 11.0, trailing: 13.0))
+      .padding(EdgeInsets(top: 13, leading: 13, bottom: 13, trailing: 13))
       .presentationCompactAdaptation(.popover)
     }
   }
