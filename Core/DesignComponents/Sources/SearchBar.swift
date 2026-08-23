@@ -39,6 +39,7 @@ public struct SearchBar: View {
           
           TextField(placeholder, text: $text)
             .font(.body)
+            .fontWeight(.medium)
             .focused($isFocused)
             .textFieldStyle(.plain)
             .autocorrectionDisabled()
@@ -49,7 +50,6 @@ public struct SearchBar: View {
               text = ""
             } label: {
               Image(systemName: "xmark.circle.fill")
-                .foregroundStyle(.secondary)
                 .imageScale(.medium)
             }
             .buttonStyle(.plain)

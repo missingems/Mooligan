@@ -208,6 +208,7 @@ public struct CardView: View {
     .glassEffect(.regular.interactive(true))
     .offset(x: callToActionHorizontalOffset, y: -13)
     .zIndex(3)
+    .opacity(isImageLoaded ? 1 : 0)
   }
   
   @ContentBuilder private func flippableCardView(
@@ -247,6 +248,7 @@ public struct CardView: View {
       .overlay(Circle().strokeBorder(.separator, lineWidth: 1 / strokeScale))
       .offset(x: callToActionHorizontalOffset, y: -13)
       .zIndex(3)
+      .opacity(isImageLoaded ? 1 : 0)
   }
   
   @ContentBuilder private var accessoryView: some View {
