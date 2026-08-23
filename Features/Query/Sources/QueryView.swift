@@ -13,6 +13,9 @@ struct QueryView: View {
   @Environment(\.colorScheme) var colorScheme
   @State private var cardLayoutConfig: CardView.LayoutConfiguration?
   
+  // State for tracking the available width for the top bar
+  @State private var topBarAvailableWidth: CGFloat? = nil
+  
   init(store: StoreOf<QueryFeature>, zoomAnimation: Namespace.ID) {
     self.store = store
     self.zoomAnimation = zoomAnimation
@@ -41,6 +44,8 @@ struct QueryView: View {
       for: CGFloat.self,
       of: { proxy in proxy.size.width },
       action: { width in
+        topBarAvailableWidth = width - (systemHorizontalMargin * 2)
+        
         let columns = CGFloat(max(1, store.numberOfColumns))
         let totalSpacing = 8.0 * (columns - 1)
         
@@ -54,24 +59,25 @@ struct QueryView: View {
     )
     .safeAreaBar(edge: .top) {
       GlassEffectContainer {
-        HStack(spacing: 8.0) {
-          if !store.isSearchExpanded {
-            ColorTypeItemsView(store: store)
-            CardTypeItemsView(store: store)
-            SortOptionsView(store: store)
+        ScrollView(.horizontal, showsIndicators: false) {
+          HStack(spacing: 8.0) {
+            if !store.isSearchExpanded {
+              ColorTypeItemsView(store: store)
+              CardTypeItemsView(store: store)
+              SortOptionsView(store: store)
+            }
+            
+            SearchBar(
+              text: $store.query.name,
+              isExpanded: $store.isSearchExpanded,
+              isLoading: store.mode.isLoading,
+              placeholder: store.searchPrompt
+            )
+            .glassEffectID("searchBar", in: searchMorph)
           }
-          
-          SearchBar(
-            text: $store.query.name,
-            isExpanded: $store.isSearchExpanded,
-            isLoading: store.mode.isLoading,
-            placeholder: store.searchPrompt
-          )
-          .glassEffectID("searchBar", in: searchMorph)
+          .frame(minWidth: topBarAvailableWidth)
         }
       }
-      .padding(.bottom, 13.0)
-      .padding(.horizontal, systemHorizontalMargin)
       .animation(.default, value: store.isSearchExpanded)
       .animation(.default, value: store.query)
     }
@@ -93,7 +99,7 @@ struct QueryView: View {
         QueryInfoView(store: store)
       }
     }
-    .background(DesignComponentsAsset.backgroundColor.swiftUIColor)
+    .background(DesignComponentsAsset.backgroundColor.swiftUIColor.ignoresSafeArea())
     .task { store.send(.viewAppeared) }
   }
 }

@@ -45,9 +45,6 @@ public struct QueryFeature: Sendable {
     let queryType: QueryType
     let title: String
     var isShowingInfo: Bool
-    var isShowingSortOptions: Bool
-    var isShowingColorTypeOptions: Bool
-    var isShowingCardTypeOptions: Bool
     public internal(set) var dataSource: CardDataSource?
     let availableColorTypeOptions: [Card.Color]
     let availableCardType: [SearchQuery.CardType]
@@ -83,9 +80,6 @@ public struct QueryFeature: Sendable {
       availableSortOrders = [.asc, .desc]
       isShowingInfo = false
       scrollPosition = ScrollPosition(edge: .top)
-      isShowingColorTypeOptions = false
-      isShowingCardTypeOptions = false
-      isShowingSortOptions = false
       availableColorTypeOptions = Card.Color.allCases
       isSearchExpanded = false
     }
