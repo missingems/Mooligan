@@ -30,10 +30,22 @@ struct CardTypeItemsView: View {
         }
       }
     } content: {
-      ForEach(store.availableCardType) { value in
+      let options = store.availableCardType
+      
+      ForEach(Array(options.enumerated()), id: \.element.id) { index, value in
+        let isSelected = store.query.cardType.contains(value)
+        let isPreviousSelected = isSelected
+        && index > 0
+        && store.query.cardType.contains(options[index - 1])
+        let isNextSelected = isSelected
+        && index < options.count - 1
+        && store.query.cardType.contains(options[index + 1])
+        
         FilterOptionRow(
           title: value.title,
-          isSelected: store.query.cardType.contains(value),
+          isSelected: isSelected,
+          isPreviousSelected: isPreviousSelected,
+          isNextSelected: isNextSelected,
           action: { store.query.cardType.toggleSelection(for: value) }
         ) {
           value.image
