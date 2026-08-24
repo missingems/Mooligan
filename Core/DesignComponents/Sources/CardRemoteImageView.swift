@@ -62,7 +62,7 @@ public struct CardRemoteImageView: View {
                 isImageLoaded = true
               }
             }
-        } else {
+        } else if url.host != "mock://" {
           Color.primary.opacity(0.3)
             .shimmering()
             .blur(radius: 34.0)
