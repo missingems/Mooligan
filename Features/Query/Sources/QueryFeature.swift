@@ -199,7 +199,7 @@ public struct QueryFeature: Sendable {
                     .updateCards(
                       CardDataSource(
                         cards: MockCardDetailRequestClient.generateMockCards(
-                          number: min(10, set.cardCount)
+                          number: set.cardCount
                         ),
                         hasNextPage: false,
                         total: set.cardCount

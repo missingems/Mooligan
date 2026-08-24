@@ -55,12 +55,12 @@ public extension Card {
       highresImage: false,
       imageStatus: .highresScan,
       imageUris: .init(
-        small: "https://google.com",
-        normal: "https://google.com",
-        large: "https://google.com",
-        png: "https://google.com",
-        artCrop: "https://google.com",
-        borderCrop: "https://google.com"
+        small: "mock://",
+        normal: "mock://",
+        large: "mock://",
+        png: "mock://",
+        artCrop: "mock://",
+        borderCrop: "mock://"
       ),
       prices: .init(
         tix: nil,
@@ -76,7 +76,7 @@ public extension Card {
       scryfallSetUri: "",
       setName: "Foundation",
       setSearchUri: URL.init(
-        string: "https://google.com"
+        string: "mock://"
       )!,
       setType: .alchemy,
       setUri: "",

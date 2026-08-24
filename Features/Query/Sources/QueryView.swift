@@ -12,8 +12,6 @@ struct QueryView: View {
   @Namespace private var searchMorph
   @Environment(\.colorScheme) var colorScheme
   @State private var cardLayoutConfig: CardView.LayoutConfiguration?
-  
-  // State for tracking the available width for the top bar
   @State private var topBarAvailableWidth: CGFloat? = nil
   
   init(store: StoreOf<QueryFeature>, zoomAnimation: Namespace.ID) {

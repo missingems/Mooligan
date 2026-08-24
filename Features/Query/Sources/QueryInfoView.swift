@@ -12,14 +12,13 @@ struct QueryInfoView: View {
     } label: {
       switch store.queryType {
       case let .querySet(set, _):
-        HStack(spacing: 8.0) {
+        HStack(spacing: 5.0) {
           IconLazyImage(URL(string: set.iconSvgUri)).frame(width: 25, height: 25, alignment: .center)
           Text(store.title).multilineTextAlignment(.leading).font(.headline).lineLimit(1)
         }
         .frame(minHeight: 44.0, alignment: .center)
         .padding(EdgeInsets(top: 0, leading: 13.0, bottom: 0, trailing: 16))
         .contentShape(Rectangle())
-        .glassEffect(.regular.interactive())
         
       case .search:
         Text("")

@@ -134,7 +134,6 @@ public struct Feature {
             
             let cardDetails = dataSource.cardDetails
             return .run { send in
-              // Pass the full cardDetails to retain the flip states
               let pagerState = CardPagerFeature.State(
                 cardDetails: cardDetails,
                 initialSelectedCard: card,
