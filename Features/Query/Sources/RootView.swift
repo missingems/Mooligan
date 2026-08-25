@@ -5,14 +5,12 @@ import SwiftUI
 
 public struct RootView: View {
   @Bindable var store: StoreOf<QueryFeature>
-  var zoomAnimation: Namespace.ID
   
   public var body: some View {
-    QueryView(store: store, zoomAnimation: zoomAnimation)
+    QueryView(store: store)
   }
   
-  public init(store: StoreOf<QueryFeature>, zoomAnimation: Namespace.ID) {
+  public init(store: StoreOf<QueryFeature>) {
     self.store = store
-    self.zoomAnimation = zoomAnimation
   }
 }

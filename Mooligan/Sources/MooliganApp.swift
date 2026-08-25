@@ -31,7 +31,6 @@ struct MooliganApp: App {
 
 struct RootView: View {
   @Bindable var store: StoreOf<Feature>
-  @Namespace var zoomAnimation
   @Environment(\.horizontalSizeClass) private var horizontalSizeClass
   
   var body: some View {
@@ -75,13 +74,13 @@ struct RootView: View {
         } destination: { destinationStore in
           switch destinationStore.case {
           case let .showCardPager(value):
-            CardDetail.CardPagerView(store: value, zoomAnimation: zoomAnimation)
+            CardDetail.CardPagerView(store: value)
             
           case let .showCardDetail(value):
             CardDetail.RootView(store: value)
             
           case let .showSetDetail(value):
-            Query.RootView(store: value, zoomAnimation: zoomAnimation)
+            Query.RootView(store: value)
           }
         }
       }
@@ -101,13 +100,13 @@ struct RootView: View {
               } destination: { destinationStore in
                 switch destinationStore.case {
                 case let .showCardPager(value):
-                  CardDetail.CardPagerView(store: value, zoomAnimation: zoomAnimation)
+                  CardDetail.CardPagerView(store: value)
                   
                 case let .showCardDetail(value):
                   CardDetail.RootView(store: value)
                   
                 case let .showSetDetail(value):
-                  Query.RootView(store: value, zoomAnimation: zoomAnimation)
+                  Query.RootView(store: value)
                 }
               }
               
