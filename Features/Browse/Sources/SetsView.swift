@@ -82,7 +82,7 @@ struct SetsView: View {
       store.send(.viewAppeared)
     }
   }
-  
+   
   @ContentBuilder
   private func setList(
     sections: IdentifiedArrayOf<ScryfallClient.SetsSection>,
