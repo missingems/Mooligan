@@ -8,15 +8,13 @@ import NukeUI
 
 struct QueryView: View {
   @Bindable private var store: StoreOf<QueryFeature>
-  var zoomAnimation: Namespace.ID
   @Namespace private var searchMorph
   @Environment(\.colorScheme) var colorScheme
   @State private var cardLayoutConfig: CardView.LayoutConfiguration?
   @State private var topBarAvailableWidth: CGFloat? = nil
   
-  init(store: StoreOf<QueryFeature>, zoomAnimation: Namespace.ID) {
+  init(store: StoreOf<QueryFeature>) {
     self.store = store
-    self.zoomAnimation = zoomAnimation
   }
   
   private var gridItems: [GridItem] {
@@ -32,7 +30,6 @@ struct QueryView: View {
         if let cardLayoutConfig {
           CardGridContentView(
             store: store,
-            zoomAnimation: zoomAnimation,
             layoutConfiguration: cardLayoutConfig
           )
         }

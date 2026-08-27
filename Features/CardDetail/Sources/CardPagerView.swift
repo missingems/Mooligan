@@ -6,7 +6,6 @@ import SwiftUI
 public struct CardPagerView: View {
   @Bindable var store: StoreOf<CardPagerFeature>
   @State var isAppeared: Bool = false
-  var zoomAnimation: Namespace.ID
   
   public var body: some View {
     ScrollView(.horizontal, showsIndicators: false) {
@@ -21,7 +20,6 @@ public struct CardPagerView: View {
     .scrollTargetBehavior(.paging)
     .scrollPosition(id: $store.selectedId)
     .scrollEdgeEffectHidden()
-    .navigationTransition(.zoom(sourceID: store.selectedId ?? UUID(), in: zoomAnimation))
     .sheet(
       item: $store.scope(state: \.showRulings, action: \.showRulings)
     ) { rulingStore in
@@ -34,8 +32,7 @@ public struct CardPagerView: View {
     }
   }
   
-  public init(store: StoreOf<CardPagerFeature>, zoomAnimation: Namespace.ID) {
+  public init(store: StoreOf<CardPagerFeature>) {
     self.store = store
-    self.zoomAnimation = zoomAnimation
   }
 }

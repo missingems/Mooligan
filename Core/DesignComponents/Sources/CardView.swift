@@ -93,8 +93,8 @@ public struct CardView: View {
   private var strokeScale: CGFloat { max(displayScale, 1) }
   
   public var body: some View {
-    VStack(spacing: 5.0) {
-      ZStack(alignment: .trailing) {
+//    VStack(spacing: 5.0) {
+//      ZStack(alignment: .trailing) {
         switch displayableCard {
         case let .transformable(direction, frontImageURL, backImageURL, callToActionIconName, id):
           transformableCardView(
@@ -122,24 +122,24 @@ public struct CardView: View {
             id: id,
             isImageLoaded: $isImageLoaded
           )
-          .ifLet(
-            shadowConfiguration,
-            transform: { view, value in
-              view.shadow(
-                color: value.color,
-                radius: value.radius,
-                x: value.offset.x,
-                y: value.offset.y
-              )
-            }
-          )
-        }
-      }
-      .zIndex(1)
+//          .ifLet(
+//            shadowConfiguration,
+//            transform: { view, value in
+//              view.shadow(
+//                color: value.color,
+//                radius: value.radius,
+//                x: value.offset.x,
+//                y: value.offset.y
+//              )
+//            }
+//          )
+//        }
+//      }
+//      .zIndex(1)
       
-      accessoryView
-        .zIndex(0)
-        .redacted(reason: isImageLoaded ? [] : .placeholder)
+//      accessoryView
+//        .zIndex(0)
+//        .redacted(reason: isImageLoaded ? [] : .placeholder)
     }
   }
   
@@ -198,17 +198,17 @@ public struct CardView: View {
     .zIndex(direction == .front ? 2 : 1)
     .animation(.bouncy, value: direction)
     
-    Button {
-      send?(.toggledFaceDirection)
-    } label: {
-      Image(systemName: callToActionIconName).fontWeight(.semibold)
-    }
-    .tint(DesignComponentsAsset.accentColor.swiftUIColor)
-    .frame(width: 44.0, height: 44.0)
-    .glassEffect(.regular.interactive(true))
-    .offset(x: callToActionHorizontalOffset, y: -13)
-    .zIndex(3)
-    .opacity(isImageLoaded ? 1 : 0)
+//    Button {
+//      send?(.toggledFaceDirection)
+//    } label: {
+//      Image(systemName: callToActionIconName).fontWeight(.semibold)
+//    }
+//    .tint(DesignComponentsAsset.accentColor.swiftUIColor)
+//    .frame(width: 44.0, height: 44.0)
+//    .glassEffect(.regular.interactive(true))
+//    .offset(x: callToActionHorizontalOffset, y: -13)
+//    .zIndex(3)
+//    .opacity(isImageLoaded ? 1 : 0)
   }
   
   @ContentBuilder private func flippableCardView(
@@ -240,15 +240,15 @@ public struct CardView: View {
     .zIndex(2)
     .animation(.bouncy, value: direction)
     
-    Button { send?(.toggledFaceDirection) } label: { Image(systemName: callToActionIconName).fontWeight(.semibold) }
-      .tint(DesignComponentsAsset.accentColor.swiftUIColor)
-      .frame(width: 44.0, height: 44.0)
-      .glassEffect()
-      .clipShape(Circle())
-      .overlay(Circle().strokeBorder(.separator, lineWidth: 1 / strokeScale))
-      .offset(x: callToActionHorizontalOffset, y: -13)
-      .zIndex(3)
-      .opacity(isImageLoaded ? 1 : 0)
+//    Button { send?(.toggledFaceDirection) } label: { Image(systemName: callToActionIconName).fontWeight(.semibold) }
+//      .tint(DesignComponentsAsset.accentColor.swiftUIColor)
+//      .frame(width: 44.0, height: 44.0)
+//      .glassEffect()
+//      .clipShape(Circle())
+//      .overlay(Circle().strokeBorder(.separator, lineWidth: 1 / strokeScale))
+//      .offset(x: callToActionHorizontalOffset, y: -13)
+//      .zIndex(3)
+//      .opacity(isImageLoaded ? 1 : 0)
   }
   
   @ContentBuilder private var accessoryView: some View {
