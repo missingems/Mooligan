@@ -26,6 +26,7 @@ struct CardTypeItemsView: View {
             .fontWeight(.medium)
             .multilineTextAlignment(.leading)
             .lineLimit(1)
+            .fixedSize(horizontal: true, vertical: false)
             .padding(.leading, 3)
         }
       }

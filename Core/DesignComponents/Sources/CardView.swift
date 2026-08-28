@@ -87,168 +87,73 @@ public struct CardView: View {
   private let displayableCard: DisplayableCardImage
   private let accessoryInfo: AccessoryInfo
   private let send: ((Action) -> Void)?
-  @State private var isImageLoaded: Bool = false
   
+  @State private var isImageLoaded: Bool = false
   @Environment(\.displayScale) private var displayScale
   private var strokeScale: CGFloat { max(displayScale, 1) }
   
   public var body: some View {
-//    VStack(spacing: 5.0) {
-//      ZStack(alignment: .trailing) {
-        switch displayableCard {
-        case let .transformable(direction, frontImageURL, backImageURL, callToActionIconName, id):
-          transformableCardView(
-            direction: direction,
-            frontImageURL: frontImageURL,
-            backImageURL: backImageURL,
-            callToActionIconName: callToActionIconName,
-            id: id
-          )
-          
-        case let .flippable(direction, displayingImageURL, callToActionIconName, id):
-          flippableCardView(
-            direction: direction,
-            displayingImageURL: displayingImageURL,
-            callToActionIconName: callToActionIconName,
-            id: id
-          )
-          
-        case let .single(displayingImageURL, id):
-          CardRemoteImageView(
-            url: displayingImageURL,
-            isLandscape: layoutConfiguration.rotation == .landscape,
-            isTransformed: false,
-            size: layoutConfiguration.size,
-            id: id,
-            isImageLoaded: $isImageLoaded
-          )
-//          .ifLet(
-//            shadowConfiguration,
-//            transform: { view, value in
-//              view.shadow(
-//                color: value.color,
-//                radius: value.radius,
-//                x: value.offset.x,
-//                y: value.offset.y
-//              )
-//            }
-//          )
-//        }
-//      }
-//      .zIndex(1)
+    VStack(spacing: 5.0) {
+      mainCardContent
+    }
+    .geometryGroup()
+  }
+  
+  @ContentBuilder private var mainCardContent: some View {
+    switch displayableCard {
+    case let .transformable(direction, frontImageURL, backImageURL, callToActionIconName, id):
+      CardRemoteImageView(
+        url: direction == .front ? frontImageURL : backImageURL,
+        isLandscape: layoutConfiguration.rotation == .landscape,
+        isTransformed: direction == .front ? false : true,
+        size: layoutConfiguration.size,
+        id: id,
+        isImageLoaded: $isImageLoaded
+      )
+      .rotation3DEffect(.degrees(direction == .front ? 0 : 180), axis: (x: 0, y: 1, z: 0))
+      .animation(.bouncy, value: direction)
+      .overlay(alignment: .trailing) {
+        callToActionButton(iconName: callToActionIconName)
+      }
       
-//      accessoryView
-//        .zIndex(0)
-//        .redacted(reason: isImageLoaded ? [] : .placeholder)
+    case let .flippable(direction, displayingImageURL, callToActionIconName, id):
+      CardRemoteImageView(
+        url: displayingImageURL,
+        isLandscape: layoutConfiguration.rotation == .landscape,
+        isTransformed: false,
+        size: layoutConfiguration.size,
+        id: id,
+        isImageLoaded: $isImageLoaded
+      )
+      .rotationEffect(.degrees(direction == .front ? 0 : 180))
+      .animation(.bouncy, value: direction)
+      .overlay(alignment: .trailing) {
+        callToActionButton(iconName: callToActionIconName)
+      }
+      
+    case let .single(displayingImageURL, id):
+      CardRemoteImageView(
+        url: displayingImageURL,
+        isLandscape: layoutConfiguration.rotation == .landscape,
+        isTransformed: false,
+        size: layoutConfiguration.size,
+        id: id,
+        isImageLoaded: $isImageLoaded
+      )
     }
   }
   
-  @ContentBuilder private func transformableCardView(
-    direction: MagicCardFaceDirection,
-    frontImageURL: URL,
-    backImageURL: URL,
-    callToActionIconName: String,
-    id: String
-  ) -> some View {
-    CardRemoteImageView(
-      url: backImageURL,
-      isLandscape: layoutConfiguration.rotation == .landscape,
-      isTransformed: true,
-      size: layoutConfiguration.size,
-      id: id,
-      isImageLoaded: $isImageLoaded
-    )
-    .ifLet(
-      shadowConfiguration,
-      transform: { view, value in
-        view.shadow(
-          color: value.color,
-          radius: value.radius,
-          x: value.offset.x,
-          y: value.offset.y
-        )
+  @ContentBuilder private func callToActionButton(iconName: String) -> some View {
+    Image(systemName: iconName)
+      .fontWeight(.semibold)
+      .onTapGesture {
+        send?(.toggledFaceDirection)
       }
-    )
-    .opacity(direction == .back ? 1 : 0)
-    .rotation3DEffect(.degrees(direction == .back ? 180 : 0), axis: (x: 0, y: 1, z: 0))
-    .zIndex(direction == .back ? 2 : 1)
-    .animation(.bouncy, value: direction)
-    
-    CardRemoteImageView(
-      url: frontImageURL,
-      isLandscape: layoutConfiguration.rotation == .landscape,
-      isTransformed: false,
-      size: layoutConfiguration.size,
-      id: id,
-      isImageLoaded: $isImageLoaded
-    )
-    .ifLet(
-      shadowConfiguration,
-      transform: { view, value in
-        view.shadow(
-          color: value.color,
-          radius: value.radius,
-          x: value.offset.x,
-          y: value.offset.y
-        )
-      }
-    )
-    .opacity(direction == .front ? 1 : 0)
-    .rotation3DEffect(.degrees(direction == .front ? 0 : 180), axis: (x: 0, y: 1, z: 0))
-    .zIndex(direction == .front ? 2 : 1)
-    .animation(.bouncy, value: direction)
-    
-//    Button {
-//      send?(.toggledFaceDirection)
-//    } label: {
-//      Image(systemName: callToActionIconName).fontWeight(.semibold)
-//    }
-//    .tint(DesignComponentsAsset.accentColor.swiftUIColor)
-//    .frame(width: 44.0, height: 44.0)
-//    .glassEffect(.regular.interactive(true))
-//    .offset(x: callToActionHorizontalOffset, y: -13)
-//    .zIndex(3)
-//    .opacity(isImageLoaded ? 1 : 0)
-  }
-  
-  @ContentBuilder private func flippableCardView(
-    direction: MagicCardFaceDirection,
-    displayingImageURL: URL,
-    callToActionIconName: String,
-    id: String
-  ) -> some View {
-    CardRemoteImageView(
-      url: displayingImageURL,
-      isLandscape: layoutConfiguration.rotation == .landscape,
-      isTransformed: false,
-      size: layoutConfiguration.size,
-      id: id,
-      isImageLoaded: $isImageLoaded
-    )
-    .ifLet(
-      shadowConfiguration,
-      transform: { view, value in
-        view.shadow(
-          color: value.color,
-          radius: value.radius,
-          x: value.offset.x,
-          y: value.offset.y
-        )
-      }
-    )
-    .rotationEffect(.degrees(direction == .front ? 0 : 180))
-    .zIndex(2)
-    .animation(.bouncy, value: direction)
-    
-//    Button { send?(.toggledFaceDirection) } label: { Image(systemName: callToActionIconName).fontWeight(.semibold) }
-//      .tint(DesignComponentsAsset.accentColor.swiftUIColor)
-//      .frame(width: 44.0, height: 44.0)
-//      .glassEffect()
-//      .clipShape(Circle())
-//      .overlay(Circle().strokeBorder(.separator, lineWidth: 1 / strokeScale))
-//      .offset(x: callToActionHorizontalOffset, y: -13)
-//      .zIndex(3)
-//      .opacity(isImageLoaded ? 1 : 0)
+      .tint(DesignComponentsAsset.accentColor.swiftUIColor)
+      .frame(width: 44.0, height: 44.0)
+      .glassEffect(.regular.interactive())
+      .offset(x: callToActionHorizontalOffset, y: -13)
+      .opacity(isImageLoaded ? 1 : 0)
   }
   
   @ContentBuilder private var accessoryView: some View {

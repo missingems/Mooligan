@@ -25,6 +25,8 @@ struct SortOptionsView: View {
           .font(.subheadline)
           .fontWeight(.medium)
           .multilineTextAlignment(.leading)
+          .lineLimit(1)
+          .fixedSize(horizontal: true, vertical: false)
       }
     } content: {
       ForEach(store.availableSortModes, id: \.rawValue) { value in

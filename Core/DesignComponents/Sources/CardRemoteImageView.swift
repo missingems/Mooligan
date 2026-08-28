@@ -35,11 +35,11 @@ public struct CardRemoteImageView: View {
     if isLandscape {
       transformers.append(RotationImageProcessor(degrees: 90))
     }
+    
     if isTransformed {
       transformers.append(FlipImageProcessor())
     }
     
-    // Built once at init, not on every body evaluation.
     self.imageRequest = ImageRequest(
       url: url,
       processors: transformers,
@@ -47,8 +47,6 @@ public struct CardRemoteImageView: View {
     )
   }
   
-  // Known upfront whenever `size` is provided — no measurement needed.
-  // Falls back to the measured value only for the nil-size, aspect-ratio-driven case.
   private var cornerRadius: CGFloat {
     if let size {
       return 5 / 100 * (isLandscape ? size.height : size.width)
@@ -59,9 +57,9 @@ public struct CardRemoteImageView: View {
   public var body: some View {
     LazyImage(
       request: imageRequest,
-      transaction: Transaction(animation: .easeInOut(duration: 0.125))
+      transaction: Transaction(animation: .smooth)
     ) { state in
-      Group {
+      Color.primary.opacity(0.116).overlay {
         if let image = state.image {
           image.resizable()
             .onAppear {
@@ -69,10 +67,6 @@ public struct CardRemoteImageView: View {
                 isImageLoaded = true
               }
             }
-        } else {
-          Color.primary.opacity(0.3)
-            .shimmering()
-            .blur(radius: 8.0)  // was 34.0 — test this first; drop further or remove if hitches persist
         }
       }
     }
@@ -97,12 +91,9 @@ public struct CardRemoteImageView: View {
           lineWidth: 1 / displayScale
         )
     )
-    .compositingGroup()
   }
 }
 
-// Isolates the onGeometryChange read/write so it only ever runs for the
-// nil-size path — the common (size-known) path never touches @State at all.
 private struct MeasureCornerRadiusIfNeeded: ViewModifier {
   let isLandscape: Bool
   let needsMeasurement: Bool
