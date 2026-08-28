@@ -34,7 +34,7 @@ public struct QueryFeature: Sendable {
       
       var isLoading: Bool {
         switch self {
-        case .placeholder: return false
+        case .placeholder: return true
         case .data: return false
         case .loading: return true
         }
@@ -45,7 +45,7 @@ public struct QueryFeature: Sendable {
     let queryType: QueryType
     let title: String
     var isShowingInfo: Bool
-    public internal(set) var dataSource: CardDataSource?
+    public internal(set) var dataSource: CardDataSource
     let availableColorTypeOptions: [Card.Color]
     let availableCardType: [SearchQuery.CardType]
     let availableSortModes: [SortMode]
@@ -75,6 +75,7 @@ public struct QueryFeature: Sendable {
         fatalError()
       }
       
+      dataSource = CardDataSource(cards: [], hasNextPage: false, total: 0)
       availableCardType = SearchQuery.CardType.allCases
       availableSortModes = [.name, .usd, .cmc, .color, .rarity, .released]
       availableSortOrders = [.asc, .desc]
@@ -85,7 +86,7 @@ public struct QueryFeature: Sendable {
     }
     
     func shouldLoadMore(at index: Int) -> Bool {
-      (index == (dataSource?.cardDetails.count ?? 1) - 1) && dataSource?.hasNextPage == true
+      (index == (dataSource.cardDetails.count) - 1) && dataSource.hasNextPage == true
     }
   }
   
@@ -156,8 +157,8 @@ public struct QueryFeature: Sendable {
         
       case let .loadMoreCardsIfNeeded(displayingIndex):
         guard
-          displayingIndex == (state.dataSource?.cardDetails.count ?? 1) - 1,
-          state.dataSource?.hasNextPage == true
+          displayingIndex == state.dataSource.cardDetails.count - 1,
+          state.dataSource.hasNextPage == true
             else {
           return .none
         }
@@ -165,8 +166,8 @@ public struct QueryFeature: Sendable {
         return .run { [client, dataSource = state.dataSource, query = state.query.next()] send in
           let result = try await client.queryCards(query)
           var dataSource = dataSource
-          dataSource?.append(cards: result.data)
-          dataSource?.hasNextPage = result.hasMore ?? false
+          dataSource.append(cards: result.data)
+          dataSource.hasNextPage = result.hasMore ?? false
           
           await send(.updateCards(dataSource, query, .data))
         }
@@ -191,29 +192,29 @@ public struct QueryFeature: Sendable {
       case .viewAppeared:
         return .concatenate(
           [
-            .run { [state] send in
-              if state.mode.isPlaceholder {
-                switch state.queryType {
-                case let .querySet(set, _):
-                  await send(
-                    .updateCards(
-                      CardDataSource(
-                        cards: MockCardDetailRequestClient.generateMockCards(
-                          number: set.cardCount
-                        ),
-                        hasNextPage: false,
-                        total: set.cardCount
-                      ),
-                      state.query,
-                      .placeholder
-                    )
-                  )
-                  
-                case .search:
-                  fatalError("Unimplemented")
-                }
-              }
-            },
+//            .run { [state] send in
+//              if state.mode.isPlaceholder {
+//                switch state.queryType {
+//                case let .querySet(set, _):
+//                  await send(
+//                    .updateCards(
+//                      CardDataSource(
+//                        cards: MockCardDetailRequestClient.generateMockCards(
+//                          number: set.cardCount
+//                        ),
+//                        hasNextPage: false,
+//                        total: set.cardCount
+//                      ),
+//                      state.query,
+//                      .placeholder
+//                    )
+//                  )
+//                  
+//                case .search:
+//                  fatalError("Unimplemented")
+//                }
+//              }
+//            },
             .run { [state] send in
               if state.mode.isPlaceholder {
                 let result = try await client.queryCards(state.query)
@@ -235,12 +236,12 @@ public struct QueryFeature: Sendable {
         )
         
       case let .cardFaceToggled(id):
-        guard let index = state.dataSource?.cardDetails.firstIndex(where: { $0.card.id == id }),
-              let currentImage = state.dataSource?.cardDetails[index].displayableCardImage else {
+        guard let index = state.dataSource.cardDetails.firstIndex(where: { $0.card.id == id }),
+              let currentImage = state.dataSource.cardDetails[index].displayableCardImage else {
           return .none
         }
         
-        state.dataSource?.cardDetails[index].displayableCardImage = currentImage.toggled()
+        state.dataSource.cardDetails[index].displayableCardImage = currentImage.toggled()
         return .none
       }
     }

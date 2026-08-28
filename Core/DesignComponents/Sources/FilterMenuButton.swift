@@ -15,24 +15,23 @@ public struct FilterMenuButton<Label: View, Content: View>: View {
   }
   
   public var body: some View {
-    Button {
-      isShowingOptions.toggle()
-    } label: {
-      label()
-        .frame(maxWidth: .infinity)
-        .padding(EdgeInsets(top: 8, leading: 13, bottom: 8, trailing: 13))
-    }
-    .glassEffect(.regular.interactive())
-    .popover(
-      isPresented: $isShowingOptions,
-      attachmentAnchor: .rect(.bounds),
-      arrowEdge: .top
-    ) {
-      VStack(alignment: .leading, spacing: 2.0) {
-        content()
+    label()
+      .frame(maxWidth: .infinity)
+      .padding(EdgeInsets(top: 8, leading: 13, bottom: 8, trailing: 13))
+      .onTapGesture {
+        isShowingOptions.toggle()
       }
-      .padding(EdgeInsets(top: 13, leading: 13, bottom: 13, trailing: 13))
-      .presentationCompactAdaptation(.popover)
-    }
+      .glassEffect(.regular.interactive())
+      .popover(
+        isPresented: $isShowingOptions,
+        attachmentAnchor: .rect(.bounds),
+        arrowEdge: .top
+      ) {
+        VStack(alignment: .leading, spacing: 2.0) {
+          content()
+        }
+        .padding(EdgeInsets(top: 13, leading: 13, bottom: 13, trailing: 13))
+        .presentationCompactAdaptation(.popover)
+      }
   }
 }

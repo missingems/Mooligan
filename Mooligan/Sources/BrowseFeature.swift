@@ -126,13 +126,12 @@ public struct Feature {
           switch value {
           case let .didSelectCard(card, queryType):
             guard
-              case let .showSetDetail(queryState) = state.path[id: id],
-              let dataSource = queryState.dataSource
+              case let .showSetDetail(queryState) = state.path[id: id]
             else {
               return .none
             }
             
-            let cardDetails = dataSource.cardDetails
+            let cardDetails = queryState.dataSource.cardDetails
             return .run { send in
               let pagerState = CardPagerFeature.State(
                 cardDetails: cardDetails,

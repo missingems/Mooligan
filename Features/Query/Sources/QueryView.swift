@@ -53,28 +53,30 @@ struct QueryView: View {
       }
     )
     .safeAreaBar(edge: .top) {
-      GlassEffectContainer {
-        ScrollView(.horizontal, showsIndicators: false) {
-          HStack(spacing: 8.0) {
-            if !store.isSearchExpanded {
-              ColorTypeItemsView(store: store)
-              CardTypeItemsView(store: store)
-              SortOptionsView(store: store)
+      if store.mode.isPlaceholder == false {
+        GlassEffectContainer {
+          ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8.0) {
+              if !store.isSearchExpanded {
+                ColorTypeItemsView(store: store)
+                CardTypeItemsView(store: store)
+                SortOptionsView(store: store)
+              }
+              
+              SearchBar(
+                text: $store.query.name,
+                isExpanded: $store.isSearchExpanded,
+                isLoading: store.mode.isLoading,
+                placeholder: store.searchPrompt
+              )
+              .glassEffectID("searchBar", in: searchMorph)
             }
-            
-            SearchBar(
-              text: $store.query.name,
-              isExpanded: $store.isSearchExpanded,
-              isLoading: store.mode.isLoading,
-              placeholder: store.searchPrompt
-            )
-            .glassEffectID("searchBar", in: searchMorph)
+            .frame(minWidth: topBarAvailableWidth)
           }
-          .frame(minWidth: topBarAvailableWidth)
         }
+        .animation(.default, value: store.isSearchExpanded)
+        .animation(.default, value: store.query)
       }
-      .animation(.default, value: store.isSearchExpanded)
-      .animation(.default, value: store.query)
     }
     .scrollEdgeEffectStyle(.soft, for: .top)
     .contentMargins(
@@ -94,7 +96,15 @@ struct QueryView: View {
         QueryInfoView(store: store)
       }
     }
-    .background(DesignComponentsAsset.backgroundColor.swiftUIColor.ignoresSafeArea())
+    .background(
+      DesignComponentsAsset.backgroundColor.swiftUIColor.ignoresSafeArea()
+    )
+    .overlay {
+      if store.mode.isPlaceholder {
+        ProgressView().controlSize(.large)
+      }
+    }
+    .animation(.smooth, value: store.mode.isPlaceholder)
     .task { store.send(.viewAppeared) }
   }
 }
