@@ -92,18 +92,81 @@ struct QueryView: View {
     .navigationTitle(store.title)
     .navigationBarTitleDisplayMode(.inline)
     .toolbar {
+      
       ToolbarItem(id: "info", placement: .principal) {
         QueryInfoView(store: store)
       }
     }
     .background(
-      DesignComponentsAsset.backgroundColor.swiftUIColor.ignoresSafeArea()
-    )
-    .overlay {
-      if store.mode.isPlaceholder {
-        ProgressView().controlSize(.large)
+      ZStack {
+        DesignComponentsAsset.backgroundColor.swiftUIColor.ignoresSafeArea()
+        
+        switch store.mode {
+        case .placeholder:
+          ProgressView().controlSize(.extraLarge)
+          
+        case let .error(placeholder: card):
+          VStack(alignment: .leading, spacing: 0) {
+//            Color.secondary.opacity(0.2)
+//              .aspectRatio(16/9, contentMode: .fit) // Lock the ratio
+//              .frame(width: topBarAvailableWidth)   // Lock the width
+//              .overlay {
+                // 2. Put the image purely inside the overlay
+                LazyImage(
+                  url: card.getImageURL(type: .artCrop),
+                  transaction: Transaction(animation: .smooth)
+                ) { state in
+                  Color.secondary.opacity(0.2)
+                    .aspectRatio(4/3, contentMode: .fit) // Lock the ratio
+                    .frame(width: topBarAvailableWidth)   // Lock the width
+                    .overlay {
+                      if let image = state.image {
+                        image
+                          .resizable()
+                          .scaledToFill()
+                      }
+                    }
+                    .shimmering(active: state.image == nil)
+                  // Notice we don't need the 'else' block here,
+                  // because the base Color underneath is already visible!
+//                }
+              }
+                .clipShape(RoundedRectangle(cornerSize: CGSize(width: 8, height: 8)))
+//                .clipped() // 3. Chop off anything bleeding outside the overlay
+              
+              Text(card.flavorText ?? "")
+                .fontDesign(.serif)
+                .italic()
+                .multilineTextAlignment(.leading)
+                .foregroundStyle(.secondary)
+                .padding(.top, 5.0)
+            Text("Failed to Search \(store.title)")
+              .font(.title3)
+              .padding(.top, 13.0)
+              
+              Button {
+                let _ = withAnimation {
+                  // store.send(.retry)
+                }
+              } label: {
+                Text("Attempt to Try Again")
+                  .font(.body)
+                  .fontWeight(.semibold)
+//                  .padding(.horizontal, 13.0)
+//                  .padding(.vertical, 8.0)
+                  .underline()
+//                  .glassEffect(.regular.interactive())
+              }
+              .padding(.top, 5.0)
+            }
+            .padding(.horizontal, systemHorizontalMargin) // Matches the grid's content margin
+            .frame(maxWidth: .infinity, alignment: .leading) // Forces left alignment like the grid
+          
+        default:
+          EmptyView()
+        }
       }
-    }
+    )
     .animation(.smooth, value: store.mode.isPlaceholder)
     .task { store.send(.viewAppeared) }
   }
