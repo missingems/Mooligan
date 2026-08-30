@@ -19,4 +19,8 @@ public struct MockCardQueryRequestClient: MagicCardQueryRequestClient {
   public func queryCards(_ query: QueryType) async throws -> ScryfallKit.ObjectList<ScryfallKit.Card> {
     response
   }
+  
+  public func randomlyQueryErrorCard() async throws -> Card {
+    fatalError("Unimplemented")
+  }
 }

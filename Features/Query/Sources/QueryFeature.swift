@@ -15,15 +15,24 @@ public struct QueryFeature: Sendable {
       case placeholder
       case data
       case loading
-      case error(placeholder: Card)
+      case error(placeholder: Card?, isRetrying: Bool = false, isInitial: Bool = false)
       
       var isPlaceholder: Bool {
+        if case .placeholder = self { return true }
+        return false
+      }
+      
+      var shouldHideTopBar: Bool {
         switch self {
         case .placeholder: return true
-        case .data: return false
-        case .loading: return false
-        case .error: return true
+        case let .error(_, _, isInitial): return isInitial
+        default: return false
         }
+      }
+      
+      var isInitialError: Bool {
+        if case let .error(_, _, isInitial) = self { return isInitial }
+        return false
       }
       
       var isScrollable: Bool {
@@ -40,7 +49,16 @@ public struct QueryFeature: Sendable {
         case .placeholder: return true
         case .data: return false
         case .loading: return true
-        case .error: return false
+        case let .error(_, isRetrying, _): return isRetrying
+        }
+      }
+      
+      var hasError: Bool {
+        switch self {
+        case .loading, .data, .placeholder:
+          return false
+        case .error:
+          return true
         }
       }
     }
@@ -75,8 +93,11 @@ public struct QueryFeature: Sendable {
         id = set.id
         searchPrompt = String(localized: "Search \(set.cardCount) cards…")
         
-      default:
-        fatalError()
+      case let .search(request):
+        title = String(localized: "Search")
+        query = request
+        id = UUID()
+        searchPrompt = String(localized: "Search cards…")
       }
       
       dataSource = CardDataSource(cards: [], hasNextPage: false, total: 0)
@@ -104,8 +125,9 @@ public struct QueryFeature: Sendable {
     case viewAppeared
     case cardFaceToggled(id: UUID)
     case performSearch
-    case queryFailed
-    case updatePlaceholderCard(Card)
+    case queryFailed(isInitial: Bool)
+    case updatePlaceholderCard(Card?, isInitial: Bool)
+    case retry
   }
   
   public var body: some ReducerOf<Self> {
@@ -144,8 +166,7 @@ public struct QueryFeature: Sendable {
                 animation: .smooth
               )
             } catch: { error, send in
-              // Map error caught in the task
-              await send(.queryFailed, animation: .default)
+              await send(.queryFailed(isInitial: false), animation: .default)
             },
             .run { send in
               await send(.scrollToTop, animation: .default)
@@ -180,7 +201,7 @@ public struct QueryFeature: Sendable {
           
           await send(.updateCards(dataSource, query, .data))
         } catch: { error, send in
-          await send(.queryFailed, animation: .default)
+          await send(.queryFailed(isInitial: false), animation: .default)
         }
           .cancellable(
             id: "loadMoreCardsIfNeeded: \(displayingIndex), for query: \(state.queryType)",
@@ -220,7 +241,7 @@ public struct QueryFeature: Sendable {
                 )
               }
             } catch: { error, send in
-              await send(.queryFailed, animation: .default)
+              await send(.queryFailed(isInitial: true), animation: .default)
             }
           ]
         )
@@ -234,67 +255,56 @@ public struct QueryFeature: Sendable {
         state.dataSource.cardDetails[index].displayableCardImage = currentImage.toggled()
         return .none
         
-      case .queryFailed:
-        return .run { send in
-          let errorCardIDs = [
-            "44130046-cd48-42d5-8083-5e4e7dd37a7b", // Feldon of the Third Path (Time Spiral Remastered)
-            "47aeb51f-dca8-4862-be9a-4a633e43825c", // Anguished Unmaking (Secret Lair Drop)
-            "16acf619-0f45-4985-a8ec-074a4ec33fa7", // Tragic Arrogance (Magic Origins)
-            "ee658648-7bfc-4311-ba4a-395dec49f207", // Selfless Savior (Secret Lair Drop)
-            "ba2b3869-7305-49f9-9d21-795c94cc83f5",  // Phyrexian Hulk (7th Edition)
-            "69ba6262-a3b1-4009-b2ed-ae684dfae022", // Curse of Obsession
-            "adffef78-f776-42d3-ab40-3347c8e5c88b", // Totally Lost
-            "5a5841fa-4f30-495a-b840-3ef5a2af8fad", // One with Nothing
-          ]
-          
-          let randomID = errorCardIDs.randomElement() ?? "44130046-cd48-42d5-8083-5e4e7dd37a7b"
-          
-          let card = try await client.queryCard(for: randomID)
-          await send(.updatePlaceholderCard(card))
+      case let .queryFailed(isInitial):
+        return .run { [client] send in
+          if isInitial {
+            do {
+              let card = try await client.randomlyQueryErrorCard()
+              await send(.updatePlaceholderCard(card, isInitial: true))
+            } catch { }
+          } else {
+            // Skips the network request entirely if it's just a search filter failure
+            await send(.updatePlaceholderCard(nil, isInitial: false))
+          }
         }
         
-      case let .updatePlaceholderCard(card):
-        state.mode = .error(placeholder: card)
+      case .retry:
+        if case let .error(card, _, isInitial) = state.mode {
+          state.mode = .error(placeholder: card, isRetrying: true, isInitial: isInitial)
+          return .run { [query = state.query] send in
+            let result = try await client.queryCards(query)
+            await send(
+              .updateCards(
+                CardDataSource(
+                  cards: result.data,
+                  hasNextPage: result.hasMore ?? false,
+                  total: result.totalCards ?? 0
+                ),
+                query,
+                .data
+              ),
+              animation: .smooth
+            )
+          } catch: { error, send in
+            await send(.queryFailed(isInitial: isInitial), animation: .default)
+          }
+            .cancellable(id: "query", cancelInFlight: true)
+        } else {
+          state.mode = .placeholder
+          return .run { send in
+            try await Task.sleep(nanoseconds: 100_000_000)
+            await send(.viewAppeared)
+          }
+        }
+        
+      case let .updatePlaceholderCard(card, isInitial):
+        state.mode = .error(placeholder: card, isRetrying: false, isInitial: isInitial)
+        // Explicitly clear the data source so no stale cards are rendered behind the error overlay
+        state.dataSource = CardDataSource(cards: [], hasNextPage: false, total: 0)
         return .none
       }
     }
   }
   
   public init() {}
-}
-
-extension QueryType {
-  enum Section: Identifiable {
-    case titleDetail(title: String, detail: String?)
-    case titleIcon(title: String, iconURL: URL?)
-    case titleCode(title: String, code: String)
-    
-    var id: String {
-      switch self {
-      case .titleDetail(let title, let detail):
-        return "titleDetail" + title + (detail ?? "")
-        
-      case .titleIcon(let title, let iconURL):
-        return "titleIcon" + title + (iconURL?.absoluteString ?? "")
-        
-      case .titleCode(let title, let code):
-        return "titleCode" + title + code
-      }
-    }
-  }
-  
-  var sections: [Section] {
-    switch self {
-    case .search:
-      return []
-      
-    case let .querySet(value, _):
-      return [
-        .titleIcon(title: String(localized: "Set Symbol"), iconURL: URL(string: value.iconSvgUri)),
-        .titleCode(title: String(localized: "Set Code"), code: value.code),
-        .titleDetail(title: String(localized: "Release Date"), detail: value.releasedAt),
-        .titleDetail(title: String(localized: "Number of Cards"), detail: "\(value.cardCount)"),
-      ]
-    }
-  }
 }

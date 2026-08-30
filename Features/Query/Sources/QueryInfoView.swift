@@ -77,3 +77,41 @@ private extension QueryType.Section {
     }
   }
 }
+
+public extension QueryType {
+  // Explicitly mark the nested enum as public
+  public enum Section: Identifiable, Sendable {
+    case titleDetail(title: String, detail: String?)
+    case titleIcon(title: String, iconURL: URL?)
+    case titleCode(title: String, code: String)
+    
+    public var id: String {
+      switch self {
+      case .titleDetail(let title, let detail):
+        return "titleDetail" + title + (detail ?? "")
+        
+      case .titleIcon(let title, let iconURL):
+        return "titleIcon" + title + (iconURL?.absoluteString ?? "")
+        
+      case .titleCode(let title, let code):
+        return "titleCode" + title + code
+      }
+    }
+  }
+  
+  // Explicitly mark the property as public
+  public var sections: [Section] {
+    switch self {
+    case .search:
+      return []
+      
+    case let .querySet(value, _):
+      return [
+        .titleIcon(title: String(localized: "Set Symbol"), iconURL: URL(string: value.iconSvgUri)),
+        .titleCode(title: String(localized: "Set Code"), code: value.code),
+        .titleDetail(title: String(localized: "Release Date"), detail: value.releasedAt),
+        .titleDetail(title: String(localized: "Number of Cards"), detail: "\(value.cardCount)"),
+      ]
+    }
+  }
+}

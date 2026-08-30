@@ -5,11 +5,50 @@ import Featurist
 import Networking
 import SwiftUI
 import NukeUI
+import CoreImage.CIFilterBuiltins
+
+
+public struct FilmGrainOverlay: View {
+  public var opacity: Double
+  public var blendMode: BlendMode
+  
+  public init(opacity: Double = 0.15, blendMode: BlendMode = .overlay) {
+    self.opacity = opacity
+    self.blendMode = blendMode
+  }
+  
+  public var body: some View {
+    Image(decorative: Self.grainImage, scale: 1, orientation: .up)
+      .resizable(resizingMode: .tile)
+      .blendMode(blendMode)
+      .opacity(opacity)
+      .allowsHitTesting(false)
+  }
+  
+  // Computes a 128x128 noise tile once statically
+  private static let grainImage: CGImage = {
+    let noiseFilter = CIFilter.randomGenerator()
+    
+    // Force grayscale so the grain doesn't look like rainbow TV static
+    let grayscale = CIFilter.colorMonochrome()
+    grayscale.inputImage = noiseFilter.outputImage
+    grayscale.color = CIColor.white
+    grayscale.intensity = 1.0
+    
+    let context = CIContext()
+    let bounds = CGRect(x: 0, y: 0, width: 128, height: 128)
+    let image = grayscale.outputImage?.cropped(to: bounds)
+    
+    return context.createCGImage(image!, from: bounds)!
+  }()
+}
 
 struct QueryView: View {
+  @Environment(\.colorScheme) private var colorScheme
+  @Environment(\.displayScale) private var displayScale
   @Bindable private var store: StoreOf<QueryFeature>
   @Namespace private var searchMorph
-  @Environment(\.colorScheme) var colorScheme
+  @Namespace private var statusMorph
   @State private var cardLayoutConfig: CardView.LayoutConfiguration?
   @State private var topBarAvailableWidth: CGFloat? = nil
   
@@ -53,7 +92,7 @@ struct QueryView: View {
       }
     )
     .safeAreaBar(edge: .top) {
-      if store.mode.isPlaceholder == false {
+      if store.mode.shouldHideTopBar == false {
         GlassEffectContainer {
           ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8.0) {
@@ -89,96 +128,130 @@ struct QueryView: View {
       store.scrollPosition
     }, set:  { _ in }))
     .scrollBounceBehavior(.basedOnSize)
-    .navigationTitle(store.title)
+    .navigationTitle(store.mode.isInitialError ? "" : store.title)
     .navigationBarTitleDisplayMode(.inline)
     .toolbar {
-      
       ToolbarItem(id: "info", placement: .principal) {
-        QueryInfoView(store: store)
+        QueryInfoView(store: store).opacity(store.mode.isInitialError ? 0 : 1)
       }
     }
     .background(
-      ZStack {
-        DesignComponentsAsset.backgroundColor.swiftUIColor.ignoresSafeArea()
-        
-        switch store.mode {
-        case .placeholder:
-          ProgressView().controlSize(.extraLarge)
-          
-        case let .error(placeholder: card):
-          VStack(alignment: .leading, spacing: 0) {
-//            Color.secondary.opacity(0.2)
-//              .aspectRatio(16/9, contentMode: .fit) // Lock the ratio
-//              .frame(width: topBarAvailableWidth)   // Lock the width
-//              .overlay {
-                // 2. Put the image purely inside the overlay
+      DesignComponentsAsset.backgroundColor.swiftUIColor.ignoresSafeArea()
+    )
+    .overlay {
+      ZStack(alignment: .center) {
+        if case let .error(card, isRetrying, isInitial) = store.mode {
+          VStack(alignment: .center, spacing: 0) {
+            if isInitial {
+              // --- INITIAL ERROR STATE ---
+              if isRetrying {
+                Text("Resolving...")
+                  .font(.title3)
+                  .fontWidth(.compressed)
+                  .fontDesign(.serif)
+                  .multilineTextAlignment(.center)
+                  .padding(.top, 21.0)
+                
+                ProgressView()
+                  .controlSize(.regular)
+                  .padding(.horizontal, 13.0)
+                  .frame(minHeight: 44.0)
+                  .matchedGeometryEffect(id: "loadingIndicator", in: statusMorph)
+                  .padding(.top, 13.0)
+                  .padding(.bottom, 89.0)
+              } else if let card {
                 LazyImage(
                   url: card.getImageURL(type: .artCrop),
                   transaction: Transaction(animation: .smooth)
                 ) { state in
                   Color.secondary.opacity(0.2)
-                    .aspectRatio(4/3, contentMode: .fit) // Lock the ratio
-                    .frame(width: topBarAvailableWidth)   // Lock the width
                     .overlay {
                       if let image = state.image {
                         image
                           .resizable()
+                          .grayscale(1.0)
                           .scaledToFill()
+                          .overlay {
+                            FilmGrainOverlay(opacity: 0.25, blendMode: .overlay)
+                          }
                       }
                     }
                     .shimmering(active: state.image == nil)
-                  // Notice we don't need the 'else' block here,
-                  // because the base Color underneath is already visible!
-//                }
-              }
-                .clipShape(RoundedRectangle(cornerSize: CGSize(width: 8, height: 8)))
-//                .clipped() // 3. Chop off anything bleeding outside the overlay
-              
-              Text(card.flavorText ?? "")
-                .fontDesign(.serif)
-                .italic()
-                .multilineTextAlignment(.leading)
-                .foregroundStyle(.secondary)
-                .padding(.top, 5.0)
-            Text("Failed to Search \(store.title)")
-              .font(.title3)
-              .padding(.top, 13.0)
-              
-              Button {
-                let _ = withAnimation {
-                  // store.send(.retry)
+                    .blur(radius: state.image == nil ? 34 : 0)
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .overlay(
+                      RoundedRectangle(cornerRadius: 8)
+                        .stroke(
+                          (colorScheme == .dark ? Color.white.opacity(0.169) : Color.black.opacity(0.225)).blendMode(
+                            colorScheme == .dark ? .plusLighter : .plusDarker
+                          ),
+                          lineWidth: 1 / displayScale
+                        )
+                    )
                 }
-              } label: {
-                Text("Attempt to Try Again")
-                  .font(.body)
-                  .fontWeight(.semibold)
-//                  .padding(.horizontal, 13.0)
-//                  .padding(.vertical, 8.0)
-                  .underline()
-//                  .glassEffect(.regular.interactive())
+                .padding(.top, 54.0)
+                
+                Text("Failed to find anything in \"\(store.title)\"")
+                  .font(.title3)
+                  .fontWidth(.compressed)
+                  .fontDesign(.serif)
+                  .multilineTextAlignment(.center)
+                  .padding(.top, 21.0)
+                
+                Text(card.flavorText ?? "")
+                  .fontDesign(.serif)
+                  .italic()
+                  .multilineTextAlignment(.center)
+                  .foregroundStyle(.secondary)
+                  .padding(.top, 5.0)
+                
+                HStack {
+                  DesignComponentsAsset.t.swiftUIImage.resizable().scaledToFit().frame(height: 24.0)
+                  Text(": Try Again")
+                    .font(.body)
+                    .fontWeight(.semibold)
+                    .lineLimit(1)
+                    .multilineTextAlignment(.center)
+                }
+                .fixedSize(horizontal: true, vertical: false)
+                .padding(.horizontal, 13.0)
+                .frame(minHeight: 44.0)
+                .glassEffect(.regular.interactive())
+                .frame(alignment: .center)
+                .onTapGesture {
+                  store.send(.retry)
+                }
+                .matchedGeometryEffect(id: "loadingIndicator", in: statusMorph)
+                .padding(.top, 13.0)
+                .padding(.bottom, 89.0)
               }
-              .padding(.top, 5.0)
+            } else {
+              // --- SEARCH / FILTER ERROR STATE ---
+              Text("No results found.")
+                .font(.title3)
+                .fontWidth(.compressed)
+                .fontDesign(.serif)
+                .multilineTextAlignment(.center)
+                .padding(.top, 89.0)
+                .padding(.bottom, 89.0)
             }
-            .padding(.horizontal, systemHorizontalMargin) // Matches the grid's content margin
-            .frame(maxWidth: .infinity, alignment: .leading) // Forces left alignment like the grid
-          
-        default:
-          EmptyView()
+          }
+          .padding(.horizontal, systemHorizontalMargin)
+        } else if store.mode.isLoading || store.mode.isPlaceholder {
+          Group {
+            ProgressView()
+              .controlSize(.extraLarge)
+            
+          }
+          .matchedGeometryEffect(id: "loadingIndicator", in: statusMorph)
+          .transition(.opacity)
+          .frame(width: topBarAvailableWidth)
         }
       }
-    )
-    .animation(.smooth, value: store.mode.isPlaceholder)
-    .task { store.send(.viewAppeared) }
-  }
-}
-
-private struct LoadingGridOverlay: View {
-  var body: some View {
-    ProgressView {
-      Text("Loading...")
     }
-    .frame(maxWidth: .infinity, maxHeight: .infinity)
-    .background(.ultraThinMaterial)
-    .transition(.opacity)
+    .animation(.smooth, value: store.mode.shouldHideTopBar)
+    .animation(.smooth, value: store.mode.hasError)
+    .animation(.smooth, value: store.mode.isLoading)
+    .task { store.send(.viewAppeared) }
   }
 }
