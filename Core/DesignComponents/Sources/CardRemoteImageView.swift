@@ -69,6 +69,7 @@ public struct CardRemoteImageView: View {
             }
         }
       }
+      .shimmering(active: state.image == nil, bandSize: 0.7)
     }
     .frame(width: size?.width, height: size?.height)
     .aspectRatio(size == nil ? MagicCardImageRatio.widthToHeight.rawValue : nil, contentMode: .fit)

@@ -9,7 +9,7 @@ import NukeUI
 struct QueryView: View {
   @Bindable private var store: StoreOf<QueryFeature>
   @Namespace private var searchMorph
-  @Environment(\.colorScheme) var colorScheme
+  @Namespace private var statusMorph
   @State private var cardLayoutConfig: CardView.LayoutConfiguration?
   @State private var topBarAvailableWidth: CGFloat? = nil
   
@@ -53,30 +53,11 @@ struct QueryView: View {
       }
     )
     .safeAreaBar(edge: .top) {
-      if store.mode.isPlaceholder == false {
-        GlassEffectContainer {
-          ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8.0) {
-              if !store.isSearchExpanded {
-                ColorTypeItemsView(store: store)
-                CardTypeItemsView(store: store)
-                SortOptionsView(store: store)
-              }
-              
-              SearchBar(
-                text: $store.query.name,
-                isExpanded: $store.isSearchExpanded,
-                isLoading: store.mode.isLoading,
-                placeholder: store.searchPrompt
-              )
-              .glassEffectID("searchBar", in: searchMorph)
-            }
-            .frame(minWidth: topBarAvailableWidth)
-          }
-        }
-        .animation(.default, value: store.isSearchExpanded)
-        .animation(.default, value: store.query)
-      }
+      QueryTopBarView(
+        store: store,
+        searchMorph: searchMorph,
+        availableWidth: topBarAvailableWidth
+      )
     }
     .scrollEdgeEffectStyle(.soft, for: .top)
     .contentMargins(
@@ -89,33 +70,26 @@ struct QueryView: View {
       store.scrollPosition
     }, set:  { _ in }))
     .scrollBounceBehavior(.basedOnSize)
-    .navigationTitle(store.title)
+    .navigationTitle(store.mode.isInitialError ? "" : store.title)
     .navigationBarTitleDisplayMode(.inline)
     .toolbar {
       ToolbarItem(id: "info", placement: .principal) {
-        QueryInfoView(store: store)
+        QueryInfoView(store: store).opacity(store.mode.isInitialError ? 0 : 1)
       }
     }
     .background(
       DesignComponentsAsset.backgroundColor.swiftUIColor.ignoresSafeArea()
     )
     .overlay {
-      if store.mode.isPlaceholder {
-        ProgressView().controlSize(.large)
-      }
+      QueryStatusOverlayView(
+        store: store,
+        statusMorph: statusMorph,
+        topBarAvailableWidth: topBarAvailableWidth
+      )
     }
-    .animation(.smooth, value: store.mode.isPlaceholder)
+    .animation(.smooth, value: store.mode.shouldHideTopBar)
+    .animation(.smooth, value: store.mode.hasError)
+    .animation(.smooth, value: store.mode.isLoading)
     .task { store.send(.viewAppeared) }
-  }
-}
-
-private struct LoadingGridOverlay: View {
-  var body: some View {
-    ProgressView {
-      Text("Loading...")
-    }
-    .frame(maxWidth: .infinity, maxHeight: .infinity)
-    .background(.ultraThinMaterial)
-    .transition(.opacity)
   }
 }

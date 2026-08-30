@@ -15,13 +15,24 @@ public struct QueryFeature: Sendable {
       case placeholder
       case data
       case loading
+      case error(placeholder: Card?, isRetrying: Bool = false, isInitial: Bool = false)
       
       var isPlaceholder: Bool {
+        if case .placeholder = self { return true }
+        return false
+      }
+      
+      var shouldHideTopBar: Bool {
         switch self {
         case .placeholder: return true
-        case .data: return false
-        case .loading: return false
+        case let .error(_, _, isInitial): return isInitial
+        default: return false
         }
+      }
+      
+      var isInitialError: Bool {
+        if case let .error(_, _, isInitial) = self { return isInitial }
+        return false
       }
       
       var isScrollable: Bool {
@@ -29,6 +40,7 @@ public struct QueryFeature: Sendable {
         case .placeholder: return false
         case .data: return true
         case .loading: return false
+        case .error: return false
         }
       }
       
@@ -37,6 +49,16 @@ public struct QueryFeature: Sendable {
         case .placeholder: return true
         case .data: return false
         case .loading: return true
+        case let .error(_, isRetrying, _): return isRetrying
+        }
+      }
+      
+      var hasError: Bool {
+        switch self {
+        case .loading, .data, .placeholder:
+          return false
+        case .error:
+          return true
         }
       }
     }
@@ -71,8 +93,11 @@ public struct QueryFeature: Sendable {
         id = set.id
         searchPrompt = String(localized: "Search \(set.cardCount) cards…")
         
-      default:
-        fatalError()
+      case let .search(request):
+        title = String(localized: "Search")
+        query = request
+        id = UUID()
+        searchPrompt = String(localized: "Search cards…")
       }
       
       dataSource = CardDataSource(cards: [], hasNextPage: false, total: 0)
@@ -100,6 +125,9 @@ public struct QueryFeature: Sendable {
     case viewAppeared
     case cardFaceToggled(id: UUID)
     case performSearch
+    case queryFailed(isInitial: Bool)
+    case updatePlaceholderCard(Card?, isInitial: Bool)
+    case retry
   }
   
   public var body: some ReducerOf<Self> {
@@ -137,6 +165,8 @@ public struct QueryFeature: Sendable {
                 ),
                 animation: .smooth
               )
+            } catch: { error, send in
+              await send(.queryFailed(isInitial: false), animation: .default)
             },
             .run { send in
               await send(.scrollToTop, animation: .default)
@@ -170,11 +200,13 @@ public struct QueryFeature: Sendable {
           dataSource.hasNextPage = result.hasMore ?? false
           
           await send(.updateCards(dataSource, query, .data))
+        } catch: { error, send in
+          await send(.queryFailed(isInitial: false), animation: .default)
         }
-        .cancellable(
-          id: "loadMoreCardsIfNeeded: \(displayingIndex), for query: \(state.queryType)",
-          cancelInFlight: true
-        )
+          .cancellable(
+            id: "loadMoreCardsIfNeeded: \(displayingIndex), for query: \(state.queryType)",
+            cancelInFlight: true
+          )
         
       case let .updateCards(value, nextQuery, mode):
         if let value {
@@ -192,29 +224,6 @@ public struct QueryFeature: Sendable {
       case .viewAppeared:
         return .concatenate(
           [
-//            .run { [state] send in
-//              if state.mode.isPlaceholder {
-//                switch state.queryType {
-//                case let .querySet(set, _):
-//                  await send(
-//                    .updateCards(
-//                      CardDataSource(
-//                        cards: MockCardDetailRequestClient.generateMockCards(
-//                          number: set.cardCount
-//                        ),
-//                        hasNextPage: false,
-//                        total: set.cardCount
-//                      ),
-//                      state.query,
-//                      .placeholder
-//                    )
-//                  )
-//                  
-//                case .search:
-//                  fatalError("Unimplemented")
-//                }
-//              }
-//            },
             .run { [state] send in
               if state.mode.isPlaceholder {
                 let result = try await client.queryCards(state.query)
@@ -231,6 +240,8 @@ public struct QueryFeature: Sendable {
                   )
                 )
               }
+            } catch: { error, send in
+              await send(.queryFailed(isInitial: true), animation: .default)
             }
           ]
         )
@@ -243,45 +254,53 @@ public struct QueryFeature: Sendable {
         
         state.dataSource.cardDetails[index].displayableCardImage = currentImage.toggled()
         return .none
+        
+      case let .queryFailed(isInitial):
+        return .run { [client] send in
+          if isInitial {
+            let card = try await client.randomlyQueryErrorCard()
+            await send(.updatePlaceholderCard(card, isInitial: true))
+          } else {
+            await send(.updatePlaceholderCard(nil, isInitial: false))
+          }
+        }
+        
+      case .retry:
+        if case let .error(card, _, isInitial) = state.mode {
+          state.mode = .error(placeholder: card, isRetrying: true, isInitial: isInitial)
+          return .run { [query = state.query] send in
+            let result = try await client.queryCards(query)
+            await send(
+              .updateCards(
+                CardDataSource(
+                  cards: result.data,
+                  hasNextPage: result.hasMore ?? false,
+                  total: result.totalCards ?? 0
+                ),
+                query,
+                .data
+              ),
+              animation: .smooth
+            )
+          } catch: { error, send in
+            await send(.queryFailed(isInitial: isInitial), animation: .default)
+          }
+            .cancellable(id: "query", cancelInFlight: true)
+        } else {
+          state.mode = .placeholder
+          return .run { send in
+            try await Task.sleep(nanoseconds: 100_000_000)
+            await send(.viewAppeared)
+          }
+        }
+        
+      case let .updatePlaceholderCard(card, isInitial):
+        state.mode = .error(placeholder: card, isRetrying: false, isInitial: isInitial)
+        state.dataSource = CardDataSource(cards: [], hasNextPage: false, total: 0)
+        return .none
       }
     }
   }
   
   public init() {}
-}
-
-extension QueryType {
-  enum Section: Identifiable {
-    case titleDetail(title: String, detail: String?)
-    case titleIcon(title: String, iconURL: URL?)
-    case titleCode(title: String, code: String)
-    
-    var id: String {
-      switch self {
-      case .titleDetail(let title, let detail):
-        return "titleDetail" + title + (detail ?? "")
-        
-      case .titleIcon(let title, let iconURL):
-        return "titleIcon" + title + (iconURL?.absoluteString ?? "")
-        
-      case .titleCode(let title, let code):
-        return "titleCode" + title + code
-      }
-    }
-  }
-  
-  var sections: [Section] {
-    switch self {
-    case .search:
-      return []
-      
-    case let .querySet(value, _):
-      return [
-        .titleIcon(title: String(localized: "Set Symbol"), iconURL: URL(string: value.iconSvgUri)),
-        .titleCode(title: String(localized: "Set Code"), code: value.code),
-        .titleDetail(title: String(localized: "Release Date"), detail: value.releasedAt),
-        .titleDetail(title: String(localized: "Number of Cards"), detail: "\(value.cardCount)"),
-      ]
-    }
-  }
 }
