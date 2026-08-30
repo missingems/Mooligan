@@ -41,18 +41,13 @@ extension ScryfallClient: MagicCardQueryRequestClient {
   }
   
   public func randomlyQueryErrorCard() async throws -> Card {
-    // We strictly enforce the presence of flavor text while searching for thematic keywords
-    // and explicitly filter out joke/Un-set cards (-is:funny).
     let errorQuery = "has:flavor (flavor:lost OR flavor:nothing OR flavor:despair OR flavor:empty OR flavor:ruin) -is:funny"
     
     do {
-      // ScryfallKit's implementation for hitting the /cards/random endpoint
-      // Note: adjust the parameter name (q: vs query:) depending on your exact ScryfallKit version
       let card = try await getRandomCard(query: errorQuery)
       return card
     } catch {
-      // Ultimate fallback to Curse of Obsession if the random query drops or times out
-      return Card(id: <#T##UUID#>, oracleId: <#T##String#>, lang: <#T##String#>, printsSearchUri: <#T##String#>, rulingsUri: <#T##String#>, scryfallUri: <#T##String#>, uri: <#T##String#>, cmc: <#T##Double#>, colorIdentity: <#T##[Card.Color]#>, keywords: <#T##[String]#>, layout: <#T##Card.Layout#>, legalities: <#T##Card.Legalities#>, name: <#T##String#>, oversized: <#T##Bool#>, reserved: <#T##Bool#>, booster: <#T##Bool#>, borderColor: <#T##Card.BorderColor#>, collectorNumber: <#T##String#>, digital: <#T##Bool#>, finishes: <#T##[Card.Finish]#>, frame: <#T##Card.Frame#>, fullArt: <#T##Bool#>, games: <#T##[Game]#>, highresImage: <#T##Bool#>, imageStatus: <#T##Card.ImageStatus#>, prices: <#T##Card.Prices#>, promo: <#T##Bool#>, rarity: <#T##Card.Rarity#>, relatedUris: <#T##[String : String]#>, releasedAt: <#T##String#>, reprint: <#T##Bool#>, scryfallSetUri: <#T##String#>, setName: <#T##String#>, setSearchUri: <#T##URL#>, setType: <#T##MTGSet.Kind#>, setUri: <#T##String#>, set: <#T##String#>, storySpotlight: <#T##Bool#>, textless: <#T##Bool#>, variation: <#T##Bool#>)
+      return try await queryCard(for: "69ba6262-a3b1-4009-b2ed-ae684dfae022")
     }
   }
 }

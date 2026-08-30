@@ -258,12 +258,9 @@ public struct QueryFeature: Sendable {
       case let .queryFailed(isInitial):
         return .run { [client] send in
           if isInitial {
-            do {
-              let card = try await client.randomlyQueryErrorCard()
-              await send(.updatePlaceholderCard(card, isInitial: true))
-            } catch { }
+            let card = try await client.randomlyQueryErrorCard()
+            await send(.updatePlaceholderCard(card, isInitial: true))
           } else {
-            // Skips the network request entirely if it's just a search filter failure
             await send(.updatePlaceholderCard(nil, isInitial: false))
           }
         }
@@ -299,7 +296,6 @@ public struct QueryFeature: Sendable {
         
       case let .updatePlaceholderCard(card, isInitial):
         state.mode = .error(placeholder: card, isRetrying: false, isInitial: isInitial)
-        // Explicitly clear the data source so no stale cards are rendered behind the error overlay
         state.dataSource = CardDataSource(cards: [], hasNextPage: false, total: 0)
         return .none
       }
