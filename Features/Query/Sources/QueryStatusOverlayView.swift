@@ -27,35 +27,34 @@ struct QueryStatusOverlayView: View {
                 .multilineTextAlignment(.center)
                 .padding(.top, 8.0)
             } else if let card {
-              LazyImage(
-                url: card.getImageURL(type: .artCrop),
-                transaction: Transaction(animation: .smooth)
-              ) { state in
-                Color.clear
-                  .overlay {
-                    if let image = state.image {
-                      GeometryReader { proxy in
-                        TimelineView(.animation) { context in
-                          let time = context.date.timeIntervalSince1970.truncatingRemainder(dividingBy: 100)
-                          
+              GeometryReader { proxy in
+                TimelineView(.animation) { context in
+                  let time = context.date.timeIntervalSince1970.truncatingRemainder(dividingBy: 100)
+                  
+                  LazyImage(
+                    url: card.getImageURL(type: .artCrop),
+                    transaction: Transaction(animation: .smooth)
+                  ) { state in
+                    Color.primary.opacity(0.1)
+                      .overlay {
+                        if let image = state.image {
                           image
                             .resizable()
                             .grayscale(0.815)
                             .scaledToFill()
-                            .frame(width: proxy.size.width, height: proxy.size.height)
-                            .clipped()
-                            .layerEffect(
-                              ShaderLibrary.designComponents.crtDistortion(
-                                .float2(proxy.size),
-                                .float(time),
-                                .color(DesignComponentsAsset.backgroundColor.swiftUIColor)
-                              ),
-                              maxSampleOffset: .zero
-                            )
                         }
                       }
-                    }
                   }
+                  .frame(width: proxy.size.width, height: proxy.size.height)
+                  .layerEffect(
+                    ShaderLibrary.designComponents.crtDistortion(
+                      .float2(proxy.size),
+                      .float(time),
+                      .color(DesignComponentsAsset.backgroundColor.swiftUIColor)
+                    ),
+                    maxSampleOffset: .zero
+                  )
+                }
               }
               .padding(.top, 54.0)
               
