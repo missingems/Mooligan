@@ -74,7 +74,8 @@ struct QueryView: View {
     .navigationBarTitleDisplayMode(.inline)
     .toolbar {
       ToolbarItem(id: "info", placement: .principal) {
-        QueryInfoView(store: store).opacity(store.mode.isInitialError ? 0 : 1)
+        QueryInfoView(store: store)
+          .opacity(store.mode.isInitialError ? 0 : 1)
       }
     }
     .background(
