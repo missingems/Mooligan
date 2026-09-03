@@ -1,8 +1,8 @@
 //
-//  inside.swift
+//  ShaderLibrary.swift
 //  DesignComponents
 //
-//  Created by Jun on 30/8/26.
+//  Created by Jun on 3/9/26.
 //
 
 
@@ -10,7 +10,7 @@ import SwiftUI
 
 public extension ShaderLibrary {
   /// Exposes the Metal shaders compiled in the DesignComponents module.
-  static var designComponents: ShaderLibrary {
+  public static var designComponents: ShaderLibrary {
     // If you are using SPM (Swift Package Manager):
     return ShaderLibrary.bundle(.module)
     
