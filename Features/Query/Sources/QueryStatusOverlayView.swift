@@ -13,7 +13,7 @@ struct QueryStatusOverlayView: View {
   
   var body: some View {
     ZStack(alignment: .center) {
-      if case let .error(card, isRetrying, isInitial) = store.mode {
+      if case let .error(card, isRetrying, isInitial, noInternet) = store.mode {
         VStack(alignment: .center, spacing: 0) {
           if isInitial {
             if isRetrying {
@@ -26,24 +26,33 @@ struct QueryStatusOverlayView: View {
                 .fontDesign(.serif)
                 .multilineTextAlignment(.center)
                 .padding(.top, 8.0)
-            } else if let card {
+            } else if card != nil || noInternet {
               GeometryReader { proxy in
                 TimelineView(.animation) { context in
                   let time = context.date.timeIntervalSince1970.truncatingRemainder(dividingBy: 100)
                   
-                  LazyImage(
-                    url: card.getImageURL(type: .artCrop),
-                    transaction: Transaction(animation: .smooth)
-                  ) { state in
-                    Color.primary.opacity(0.1)
-                      .overlay {
-                        if let image = state.image {
-                          image
-                            .resizable()
-                            .grayscale(0.815)
-                            .scaledToFill()
-                        }
+                  Group {
+                    if let card {
+                      LazyImage(
+                        url: card.getImageURL(type: .artCrop),
+                        transaction: Transaction(animation: .smooth)
+                      ) { state in
+                        Color.primary.opacity(0.1)
+                          .overlay {
+                            if let image = state.image {
+                              image
+                                .resizable()
+                                .grayscale(0.815)
+                                .scaledToFill()
+                            }
+                          }
                       }
+                    } else {
+                      DesignComponentsAsset.errorPlaceholder.swiftUIImage
+                        .resizable()
+                        .grayscale(0.815)
+                        .scaledToFill()
+                    }
                   }
                   .frame(width: proxy.size.width, height: proxy.size.height)
                   .layerEffect(
@@ -54,6 +63,7 @@ struct QueryStatusOverlayView: View {
                     ),
                     maxSampleOffset: .zero
                   )
+                    
                 }
               }
               .padding(.top, 54.0)
@@ -64,7 +74,15 @@ struct QueryStatusOverlayView: View {
                 .multilineTextAlignment(.center)
                 .padding(.top, 21.0)
               
-              Text(card.flavorText ?? "")
+              let flavorText: String = {
+                if noInternet {
+                  "No internet connection."
+                } else {
+                  card?.flavorText ?? ""
+                }
+              }()
+              
+              Text(flavorText)
                 .fontDesign(.serif)
                 .italic()
                 .multilineTextAlignment(.center)
