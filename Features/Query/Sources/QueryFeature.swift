@@ -15,7 +15,12 @@ public struct QueryFeature: Sendable {
       case placeholder
       case data
       case loading
-      case error(placeholder: Card?, isRetrying: Bool = false, isInitial: Bool = false)
+      case error(
+        placeholder: Card?,
+        isRetrying: Bool = false,
+        isInitial: Bool = false,
+        noInternet: Bool = false
+      )
       
       var isPlaceholder: Bool {
         if case .placeholder = self { return true }
@@ -25,13 +30,13 @@ public struct QueryFeature: Sendable {
       var shouldHideTopBar: Bool {
         switch self {
         case .placeholder: return true
-        case let .error(_, _, isInitial): return isInitial
+        case let .error(_, _, isInitial, _): return isInitial
         default: return false
         }
       }
       
       var isInitialError: Bool {
-        if case let .error(_, _, isInitial) = self { return isInitial }
+        if case let .error(_, _, isInitial, _) = self { return isInitial }
         return false
       }
       
@@ -49,7 +54,7 @@ public struct QueryFeature: Sendable {
         case .placeholder: return true
         case .data: return false
         case .loading: return true
-        case let .error(_, isRetrying, _): return isRetrying
+        case let .error(_, isRetrying, _, _): return isRetrying
         }
       }
       
@@ -74,7 +79,7 @@ public struct QueryFeature: Sendable {
     let availableSortOrders: [SortDirection]
     var query: SearchQuery
     var scrollPosition: ScrollPosition
-    var numberOfColumns: Double = 2
+    var numberOfColumns: Double = 4
     let searchPrompt: String
     public let id: UUID
     var isSearchExpanded: Bool
@@ -126,7 +131,7 @@ public struct QueryFeature: Sendable {
     case cardFaceToggled(id: UUID)
     case performSearch
     case queryFailed(isInitial: Bool)
-    case updatePlaceholderCard(Card?, isInitial: Bool)
+    case updatePlaceholderCard(Card?, isInitial: Bool, noInternet: Bool)
     case retry
   }
   
@@ -259,14 +264,16 @@ public struct QueryFeature: Sendable {
         return .run { [client] send in
           if isInitial {
             let card = try await client.randomlyQueryErrorCard()
-            await send(.updatePlaceholderCard(card, isInitial: true))
+            await send(.updatePlaceholderCard(card, isInitial: true, noInternet: false))
           } else {
-            await send(.updatePlaceholderCard(nil, isInitial: false))
+            await send(.updatePlaceholderCard(nil, isInitial: false, noInternet: false))
           }
+        } catch: { _, send in
+          await send(.updatePlaceholderCard(nil, isInitial: isInitial, noInternet: true))
         }
         
       case .retry:
-        if case let .error(card, _, isInitial) = state.mode {
+        if case let .error(card, _, isInitial, _) = state.mode {
           state.mode = .error(placeholder: card, isRetrying: true, isInitial: isInitial)
           return .run { [query = state.query] send in
             let result = try await client.queryCards(query)
@@ -294,8 +301,8 @@ public struct QueryFeature: Sendable {
           }
         }
         
-      case let .updatePlaceholderCard(card, isInitial):
-        state.mode = .error(placeholder: card, isRetrying: false, isInitial: isInitial)
+      case let .updatePlaceholderCard(card, isInitial, noInternet):
+        state.mode = .error(placeholder: card, isRetrying: false, isInitial: isInitial, noInternet: noInternet)
         state.dataSource = CardDataSource(cards: [], hasNextPage: false, total: 0)
         return .none
       }
