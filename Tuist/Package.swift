@@ -5,9 +5,10 @@
 @preconcurrency import ProjectDescription
 
 let packageSettings = PackageSettings(
-  // Customize the product types for specific package product
-  // Default is .staticFramework
-  productTypes: ["ComposableArchitecture": .framework]
+  // Everything defaults to .staticFramework, which is what we want: the whole
+  // dependency graph links into a single app binary. Only override a product
+  // here if it must exist as its own dynamic image at runtime.
+  productTypes: [:]
 )
 #endif
 

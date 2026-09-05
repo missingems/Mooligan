@@ -8,6 +8,10 @@ public struct RootView: View {
   
   public var body: some View {
     CardDetailView(store: store)
+      .edgeScrims()
+      .task(priority: .background) {
+        store.send(.viewAppeared(initialAction: .fetchAdditionalInformation(card: store.content.card)))
+      }
   }
   
   public init(store: StoreOf<CardDetailFeature>) {

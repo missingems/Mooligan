@@ -1,32 +1,15 @@
 import ProjectDescription
+import ProjectDescriptionHelpers
 
-let project = Project(
+let project = Project.core(
   name: "DesignComponents",
-  settings: .settings(
-    base: [
-      "SWIFT_VERSION": "6.2",
-      "ENABLE_USER_SCRIPT_SANDBOXING": "YES",
-      "ENABLE_MODULE_VERIFIER": "YES",
-      "SWIFT_EMIT_LOC_STRINGS": "YES"
-    ]
-  ),
-  targets: [
-    .target(
-      name: "DesignComponents",
-      destinations: .iOS,
-      product: .framework,
-      bundleId: "com.missingems.DesignComponents",
-      infoPlist: .default,
-      sources: ["Sources/**"],
-      resources: ["Resources/**"],
-      dependencies: [
-        .external(name: "NukeUI"),
-        .external(name: "Shimmer"),
-        .external(name: "SVGView"),
-        .external(name: "VariableBlur"),
-        .project(target: "Networking", path: "../../Core/Networking"),
-        .project(target: "Featurist", path: "../../Core/Featurist"),
-      ]
-    )
+  dependencies: [
+    .external(name: "NukeUI"),
+    .external(name: "Shimmer"),
+    .external(name: "SVGView"),
+    .external(name: "VariableBlur"),
+    .external(name: "ScryfallKit"),
+    .project(target: "Networking", path: "../../Core/Networking"),
+    .project(target: "Featurist", path: "../../Core/Featurist"),
   ]
 )

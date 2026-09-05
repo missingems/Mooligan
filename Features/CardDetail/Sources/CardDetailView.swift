@@ -4,11 +4,11 @@ import Networking
 import Nuke
 import NukeUI
 import SwiftUI
-import VariableBlur
 
 public struct CardDetailView: View {
   @Bindable var store: StoreOf<CardDetailFeature>
-  @State private var maxWidth: CGFloat = UIScreen.main.bounds.width
+  // Seed value only; corrected by `onGeometryChange` on the first layout pass.
+  @State private var maxWidth: CGFloat = .initialScreenWidth
   @Environment(\.displayScale) private var displayScale
   
   public init(store: StoreOf<CardDetailFeature>) {
@@ -121,7 +121,7 @@ public struct CardDetailView: View {
         }
         
         if let relatedTokensSection = content.relatedTokens,
-           let cards = content.relatedTokens?.state.value {
+           let cards = relatedTokensSection.state.value {
           HorizontalCardScrollView(
             title: relatedTokensSection.title,
             subtitle: relatedTokensSection.subtitle,
@@ -138,7 +138,7 @@ public struct CardDetailView: View {
         }
         
         if let relatedComboPiecesSection = content.relatedComboPieces,
-           let cards = content.relatedComboPieces?.state.value {
+           let cards = relatedComboPiecesSection.state.value {
           HorizontalCardScrollView(
             title: relatedComboPiecesSection.title,
             subtitle: relatedComboPiecesSection.subtitle,
@@ -155,7 +155,7 @@ public struct CardDetailView: View {
         }
         
         if let relatedMeldPiecesSection = content.relatedMeldPieces,
-           let cards = content.relatedMeldPieces?.state.value {
+           let cards = relatedMeldPiecesSection.state.value {
           HorizontalCardScrollView(
             title: relatedMeldPiecesSection.title,
             subtitle: relatedMeldPiecesSection.subtitle,
@@ -172,7 +172,7 @@ public struct CardDetailView: View {
         }
         
         if let relatedMeldResultSection = content.relatedMeldResult,
-           let cards = content.relatedMeldResult?.state.value {
+           let cards = relatedMeldResultSection.state.value {
           HorizontalCardScrollView(
             title: relatedMeldResultSection.title,
             subtitle: relatedMeldResultSection.subtitle,
@@ -214,60 +214,43 @@ public struct CardDetailView: View {
     }
     .background {
       ZStack {
-        LazyImage(
-          url: content.card.getImageURL(type: .normal),
-          transaction: Transaction(animation: .smooth)
-        ) { state in
-          if let image = state.image {
-            image
-              .resizable()
-              .blur(radius: 89, opaque: true)
-          }
-        }
-        .opacity((content.displayableCardImage?.faceDirection == .front) ? 1 : 0)
-        
-        LazyImage(
-          url: content.card.getImageURL(type: .normal, getSecondFace: true),
-          transaction: Transaction(animation: .smooth)
-        ) { state in
-          if let image = state.image {
-            image
-              .resizable()
-              .blur(radius: 89, opaque: true)
-          }
-        }
-        .opacity((content.displayableCardImage?.faceDirection == .back) ? 1 : 0)
-        
+        backdrop(for: content.card.getImageURL(type: .normal))
+          .opacity((content.displayableCardImage?.faceDirection == .front) ? 1 : 0)
+          
+        backdrop(for: content.card.getImageURL(type: .normal, getSecondFace: true))
+          .opacity((content.displayableCardImage?.faceDirection == .back) ? 1 : 0)
+          
         Color(asset: DesignComponentsAsset.backgroundPlaceholder)
       }
       .ignoresSafeArea()
     }
-    .overlay(alignment: .bottom) {
-      ZStack {
-        VariableBlurView(maxBlurRadius: 2.0, direction: .blurredBottomClearTop, startOffset: 0)
-        LinearGradient(
-          colors: [.clear, DesignComponentsAsset.invertedPrimary.swiftUIColor.opacity(0.62)],
-          startPoint: .top,
-          endPoint: .bottom
-        )
+  }
+  
+  private func backdrop(for url: URL?) -> some View {
+    LazyImage(
+      request: ImageRequest(url: url, processors: [ArtCropImageProcessor()]),
+      transaction: Transaction(animation: .smooth)
+    ) { state in
+      if let image = state.image {
+        image
+          .resizable()
+          .blur(radius: 89, opaque: true)
       }
-      .ignoresSafeArea(.all, edges: .bottom)
-      .frame(height: 20)
     }
-    .overlay(alignment: .top) {
-      ZStack {
-        VariableBlurView(maxBlurRadius: 2.0, direction: .blurredTopClearBottom, startOffset: 0)
-        LinearGradient(
-          colors: [DesignComponentsAsset.invertedPrimary.swiftUIColor.opacity(0.62), .clear],
-          startPoint: .top,
-          endPoint: .bottom
-        )
-      }
-      .ignoresSafeArea(.all, edges: .top)
-      .frame(height: 20)
-    }
-    .task(priority: .background) {
-      store.send(.viewAppeared(initialAction: .fetchAdditionalInformation(card: content.card)))
-    }
+  }
+}
+
+private extension CGFloat {
+  /// Width of the active window scene's screen.
+  ///
+  /// `UIScreen.main` is deprecated in iOS 26 — the screen must be reached
+  /// through the view's context instead. This is used purely as a pre-layout
+  /// seed, so falling back to zero is safe.
+  @MainActor static var initialScreenWidth: CGFloat {
+    UIApplication.shared.connectedScenes
+      .lazy
+      .compactMap { $0 as? UIWindowScene }
+      .first?
+      .screen.bounds.width ?? 0
   }
 }

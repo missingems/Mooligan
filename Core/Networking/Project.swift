@@ -1,39 +1,11 @@
 import ProjectDescription
+import ProjectDescriptionHelpers
 
-let project = Project(
+let project = Project.core(
   name: "Networking",
-  settings: .settings(
-    base: [
-      "SWIFT_VERSION": "6.2",
-      "ENABLE_USER_SCRIPT_SANDBOXING": "YES",
-      "ENABLE_MODULE_VERIFIER": "YES",
-      "SWIFT_EMIT_LOC_STRINGS": "YES"
-    ]
-  ),
-  targets: [
-    .target(
-      name: "Networking",
-      destinations: .iOS,
-      product: .framework,
-      bundleId: "com.missingems.Mooligan.Networking",
-      infoPlist: .default,
-      sources: ["Sources/**"],
-      resources: ["Resources/**"],
-      dependencies: [
-        .external(name: "ScryfallKit"),
-        .project(target: "Featurist", path: "../../Core/Featurist"),
-        .project(target: "MTGJson", path: "../../Dependencies/MTGJson"),
-      ]
-    ),
-    .target(
-      name: "NetworkingTests",
-      destinations: .iOS,
-      product: .unitTests,
-      bundleId: "com.missingems.Mooligan.NetworkingTests",
-      infoPlist: .default,
-      sources: ["Tests/**"],
-      resources: [],
-      dependencies: [.target(name: "Networking")]
-    ),
+  dependencies: [
+    .external(name: "ScryfallKit"),
+    .external(name: "ComposableArchitecture"),
+    .project(target: "Featurist", path: "../../Core/Featurist"),
   ]
 )

@@ -158,7 +158,7 @@ extension Content {
     var value: CardDataSource? {
       switch self {
       case let .data(value):
-        return value
+        return value.cardDetails.isEmpty ? nil : value
         
       case let .initial(value):
         return if let value {
