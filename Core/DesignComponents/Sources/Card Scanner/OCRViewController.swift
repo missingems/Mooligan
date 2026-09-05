@@ -119,9 +119,7 @@ extension OCRViewController {
   private func setupCamera() {
 #if targetEnvironment(simulator)
     setupSimulatorEnvironment()
-    return
-#endif
-    
+#else
     guard
       let backCamera = AVCaptureDevice.default(for: .video),
       let input = try? AVCaptureDeviceInput(device: backCamera)
@@ -159,6 +157,7 @@ extension OCRViewController {
     previewLayer = AVCaptureVideoPreviewLayer(session: captureSession)
     previewLayer.videoGravity = .resizeAspectFill
     view.layer.insertSublayer(previewLayer, at: 0)
+#endif
   }
   
   private func setupOverlayLayers() {
@@ -222,7 +221,10 @@ extension OCRViewController {
   private func startSimulatorLoop() {
     simulatorTimer?.invalidate()
     simulatorTimer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true) { [weak self] _ in
-      self?.simulateScanTick()
+      // Scheduled on the main run loop, so the callback is already on the main actor.
+      MainActor.assumeIsolated {
+        self?.simulateScanTick()
+      }
     }
   }
   

@@ -7,7 +7,8 @@ import SwiftUI
 
 public struct CardDetailView: View {
   @Bindable var store: StoreOf<CardDetailFeature>
-  @State private var maxWidth: CGFloat = UIScreen.main.bounds.width
+  // Seed value only; corrected by `onGeometryChange` on the first layout pass.
+  @State private var maxWidth: CGFloat = .initialScreenWidth
   @Environment(\.displayScale) private var displayScale
   
   public init(store: StoreOf<CardDetailFeature>) {
@@ -236,5 +237,20 @@ public struct CardDetailView: View {
           .blur(radius: 89, opaque: true)
       }
     }
+  }
+}
+
+private extension CGFloat {
+  /// Width of the active window scene's screen.
+  ///
+  /// `UIScreen.main` is deprecated in iOS 26 — the screen must be reached
+  /// through the view's context instead. This is used purely as a pre-layout
+  /// seed, so falling back to zero is safe.
+  @MainActor static var initialScreenWidth: CGFloat {
+    UIApplication.shared.connectedScenes
+      .lazy
+      .compactMap { $0 as? UIWindowScene }
+      .first?
+      .screen.bounds.width ?? 0
   }
 }

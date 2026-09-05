@@ -76,22 +76,11 @@ public final actor CardImageHashSyncManager: CardImageHashSyncManagable {
   func generateFeaturePrint(from cgImage: CGImage) throws -> VNFeaturePrintObservation? {
     let request = VNGenerateImageFeaturePrintRequest()
     
-    if let dbModel = observations.values.first {
-      request.revision = VNGenerateImageFeaturePrintRequestRevision2
-    } else {
-      if #available(iOS 17.0, macOS 14.0, *) {
-        request.revision = VNGenerateImageFeaturePrintRequestRevision2
-      } else {
-        request.revision = VNGenerateImageFeaturePrintRequestRevision1
-      }
-    }
-    
+    // Revision2 is the floor everywhere at our deployment target, and the
+    // stored database is built with it, so there is nothing to branch on.
+    request.revision = VNGenerateImageFeaturePrintRequestRevision2
     request.imageCropAndScaleOption = .scaleFill
-    
-#if targetEnvironment(simulator)
-    request.usesCPUOnly = true
-#endif
-    
+
     try VNImageRequestHandler(cgImage: cgImage, options: [:]).perform([request])
     return request.results?.first as? VNFeaturePrintObservation
   }
@@ -112,18 +101,17 @@ public final actor CardImageHashSyncManager: CardImageHashSyncManagable {
   // MARK: - Core Search Engine (Accelerate + TaskGroup + Dynamic Threshold)
   
   public func findBestMatches(for image: CGImage) async -> [MatchResult] {
+#if targetEnvironment(simulator)
+    return [MatchResult(id: "57950af0-92d8-467e-9124-2206c84228c8", distance: 0)]
+#else
     guard let targetObservation = try? generateFeaturePrint(from: image) else {
       return []
     }
-    
-#if targetEnvironment(simulator)
-    return [MatchResult(id: "57950af0-92d8-467e-9124-2206c84228c8", distance: 0)]
-#endif
-    
+
     // 1. Extract raw floats from target image exactly ONCE
     let elementCount = targetObservation.elementCount
     let targetVector = [Float](unsafeUninitializedCapacity: elementCount) { buffer, initializedCount in
-      targetObservation.data.copyBytes(to: buffer)
+      _ = targetObservation.data.copyBytes(to: buffer)
       initializedCount = elementCount
     }
     
@@ -199,6 +187,7 @@ public final actor CardImageHashSyncManager: CardImageHashSyncManagable {
         MatchResult(id: $0.id, distance: $0.distance)
       }
     }
+#endif
   }
   
   // MARK: - Hydration & Sync
@@ -207,7 +196,7 @@ public final actor CardImageHashSyncManager: CardImageHashSyncManagable {
     self.searchDatabase = dictionary.compactMap { id, obs in
       let count = obs.elementCount
       let vector = [Float](unsafeUninitializedCapacity: count) { buffer, initializedCount in
-        obs.data.copyBytes(to: buffer)
+        _ = obs.data.copyBytes(to: buffer)
         initializedCount = count
       }
       return DatabaseItem(id: id, vector: vector)
@@ -223,7 +212,8 @@ public final actor CardImageHashSyncManager: CardImageHashSyncManagable {
       
       let frameworkBundle = Bundle(for: BundleFinder.self)
       var targetDBPath: URL? = nil
-      var targetManifestPath: URL? = nil
+      // No manifest ships in the bundle today, so the copy below is inert.
+      let targetManifestPath: URL? = nil
       
       if let rootURL = frameworkBundle.url(forResource: "MTG_Hashes_Compressed", withExtension: "lzfse") {
         targetDBPath = rootURL

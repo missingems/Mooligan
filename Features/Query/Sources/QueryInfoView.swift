@@ -79,8 +79,7 @@ private extension QueryType.Section {
 }
 
 public extension QueryType {
-  // Explicitly mark the nested enum as public
-  public enum Section: Identifiable, Sendable {
+  enum Section: Identifiable, Sendable {
     case titleDetail(title: String, detail: String?)
     case titleIcon(title: String, iconURL: URL?)
     case titleCode(title: String, code: String)
@@ -99,8 +98,7 @@ public extension QueryType {
     }
   }
   
-  // Explicitly mark the property as public
-  public var sections: [Section] {
+  var sections: [Section] {
     switch self {
     case .search:
       return []

@@ -10,7 +10,9 @@ public struct CardPagerView: View {
   public var body: some View {
     ScrollView(.horizontal, showsIndicators: false) {
       LazyHStack(spacing: 0) {
-        ForEach(store.scope(state: \.cards, action: \.cards), id: \.state.id) { childStore in
+        // Eagerly materialised: LazyHStack indexes its children off the main
+        // actor, and _StoreCollection's subscript requires main.
+        ForEach(Array(store.scope(state: \.cards, action: \.cards)), id: \.state.id) { childStore in
           CardDetailView(store: childStore)
             .containerRelativeFrame(.horizontal)
             .geometryGroup()
