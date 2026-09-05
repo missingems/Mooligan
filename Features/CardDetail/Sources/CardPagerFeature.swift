@@ -35,6 +35,7 @@ public struct CardPagerFeature: Sendable {
   public enum Action: BindableAction, Equatable, Sendable {
     case binding(BindingAction<State>)
     case cards(IdentifiedActionOf<CardDetailFeature>)
+    case currentCardSettled(id: UUID?)
     case showRulings(PresentationAction<RulingFeature.Action>)
     case viewAppeared
     case setRemainingCards(IdentifiedArrayOf<CardDetailFeature.State>)
@@ -48,22 +49,44 @@ public struct CardPagerFeature: Sendable {
         return .none
         
       case .viewAppeared:
-        guard state.cards.count < state.rawCardDetails.count else { return .none }
+        let loadInitialCard: Effect<Action> = .send(.currentCardSettled(id: state.selectedId))
+        
+        guard state.cards.count < state.rawCardDetails.count else { return loadInitialCard }
         
         let rawDetails = state.rawCardDetails
         let query = state.queryType
         
-        return .run { send in
-          let mapped = rawDetails.map { info in
-            CardDetailFeature.State(
-              card: info.card,
-              displayableCardImage: info.displayableCardImage,
-              queryType: query
-            )
+        return .merge(
+          loadInitialCard,
+          .run { send in
+            let mapped = rawDetails.map { info in
+              CardDetailFeature.State(
+                card: info.card,
+                displayableCardImage: info.displayableCardImage,
+                queryType: query
+              )
+            }
+            
+            await send(.setRemainingCards(IdentifiedArray(uniqueElements: mapped)))
           }
-          
-          await send(.setRemainingCards(IdentifiedArray(uniqueElements: mapped)))
+        )
+        
+      case let .currentCardSettled(id):
+        guard
+          let id,
+          let card = state.cards[id: id]?.content.card
+        else {
+          return .none
         }
+        
+        return .send(
+          .cards(
+            .element(
+              id: id,
+              action: .viewAppeared(initialAction: .fetchAdditionalInformation(card: card))
+            )
+          )
+        )
         
       case var .setRemainingCards(fullArray):
         for existingCard in state.cards {

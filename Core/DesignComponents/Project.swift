@@ -27,6 +27,16 @@ let project = Project(
         .project(target: "Networking", path: "../../Core/Networking"),
         .project(target: "Featurist", path: "../../Core/Featurist"),
       ]
-    )
+    ),
+    .target(
+      name: "DesignComponentsTests",
+      destinations: .iOS,
+      product: .unitTests,
+      bundleId: "com.missingems.DesignComponentsTests",
+      infoPlist: .default,
+      sources: ["Tests/**"],
+      resources: [],
+      dependencies: [.target(name: "DesignComponents")]
+    ),
   ]
 )

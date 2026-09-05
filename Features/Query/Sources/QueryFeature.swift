@@ -10,7 +10,7 @@ public struct QueryFeature: Sendable {
   @Dependency(\.cardQueryRequestClient) var client
   
   @ObservableState
-  public struct State: Sendable {
+  public struct State: Equatable, Sendable {
     public enum Mode: Equatable, Sendable {
       case placeholder
       case data
@@ -79,7 +79,7 @@ public struct QueryFeature: Sendable {
     let availableSortOrders: [SortDirection]
     var query: SearchQuery
     var scrollPosition: ScrollPosition
-    var numberOfColumns: Double = 4
+    var numberOfColumns: Double = 2
     let searchPrompt: String
     public let id: UUID
     var isSearchExpanded: Bool

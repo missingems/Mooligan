@@ -12,22 +12,30 @@ public enum TextElementParser {
     var currentToken = ""
     var insideToken = false
     
+    func flushText() {
+      if !currentText.isEmpty {
+        elements.append(.text(currentText, isItalic: isItalic, isKeyword: isKeyword))
+        currentText = ""
+      }
+    }
+    
     for char in text {
       if char == "<" {
+        flushText()
         isKeyword = true
       } else if char == ">" {
+        flushText()
         isKeyword = false
       } else if char == "(" {
+        flushText()
         isItalic = true
         elements.append(.text("(", isItalic: isItalic, isKeyword: isKeyword))
       } else if char == ")" {
+        flushText()
         elements.append(.text(")", isItalic: isItalic, isKeyword: isKeyword))
         isItalic = false
       } else if char == "{" {
-        if !currentText.isEmpty {
-          elements.append(.text(currentText, isItalic: isItalic, isKeyword: isKeyword))
-          currentText = ""
-        }
+        flushText()
         insideToken = true
       } else if char == "}" && insideToken {
         insideToken = false
@@ -36,14 +44,12 @@ public enum TextElementParser {
       } else if insideToken {
         currentToken.append(char)
       } else {
-        elements.append(.text("\(char)", isItalic: isItalic, isKeyword: isKeyword))
+        currentText.append(char)
       }
     }
     
-    if !currentText.isEmpty {
-      elements.append(.text(currentText, isItalic: isItalic, isKeyword: isKeyword))
-    }
-     
+    flushText()
+    
     return elements
   }
 }
