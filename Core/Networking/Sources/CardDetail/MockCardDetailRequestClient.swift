@@ -1,6 +1,7 @@
 import Foundation
 import ScryfallKit
 
+#if DEBUG
 public extension Card {
   
   static func mock(
@@ -34,12 +35,14 @@ public extension Card {
         gladiator: nil,
         oathbreaker: nil,
         standardbrawl: nil,
+        competitivebrawl: nil,
         alchemy: nil,
         paupercommander: nil,
         duel: nil,
         oldschool: nil,
         premodern: nil,
-        predh: nil
+        predh: nil,
+        tlr: nil
       ),
       name: "",
       oversized: false,
@@ -81,6 +84,7 @@ public extension Card {
       setType: .alchemy,
       setUri: "",
       set: "FDN",
+      setId: UUID(uuidString: "A1B2C3D4-0000-4000-8000-000000000001")!,
       storySpotlight: false,
       textless: false,
       variation: false
@@ -164,4 +168,4 @@ public struct MockCardDetailRequestClient: MagicCardDetailRequestClient {
     )
   }
 }
-
+#endif
