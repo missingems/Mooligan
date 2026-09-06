@@ -15,7 +15,10 @@ let project = Project(
       deploymentTargets: Module.deploymentTargets,
       infoPlist: .extendingDefault(
         with: [
-          "UILaunchStoryboardName": "LaunchScreen.storyboard",
+          // Modern launch screen (deployment target is iOS 27) — an empty dict
+          // is the plain default screen and satisfies the iPad-multitasking
+          // requirement without shipping a storyboard.
+          "UILaunchScreen": .dictionary([:]),
           "NSCameraUsageDescription": .string("We need camera access to scan your cards."),
           "BGTaskSchedulerPermittedIdentifiers": .array(["com.missingems.mooligan.bulkSync"]),
           "UIBackgroundModes": .array(["processing"]),
