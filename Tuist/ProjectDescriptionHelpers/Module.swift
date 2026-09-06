@@ -34,7 +34,17 @@ public enum Module {
 
   public static let settings: Settings = .settings(base: baseSettings)
 
-  static let testSettings: Settings = .settings(
+  /// Defaults for the app's version and build number.
+  ///
+  /// Local builds get `1.0.0 (1)`. CI overrides both on the `xcodebuild`
+  /// command line: `MARKETING_VERSION` from the latest `vX.Y.Z` tag,
+  /// `CURRENT_PROJECT_VERSION` from the commit count since that tag.
+  public static let appVersioning: SettingsDictionary = [
+    "MARKETING_VERSION": "1.0.0",
+    "CURRENT_PROJECT_VERSION": "1",
+  ]
+
+  public static let testSettings: Settings = .settings(
     base: baseSettings.merging(["CODE_COVERAGE_ENABLED": "YES"]) { _, new in new }
   )
 }
@@ -156,9 +166,68 @@ public extension Project {
   }
 }
 
+// MARK: - Every tested first-party module
+
+public extension Module {
+  /// Feature / core modules that ship a test bundle, as (manifest-relative
+  /// path, module name). The test bundle is always `<name>Tests`.
+  ///
+  /// Drives the app scheme's aggregate test action — add a module here and one
+  /// Cmd-U on the `Mooligan` scheme picks it up.
+  static let testedModules: [(path: String, name: String)] = [
+    ("Features/Browse", "Browse"),
+    ("Features/Query", "Query"),
+    ("Features/CardDetail", "CardDetail"),
+    ("Features/CardScanner", "CardScanner"),
+    ("Core/Networking", "Networking"),
+    ("Core/DesignComponents", "DesignComponents"),
+  ]
+}
+
 // MARK: - Scheme factories
 
 extension Scheme {
+  /// The one scheme to run in Xcode — a **workspace** scheme (it references
+  /// targets across projects, which a project scheme can't). Its test action
+  /// builds and runs *every* test target: `MooliganTests` (logic),
+  /// `MooliganSnapshotTests`, `MooliganUITests`, and every module's
+  /// `<name>Tests` bundle. One Cmd-U gives whole-project coverage.
+  ///
+  /// Belongs in `Workspace.swift`, not a `Project.swift`.
+  public static func mooliganApp() -> Scheme {
+    func app(_ target: String) -> TargetReference {
+      .project(path: .relativeToManifest("."), target: target)
+    }
+    func module(_ path: String, _ target: String) -> TargetReference {
+      .project(path: .relativeToManifest(path), target: target)
+    }
+
+    let moduleTestables = Module.testedModules.map { mod in
+      TestableTarget.testableTarget(
+        target: module(mod.path, "\(mod.name)Tests"),
+        parallelization: .swiftTestingOnly,
+        isRandomExecutionOrdering: true
+      )
+    }
+
+    let coverageTargets: [TargetReference] =
+      [app("Mooligan")] + Module.testedModules.map { module($0.path, $0.name) }
+
+    return .scheme(
+      name: "Mooligan",
+      buildAction: .buildAction(targets: [app("Mooligan")]),
+      testAction: .targets(
+        [
+          .testableTarget(target: app("MooliganTests"), parallelization: .swiftTestingOnly),
+          .testableTarget(target: app("MooliganSnapshotTests"), parallelization: .swiftTestingOnly),
+          .testableTarget(target: app("MooliganUITests")),
+        ] + moduleTestables,
+        options: .options(coverage: true, codeCoverageTargets: coverageTargets)
+      ),
+      runAction: .runAction(executable: app("Mooligan"))
+    )
+  }
+
   static func moduleScheme(_ name: String) -> Scheme {
     .scheme(
       name: name,

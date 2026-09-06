@@ -22,5 +22,8 @@ let package = Package(
     .package(url: "https://github.com/markiv/SwiftUI-Shimmer", from: "1.5.1"),
     .package(url: "https://github.com/nikstar/VariableBlur.git", .upToNextMajor(from: "1.3.0")),
     .package(url: "https://github.com/pointfreeco/sqlite-data", from: "1.12.0"),
+    // Test-only: SwiftUI view rendering for MooliganSnapshotTests. Only the
+    // `SnapshotTesting` product is used (no macros), so it adds no swift-syntax.
+    .package(url: "https://github.com/pointfreeco/swift-snapshot-testing", from: "1.18.0"),
   ]
 )
