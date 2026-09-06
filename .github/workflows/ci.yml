@@ -1,5 +1,8 @@
 name: CI
 
+# PRs and pushes run the full test suite + a Release build.
+# A push to `main` additionally archives and ships the build to TestFlight
+# (the `deploy` job), versioned from the latest `vX.Y.Z` tag.
 on:
   push:
     branches: [main]
@@ -8,7 +11,9 @@ on:
 
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  # Supersede in-progress PR runs, but never a `main` run — that one may be
+  # mid-deploy.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   SIMULATOR_NAME: iPhone 17 Pro
@@ -17,9 +22,9 @@ jobs:
   test:
     name: Build & test
     # The project pins iOS 27 as its deployment target and uses unguarded iOS 27
-    # APIs (glassEffect, tabBarMinimizeBehavior, scrollEdgeEffect), so it needs the
-    # iOS 27 SDK. `xcode-27` is currently the only hosted image that ships it —
-    # macos-26 tops out at Xcode 26.6. It is a preview image; see README notes.
+    # APIs, so it needs the iOS 27 SDK. `xcode-27` is currently the only hosted
+    # image that ships it — macos-26 tops out at Xcode 26.6. It is a preview
+    # image; see README notes.
     runs-on: xcode-27
     timeout-minutes: 60
 
@@ -58,8 +63,13 @@ jobs:
           if [ -n "$udid" ]; then xcrun simctl boot "$udid" || true; fi
           xcrun simctl list devices booted
 
-      - name: Test
-        run: tuist test --device "$SIMULATOR_NAME"
+      # The `Mooligan` scheme aggregates every test target: the per-module *Tests
+      # bundles, MooliganTests (logic) and MooliganSnapshotTests (renders views
+      # and diffs them against Mooligan/SnapshotTests/__Snapshots__).
+      # `--skip-ui-tests` drops MooliganUITests — it runs in the separate
+      # `ui-test` job, which is slower and flakier so it gets its own retries.
+      - name: Test (unit + snapshot)
+        run: tuist test Mooligan --device "$SIMULATOR_NAME" --skip-ui-tests
 
       - name: Generate project
         run: tuist generate --no-open
@@ -83,5 +93,196 @@ jobs:
           path: |
             ~/Library/Developer/Xcode/DerivedData/**/Logs/Test/*.xcresult
             ~/.local/state/tuist/**/logs.txt
+          retention-days: 7
+          if-no-files-found: ignore
+
+  ui-test:
+    name: UI tests
+    needs: test
+    runs-on: xcode-27
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install pinned tools
+        uses: jdx/mise-action@v2
+
+      - name: Cache SwiftPM clones
+        uses: actions/cache@v4
+        with:
+          path: ~/Library/Caches/org.swift.swiftpm
+          key: swiftpm-${{ hashFiles('Tuist/Package.resolved') }}
+          restore-keys: swiftpm-
+
+      - name: Resolve dependencies
+        run: tuist install
+
+      - name: Boot simulator
+        run: |
+          udid=$(xcrun simctl list devices available --json \
+            | python3 -c "import json,sys;d=json.load(sys.stdin)['devices'];print(next((v['udid'] for k,vs in d.items() if 'iOS-27' in k for v in vs if v['name']=='${SIMULATOR_NAME}'),''))")
+          if [ -n "$udid" ]; then xcrun simctl boot "$udid" || true; fi
+          xcrun simctl list devices booted
+
+      # The app launches with -uiTestMode (see Mooligan/Sources/UITestSupport.swift),
+      # so these run fully offline against mock data. Retry flakes in place rather
+      # than failing the job on the first miss.
+      - name: UI tests
+        run: |
+          tuist test Mooligan \
+            --device "$SIMULATOR_NAME" \
+            --test-targets MooliganUITests \
+            --no-selective-testing \
+            -- -retry-tests-on-failure -test-iterations 3
+
+      - name: Upload test results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-test-results
+          path: |
+            ~/Library/Developer/Xcode/DerivedData/**/Logs/Test/*.xcresult
+            ~/.local/state/tuist/**/logs.txt
+          retention-days: 7
+          if-no-files-found: ignore
+
+  deploy:
+    name: Archive & upload to TestFlight
+    needs: [test, ui-test]
+    # Only from main, on a merge (or a manual re-run of the workflow on main).
+    if: >-
+      github.ref == 'refs/heads/main' &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: xcode-27
+    timeout-minutes: 90
+    # Never cancel an in-flight upload; queue instead. A cancelled altool run can
+    # leave a half-uploaded build that App Store Connect rejects the retry of.
+    concurrency:
+      group: testflight
+      cancel-in-progress: false
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Full history + tags: the build number is the commit count since the
+          # latest release tag.
+          fetch-depth: 0
+
+      - name: Install pinned tools
+        uses: jdx/mise-action@v2
+
+      - name: Cache SwiftPM clones
+        uses: actions/cache@v4
+        with:
+          path: ~/Library/Caches/org.swift.swiftpm
+          key: swiftpm-${{ hashFiles('Tuist/Package.resolved') }}
+          restore-keys: swiftpm-
+
+      # Marketing version = latest vX.Y.Z tag (the `v` is optional).
+      # Build number  = commits since that tag, + 1, so the tagged commit is
+      # build 1 and every later merge bumps it. Resets when a new tag lands,
+      # which is fine — TestFlight only requires the build to increase *within*
+      # a marketing version.
+      - name: Compute version
+        id: version
+        run: |
+          set -euo pipefail
+          git fetch --tags --force --prune
+          tag=$(git tag --list --sort=-v:refname \
+            | grep -E '^v?[0-9]+\.[0-9]+\.[0-9]+$' | head -1 || true)
+          if [ -z "$tag" ]; then
+            marketing="0.1.0"
+            build=$(git rev-list --count HEAD)
+            echo "No release tag found — using $marketing ($build)."
+          else
+            marketing="${tag#v}"
+            build=$(( $(git rev-list --count "${tag}..HEAD") + 1 ))
+            echo "Latest tag $tag → $marketing ($build)."
+          fi
+          echo "marketing=$marketing" >> "$GITHUB_OUTPUT"
+          echo "build=$build" >> "$GITHUB_OUTPUT"
+
+      - name: Resolve dependencies
+        run: tuist install
+
+      - name: Generate project
+        run: tuist generate --no-open
+
+      # An App Store Connect API key lets xcodebuild both fetch signing assets and
+      # upload, so no certificate or profile has to be stored in the repository.
+      - name: Write App Store Connect API key
+        env:
+          KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          KEY_P8: ${{ secrets.APP_STORE_CONNECT_KEY_P8 }}
+        run: |
+          mkdir -p ~/.appstoreconnect/private_keys
+          printf '%s' "$KEY_P8" > ~/.appstoreconnect/private_keys/AuthKey_${KEY_ID}.p8
+
+      - name: Archive
+        env:
+          TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          MARKETING_VERSION: ${{ steps.version.outputs.marketing }}
+          CURRENT_PROJECT_VERSION: ${{ steps.version.outputs.build }}
+        run: |
+          xcodebuild archive \
+            -workspace Mooligan.xcworkspace \
+            -scheme Mooligan \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath build/Mooligan.xcarchive \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath ~/.appstoreconnect/private_keys/AuthKey_${KEY_ID}.p8 \
+            -authenticationKeyID "$KEY_ID" \
+            -authenticationKeyIssuerID "$ISSUER_ID" \
+            DEVELOPMENT_TEAM="$TEAM_ID" \
+            MARKETING_VERSION="$MARKETING_VERSION" \
+            CURRENT_PROJECT_VERSION="$CURRENT_PROJECT_VERSION"
+
+      # `destination = upload` in the export options makes -exportArchive hand the
+      # .ipa straight to App Store Connect — no separate altool step.
+      - name: Export & upload to TestFlight
+        env:
+          TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+        run: |
+          cat > build/ExportOptions.plist <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>destination</key><string>upload</string>
+            <key>teamID</key><string>${TEAM_ID}</string>
+            <key>uploadSymbols</key><true/>
+            <key>manageAppVersionAndBuildNumber</key><false/>
+          </dict>
+          </plist>
+          PLIST
+          xcodebuild -exportArchive \
+            -archivePath build/Mooligan.xcarchive \
+            -exportPath build/export \
+            -exportOptionsPlist build/ExportOptions.plist \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath ~/.appstoreconnect/private_keys/AuthKey_${KEY_ID}.p8 \
+            -authenticationKeyID "$KEY_ID" \
+            -authenticationKeyIssuerID "$ISSUER_ID"
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "### TestFlight" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Version **${{ steps.version.outputs.marketing }} (${{ steps.version.outputs.build }})**" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload archive
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xcarchive
+          path: build/Mooligan.xcarchive
           retention-days: 7
           if-no-files-found: ignore
