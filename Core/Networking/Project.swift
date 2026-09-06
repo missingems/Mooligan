@@ -6,6 +6,12 @@ let project = Project.core(
   dependencies: [
     .external(name: "ScryfallKit"),
     .external(name: "ComposableArchitecture"),
+    .external(name: "SQLiteData"),
     .project(target: "Featurist", path: "../../Core/Featurist"),
+  ],
+  testDependencies: [
+    .external(name: "ScryfallKit"),
+    .external(name: "ComposableArchitecture"),
+    .external(name: "SQLiteData"),
   ]
 )

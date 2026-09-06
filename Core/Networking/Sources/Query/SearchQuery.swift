@@ -151,9 +151,16 @@ public struct SearchQuery: Equatable, Hashable, Sendable {
     return filters
   }
   
-  public mutating func next() -> Self {
-    page += 1
-    return self
+  public func nextPage() -> Self {
+    var copy = self
+    copy.page += 1
+    return copy
+  }
+  
+  public func first() -> Self {
+    var copy = self
+    copy.page = 1
+    return copy
   }
 }
 

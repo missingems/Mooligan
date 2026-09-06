@@ -1,18 +1,16 @@
+#if DEBUG
 import Foundation
 import ScryfallKit
 
 public struct MockGameSetRequestClient: GameSetRequestClient {
-  public func getSets(queryType: GameSetQueryType) async throws -> ([ScryfallKit.ScryfallClient.SetsSection], [ScryfallKit.MTGSet]) {
-    (MockGameSetRequestClient.mocksSetSections, MockGameSetRequestClient.mockSets)
+  public init() {}
+
+  public func getSets(
+    queryType: GameSetQueryType
+  ) async throws -> ([ScryfallClient.SetsSection], [MTGSet]) {
+    (Self.mocksSetSections, Self.mockSets)
   }
-  
-  nonisolated(unsafe) public static let mocksSetSections: [ScryfallKit.ScryfallClient.SetsSection] = [
-    .init(isUpcomingSet: true, displayDate: "Latest", sets: Array(mockSets.prefix(2))),
-    .init(isUpcomingSet: true, displayDate: "Older", sets: Array(mockSets.suffix(3))),
-    .init(isUpcomingSet: false, displayDate: "Older", sets: Array(mockSets.suffix(3))),
-    .init(isUpcomingSet: false, displayDate: "Older", sets: Array(mockSets.suffix(3))),
-  ]
-  
+
   public static let mockSets: [MTGSet] = [
     MTGSet(
       id: UUID(), code: "FIN", mtgoCode: nil, tcgplayerId: 0,
@@ -70,8 +68,12 @@ public struct MockGameSetRequestClient: GameSetRequestClient {
       searchUri: "https://api.scryfall.com/cards/search?order=set&q=e%3Alci"
     )
   ]
-  
-  public func getAllSets() async throws -> [MTGSet] {
-    MockGameSetRequestClient.mockSets
-  }
+
+  nonisolated(unsafe) public static let mocksSetSections: [ScryfallClient.SetsSection] = [
+    .init(isUpcomingSet: true, displayDate: "Latest", sets: Array(mockSets.prefix(2))),
+    .init(isUpcomingSet: true, displayDate: "Older", sets: Array(mockSets.suffix(3))),
+    .init(isUpcomingSet: false, displayDate: "Older", sets: Array(mockSets.suffix(3))),
+    .init(isUpcomingSet: false, displayDate: "Older", sets: Array(mockSets.suffix(3))),
+  ]
 }
+#endif

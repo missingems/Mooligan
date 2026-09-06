@@ -4,6 +4,13 @@ import ScryfallKit
 
 public protocol GameSetRequestClient: Sendable {
   func getSets(queryType: GameSetQueryType) async throws -> ([ScryfallClient.SetsSection], [MTGSet])
+  func getSets(queryType: GameSetQueryType, policy: CachePolicy) async throws -> ([ScryfallClient.SetsSection], [MTGSet])
+}
+
+public extension GameSetRequestClient {
+  func getSets(queryType: GameSetQueryType, policy: CachePolicy) async throws -> ([ScryfallClient.SetsSection], [MTGSet]) {
+    try await getSets(queryType: queryType)
+  }
 }
 
 public enum GameSetQueryType: Equatable, Sendable {
@@ -12,9 +19,11 @@ public enum GameSetQueryType: Equatable, Sendable {
 }
 
 public enum GameSetRequestClientKey: DependencyKey {
-  public static let liveValue: any GameSetRequestClient = ScryfallClient()
+  public static var liveValue: any GameSetRequestClient { CachedGameSetRequestClient() }
+#if DEBUG
   public static let previewValue: any GameSetRequestClient = MockGameSetRequestClient()
   public static let testValue: any GameSetRequestClient = MockGameSetRequestClient()
+#endif
 }
 
 public extension DependencyValues {
@@ -32,7 +41,7 @@ extension ScryfallClient: GameSetRequestClient {
     public let sets: [MTGSet]
   }
   
-  private static func filteredAndFoldedSets(from sets: [MTGSet]) -> [Folder<MTGSet>] {
+  static func filteredAndFoldedSets(from sets: [MTGSet]) -> [Folder<MTGSet>] {
     return sets.filter { !$0.digital }
       .folded()
       .filter {
@@ -40,7 +49,7 @@ extension ScryfallClient: GameSetRequestClient {
       }
   }
   
-  private static func makeSections(from folders: [Folder<MTGSet>]) -> [SetsSection] {
+  static func makeSections(from folders: [Folder<MTGSet>]) -> [SetsSection] {
     let grouped = Dictionary(grouping: folders) { $0.model.date }
     return grouped.keys.sorted(by: >).compactMap { date in
       grouped[date].map { sets in
@@ -59,25 +68,29 @@ extension ScryfallClient: GameSetRequestClient {
     switch queryType {
     case .all:
       let sets = try await getSets().data
-      return (Self.makeSections(from: Self.filteredAndFoldedSets(from: sets)), sets)
+      return (Self.sections(from: sets), sets)
       
     case let .name(name, existingSets):
       let sets = existingSets.isEmpty ? try await getSets().data : existingSets
-      let folded = Self.filteredAndFoldedSets(from: sets)
-      
-      var filteredSets = folded.filter { folder in
-        let parentContainsName = folder.model.name.range(of: name, options: .caseInsensitive) != nil
-        let childContainsName = folder.folders.flatMap { $0.flattened() }
-          .contains { $0.name.range(of: name, options: .caseInsensitive) != nil }
-        return parentContainsName || childContainsName
-      }
-      
-      if filteredSets.isEmpty {
-        filteredSets = folded
-      }
-      
-      return (Self.makeSections(from: filteredSets), sets)
+      return (Self.sections(from: sets, matching: name), sets)
     }
+  }
+  
+  static func sections(from sets: [MTGSet]) -> [SetsSection] {
+    makeSections(from: filteredAndFoldedSets(from: sets))
+  }
+  
+  static func sections(from sets: [MTGSet], matching name: String) -> [SetsSection] {
+    let folded = filteredAndFoldedSets(from: sets)
+    
+    let filtered = folded.filter { folder in
+      let parentContainsName = folder.model.name.range(of: name, options: .caseInsensitive) != nil
+      let childContainsName = folder.folders.flatMap { $0.flattened() }
+        .contains { $0.name.range(of: name, options: .caseInsensitive) != nil }
+      return parentContainsName || childContainsName
+    }
+    
+    return makeSections(from: filtered.isEmpty ? folded : filtered)
   }
 }
 

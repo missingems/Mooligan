@@ -7,13 +7,20 @@ public struct CardPagerView: View {
   @Bindable var store: StoreOf<CardPagerFeature>
   @State private var scrolledId: UUID?
   
+  private struct Page: Identifiable {
+    let id: UUID
+    let store: StoreOf<CardDetailFeature>
+  }
+  
+  @MainActor private var pages: [Page] {
+    store.scope(state: \.cards, action: \.cards).map { Page(id: $0.state.id, store: $0) }
+  }
+  
   public var body: some View {
     ScrollView(.horizontal, showsIndicators: false) {
       LazyHStack(spacing: 0) {
-        // Eagerly materialised: LazyHStack indexes its children off the main
-        // actor, and _StoreCollection's subscript requires main.
-        ForEach(Array(store.scope(state: \.cards, action: \.cards)), id: \.state.id) { childStore in
-          CardDetailView(store: childStore)
+        ForEach(pages) { page in
+          CardDetailView(store: page.store)
             .containerRelativeFrame(.horizontal)
             .geometryGroup()
         }

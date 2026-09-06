@@ -66,6 +66,9 @@ struct QueryView: View {
       for: .scrollContent
     )
     .scrollDisabled(store.mode.isScrollable == false)
+    .refreshable {
+      await store.send(.refresh).finish()
+    }
     .scrollPosition(.init(get: {
       store.scrollPosition
     }, set:  { _ in }))

@@ -10,21 +10,25 @@ import SwiftUI
 
 @main
 struct MooliganApp: App {
+  private let store: StoreOf<Feature>
+
   init() {
     DesignComponents.Main().setup()
+
+    let store = Store(initialState: Feature.State()) { Feature() }
+    store.send(.setup)
+    self.store = store
   }
   
   var body: some Scene {
     WindowGroup {
-      RootView(
-        store: Store(
-          initialState: Feature.State(
-            sets: .init(selectedSet: nil),
-            scan: .init()
-          )
-        ) {
-          Feature()
-        })
+      RootView(store: store)
+        .task {
+          await store.send(.bulkSync(.task)).finish()
+        }
+    }
+    .backgroundTask(.urlSession(BackgroundBulkDataDownloader.sessionIdentifier)) {
+      await store.send(.bulkSync(.syncRequested(force: true))).finish()
     }
   }
 }
