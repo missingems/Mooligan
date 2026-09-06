@@ -6,7 +6,7 @@ import ProjectDescription
 /// so a change is made once and every project picks it up on the next
 /// `tuist generate`.
 public enum Module {
-  public static let organization = "com.missingems.Mooligan"
+  public static let organization = "com.missingems.mooligan"
 
   public static let destinations: Destinations = .iOS
 

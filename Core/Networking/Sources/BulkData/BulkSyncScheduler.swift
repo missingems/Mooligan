@@ -52,7 +52,7 @@ public struct InertBulkSyncScheduler: BulkSyncScheduling {
 #endif
 
 public final class BackgroundTaskBulkSyncScheduler: BulkSyncScheduling, @unchecked Sendable {
-  public static let taskIdentifier = "com.missingems.Mooligan.bulkSync"
+  public static let taskIdentifier = "com.missingems.mooligan.bulkSync"
 
   private let lock = NSLock()
   private var continuations: [UUID: AsyncStream<BulkSyncTrigger>.Continuation] = [:]

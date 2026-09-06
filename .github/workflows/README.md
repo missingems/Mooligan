@@ -83,21 +83,25 @@ on the `xcodebuild` command line.
 **To cut a release:** `git tag v2.0.0 && git push origin v2.0.0`. The next merge
 to `main` ships under the new version.
 
-### Prerequisites (the `deploy` job fails until these are done)
+### Prerequisites
+
+The `deploy` job's `Verify App Store Connect credentials` step checks all of
+this up front and fails in seconds with a precise message if something is off
+(it prints only shapes, never the secret values).
 
 1. **Signing team.** There is no `DEVELOPMENT_TEAM` in the Tuist manifests; the
    workflow passes it on the command line from `APPLE_TEAM_ID`. Setting it in
    `Module.baseSettings` is the tidier fix.
-2. **App record.** `com.missingems.Mooligan` must exist in App Store Connect
-   with an app record before an upload is accepted.
+2. **App record.** `com.missingems.mooligan` (lowercase — bundle ids are
+   case-sensitive) must exist in App Store Connect before an upload is accepted.
 3. **Four repository secrets:**
 
    | Secret | Where it comes from |
    | --- | --- |
-   | `APPLE_TEAM_ID` | Apple Developer → Membership → Team ID |
-   | `APP_STORE_CONNECT_KEY_ID` | App Store Connect → Users and Access → Integrations → Keys |
-   | `APP_STORE_CONNECT_ISSUER_ID` | same page, above the key list |
-   | `APP_STORE_CONNECT_KEY_P8` | the downloaded `AuthKey_*.p8`, contents pasted whole |
+   | `APPLE_TEAM_ID` | Apple Developer → Membership → Team ID (10 chars) |
+   | `APP_STORE_CONNECT_KEY_ID` | App Store Connect → Users and Access → Integrations → Keys (10 chars) |
+   | `APP_STORE_CONNECT_ISSUER_ID` | same page, above the key list — a **UUID**, not the Team ID |
+   | `APP_STORE_CONNECT_KEY_P8` | `gh secret set APP_STORE_CONNECT_KEY_P8 < AuthKey_*.p8` — pipe the file so the newlines survive |
 
 ## Runner
 
