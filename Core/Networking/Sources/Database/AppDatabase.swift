@@ -3,7 +3,7 @@ import Foundation
 import OSLog
 import SQLiteData
 
-let databaseLogger = Logger(subsystem: "com.missingems.Mooligan", category: "Database")
+let databaseLogger = Logger(subsystem: "com.missingems.mooligan", category: "Database")
 
 public func appDatabase() throws -> any DatabaseWriter {
   @Dependency(\.context) var context

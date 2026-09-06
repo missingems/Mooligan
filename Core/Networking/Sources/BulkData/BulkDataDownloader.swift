@@ -121,7 +121,7 @@ final class BulkDataSessionDelegate: NSObject, URLSessionDownloadDelegate, @unch
 }
 
 public actor BackgroundBulkDataDownloader: BulkDataDownloading {
-  public static let sessionIdentifier = "com.missingems.Mooligan.bulkData"
+  public static let sessionIdentifier = "com.missingems.mooligan.bulkData"
 
   private let staging: BulkDataStagingArea
   private let delegate: BulkDataSessionDelegate

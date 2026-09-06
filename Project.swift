@@ -10,13 +10,14 @@ let project = Project(
       name: "Mooligan",
       destinations: Module.destinations,
       product: .app,
-      bundleId: "com.missingems.Mooligan",
+      // Lowercase — this is the identifier registered in App Store Connect.
+      bundleId: "com.missingems.mooligan",
       deploymentTargets: Module.deploymentTargets,
       infoPlist: .extendingDefault(
         with: [
           "UILaunchStoryboardName": "LaunchScreen.storyboard",
           "NSCameraUsageDescription": .string("We need camera access to scan your cards."),
-          "BGTaskSchedulerPermittedIdentifiers": .array(["com.missingems.Mooligan.bulkSync"]),
+          "BGTaskSchedulerPermittedIdentifiers": .array(["com.missingems.mooligan.bulkSync"]),
           "UIBackgroundModes": .array(["processing"]),
           // Version and build both come from build settings so CI can stamp
           // them on the `xcodebuild` command line without touching the plist.
@@ -42,7 +43,7 @@ let project = Project(
       name: "MooliganTests",
       destinations: Module.destinations,
       product: .unitTests,
-      bundleId: "com.missingems.MooliganTests",
+      bundleId: "com.missingems.mooligan.MooliganTests",
       deploymentTargets: Module.deploymentTargets,
       infoPlist: .default,
       sources: ["Mooligan/Tests/**"],
@@ -62,7 +63,7 @@ let project = Project(
       name: "MooliganSnapshotTests",
       destinations: Module.destinations,
       product: .unitTests,
-      bundleId: "com.missingems.MooliganSnapshotTests",
+      bundleId: "com.missingems.mooligan.MooliganSnapshotTests",
       deploymentTargets: Module.deploymentTargets,
       infoPlist: .default,
       sources: ["Mooligan/SnapshotTests/**"],
@@ -80,7 +81,7 @@ let project = Project(
       name: "MooliganUITests",
       destinations: Module.destinations,
       product: .uiTests,
-      bundleId: "com.missingems.MooliganUITests",
+      bundleId: "com.missingems.mooligan.MooliganUITests",
       deploymentTargets: Module.deploymentTargets,
       infoPlist: .default,
       sources: ["Mooligan/UITests/**"],

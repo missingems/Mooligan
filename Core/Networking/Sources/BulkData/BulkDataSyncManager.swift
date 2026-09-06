@@ -3,7 +3,7 @@ import Foundation
 import OSLog
 import ScryfallKit
 
-let bulkSyncLogger = Logger(subsystem: "com.missingems.Mooligan", category: "BulkDataSync")
+let bulkSyncLogger = Logger(subsystem: "com.missingems.mooligan", category: "BulkDataSync")
 
 public enum BulkSyncOutcome: Equatable, Sendable {
   case skippedNotDue
