@@ -6,12 +6,22 @@ public protocol MagicCardQueryRequestClient: Sendable {
   func queryCards(_ query: SearchQuery) async throws -> ObjectList<Card>
   func queryCard(for id: String) async throws -> Card
   func randomlyQueryErrorCard() async throws -> Card
+
+  func queryCards(_ query: SearchQuery, policy: CachePolicy) async throws -> ObjectList<Card>
+}
+
+public extension MagicCardQueryRequestClient {
+  func queryCards(_ query: SearchQuery, policy: CachePolicy) async throws -> ObjectList<Card> {
+    try await queryCards(query)
+  }
 }
 
 public enum MagicCardQueryRequestClientKey: DependencyKey {
-  public static let liveValue: any MagicCardQueryRequestClient = ScryfallClient()
+  public static var liveValue: any MagicCardQueryRequestClient { CachedMagicCardQueryRequestClient() }
+#if DEBUG
   public static let previewValue: any MagicCardQueryRequestClient = MockCardQueryRequestClient()
   public static let testValue: any MagicCardQueryRequestClient = MockCardQueryRequestClient()
+#endif
 }
 
 public extension DependencyValues {
