@@ -230,6 +230,51 @@ jobs:
           mkdir -p ~/.appstoreconnect/private_keys
           printf '%s' "$KEY_P8" > ~/.appstoreconnect/private_keys/AuthKey_${KEY_ID}.p8
 
+      # Fail in seconds with a precise message if a secret is wrong, instead of
+      # ~15 minutes into the archive. Prints only shapes and pass/fail, never
+      # the secret values.
+      - name: Verify App Store Connect credentials
+        env:
+          KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          set -uo pipefail
+          key="$HOME/.appstoreconnect/private_keys/AuthKey_${KEY_ID}.p8"
+          fail=0
+
+          echo "APP_STORE_CONNECT_KEY_ID    : ${#KEY_ID} chars"
+          [[ "$KEY_ID" =~ ^[A-Z0-9]{10}$ ]] || { echo "::warning::KEY_ID is not the usual 10 upper-alphanumeric chars"; }
+
+          echo "APP_STORE_CONNECT_ISSUER_ID : ${#ISSUER_ID} chars"
+          if [[ "$ISSUER_ID" =~ ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$ ]]; then
+            echo "  -> looks like a UUID (correct)"
+          else
+            echo "::error::APP_STORE_CONNECT_ISSUER_ID is not a UUID. It is the Issuer ID at the top of App Store Connect > Users and Access > Integrations > Keys, NOT the Team ID."
+            fail=1
+          fi
+
+          echo "APPLE_TEAM_ID               : ${#TEAM_ID} chars"
+          [[ "$TEAM_ID" =~ ^[A-Z0-9]{10}$ ]] || echo "::warning::APPLE_TEAM_ID is not the usual 10-char Team ID — is it swapped with the Issuer ID?"
+
+          echo "P8 first line              : $(head -1 "$key")"
+          echo "P8 line count              : $(wc -l < "$key")"
+          if ! head -1 "$key" | grep -q -- "-----BEGIN PRIVATE KEY-----"; then
+            echo "::error::APP_STORE_CONNECT_KEY_P8 is not a PEM key (missing header, or newlines got flattened). Re-set it: gh secret set APP_STORE_CONNECT_KEY_P8 < AuthKey_${KEY_ID}.p8"
+            fail=1
+          fi
+          openssl pkey -in "$key" -noout 2>/dev/null || { echo "::error::openssl cannot parse the private key"; fail=1; }
+
+          [ "$fail" = 0 ] || exit 1
+
+          echo "Calling App Store Connect (altool --list-providers)…"
+          if xcrun altool --list-providers --apiKey "$KEY_ID" --apiIssuer "$ISSUER_ID" 2>&1 | tee /tmp/asc.txt; then
+            echo "App Store Connect API key OK."
+          else
+            echo "::error::App Store Connect rejected the API key (see output above). Verify the Issuer ID, that the key is still active, and that the .p8 matches the Key ID."
+            exit 1
+          fi
+
       - name: Archive
         env:
           TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
