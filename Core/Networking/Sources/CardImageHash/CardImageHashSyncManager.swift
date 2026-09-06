@@ -115,8 +115,8 @@ public final actor CardImageHashSyncManager: CardImageHashSyncManagable {
       initializedCount = elementCount
     }
     
-    let db = self.searchDatabase
-    let totalCards = db.count
+    let searchDatabase = self.searchDatabase
+    let totalCards = searchDatabase.count
     guard totalCards > 0 else { return [] }
     
     // Since we removed sqrt() for speed, we compare against the squared threshold.
@@ -132,7 +132,7 @@ public final actor CardImageHashSyncManager: CardImageHashSyncManagable {
         let endIndex = min(startIndex + chunkSize, totalCards)
         
         // Pass a memory slice (zero-cost) to the background thread
-        let chunk = db[startIndex..<endIndex]
+        let chunk = searchDatabase[startIndex..<endIndex]
         
         group.addTask {
           var localTop5: [MatchResult] = []
