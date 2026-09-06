@@ -146,6 +146,7 @@ struct SetsView: View {
           .padding(.bottom, 3.0)
       }
     }
+    .accessibilityIdentifier("browse.setList")
     .scrollEdgeEffectStyle(.soft, for: .top)
     .toolbarMinimizationBehavior(.onScrollDown, for: .navigationBar)
     .listStyle(.plain)

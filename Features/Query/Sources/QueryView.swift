@@ -66,6 +66,7 @@ struct QueryView: View {
       for: .scrollContent
     )
     .scrollDisabled(store.mode.isScrollable == false)
+    .accessibilityIdentifier("setDetail.cardGrid")
     .refreshable {
       await store.send(.refresh).finish()
     }

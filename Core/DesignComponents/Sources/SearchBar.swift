@@ -5,7 +5,8 @@ public struct SearchBar: View {
   @Binding var isExpanded: Bool
   let isLoading: Bool
   let placeholder: String
-  
+  let fieldIdentifier: String?
+
   @FocusState private var isFocused: Bool
   @ScaledMetric(relativeTo: .body) private var iconWidth: CGFloat = 18
   @ScaledMetric(relativeTo: .body) private var fieldMinHeight: CGFloat = 44
@@ -15,12 +16,14 @@ public struct SearchBar: View {
     text: Binding<String>,
     isExpanded: Binding<Bool>,
     isLoading: Bool,
-    placeholder: String
+    placeholder: String,
+    fieldIdentifier: String? = nil
   ) {
     self._text = text
     self._isExpanded = isExpanded
     self.isLoading = isLoading
     self.placeholder = placeholder
+    self.fieldIdentifier = fieldIdentifier
   }
   
   public var body: some View {
@@ -44,6 +47,7 @@ public struct SearchBar: View {
             .textFieldStyle(.plain)
             .autocorrectionDisabled()
             .submitLabel(.search)
+            .accessibilityIdentifier(fieldIdentifier ?? "searchBar.textField")
           
           if !text.isEmpty {
             Button {
@@ -74,6 +78,7 @@ public struct SearchBar: View {
       }
       .frame(width: circleButtonSize, height: circleButtonSize)
       .glassEffect(.regular.interactive())
+      .accessibilityIdentifier((fieldIdentifier ?? "searchBar").appending(".toggle"))
     }
     .animation(.smooth, value: text.isEmpty)
   }

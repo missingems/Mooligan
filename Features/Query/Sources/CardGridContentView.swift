@@ -21,6 +21,8 @@ struct CardGridContentView: View {
           store.send(.cardFaceToggled(id: cardInfo.id))
         }
       )
+      .accessibilityElement(children: .combine)
+      .accessibilityIdentifier("setDetail.card.\(cardInfo.card.collectorNumber)")
       .onTapGesture {
         store.send(
           .didSelectCard(cardInfo.card, store.queryType)

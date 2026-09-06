@@ -23,6 +23,7 @@ struct ColorTypeItemsView: View {
             .background { Circle().fill(.black).offset(x: -0.75, y: 1) }
         }
       }
+      .accessibilityElement(children: .ignore)
     } content: {
       let options = store.availableColorTypeOptions
       
@@ -40,6 +41,7 @@ struct ColorTypeItemsView: View {
           isSelected: isSelected,
           isPreviousSelected: isPreviousSelected,
           isNextSelected: isNextSelected,
+          identifier: "setDetail.filterOption.\(value.name)",
           action: { store.query.colorIdentities.toggleSelection(for: value) }
         ) {
           value.image
@@ -53,5 +55,6 @@ struct ColorTypeItemsView: View {
         }
       }
     }
+    .accessibilityIdentifier("setDetail.filter.color")
   }
 }

@@ -1,26 +1,24 @@
+import Browse
 import ComposableArchitecture
 import DesignComponents
-import SwiftUI
-import Browse
+import Networking
 import ScryfallKit
+import SwiftUI
 
 @main
 struct BrowseApp: App {
   init() {
     DesignComponents.Main().setup()
   }
-  
+
   var body: some Scene {
     WindowGroup {
-      NavigationView {
+      NavigationStack {
         RootView(
           store: Store(
-            initialState: BrowseFeature.State(selectedSet: nil, sets: []),
-            reducer: {
-              Browse.BrowseFeature()
-            }, withDependencies: { value in
-              value.gameSetRequestClient = ScryfallClient(networkLogLevel: .minimal)
-            }
+            initialState: BrowseFeature.State(),
+            reducer: { Browse.BrowseFeature() },
+            withDependencies: { $0.gameSetRequestClient = ScryfallClient() }
           )
         )
       }

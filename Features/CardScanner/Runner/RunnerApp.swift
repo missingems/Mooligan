@@ -1,19 +1,19 @@
-import SwiftUI
 import CardScanner
 import ComposableArchitecture
 import DesignComponents
+import SwiftUI
 
 @main
 struct RunnerApp: App {
+  init() {
+    DesignComponents.Main().setup()
+  }
+
   var body: some Scene {
     WindowGroup {
-      NavigationView {
+      NavigationStack {
         RootView(
-          store: Store(
-            initialState: CardScannerFeature.State(
-              scannedResult: OCRCardScannedResult(title: "", set: nil, code: nil)
-            )
-          ) {
+          store: Store(initialState: CardScannerFeature.State()) {
             CardScannerFeature()
           }
         )
