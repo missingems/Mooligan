@@ -130,7 +130,9 @@ public struct QueryFeature: Sendable {
     case viewAppeared
     case cardFaceToggled(id: UUID)
     case performSearch
+    case refresh
     case queryFailed(isInitial: Bool)
+    case pagingFailed
     case updatePlaceholderCard(Card?, isInitial: Bool, noInternet: Bool)
     case retry
   }
@@ -183,6 +185,27 @@ public struct QueryFeature: Sendable {
           cancelInFlight: true
         )
         
+      case .refresh:
+        return .run { [query = state.query.first()] send in
+          let result = try await client.queryCards(query, policy: .revalidate)
+          
+          await send(
+            .updateCards(
+              CardDataSource(
+                cards: result.data,
+                hasNextPage: result.hasMore ?? false,
+                total: result.totalCards ?? 0
+              ),
+              query,
+              .data
+            ),
+            animation: .smooth
+          )
+        } catch: { error, send in
+          await send(.queryFailed(isInitial: false), animation: .default)
+        }
+        .cancellable(id: "query", cancelInFlight: true)
+        
       case .didSelectCard:
         return .none
         
@@ -198,7 +221,7 @@ public struct QueryFeature: Sendable {
           return .none
         }
         
-        return .run { [client, dataSource = state.dataSource, query = state.query.next()] send in
+        return .run { [client, dataSource = state.dataSource, query = state.query.nextPage()] send in
           let result = try await client.queryCards(query)
           var dataSource = dataSource
           dataSource.append(cards: result.data)
@@ -206,7 +229,7 @@ public struct QueryFeature: Sendable {
           
           await send(.updateCards(dataSource, query, .data))
         } catch: { error, send in
-          await send(.queryFailed(isInitial: false), animation: .default)
+          await send(.pagingFailed)
         }
           .cancellable(
             id: "loadMoreCardsIfNeeded: \(displayingIndex), for query: \(state.queryType)",
@@ -258,6 +281,10 @@ public struct QueryFeature: Sendable {
         }
         
         state.dataSource.cardDetails[index].displayableCardImage = currentImage.toggled()
+        return .none
+        
+      case .pagingFailed:
+        state.dataSource.hasNextPage = false
         return .none
         
       case let .queryFailed(isInitial):

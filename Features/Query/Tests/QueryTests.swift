@@ -45,14 +45,98 @@ import Testing
     #expect(state.title == "Search")
   }
 
+  @Test func whenPagingFailsOffline_shouldKeepTheCardsAlreadyLoaded() async {
+    let loaded = CardDataSource(cards: [card], hasNextPage: true, total: 400)
+    let store = TestStore(
+      initialState: QueryFeature.State(mode: .data, queryType: .querySet(set, searchQuery))
+    ) {
+      QueryFeature()
+    } withDependencies: {
+      $0.cardQueryRequestClient = MockCardQueryRequestClient(
+        expectedResponse: ObjectList(data: [.mock()]),
+        failingFromPage: 2
+      )
+    }
+
+    await store.send(.updateCards(loaded, searchQuery, .data)) { state in
+      state.dataSource = loaded
+      state.mode = .data
+    }
+
+    await store.send(.loadMoreCardsIfNeeded(displayingIndex: 0))
+    await store.receive(.pagingFailed) { state in
+      state.dataSource.hasNextPage = false
+    }
+
+    #expect(store.state.dataSource.cardDetails.count == 1)
+    #expect(store.state.query.page == 1)
+  }
+
+  @Test func whenPagingSucceeds_shouldAdvanceTheQueryOnlyOnceResultsArrive() async {
+    let loaded = CardDataSource(cards: [card], hasNextPage: true, total: 400)
+    let store = makeStore(mode: .data)
+    var pageTwo = searchQuery
+    pageTwo.page = 2
+
+    await store.send(.updateCards(loaded, searchQuery, .data)) { state in
+      state.dataSource = loaded
+      state.mode = .data
+    }
+
+    await store.send(.loadMoreCardsIfNeeded(displayingIndex: 0))
+
+    var expected = loaded
+    expected.append(cards: [.mock()])
+    expected.hasNextPage = false
+
+    await store.receive(.updateCards(expected, pageTwo, .data)) { state in
+      state.dataSource = expected
+      state.query = pageTwo
+      state.mode = .data
+    }
+  }
+
+  @Test func whenPulledToRefresh_shouldReloadFromTheFirstPage() async {
+    let store = makeStore(mode: .data)
+    let expected = CardDataSource(cards: [card], hasNextPage: false, total: 0)
+
+    await store.send(.refresh)
+
+    await store.receive(.updateCards(expected, searchQuery.first(), .data)) { state in
+      state.dataSource = expected
+      state.mode = .data
+    }
+  }
+
+  @Test func whenRefreshingAfterPaging_shouldResetTheQueryToPageOne() async {
+    var paged = searchQuery
+    paged.page = 4
+    let store = TestStore(
+      initialState: QueryFeature.State(mode: .data, queryType: .querySet(set, paged))
+    ) {
+      QueryFeature()
+    } withDependencies: {
+      $0.cardQueryRequestClient = MockCardQueryRequestClient(
+        expectedResponse: ObjectList(data: [.mock()])
+      )
+    }
+    let expected = CardDataSource(cards: [card], hasNextPage: false, total: 0)
+
+    await store.send(.refresh)
+
+    await store.receive(.updateCards(expected, paged.first(), .data)) { state in
+      state.dataSource = expected
+      state.query = paged.first()
+      state.mode = .data
+    }
+  }
+
   @Test func whenViewAppearedWithAPlaceholder_shouldQueryCards() async {
     let store = makeStore()
     let expected = CardDataSource(cards: [card], hasNextPage: false, total: 0)
 
-    // When
     await store.send(.viewAppeared)
 
-    // Then
     await store.receive(.updateCards(expected, searchQuery, .data)) { state in
       state.dataSource = expected
       state.mode = .data
@@ -69,15 +153,12 @@ import Testing
     let store = makeStore(mode: .data)
     let expected = CardDataSource(cards: [card], hasNextPage: false, total: 0)
 
-    // When
     await store.send(.performSearch)
 
-    // Should show loading first, keeping the existing data source.
     await store.receive(.updateCards(store.state.dataSource, searchQuery, .loading)) { state in
       state.mode = .loading
     }
 
-    // Then the results arrive.
     await store.receive(.updateCards(expected, searchQuery, .data)) { state in
       state.dataSource = expected
       state.mode = .data
@@ -113,16 +194,13 @@ import Testing
     store.exhaustivity = .off
     let firstPage = CardDataSource(cards: [card], hasNextPage: true, total: 2)
 
-    // Given
     await store.send(.updateCards(firstPage, searchQuery, .data)) { state in
       state.dataSource = firstPage
       state.mode = .data
     }
 
-    // When
     await store.send(.loadMoreCardsIfNeeded(displayingIndex: 0))
 
-    // Then the next page is appended.
     await store.receive(\.updateCards)
     await store.finish()
 
@@ -133,13 +211,11 @@ import Testing
     let store = makeStore(mode: .data)
     let onePage = CardDataSource(cards: [card], hasNextPage: false, total: 1)
 
-    // Given
     await store.send(.updateCards(onePage, searchQuery, .data)) { state in
       state.dataSource = onePage
       state.mode = .data
     }
 
-    // When / Then
     await store.send(.loadMoreCardsIfNeeded(displayingIndex: 0))
   }
 
@@ -147,13 +223,11 @@ import Testing
     let store = makeStore(mode: .data)
     let pages = CardDataSource(cards: [card, .mock(id: UUID())], hasNextPage: true, total: 5)
 
-    // Given
     await store.send(.updateCards(pages, searchQuery, .data)) { state in
       state.dataSource = pages
       state.mode = .data
     }
 
-    // When / Then
     await store.send(.loadMoreCardsIfNeeded(displayingIndex: 0))
   }
 
@@ -176,12 +250,10 @@ import Testing
     let store = makeStore(mode: .error(placeholder: nil, isRetrying: false, isInitial: false))
     let expected = CardDataSource(cards: [card], hasNextPage: false, total: 0)
 
-    // When
     await store.send(.retry) { state in
       state.mode = .error(placeholder: nil, isRetrying: true, isInitial: false)
     }
 
-    // Then
     await store.receive(.updateCards(expected, searchQuery, .data)) { state in
       state.dataSource = expected
       state.mode = .data
@@ -192,12 +264,10 @@ import Testing
     let store = makeStore(mode: .data)
     store.exhaustivity = .off
 
-    // When
     await store.send(.retry) { state in
       state.mode = .placeholder
     }
 
-    // Then it re-runs the initial appearance.
     await store.receive(\.viewAppeared)
     await store.finish()
   }
