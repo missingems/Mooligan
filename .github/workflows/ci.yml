@@ -35,6 +35,11 @@ jobs:
       - name: Install pinned tools
         uses: jdx/mise-action@v2
 
+      # Xcode 26+ ships the Metal toolchain as a separate download; the hosted
+      # image omits it and DesignComponents has a .metal shader.
+      - name: Install Metal toolchain
+        run: xcodebuild -downloadComponent MetalToolchain
+
       # Only the SwiftPM mirror cache, deliberately not Tuist/.build: Tuist restores
       # pins from its own state, and a partially restored .build can resolve to
       # versions that disagree with the committed Package.resolved.
@@ -108,6 +113,9 @@ jobs:
       - name: Install pinned tools
         uses: jdx/mise-action@v2
 
+      - name: Install Metal toolchain
+        run: xcodebuild -downloadComponent MetalToolchain
+
       - name: Cache SwiftPM clones
         uses: actions/cache@v4
         with:
@@ -171,6 +179,9 @@ jobs:
 
       - name: Install pinned tools
         uses: jdx/mise-action@v2
+
+      - name: Install Metal toolchain
+        run: xcodebuild -downloadComponent MetalToolchain
 
       - name: Cache SwiftPM clones
         uses: actions/cache@v4

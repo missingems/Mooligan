@@ -107,6 +107,10 @@ only hosted image that ships it. That image is a **preview** image: if it is
 withdrawn before Xcode 27 reaches a GA image, the options are a self-hosted
 runner or lowering the deployment target.
 
+Every job runs `xcodebuild -downloadComponent MetalToolchain` first — Xcode 26+
+ships the Metal toolchain separately and `DesignComponents/Sources/crtDistortion.metal`
+needs it to compile.
+
 ## Caching
 
 Only `~/Library/Caches/org.swift.swiftpm` is cached, deliberately not
