@@ -34,12 +34,20 @@ import ScryfallKit
           await send(.fetchFailed(error.localizedDescription))
         }.cancellable(id: "searchSets", cancelInFlight: true)
         
+      case .refresh:
+        return .run { send in
+          let value = try await client.getSets(queryType: .all, policy: .revalidate)
+          await send(.updateSetSections(sections: value.0, flattened: value.1))
+        } catch: { error, send in
+          await send(.fetchFailed(error.localizedDescription))
+        }.cancellable(id: "searchSets", cancelInFlight: true)
+        
       case let .fetchFailed(errorMessage):
         state.mode = .error(errorMessage)
         return .none
         
       case .retry:
-        state.mode = .placeholder(.init(uniqueElements: MockGameSetRequestClient.mocksSetSections))
+        state.mode = .loading
         
         let query = state.query
         let sets = state.sets
@@ -53,7 +61,7 @@ import ScryfallKit
         }
         
       case .viewAppeared:
-        return if state.mode.isPlaceholder {
+        return if state.mode.isLoading {
           .run { send in
             await send(.searchSets(.all))
           }
@@ -75,7 +83,7 @@ import ScryfallKit
 public extension BrowseFeature {
   @ObservableState struct State: Equatable {
     var sets: [MTGSet] = []
-    var mode: Mode = .placeholder(.init(uniqueElements: MockGameSetRequestClient.mocksSetSections))
+    var mode: Mode = .loading
     var selectedSet: MTGSet?
     var query = ""
     var queryPlaceholder = String(localized: "Enter set name...")
@@ -89,6 +97,7 @@ public extension BrowseFeature {
     case binding(BindingAction<State>)
     case didSelectSet(MTGSet)
     case searchSets(GameSetQueryType)
+    case refresh
     case fetchFailed(String)
     case retry
     case viewAppeared
@@ -98,13 +107,13 @@ public extension BrowseFeature {
 
 public extension BrowseFeature.State {
   enum Mode: Equatable {
-    case placeholder(IdentifiedArrayOf<ScryfallClient.SetsSection>)
+    case loading
     case data(IdentifiedArrayOf<ScryfallClient.SetsSection>)
     case error(String)
     
-    var isPlaceholder: Bool {
+    var isLoading: Bool {
       switch self {
-      case .placeholder: return true
+      case .loading: return true
       case .data, .error: return false
       }
     }
@@ -112,15 +121,14 @@ public extension BrowseFeature.State {
     var isScrollable: Bool {
       switch self {
       case .data: return true
-      case .placeholder, .error: return false
+      case .loading, .error: return false
       }
     }
     
     var data: IdentifiedArrayOf<ScryfallClient.SetsSection> {
       switch self {
-      case let .placeholder(value): return value
       case let .data(value): return value
-      case .error: return []
+      case .loading, .error: return []
       }
     }
   }

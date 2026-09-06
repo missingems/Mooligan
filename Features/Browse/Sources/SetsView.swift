@@ -41,41 +41,35 @@ struct SetsView: View {
     Group {
       switch store.mode {
       case let .data(sections):
-        setList(sections: sections, isPlaceholder: false, isScrollable: true)
+        setList(sections: sections, isScrollable: true)
         
-      case let .placeholder(sections):
-        setList(sections: sections, isPlaceholder: true, isScrollable: false)
+      case .loading:
+        ProgressView()
+          .controlSize(.large)
+          .frame(maxWidth: .infinity, maxHeight: .infinity)
+          .background(DesignComponentsAsset.backgroundColor.swiftUIColor.ignoresSafeArea())
         
       case let .error(message):
-        ZStack {
-          setList(
-            sections: IdentifiedArrayOf(uniqueElements: MockGameSetRequestClient.mocksSetSections),
-            isPlaceholder: true,
-            isScrollable: false
-          )
-          .blur(radius: 12.0)
-          
-          ContentUnavailableView {
-            Label("Failed to load", systemImage: "wifi.slash")
-          } description: {
-            Text(message)
-          } actions: {
-            Button {
-              let _ = withAnimation {
-                store.send(.retry)
-              }
-            } label: {
-              Text("Retry")
-                .font(.body)
-                .fontWeight(.semibold)
-                .padding(.horizontal, 13.0)
-                .padding(.vertical, 5.0)
-                .glassEffect()
-                .padding(.bottom, 3.0)
+        ContentUnavailableView {
+          Label("Failed to load", systemImage: "wifi.slash")
+        } description: {
+          Text(message)
+        } actions: {
+          Button {
+            let _ = withAnimation {
+              store.send(.retry)
             }
+          } label: {
+            Text("Retry")
+              .font(.body)
+              .fontWeight(.semibold)
+              .padding(.horizontal, 13.0)
+              .padding(.vertical, 5.0)
+              .glassEffect()
+              .padding(.bottom, 3.0)
           }
-          .background(.ultraThinMaterial)
         }
+        .background(DesignComponentsAsset.backgroundColor.swiftUIColor.ignoresSafeArea())
       }
     }
     .task {
@@ -86,7 +80,6 @@ struct SetsView: View {
   @ContentBuilder
   private func setList(
     sections: IdentifiedArrayOf<ScryfallClient.SetsSection>,
-    isPlaceholder: Bool,
     isScrollable: Bool
   ) -> some View {
     List(sections) { value in
@@ -125,7 +118,6 @@ struct SetsView: View {
             ) {
               store.send(.didSelectSet(set))
             }
-            .shimmering(active: isPlaceholder)
             
             if hasSeparator {
               VibrantDivider().padding(.leading, 60.0)
@@ -162,13 +154,10 @@ struct SetsView: View {
       view.searchable(text: $store.query)
     })
     .background(DesignComponentsAsset.backgroundColor.swiftUIColor.ignoresSafeArea())
-    .redacted(reason: isPlaceholder ? .placeholder : [])
-    .scrollDisabled(isPlaceholder)
-    .allowsHitTesting(isPlaceholder == false)
     .contentMargins(.top, 0, for: .scrollContent)
     .listSectionSpacing(13.0)
     .refreshable {
-      await store.send(.searchSets(.all)).finish()
+      await store.send(.refresh).finish()
     }
   }
   
