@@ -1,0 +1,87 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  SIMULATOR_NAME: iPhone 17 Pro
+
+jobs:
+  test:
+    name: Build & test
+    # The project pins iOS 27 as its deployment target and uses unguarded iOS 27
+    # APIs (glassEffect, tabBarMinimizeBehavior, scrollEdgeEffect), so it needs the
+    # iOS 27 SDK. `xcode-27` is currently the only hosted image that ships it —
+    # macos-26 tops out at Xcode 26.6. It is a preview image; see README notes.
+    runs-on: xcode-27
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Installs the tuist version pinned in .mise.toml.
+      - name: Install pinned tools
+        uses: jdx/mise-action@v2
+
+      # Only the SwiftPM mirror cache, deliberately not Tuist/.build: Tuist restores
+      # pins from its own state, and a partially restored .build can resolve to
+      # versions that disagree with the committed Package.resolved.
+      - name: Cache SwiftPM clones
+        uses: actions/cache@v4
+        with:
+          path: ~/Library/Caches/org.swift.swiftpm
+          key: swiftpm-${{ hashFiles('Tuist/Package.resolved') }}
+          restore-keys: swiftpm-
+
+      - name: Report toolchain
+        run: |
+          xcodebuild -version
+          swift --version
+          tuist version
+
+      - name: Resolve dependencies
+        run: tuist install
+
+      # Booting up front keeps the first test bundle from racing a cold simulator.
+      # A failed boot is not fatal — the test run will boot it itself.
+      - name: Boot simulator
+        run: |
+          udid=$(xcrun simctl list devices available --json \
+            | python3 -c "import json,sys;d=json.load(sys.stdin)['devices'];print(next((v['udid'] for k,vs in d.items() if 'iOS-27' in k for v in vs if v['name']=='${SIMULATOR_NAME}'),''))")
+          if [ -n "$udid" ]; then xcrun simctl boot "$udid" || true; fi
+          xcrun simctl list devices booted
+
+      - name: Test
+        run: tuist test --device "$SIMULATOR_NAME"
+
+      - name: Generate project
+        run: tuist generate --no-open
+
+      # Guards the #if DEBUG test doubles: if any production code reaches a mock,
+      # this is the build that fails.
+      - name: Release build
+        run: |
+          xcodebuild build \
+            -workspace Mooligan.xcworkspace \
+            -scheme Mooligan \
+            -configuration Release \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Upload test results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: |
+            ~/Library/Developer/Xcode/DerivedData/**/Logs/Test/*.xcresult
+            ~/.local/state/tuist/**/logs.txt
+          retention-days: 7
+          if-no-files-found: ignore
