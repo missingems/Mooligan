@@ -15,6 +15,8 @@ let project = Project(
         with: [
           "UILaunchStoryboardName": "LaunchScreen.storyboard",
           "NSCameraUsageDescription": .string("We need camera access to scan your cards."),
+          "BGTaskSchedulerPermittedIdentifiers": .array(["com.missingems.Mooligan.bulkSync"]),
+          "UIBackgroundModes": .array(["processing"]),
         ]
       ),
       sources: ["Mooligan/Sources/**"],
@@ -39,7 +41,12 @@ let project = Project(
       infoPlist: .default,
       sources: ["Mooligan/Tests/**"],
       resources: [],
-      dependencies: [.target(name: "Mooligan")]
+      dependencies: [
+        .target(name: "Mooligan"),
+        .project(target: "Networking", path: .relativeToManifest("Core/Networking")),
+        .project(target: "Browse", path: .relativeToManifest("Features/Browse")),
+        .external(name: "ComposableArchitecture"),
+      ]
     ),
   ]
 )
