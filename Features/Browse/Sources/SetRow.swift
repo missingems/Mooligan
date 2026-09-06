@@ -59,6 +59,7 @@ struct SetRow: View {
       }
     )
     .buttonStyle(.sinkableButtonStyle)
+    .accessibilityIdentifier("browse.setRow.\(viewModel.id)")
   }
   
   init(viewModel: ViewModel, _ onSelect: @escaping () -> Void) {

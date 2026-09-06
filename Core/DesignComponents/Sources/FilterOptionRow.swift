@@ -7,14 +7,16 @@ public struct FilterOptionRow<Icon: View>: View {
   let isSelected: Bool
   let isPreviousSelected: Bool
   let isNextSelected: Bool
+  let identifier: String?
   let action: () -> Void
   let icon: () -> Icon
-  
+
   public init(
     title: String,
     isSelected: Bool,
     isPreviousSelected: Bool = false,
     isNextSelected: Bool = false,
+    identifier: String? = nil,
     action: @escaping () -> Void,
     @ViewBuilder icon: @escaping () -> Icon = { EmptyView() }
   ) {
@@ -22,6 +24,7 @@ public struct FilterOptionRow<Icon: View>: View {
     self.isSelected = isSelected
     self.isPreviousSelected = isPreviousSelected
     self.isNextSelected = isNextSelected
+    self.identifier = identifier
     self.action = action
     self.icon = icon
   }
@@ -60,6 +63,7 @@ public struct FilterOptionRow<Icon: View>: View {
       .contentShape(.rect)
     }
     .buttonStyle(.sinkableButtonStyle)
+    .accessibilityIdentifier(identifier ?? "filterOption.\(title)")
     .animation(.smooth, value: isSelected)
     .animation(.smooth, value: isPreviousSelected)
     .animation(.smooth, value: isNextSelected)

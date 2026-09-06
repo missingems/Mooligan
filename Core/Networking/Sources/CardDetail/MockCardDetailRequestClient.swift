@@ -5,7 +5,10 @@ import ScryfallKit
 public extension Card {
   
   static func mock(
-    id: UUID? = UUID(uuidString: "E621E1F8-C36C-495A-93FC-0C247A3E6E5F")
+    id: UUID? = UUID(uuidString: "E621E1F8-C36C-495A-93FC-0C247A3E6E5F"),
+    name: String = "",
+    collectorNumber: String = "",
+    set: String = "FDN"
   ) -> Self {
     Card(
       id: id ?? UUID(),
@@ -44,12 +47,12 @@ public extension Card {
         predh: nil,
         tlr: nil
       ),
-      name: "",
+      name: name,
       oversized: false,
       reserved: false,
       booster: false,
       borderColor: .black,
-      collectorNumber: "",
+      collectorNumber: collectorNumber,
       digital: false,
       finishes: [],
       frame: .future,
@@ -83,7 +86,7 @@ public extension Card {
       )!,
       setType: .alchemy,
       setUri: "",
-      set: "FDN",
+      set: set,
       setId: UUID(uuidString: "A1B2C3D4-0000-4000-8000-000000000001")!,
       storySpotlight: false,
       textless: false,
@@ -93,6 +96,8 @@ public extension Card {
 }
 
 public struct MockCardDetailRequestClient: MagicCardDetailRequestClient {
+  public init() {}
+
   public func getRelatedCardsIfNeeded(of card: ScryfallKit.Card, for type: ScryfallKit.Card.RelatedCard.Component) async throws -> CardDataSource? {
     return nil
   }

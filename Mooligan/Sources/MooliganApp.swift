@@ -13,6 +13,10 @@ struct MooliganApp: App {
   private let store: StoreOf<Feature>
 
   init() {
+    #if DEBUG
+    UITestSupport.prepareIfNeeded()
+    #endif
+
     DesignComponents.Main().setup()
 
     let store = Store(initialState: Feature.State()) { Feature() }

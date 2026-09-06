@@ -23,11 +23,13 @@ public struct CardPagerView: View {
           CardDetailView(store: page.store)
             .containerRelativeFrame(.horizontal)
             .geometryGroup()
+            .accessibilityIdentifier("cardDetail.page.\(page.store.content.card.collectorNumber)")
         }
       }
       .scrollTargetLayout()
     }
     .scrollTargetBehavior(.paging)
+    .accessibilityIdentifier("cardDetail.pager")
     .scrollPosition(id: $scrolledId)
     .scrollEdgeEffectHidden()
     .onScrollPhaseChange { _, newPhase in

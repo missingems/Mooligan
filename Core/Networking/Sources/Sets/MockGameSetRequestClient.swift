@@ -8,7 +8,21 @@ public struct MockGameSetRequestClient: GameSetRequestClient {
   public func getSets(
     queryType: GameSetQueryType
   ) async throws -> ([ScryfallClient.SetsSection], [MTGSet]) {
-    (Self.mocksSetSections, Self.mockSets)
+    switch queryType {
+    case .all:
+      return (Self.mocksSetSections, Self.mockSets)
+
+    case let .name(query, _):
+      let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+      guard trimmed.isEmpty == false else {
+        return (Self.mocksSetSections, Self.mockSets)
+      }
+      let matches = Self.mockSets.filter { $0.name.localizedCaseInsensitiveContains(trimmed) }
+      let sections = [
+        ScryfallClient.SetsSection(isUpcomingSet: false, displayDate: "Results", sets: matches),
+      ]
+      return (sections, matches)
+    }
   }
 
   public static let mockSets: [MTGSet] = [

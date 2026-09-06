@@ -212,6 +212,7 @@ public struct CardDetailView: View {
         }
       })
     }
+    .accessibilityIdentifier("cardDetail.scroll")
     .background {
       ZStack {
         backdrop(for: content.card.getImageURL(type: .normal))

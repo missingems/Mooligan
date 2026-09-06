@@ -22,7 +22,8 @@ struct QueryTopBarView: View {
               text: $store.query.name,
               isExpanded: $store.isSearchExpanded,
               isLoading: store.mode.isLoading,
-              placeholder: store.searchPrompt
+              placeholder: store.searchPrompt,
+              fieldIdentifier: "setDetail.searchField"
             )
             .glassEffectID("searchBar", in: searchMorph)
           }
