@@ -67,7 +67,7 @@ public final class ApolloPriceHistoryClient: PriceHistoryClient, @unchecked Send
   ) async throws -> [MTGGraphQLPriceRow] {
     try await withCheckedThrowingContinuation { continuation in
       apollo.fetch(
-        query: MTGGraphQLAPI.CardPriceHistoryQuery(scryfallId: scryfallID),
+        query: MTGGraphQLAPI.CardPriceHistoryQuery(scryfallId: scryfallID.lowercased()),
         cachePolicy: .returnCacheDataElseFetch
       ) { result in
         switch result {
