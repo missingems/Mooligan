@@ -8,8 +8,8 @@ compatibility_date = "2025-01-01"
 # Deploy with:
 #   npx wrangler deploy
 #
-# Then put the resulting workers.dev (or custom domain) URL into
-# Mooligan/Secrets.xcconfig as MTGGRAPHQL_PROXY_URL.
+# The deployed URL is wired into the app as MTGGraphQLProxyURL in Project.swift.
+# Currently: https://mtggraphql-proxy.mooligan.workers.dev
 
 [observability]
 enabled = true

@@ -70,9 +70,7 @@ Derived/
 **/Tuist/.build
 /.build
 
-### Mooligan secrets ###
-# Proxy URL / any local-only build settings. Never commit an MTGGraphQL token.
-Mooligan/Secrets.xcconfig
+### Price history codegen / proxy — never commit an MTGGraphQL token ###
 Core/Networking/GraphQL/apollo-codegen-config.local.json
 Core/Networking/GraphQL/apollo-ios-cli
 

@@ -17,12 +17,11 @@ public struct MTGGraphQLEndpoint: Sendable {
     self.url = url
   }
 
-  /// Reads `MTGGraphQLProxyURL` from the main bundle's Info.plist, which resolves
-  /// from the `MTGGRAPHQL_PROXY_URL` build setting (see `Mooligan/Secrets.xcconfig`).
-  /// Returns nil rather than a hardcoded host when it is unset — an undefined
-  /// build setting expands to an empty string, and a half-configured build (the
-  /// literal `$(MTGGRAPHQL_PROXY_URL)` left unexpanded) must not become a live
-  /// endpoint either, hence the explicit `https://` requirement.
+  /// Reads `MTGGraphQLProxyURL` from the main bundle's Info.plist (set in the app
+  /// target's manifest — `Project.swift`). Returns nil rather than a hardcoded
+  /// host when it is missing, empty, or left as an unexpanded `$(...)`
+  /// placeholder, hence the explicit `https://` requirement; a nil endpoint
+  /// hides the price-history section instead of pointing it at a bad URL.
   public static func fromBundle(_ bundle: Bundle = .main) -> MTGGraphQLEndpoint? {
     guard
       let raw = (bundle.object(forInfoDictionaryKey: "MTGGraphQLProxyURL") as? String)?
