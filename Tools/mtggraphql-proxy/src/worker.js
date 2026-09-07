@@ -53,6 +53,12 @@ const UUID_RE = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0
 // budget almost entirely untouched no matter how many installs are browsing.
 const CACHE_TTL_SECONDS = 6 * 60 * 60;
 
+// The Cache API's storage is NOT cleared by `wrangler deploy`, so a change to
+// CARD_PRICE_HISTORY (the response shape) would keep serving stale bodies for up
+// to CACHE_TTL_SECONDS. Bump this whenever the query changes — it is part of the
+// cache key, so old entries are abandoned immediately on deploy.
+const CACHE_VERSION = "2";
+
 function json(body, status = 200, extraHeaders = {}) {
   return new Response(JSON.stringify(body), {
     status,
@@ -92,16 +98,23 @@ export default {
     }
 
     // Cache on a synthetic GET key — the Cache API only stores GET responses.
+    // `?nocache` (or `?refresh`) forces a fresh upstream fetch and overwrites the
+    // entry, so a stale body can be cleared without waiting out the TTL.
+    const url = new URL(request.url);
+    const bypassCache =
+      url.searchParams.has("nocache") || url.searchParams.has("refresh");
     const cacheKey = new Request(
-      `https://mtggraphql-proxy.internal/price-history/${scryfallId.toLowerCase()}`,
+      `https://mtggraphql-proxy.internal/v${CACHE_VERSION}/price-history/${scryfallId.toLowerCase()}`,
       { method: "GET" }
     );
     const cache = caches.default;
-    const cached = await cache.match(cacheKey);
-    if (cached) {
-      const hit = new Response(cached.body, cached);
-      hit.headers.set("x-proxy-cache", "HIT");
-      return hit;
+    if (!bypassCache) {
+      const cached = await cache.match(cacheKey);
+      if (cached) {
+        const hit = new Response(cached.body, cached);
+        hit.headers.set("x-proxy-cache", "HIT");
+        return hit;
+      }
     }
 
     const upstream = await fetch(UPSTREAM, {
