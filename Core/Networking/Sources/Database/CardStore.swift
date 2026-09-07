@@ -6,7 +6,8 @@ import SQLiteData
 public struct CardStore: Sendable {
   public static let pageSize = 175
 
-  @Dependency(\.defaultDatabase) private var database
+  // Not `private`: `CardStore+Booster.swift` reads it from an extension.
+  @Dependency(\.defaultDatabase) var database
   @Dependency(\.date.now) private var now
 
   public init() {}

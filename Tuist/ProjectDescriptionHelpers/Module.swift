@@ -179,6 +179,7 @@ public extension Module {
     ("Features/Query", "Query"),
     ("Features/CardDetail", "CardDetail"),
     ("Features/CardScanner", "CardScanner"),
+    ("Features/PackOpening", "PackOpening"),
     ("Core/Networking", "Networking"),
     ("Core/DesignComponents", "DesignComponents"),
   ]

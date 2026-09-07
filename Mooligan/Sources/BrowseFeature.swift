@@ -6,6 +6,7 @@ import ScryfallKit
 import Networking
 import Foundation
 import CardScanner
+import PackOpening
 
 @Reducer
 public struct Feature {
@@ -18,12 +19,14 @@ public struct Feature {
   
   public enum TabInfo: Equatable, CaseIterable, Identifiable {
     case sets
+    case packs
     case scan
     case collection
     
     public var title: String {
       switch self {
       case .sets: return String(localized: "Sets")
+      case .packs: return String(localized: "Packs")
       case .scan: return String(localized: "Scan")
       case .collection: return String(localized: "Collection")
       }
@@ -32,6 +35,7 @@ public struct Feature {
     public var systemIconName: String {
       switch self {
       case .sets: return "text.page"
+      case .packs: return "shippingbox.fill"
       case .scan: return "camera.fill"
       case .collection: return "folder"
       }
@@ -45,6 +49,7 @@ public struct Feature {
     public var selectedTab: TabInfo = .sets
     public var sets: Browse.BrowseFeature.State
     public var scan: CardScannerFeature.State
+    public var packs: PackOpeningFeature.State
     public var bulkSync: BulkSyncFeature.State
     public var selectedSet: MTGSet?
     public var path: StackState<Path.State>
@@ -53,6 +58,7 @@ public struct Feature {
       selectedTab: TabInfo = .sets,
       sets: Browse.BrowseFeature.State = .init(),
       scan: CardScannerFeature.State = .init(),
+      packs: PackOpeningFeature.State = .init(),
       bulkSync: BulkSyncFeature.State = .init(),
       selectedSet: MTGSet? = nil,
       path: StackState<Path.State> = .init()
@@ -60,6 +66,7 @@ public struct Feature {
       self.selectedTab = selectedTab
       self.sets = sets
       self.scan = scan
+      self.packs = packs
       self.bulkSync = bulkSync
       self.selectedSet = selectedSet
       self.path = path
@@ -71,6 +78,7 @@ public struct Feature {
     case setup
     case sets(BrowseFeature.Action)
     case scan(CardScannerFeature.Action)
+    case packs(PackOpeningFeature.Action)
     case bulkSync(BulkSyncFeature.Action)
     case path(StackActionOf<Path>)
     case cardPagerStatePrepared(CardPagerFeature.State)
@@ -87,6 +95,10 @@ public struct Feature {
     
     Scope(state: \.scan, action: \.scan) {
       CardScannerFeature()
+    }
+    
+    Scope(state: \.packs, action: \.packs) {
+      PackOpeningFeature()
     }
     
     Scope(state: \.bulkSync, action: \.bulkSync) {
@@ -127,6 +139,9 @@ public struct Feature {
       return .none
       
     case .scan:
+      return .none
+      
+    case .packs:
       return .none
       
     case .bulkSync:

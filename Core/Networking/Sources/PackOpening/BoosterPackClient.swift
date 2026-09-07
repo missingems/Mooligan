@@ -1,0 +1,123 @@
+import ComposableArchitecture
+import Foundation
+import ScryfallKit
+
+/// Stocks the shelf and rolls packs.
+public protocol BoosterPackClient: Sendable {
+  /// Every set the simulator is willing to sell packs of, newest first.
+  func products() async throws -> [PackProduct]
+
+  /// Rolls one pack. `seed` pins the result, which is what lets a torn-open
+  /// pack survive a state restoration without re-rolling different cards.
+  func open(product: PackProduct, seed: UUID) async throws -> BoosterPack
+}
+
+public extension BoosterPackClient {
+  func open(product: PackProduct) async throws -> BoosterPack {
+    try await open(product: product, seed: UUID())
+  }
+}
+
+public enum BoosterPackClientKey: DependencyKey {
+  public static var liveValue: any BoosterPackClient { LiveBoosterPackClient() }
+
+#if DEBUG
+  public static var previewValue: any BoosterPackClient { MockBoosterPackClient() }
+  public static var testValue: any BoosterPackClient { MockBoosterPackClient() }
+#endif
+}
+
+public extension DependencyValues {
+  var boosterPackClient: any BoosterPackClient {
+    get { self[BoosterPackClientKey.self] }
+    set { self[BoosterPackClientKey.self] = newValue }
+  }
+}
+
+// MARK: - Live
+
+public struct LiveBoosterPackClient: BoosterPackClient {
+  @Dependency(\.gameSetRequestClient) private var setClient
+  @Dependency(\.boosterPoolSource) private var poolSource
+
+  private let cache = BoosterPoolCache()
+
+  public init() {}
+
+  public func products() async throws -> [PackProduct] {
+    let (_, sets) = try await setClient.getSets(queryType: .all)
+
+    return
+      sets
+      .filter(\.sellsBoosters)
+      .sorted { ($0.releasedAt ?? "") > ($1.releasedAt ?? "") }
+      .flatMap { set in
+        set.stockedPackKinds.map { PackProduct(set: set, kind: $0) }
+      }
+  }
+
+  public func open(product: PackProduct, seed: UUID) async throws -> BoosterPack {
+    let pool: BoosterCardPool
+
+    if let cached = await cache.pool(forSet: product.set.code) {
+      pool = cached
+    } else {
+      pool = try await poolSource.pool(forSet: product.set.code)
+      await cache.store(pool, forSet: product.set.code)
+    }
+
+    var generator = SeededRandomNumberGenerator(seed: seed)
+    let cards = BoosterPackRoller.roll(kind: product.kind, from: pool, using: &generator)
+
+    guard cards.isEmpty == false else {
+      throw BoosterPoolSourceError.emptyPool(setCode: product.set.code)
+    }
+
+    return BoosterPack(id: seed, product: product, cards: cards)
+  }
+}
+
+/// Keeps a set's sampled pool for the life of the process.
+///
+/// Opening five packs in a row from the same shelf slot is the common case, and
+/// this turns everything after the first into a pure in-memory roll.
+actor BoosterPoolCache {
+  private var pools: [String: BoosterCardPool] = [:]
+
+  func pool(forSet setCode: String) -> BoosterCardPool? {
+    pools[setCode.lowercased()]
+  }
+
+  func store(_ pool: BoosterCardPool, forSet setCode: String) {
+    pools[setCode.lowercased()] = pool
+  }
+}
+
+// MARK: - Which sets get shelf space
+
+extension MTGSet {
+  /// Sets that were actually sold in boosters. Keeps the machine free of token
+  /// sets, memorabilia, promo dumps and the digital-only releases.
+  var sellsBoosters: Bool {
+    guard digital == false, cardCount >= 60 else { return false }
+
+    return switch setType {
+    case .core, .expansion, .masters, .draftInnovation, .starter, .commander:
+      true
+    default:
+      false
+    }
+  }
+
+  /// Collector boosters only exist for sets from roughly Throne of Eldraine on,
+  /// and draft boosters were retired when Play Boosters arrived in 2024.
+  var stockedPackKinds: [BoosterPackKind] {
+    let year = Int((releasedAt ?? "").prefix(4)) ?? 0
+
+    var kinds: [BoosterPackKind] = []
+    if year >= 2024 { kinds.append(.play) }
+    if year < 2024 || kinds.isEmpty { kinds.append(.draft) }
+    if year >= 2019 { kinds.append(.collector) }
+    return kinds
+  }
+}

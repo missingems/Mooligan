@@ -5,6 +5,7 @@ import ComposableArchitecture
 import Foundation
 import DesignComponents
 import Networking
+import PackOpening
 import Query
 import SwiftUI
 
@@ -64,6 +65,10 @@ struct RootView: View {
           Browse.RootView(store: store.scope(state: \.sets, action: \.sets))
             .navigationTitle(Feature.TabInfo.sets.title)
           
+        case .packs:
+          PackOpening.RootView(store: store.scope(state: \.packs, action: \.packs))
+            .navigationTitle(Feature.TabInfo.packs.title)
+          
         case .collection:
           Text(Feature.TabInfo.collection.title)
             .navigationTitle(Feature.TabInfo.collection.title)
@@ -116,6 +121,14 @@ struct RootView: View {
                 case let .showSetDetail(value):
                   Query.RootView(store: value)
                 }
+              }
+              
+            case .packs:
+              NavigationStack {
+                PackOpening
+                  .RootView(store: store.scope(state: \.packs, action: \.packs))
+                  .navigationTitle(info.title)
+                  .toolbarTitleDisplayMode(.inlineLarge)
               }
               
             case .collection:
