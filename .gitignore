@@ -69,3 +69,11 @@ Derived/
 ### Tuist managed dependencies ###
 **/Tuist/.build
 /.build
+
+### Price history codegen / proxy — never commit an MTGGraphQL token ###
+Core/Networking/GraphQL/apollo-codegen-config.local.json
+Core/Networking/GraphQL/apollo-ios-cli
+
+### mtggraphql-proxy (Cloudflare Worker) ###
+Tools/mtggraphql-proxy/.wrangler/
+Tools/mtggraphql-proxy/node_modules/

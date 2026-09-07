@@ -103,7 +103,13 @@ public struct CardDetailView: View {
           usdEtchedLabel: content.usdEtchedLabel,
           purchaseVendor: PurchaseVendor(purchaseURIs: content.card.purchaseUris)
         )
-        
+
+        PriceHistoryChartView(
+          card: content.card,
+          title: content.priceHistoryLabel,
+          subtitle: content.priceHistorySubtitleLabel
+        )
+
         if let cards = content.variants.state.value {
           HorizontalCardScrollView(
             title: content.variants.title,
