@@ -19,16 +19,23 @@ const ALLOWED_OPERATION = "CardPriceHistory";
 // The single operation this proxy will forward, defined server-side.
 // Mirrors Core/Networking/GraphQL/CardPriceHistory.graphql — keep the two in
 // step. `scryfallId_eq` lives under `identifiers`, not on the filter root.
+//
+// `__typename` is required: the client is Apollo iOS, whose generated response
+// types demand __typename on every object. The proxy rebuilds the query rather
+// than forwarding the client's text, so it must request __typename itself —
+// without it MTGGraphQL omits it and Apollo fails to decode the response.
 const CARD_PRICE_HISTORY = `
 query CardPriceHistory($scryfallId: String!) {
   cards(
     filter: { identifiers: { scryfallId_eq: $scryfallId } }
     page: { take: 1, skip: 0 }
   ) {
+    __typename
     uuid
     name
     setCode
     prices {
+      __typename
       provider
       date
       cardType
@@ -45,6 +52,12 @@ const UUID_RE = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0
 // Prices move once a day upstream, so a long edge cache keeps the shared token
 // budget almost entirely untouched no matter how many installs are browsing.
 const CACHE_TTL_SECONDS = 6 * 60 * 60;
+
+// The Cache API's storage is NOT cleared by `wrangler deploy`, so a change to
+// CARD_PRICE_HISTORY (the response shape) would keep serving stale bodies for up
+// to CACHE_TTL_SECONDS. Bump this whenever the query changes — it is part of the
+// cache key, so old entries are abandoned immediately on deploy.
+const CACHE_VERSION = "2";
 
 function json(body, status = 200, extraHeaders = {}) {
   return new Response(JSON.stringify(body), {
@@ -85,16 +98,23 @@ export default {
     }
 
     // Cache on a synthetic GET key — the Cache API only stores GET responses.
+    // `?nocache` (or `?refresh`) forces a fresh upstream fetch and overwrites the
+    // entry, so a stale body can be cleared without waiting out the TTL.
+    const url = new URL(request.url);
+    const bypassCache =
+      url.searchParams.has("nocache") || url.searchParams.has("refresh");
     const cacheKey = new Request(
-      `https://mtggraphql-proxy.internal/price-history/${scryfallId.toLowerCase()}`,
+      `https://mtggraphql-proxy.internal/v${CACHE_VERSION}/price-history/${scryfallId.toLowerCase()}`,
       { method: "GET" }
     );
     const cache = caches.default;
-    const cached = await cache.match(cacheKey);
-    if (cached) {
-      const hit = new Response(cached.body, cached);
-      hit.headers.set("x-proxy-cache", "HIT");
-      return hit;
+    if (!bypassCache) {
+      const cached = await cache.match(cacheKey);
+      if (cached) {
+        const hit = new Response(cached.body, cached);
+        hit.headers.set("x-proxy-cache", "HIT");
+        return hit;
+      }
     }
 
     const upstream = await fetch(UPSTREAM, {

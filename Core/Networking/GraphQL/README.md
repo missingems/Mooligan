@@ -79,8 +79,13 @@ guessed wrong:
   does filter server-side but keys off the MTGJSON `uuid`, which would cost a
   second round trip from a Scryfall id.
 
-`Tools/mtggraphql-proxy/src/worker.js` rebuilds this same operation server-side —
-keep the two in step when changing it.
+`Tools/mtggraphql-proxy/src/worker.js` rebuilds this same operation server-side
+rather than forwarding the client's query text, so its copy must **explicitly
+request `__typename`** on `cards` and `prices`. Apollo iOS adds `__typename` to
+this document automatically and its generated response types require it, but the
+proxy's hand-written copy does not get that for free — omitting it makes every
+`apollo.fetch` fail to decode with the response silently swallowed by the
+chart's `try?`. Keep the two operations in step when changing either.
 
 ## Rate limits
 
