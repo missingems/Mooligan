@@ -69,3 +69,13 @@ Derived/
 ### Tuist managed dependencies ###
 **/Tuist/.build
 /.build
+
+### Mooligan secrets ###
+# Proxy URL / any local-only build settings. Never commit an MTGGraphQL token.
+Mooligan/Secrets.xcconfig
+Core/Networking/GraphQL/apollo-codegen-config.local.json
+Core/Networking/GraphQL/apollo-ios-cli
+
+### mtggraphql-proxy (Cloudflare Worker) ###
+Tools/mtggraphql-proxy/.wrangler/
+Tools/mtggraphql-proxy/node_modules/

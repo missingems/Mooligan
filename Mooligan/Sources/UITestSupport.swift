@@ -28,6 +28,7 @@ enum UITestSupport {
       $0.gameSetRequestClient = MockGameSetRequestClient()
       $0.cardQueryRequestClient = MockCardQueryRequestClient(uiTestCorpus: 60, pageSize: 12)
       $0.cardDetailRequestClient = MockCardDetailRequestClient()
+      $0.priceHistoryClient = MockPriceHistoryClient()
 
       $0.databasePreparer = InertDatabasePreparer()
       $0.bulkSyncScheduler = InertBulkSyncScheduler()

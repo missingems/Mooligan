@@ -1,0 +1,41 @@
+{
+  "schemaNamespace": "MTGGraphQLAPI",
+  "input": {
+    "operationSearchPaths": ["./**/*.graphql"],
+    "schemaSearchPaths": ["./schema.graphqls"]
+  },
+  "output": {
+    "schemaTypes": {
+      "path": "../Sources/PriceHistory/Generated",
+      "moduleType": {
+        "embeddedInTarget": {
+          "name": "Networking"
+        }
+      }
+    },
+    "operations": {
+      "inSchemaModule": {}
+    },
+    "testMocks": {
+      "none": {}
+    }
+  },
+  "options": {
+    "deprecatedEnumCases": "exclude",
+    "schemaDocumentation": "include",
+    "warningsOnDeprecatedUsage": "include"
+  },
+  "schemaDownloadConfiguration": {
+    "downloadMethod": {
+      "introspection": {
+        "endpointURL": "https://graphql.mtgjson.com/",
+        "httpMethod": { "POST": {} },
+        "includeDeprecatedInputValues": false,
+        "outputFormat": "SDL"
+      }
+    },
+    "outputPath": "./schema.graphqls",
+    "downloadTimeout": 60,
+    "headers": []
+  }
+}

@@ -22,6 +22,8 @@ public struct Content: Equatable, Sendable {
   let variantLabel: String
   let priceLabel: String
   let priceSubtitleLabel: String
+  let priceHistoryLabel: String
+  let priceHistorySubtitleLabel: String
   let usdLabel: String
   let usdFoilLabel: String
   let usdEtchedLabel: String
@@ -53,6 +55,8 @@ public struct Content: Equatable, Sendable {
     variantLabel = String(localized: "Prints")
     priceLabel = String(localized: "Market Prices")
     priceSubtitleLabel = String(localized: "Data from Scryfall")
+    priceHistoryLabel = String(localized: "Price History")
+    priceHistorySubtitleLabel = String(localized: "TCGplayer retail, data from MTGJSON")
     usdLabel = String(localized: "Regular")
     usdFoilLabel = String(localized: "Foil")
     usdEtchedLabel = String(localized: "Etched Foil")

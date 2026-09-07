@@ -26,6 +26,10 @@ let project = Project(
           // them on the `xcodebuild` command line without touching the plist.
           "CFBundleShortVersionString": "$(MARKETING_VERSION)",
           "CFBundleVersion": "$(CURRENT_PROJECT_VERSION)",
+          // Base URL of the MTGGraphQL proxy (Tools/mtggraphql-proxy). Set in the
+          // gitignored Mooligan/Secrets.xcconfig; empty means the price history
+          // section simply doesn't render. No access token ever ships in the app.
+          "MTGGraphQLProxyURL": "$(MTGGRAPHQL_PROXY_URL)",
         ]
       ),
       sources: ["Mooligan/Sources/**"],

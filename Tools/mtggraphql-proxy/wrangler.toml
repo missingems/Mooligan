@@ -1,0 +1,15 @@
+name = "mtggraphql-proxy"
+main = "src/worker.js"
+compatibility_date = "2025-01-01"
+
+# The MTGGraphQL access token is a secret, never a var in this file:
+#   npx wrangler secret put MTGGRAPHQL_TOKEN
+#
+# Deploy with:
+#   npx wrangler deploy
+#
+# Then put the resulting workers.dev (or custom domain) URL into
+# Mooligan/Secrets.xcconfig as MTGGRAPHQL_PROXY_URL.
+
+[observability]
+enabled = true
