@@ -19,16 +19,23 @@ const ALLOWED_OPERATION = "CardPriceHistory";
 // The single operation this proxy will forward, defined server-side.
 // Mirrors Core/Networking/GraphQL/CardPriceHistory.graphql — keep the two in
 // step. `scryfallId_eq` lives under `identifiers`, not on the filter root.
+//
+// `__typename` is required: the client is Apollo iOS, whose generated response
+// types demand __typename on every object. The proxy rebuilds the query rather
+// than forwarding the client's text, so it must request __typename itself —
+// without it MTGGraphQL omits it and Apollo fails to decode the response.
 const CARD_PRICE_HISTORY = `
 query CardPriceHistory($scryfallId: String!) {
   cards(
     filter: { identifiers: { scryfallId_eq: $scryfallId } }
     page: { take: 1, skip: 0 }
   ) {
+    __typename
     uuid
     name
     setCode
     prices {
+      __typename
       provider
       date
       cardType

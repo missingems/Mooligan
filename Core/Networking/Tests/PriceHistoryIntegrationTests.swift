@@ -88,6 +88,17 @@ struct PriceHistoryIntegrationTests {
       "HTTP \(response.statusCode): \(String(decoding: data, as: UTF8.self).prefix(400))"
     )
 
+    // When exercising the proxy (MTGGRAPHQL_URL set), the response must carry
+    // `__typename` — the proxy rebuilds the query and Apollo iOS cannot decode a
+    // response without it. This is the exact regression that shipped a blank
+    // chart: every other test parses with hand-rolled Codable and never noticed.
+    if ProcessInfo.processInfo.environment["MTGGRAPHQL_URL"] != nil {
+      #expect(
+        String(decoding: data, as: UTF8.self).contains("__typename"),
+        "proxy response is missing __typename — Apollo will fail to decode it"
+      )
+    }
+
     let envelope = try JSONDecoder().decode(Envelope.self, from: data)
     #expect(
       envelope.errors == nil,
