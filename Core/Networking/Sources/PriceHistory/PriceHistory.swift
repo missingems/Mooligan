@@ -105,3 +105,52 @@ public struct PriceHistory: Sendable, Equatable {
     PriceSeriesKind.allCases.filter { (series[$0]?.count ?? 0) >= 2 }
   }
 }
+
+/// The move between two observations, as an absolute amount and a fraction.
+///
+/// Kept as a value over the two `PricePoint`s rather than two bare numbers so the
+/// UI can label a comparison with the dates it actually spans.
+public struct PriceChange: Sendable, Equatable {
+  public let start: PricePoint
+  public let end: PricePoint
+
+  public init(start: PricePoint, end: PricePoint) {
+    self.start = start
+    self.end = end
+  }
+
+  public var absolute: Decimal { end.amount - start.amount }
+
+  /// `nil` when the baseline is zero — a percentage off zero is undefined, and
+  /// MTGJSON does report 0.00 for some listings.
+  public var fraction: Double? {
+    let base = (start.amount as NSDecimalNumber).doubleValue
+    let delta = (absolute as NSDecimalNumber).doubleValue
+    guard base != 0, base.isFinite, delta.isFinite else { return nil }
+    return delta / base
+  }
+
+  public var isIncrease: Bool { absolute > 0 }
+  public var isDecrease: Bool { absolute < 0 }
+}
+
+public extension BidirectionalCollection where Element == PricePoint {
+  /// The change across the whole series. `nil` for fewer than two points, where
+  /// there is nothing to compare against.
+  var change: PriceChange? {
+    guard count >= 2, let start = first, let end = last else { return nil }
+    return PriceChange(start: start, end: end)
+  }
+}
+
+/// Everything the price feed will give us.
+///
+/// The chart used to ask for a fixed 92 day window, which was a cap the data did
+/// not need: MTGJSON retains what it retains — around 90 days for a card in
+/// print, a handful of days for one released last week — so an explicit window
+/// could only ever hide history, never add any.
+public extension DateInterval {
+  static var allPriceHistory: DateInterval {
+    DateInterval(start: .distantPast, end: .distantFuture)
+  }
+}

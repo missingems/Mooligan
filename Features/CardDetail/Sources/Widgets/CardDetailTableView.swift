@@ -6,7 +6,17 @@ struct CardDetailTableView: View {
   let sections: [SectionType]
   
   var body: some View {
-    LazyVStack(spacing: 0) {
+    // Deliberately eager.
+    //
+    // This only ever holds three sections — title, typeline, description — so
+    // there is nothing to virtualise, and `LazyVStack` actively broke it: a lazy
+    // stack discards children that scroll out of view and re-measures them when
+    // they come back. Anything that rebuilds this subtree while the name and text
+    // are off screen — returning from Safari after a buy link, or the card pager
+    // recreating a page as you swipe away and back — left the description blank
+    // at its last measured height, and scrolling up re-materialised it at a
+    // slightly different height, which shifted the whole page under the reader.
+    VStack(spacing: 0) {
       ForEach(sections.indices, id: \.self) { index in
         VibrantDivider()
           .safeAreaPadding(.leading, systemHorizontalMargin)

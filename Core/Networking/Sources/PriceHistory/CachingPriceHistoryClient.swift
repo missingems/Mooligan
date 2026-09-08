@@ -75,6 +75,10 @@ private extension PriceHistory {
       cardID: cardID,
       provider: provider,
       listType: listType,
+      // Carry the currency the API reported through the clip. Dropping it fell
+      // back to the provider default, which silently relabels a Cardmarket
+      // series as USD.
+      currency: currency,
       series: series.mapValues { $0.filter { window.contains($0.date) } }
     )
   }
