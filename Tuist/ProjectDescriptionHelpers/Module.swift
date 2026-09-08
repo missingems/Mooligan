@@ -53,11 +53,15 @@ public enum Module {
 
 public extension Target {
   /// A first-party module: static framework, shared settings.
+  ///
+  /// `settings` defaults to `Module.settings`; pass a value only when a module
+  /// needs extra build settings on top of the shared base.
   static func module(
     name: String,
     sources: SourceFilesList,
     resources: ResourceFileElements? = nil,
-    dependencies: [TargetDependency]
+    dependencies: [TargetDependency],
+    settings: Settings? = nil
   ) -> Target {
     .target(
       name: name,
@@ -68,7 +72,8 @@ public extension Target {
       infoPlist: .default,
       sources: sources,
       resources: resources,
-      dependencies: dependencies
+      dependencies: dependencies,
+      settings: settings
     )
   }
 
@@ -124,13 +129,20 @@ public extension Project {
     resources: ResourceFileElements? = ["Resources/**"],
     dependencies: [TargetDependency],
     hasTests: Bool = true,
-    testDependencies: [TargetDependency] = []
+    testDependencies: [TargetDependency] = [],
+    moduleSettings: Settings? = nil
   ) -> Project {
     Project(
       name: name,
       settings: Module.settings,
       targets: [
-        .module(name: name, sources: sources, resources: resources, dependencies: dependencies),
+        .module(
+          name: name,
+          sources: sources,
+          resources: resources,
+          dependencies: dependencies,
+          settings: moduleSettings
+        ),
       ] + (hasTests ? [.tests(for: name, dependencies: testDependencies)] : [])
     )
   }

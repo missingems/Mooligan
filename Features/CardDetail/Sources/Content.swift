@@ -20,8 +20,11 @@ public struct Content: Equatable, Sendable {
   let viewRulingsLabel: String
   let legalityLabel: String
   let variantLabel: String
-  let priceLabel: String
-  let priceSubtitleLabel: String
+  let purchaseLabel: String
+  let purchaseSubtitleLabel: String
+  let priceHistoryLabel: String
+  let priceHistorySourceLabel: String
+  let priceHistoryUnavailableLabel: String
   let usdLabel: String
   let usdFoilLabel: String
   let usdEtchedLabel: String
@@ -33,6 +36,7 @@ public struct Content: Equatable, Sendable {
   let relatedSelectionIcon: Image
   let queryType: QueryType
   var setIconURL: URL?
+  var priceHistory: PriceHistoryState = .loading
   var variants: SubContent
   var relatedTokens: SubContent?
   var relatedComboPieces: SubContent?
@@ -51,8 +55,13 @@ public struct Content: Equatable, Sendable {
     legalityLabel = String(localized: "Legality")
     infoLabel = String(localized: "Information")
     variantLabel = String(localized: "Prints")
-    priceLabel = String(localized: "Market Prices")
-    priceSubtitleLabel = String(localized: "Data from Scryfall")
+    purchaseLabel = String(localized: "Where to Buy")
+    purchaseSubtitleLabel = String(localized: "Live prices from Scryfall")
+    priceHistoryLabel = String(localized: "Price History")
+    // Attribution only. The line under the title now carries the price move,
+    // which is the thing a reader actually looks at a price chart to learn.
+    priceHistorySourceLabel = String(localized: "TCGplayer · MTGJSON")
+    priceHistoryUnavailableLabel = String(localized: "No price history for this printing")
     usdLabel = String(localized: "Regular")
     usdFoilLabel = String(localized: "Foil")
     usdEtchedLabel = String(localized: "Etched Foil")

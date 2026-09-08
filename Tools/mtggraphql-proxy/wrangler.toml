@@ -1,0 +1,15 @@
+name = "mtggraphql-proxy"
+main = "src/worker.js"
+compatibility_date = "2025-01-01"
+
+# The MTGGraphQL access token is a secret, never a var in this file:
+#   npx wrangler secret put MTGGRAPHQL_TOKEN
+#
+# Deploy with:
+#   npx wrangler deploy
+#
+# The deployed URL is wired into the app as MTGGraphQLProxyURL in Project.swift.
+# Currently: https://mtggraphql-proxy.mooligan.workers.dev
+
+[observability]
+enabled = true

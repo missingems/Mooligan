@@ -1,0 +1,19 @@
+query CardPriceHistory($scryfallId: String!) {
+  cards(
+    filter: { identifiers: { scryfallId_eq: $scryfallId } }
+    page: { take: 1, skip: 0 }
+  ) {
+    uuid
+    name
+    setCode
+    prices {
+      provider
+      date
+      cardType
+      listType
+      currency
+      format
+      price
+    }
+  }
+}
