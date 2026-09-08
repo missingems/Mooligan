@@ -6,6 +6,8 @@ import ScryfallKit
 
 @Reducer public struct CardDetailFeature: Sendable {
   @Dependency(\.cardDetailRequestClient) private var client
+  @Dependency(\.priceHistoryClient) private var priceHistoryClient
+  @Dependency(\.gameSetRequestClient) private var setClient
   
   public init() {}
   
@@ -37,6 +39,7 @@ import ScryfallKit
       return .merge(
         needsSetIcon ? .send(.fetchSetIcon(card: card)) : .none,
         .send(.fetchVariants(card: card, page: 1)),
+        .send(.fetchPriceHistory(card: card)),
         .send(.fetchRelatedTokens(card: card)),
         .send(.fetchRelatedComboPieces(card: card)),
         .send(.fetchRelatedMeldPieces(card: card)),
@@ -78,6 +81,32 @@ import ScryfallKit
         }
       }
       
+    case let .fetchPriceHistory(card):
+      return .run { send in
+        // Both sides are independent and both can fail to nothing: a card with
+        // no history still gets its markers, and a set list that never loads
+        // just means no symbols on the axis.
+        async let history = try? priceHistoryClient.history(
+          for: card,
+          provider: .tcgplayer,
+          listType: .retail,
+          window: .allPriceHistory
+        )
+        async let releases = SetReleaseMarkerStore.shared.markers(in: .allPriceHistory) {
+          (try? await setClient.getSets(queryType: .all).1) ?? []
+        }
+
+        await send(
+          .updatePriceHistory(
+            PriceHistorySection.makeState(
+              card: card,
+              history: await history,
+              releases: await releases
+            )
+          )
+        )
+      }
+
     case let .fetchRelatedTokens(card):
       return .run { send in
         do {
@@ -141,6 +170,10 @@ import ScryfallKit
     case let .updateVariants(value, page):
       state.updateVariants(value, page: page)
       return .none
+
+    case let .updatePriceHistory(value):
+      state.updatePriceHistory(value)
+      return .none
       
     case let .updateMeldPieces(value):
       state.updateMeldPieces(value)
@@ -197,6 +230,7 @@ public extension CardDetailFeature {
     case fetchAdditionalInformation(card: Card)
     case fetchSetIcon(card: Card)
     case fetchVariants(card: Card, page: Int)
+    case fetchPriceHistory(card: Card)
     case fetchRelatedTokens(card: Card)
     case fetchRelatedComboPieces(card: Card)
     case fetchRelatedMeldPieces(card: Card)
@@ -205,6 +239,7 @@ public extension CardDetailFeature {
     // Update/Response Actions
     case updateSetIconURL(URL?)
     case updateVariants(CardDataSource, page: Int)
+    case updatePriceHistory(PriceHistoryState)
     case updateRelatedTokens(CardDataSource)
     case updateComboPieces(CardDataSource)
     case updateMeldPieces(CardDataSource)
@@ -224,6 +259,10 @@ private extension CardDetailFeature.State {
   
   mutating func updateVariants(_ dataSource: CardDataSource, page: Int) {
     content.variants = content.variants.updating(page: page, state: .data(dataSource))
+  }
+
+  mutating func updatePriceHistory(_ value: PriceHistoryState) {
+    content.priceHistory = value
   }
   
   mutating func updateRelatedTokens(_ dataSource: CardDataSource) {

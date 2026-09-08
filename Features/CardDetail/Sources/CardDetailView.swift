@@ -94,20 +94,29 @@ public struct CardDetailView: View {
           legalities: content.card.legalities.all
         )
         
-        PriceView(
-          title: content.priceLabel,
-          subtitle: content.priceSubtitleLabel,
-          prices: content.card.prices,
-          usdLabel: content.usdLabel,
-          usdFoilLabel: content.usdFoilLabel,
-          usdEtchedLabel: content.usdEtchedLabel,
-          purchaseVendor: PurchaseVendor(purchaseURIs: content.card.purchaseUris)
+        PriceHistoryChartView(
+          state: content.priceHistory,
+          title: content.priceHistoryLabel,
+          sourceLabel: content.priceHistorySourceLabel,
+          unavailableLabel: content.priceHistoryUnavailableLabel
         )
 
-        PriceHistoryChartView(
-          card: content.card,
-          title: content.priceHistoryLabel,
-          subtitle: content.priceHistorySubtitleLabel
+        // Buying comes after the history, not before it: the chart is what tells
+        // you whether now is the moment, and these are the places to act on it.
+        PurchaseLinksView(
+          title: content.purchaseLabel,
+          subtitle: content.purchaseSubtitleLabel,
+          listings: MarketplaceListing.listings(
+            purchaseURIs: content.card.purchaseUris,
+            prices: content.card.prices
+          ),
+          finishLabel: { kind in
+            switch kind {
+            case .normal: content.usdLabel
+            case .foil: content.usdFoilLabel
+            case .etched: content.usdEtchedLabel
+            }
+          }
         )
 
         if let cards = content.variants.state.value {
