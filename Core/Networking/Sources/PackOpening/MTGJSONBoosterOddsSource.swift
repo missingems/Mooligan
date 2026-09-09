@@ -24,25 +24,78 @@ public actor MTGJSONBoosterOddsSource: BoosterOddsSource {
   private var cache: [String: BoosterPackOdds] = [:]
   private var inFlight: [String: Task<BoosterPackOdds, Never>] = [:]
 
-  public init(session: URLSession = .shared) {
-    self.session = session
+  public init(session: URLSession? = nil) {
+    // Not `URLSession.shared`. These are multi-megabyte set files fetched for a
+    // detail the pack can happily do without, and the shared session's minute
+    // -long request timeout meant a slow one held the pack shut for a minute
+    // with nothing on screen but "deciding what is in it". Anything that has
+    // not arrived in a few seconds is not worth waiting for.
+    if let session {
+      self.session = session
+    } else {
+      // Longer than `deadline` on purpose: nobody is waiting on these once the
+      // deadline passes, and a slow-but-progressing download is still worth
+      // finishing so the next pack from this set gets the real numbers.
+      let configuration = URLSessionConfiguration.default
+      configuration.timeoutIntervalForRequest = 15
+      configuration.timeoutIntervalForResource = 30
+      self.session = URLSession(configuration: configuration)
+    }
   }
+
+  /// How long a pack waits for real odds before rolling on the built-in ones.
+  static let deadline: TimeInterval = 3
 
   public func odds(forSet setCode: String, kind: BoosterPackKind) async -> BoosterPackOdds {
     let key = "\(setCode.lowercased())/\(kind.rawValue)"
 
     if let cached = cache[key] { return cached }
-    if let running = inFlight[key] { return await running.value }
 
+    let task = inFlight[key] ?? startFetch(setCode: setCode, kind: kind, key: key)
+
+    // Wait only so long. MTGJSON's set files are megabytes and its serving is
+    // uneven — some sets arrive in under two seconds and others stall part-way
+    // through and never finish — so a pack that waits for them is a pack that
+    // sometimes never opens. The fetch is left running when the wait expires,
+    // and caches itself when it lands, so the cost of a slow set is that its
+    // *first* pack of the session rolls on the built-in odds rather than that
+    // the player sits looking at a progress bar.
+    return await withTaskGroup(of: BoosterPackOdds?.self) { group in
+      group.addTask { await task.value }
+      group.addTask {
+        try? await Task.sleep(for: .seconds(Self.deadline))
+        return nil
+      }
+
+      let first = await group.next() ?? nil
+      // Cancels the *waiting*, not the fetch: `task` is unstructured and is
+      // deliberately not a child of this group.
+      group.cancelAll()
+      return first ?? .fallback
+    }
+  }
+
+  private func startFetch(
+    setCode: String,
+    kind: BoosterPackKind,
+    key: String
+  ) -> Task<BoosterPackOdds, Never> {
     let task = Task<BoosterPackOdds, Never> { [session] in
       (try? await Self.fetchAndParse(setCode: setCode, kind: kind, session: session)) ?? .fallback
     }
     inFlight[key] = task
 
-    let value = await task.value
-    cache[key] = value
+    Task { [weak self] in
+      let value = await task.value
+      await self?.store(value, for: key)
+    }
+
+    return task
+  }
+
+  private func store(_ odds: BoosterPackOdds, for key: String) {
+    cache[key] = odds
     inFlight[key] = nil
-    return value
   }
 
   private static func fetchAndParse(

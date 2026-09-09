@@ -3,7 +3,7 @@ import Foundation
 import ScryfallKit
 
 /// One rarity's share of a slot, as a fraction of that slot's total weight.
-public struct RarityWeight: Equatable, Sendable {
+public struct RarityWeight: Equatable, Sendable, Codable {
   public let rarity: Card.Rarity
   public let weight: Double
 
@@ -21,7 +21,7 @@ public struct RarityWeight: Equatable, Sendable {
 /// figures estimated from memory. `fallback` is what a set MTGJSON doesn't
 /// cover, or a booster shape the parser doesn't recognise, gets instead: still
 /// a guess, just the least-wrong one available, and never presented as more.
-public struct BoosterPackOdds: Equatable, Sendable {
+public struct BoosterPackOdds: Equatable, Sendable, Codable {
   /// Chance the guaranteed rare/mythic slot upgrades to mythic.
   public let mythicChance: Double
   /// Rarity distribution of the plain any-rarity ("wildcard") slot.
@@ -81,7 +81,9 @@ public protocol BoosterOddsSource: Sendable {
 }
 
 public enum BoosterOddsSourceKey: DependencyKey {
-  public static var liveValue: any BoosterOddsSource { MTGJSONBoosterOddsSource() }
+  public static var liveValue: any BoosterOddsSource {
+    CachedBoosterOddsSource(upstream: MTGJSONBoosterOddsSource())
+  }
 
 #if DEBUG
   public static var previewValue: any BoosterOddsSource { MockBoosterOddsSource() }
