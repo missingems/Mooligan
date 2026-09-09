@@ -58,6 +58,11 @@ public struct LiveBoosterPackClient: BoosterPackClient {
   }
 
   public func open(product: PackProduct, seed: UUID) async throws -> BoosterPack {
+    // Started before the pool rather than after it. The two have nothing to say
+    // to each other, and running them back to back made the wait the sum of a
+    // database read and a network fetch instead of the longer of the two.
+    async let pendingOdds = oddsSource.odds(forSet: product.set.code, kind: product.kind)
+
     let pool: BoosterCardPool
 
     if let cached = await cache.pool(forSet: product.set.code) {
@@ -67,10 +72,10 @@ public struct LiveBoosterPackClient: BoosterPackClient {
       await cache.store(pool, forSet: product.set.code)
     }
 
-    // Odds never fail the open: a set MTGJSON doesn't cover, or a network drop,
-    // both just mean `BoosterPackOdds.fallback` — the cards are the only thing
-    // that has to be real for a pack to be worth opening.
-    let odds = await oddsSource.odds(forSet: product.set.code, kind: product.kind)
+    // Odds never fail the open: a set MTGJSON doesn't cover, a network drop, or
+    // simply taking too long, all mean `BoosterPackOdds.fallback` — the cards
+    // are the only thing that has to be real for a pack to be worth opening.
+    let odds = await pendingOdds
 
     var generator = SeededRandomNumberGenerator(seed: seed)
     let cards = BoosterPackRoller.roll(kind: product.kind, from: pool, odds: odds, using: &generator)
@@ -101,7 +106,7 @@ actor BoosterPoolCache {
 
 // MARK: - Which sets get shelf space
 
-extension MTGSet {
+public extension MTGSet {
   /// Sets that were actually sold in randomised boosters. Keeps the shelf free
   /// of token sets, memorabilia, promo dumps, digital-only releases, and two
   /// things that look like they belong but aren't: Commander products (sold as

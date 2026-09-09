@@ -46,7 +46,8 @@ public struct MockBoosterPoolSource: BoosterPoolSource {
       uncommons: Self.cards(rarity: .uncommon, count: 20, setCode: setCode),
       rares: Self.cards(rarity: .rare, count: 12, setCode: setCode),
       mythics: Self.cards(rarity: .mythic, count: 5, setCode: setCode),
-      lands: Self.cards(rarity: .common, count: 5, setCode: setCode, namePrefix: "Island")
+      lands: Self.cards(rarity: .common, count: 5, setCode: setCode, namePrefix: "Island"),
+      rarityCounts: BoosterRarityCounts(common: 40, uncommon: 20, rare: 12, mythic: 5, land: 5)
     )
   }
 

@@ -123,6 +123,9 @@ public struct QueryFeature: Sendable {
   public enum Action: Equatable, BindableAction {
     case binding(BindingAction<State>)
     case didSelectCard(Card, QueryType)
+    /// Open a booster of this set. Handled by the host, which owns the
+    /// navigation the pack session and its card pager both need.
+    case didSelectOpenPack(MTGSet, BoosterPackKind)
     case didSelectShowInfo
     case loadMoreCardsIfNeeded(displayingIndex: Int)
     case updateCards(CardDataSource?, SearchQuery, State.Mode)
@@ -211,6 +214,12 @@ public struct QueryFeature: Sendable {
         
       case .didSelectShowInfo:
         state.isShowingInfo = true
+        return .none
+
+      case .didSelectOpenPack:
+        // Dismiss the popover the button was tapped in; the host takes it from
+        // here.
+        state.isShowingInfo = false
         return .none
         
       case let .loadMoreCardsIfNeeded(displayingIndex):

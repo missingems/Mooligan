@@ -38,12 +38,29 @@ struct CardStackSetting {
   /// How long a thrown card takes to clear the screen.
   var swipeDuration: TimeInterval = 0.24
 
+  /// How long a card takes to travel to a `CardStackLanding`. Longer than a
+  /// throw off-screen, because this one is watched all the way in.
+  var landingDuration: TimeInterval = 0.42
+
   /// How much darker each card is than the one in front of it.
   var dimInterval: Double = 0.06
 
   /// The way a card goes when nothing dragged it — the accessibility action, or
   /// any other route into the stack that is not a finger.
   var dealDirection = CGSize(width: -1, height: -0.18)
+}
+
+/// Where a thrown card comes to rest, instead of simply leaving the screen.
+///
+/// Given one, a card that is let go does not fly off into nothing — it travels
+/// to a specific place at a specific size, which is what lets the pack's cards
+/// tuck themselves into the strip along the bottom as they are dealt rather
+/// than vanishing and reappearing there.
+struct CardStackLanding: Equatable {
+  /// Offset from the stack's own centre.
+  var offset: CGSize
+  /// Size relative to a card at rest.
+  var scale: CGFloat
 }
 
 /// A stack of cards dealt off the top by dragging, modelled closely on
@@ -73,6 +90,10 @@ struct CardStack<Content: View>: View {
 
   var setting = CardStackSetting()
 
+  /// Where a thrown card ends up. Without one it is thrown clear of the screen,
+  /// which is CardStackView's own behaviour.
+  var landing: CardStackLanding?
+
   /// The card on top. Written by the stack as cards are thrown; the host reads
   /// it to keep the rest of the screen in step.
   @Binding var topIndex: Int
@@ -100,6 +121,7 @@ struct CardStack<Content: View>: View {
   private struct Departure {
     var translation: CGSize
     var rotation: Double
+    var scale: CGFloat
   }
 
   /// Everything needed to place one card, computed in a single pass so that no
@@ -123,6 +145,16 @@ struct CardStack<Content: View>: View {
   }
 
   @State private var drag: CGSize = .zero
+
+  /// Size of the card in hand. Only ever moves during a throw with a landing,
+  /// where the card shrinks on its way to wherever it is going.
+  @State private var throwScale: CGFloat = 1
+
+  /// How far a throw has run, 0...1. Stands in for `ratio` while a card is in
+  /// the air: a landing can sit closer than the distance `ratio` needs to reach
+  /// 1, and the stack behind still has to finish closing up before the thrown
+  /// card is retired.
+  @State private var settleProgress: CGFloat = 0
 
   /// Where the card was taken hold of: +1 at its top edge, -1 at its bottom.
   @State private var grip: CGFloat = 0
@@ -183,20 +215,28 @@ struct CardStack<Content: View>: View {
     guard depth > 0 else {
       // The card in hand, and the one just thrown — parked where it flew to.
       let departure = departures[index] ?? Departure(
-        translation: flightVector(along: setting.dealDirection),
-        rotation: 0
+        translation: landing?.offset ?? flightVector(along: setting.dealDirection),
+        rotation: 0,
+        scale: landing?.scale ?? 1
       )
 
       return Placement(
         translation: depth == 0 ? drag : departure.translation,
         rotation: depth == 0 ? rotation(forWidth: drag.width) : departure.rotation,
+        scale: depth == 0 ? throwScale : departure.scale,
+        // A card that has landed is handed over to whatever it landed on and
+        // stops being drawn here. It has to stay in the tree — a rewind brings
+        // it back along the path it left by, and it fades in as it comes — but
+        // leaving it drawn where it came to rest would sit a second copy of the
+        // card on top of the thing that just took its place.
+        opacity: depth < 0 ? 0 : 1,
         depth: depth
       )
     }
 
     // Behind: closing on the slot in front by however far the top card has
     // gone. CardStackView's own interpolation, verbatim.
-    let progress = ratio
+    let progress = max(ratio, settleProgress)
 
     let currentScale = 1 - CGFloat(depth) * (1 - setting.scaleInterval)
     let nextScale = 1 - CGFloat(depth - 1) * (1 - setting.scaleInterval)
@@ -312,15 +352,27 @@ struct CardStack<Content: View>: View {
   // MARK: - Transitions
 
   private func throwOut(along direction: CGSize) {
-    let vector = flightVector(along: direction)
-
     motion = .throwing
     isPastThreshold = false
     flightID += 1
     let flight = flightID
 
-    withAnimation(.easeOut(duration: setting.swipeDuration)) {
-      drag = vector
+    // A card with somewhere to go travels there and shrinks to fit; one
+    // without is thrown clear of the screen.
+    let target = landing?.offset ?? flightVector(along: direction)
+    let scale = landing?.scale ?? 1
+
+    // Landing somewhere on screen is a shorter, gentler move than being thrown
+    // off it, and wants an easing that settles rather than one that launches.
+    let animation: Animation =
+      landing == nil
+        ? .easeOut(duration: setting.swipeDuration)
+        : .spring(duration: setting.landingDuration, bounce: 0.12)
+
+    withAnimation(animation) {
+      drag = target
+      throwScale = scale
+      settleProgress = 1
       swipeProgress = 1
     } completion: {
       guard flight == flightID else { return }
@@ -362,11 +414,14 @@ struct CardStack<Content: View>: View {
 
     departures[topIndex] = Departure(
       translation: drag,
-      rotation: rotation(forWidth: drag.width)
+      rotation: rotation(forWidth: drag.width),
+      scale: throwScale
     )
 
     topIndex += 1
     drag = .zero
+    throwScale = 1
+    settleProgress = 0
     swipeProgress = 0
     motion = .idle
   }
@@ -377,6 +432,8 @@ struct CardStack<Content: View>: View {
 
     withAnimation(.spring(duration: 0.42, bounce: 0.3)) {
       drag = .zero
+      throwScale = 1
+      settleProgress = 0
       swipeProgress = 0
     }
   }

@@ -1,32 +1,7 @@
 import Networking
 import Nuke
+import UIKit
 import SwiftUI
-
-/// Where a product's real wrapper photograph lives.
-///
-/// Arcane Assets hosts a photo of each sealed product at a predictable path,
-/// and has said it is fine to read as a public API. Coverage is partial —
-/// plenty of sets have no image at all — so this is only ever an upgrade over
-/// the drawn wrapper, never a requirement: anything that 404s or fails to load
-/// falls back to `BoosterPackArtwork`.
-enum PackWrapperArt {
-  static func url(for product: PackProduct) -> URL? {
-    // The slugs line up with what the shelf already offers: `stockedPackKinds`
-    // only sells `.play` for 2024-on sets and `.draft` for older ones, which is
-    // exactly the split Arcane Assets files them under.
-    let slug =
-      switch product.kind {
-      case .play: "play"
-      case .draft: "draft"
-      case .collector: "collector"
-      }
-
-    return URL(
-      string:
-        "https://www.arcane-assets.com/sealed_products/\(product.set.code.lowercased())/\(slug).png"
-    )
-  }
-}
 
 /// Loads the wrapper photograph for one product, once.
 ///
@@ -49,12 +24,77 @@ final class PackWrapperArtLoader {
   private(set) var hasSettled = false
 
   func load(for product: PackProduct) async {
-    guard hasSettled == false, let url = PackWrapperArt.url(for: product) else { return }
+    guard hasSettled == false else { return }
 
-    if let image = try? await ImagePipeline.shared.image(for: url), image.size.height > 0 {
-      photo = Image(uiImage: image)
-      aspectRatio = image.size.width / image.size.height
+    // Sources in order of preference; the first that actually returns a
+    // picture wins, and running out of them is what leaves `photo` nil and
+    // hands the wrapper back to `BoosterPackArtwork`.
+    for url in PackArtwork.urls(for: product) {
+      guard let image = try? await ImagePipeline.shared.image(for: url), image.size.height > 0
+      else { continue }
+
+      let trimmed = image.trimmingTransparentEdges() ?? image
+      guard trimmed.size.height > 0 else { continue }
+
+      photo = Image(uiImage: trimmed)
+      aspectRatio = trimmed.size.width / trimmed.size.height
+      break
     }
+
     hasSettled = true
+  }
+}
+
+
+private extension UIImage {
+  /// Crops away fully transparent margins.
+  ///
+  /// PackSim draws every wrapper into a square canvas, so a pack that is really
+  /// about 1:1.9 arrives claiming to be 1:1 with air on either side. Taken at
+  /// face value that squashes the wrapper into a square box — the pack renders
+  /// small and centred, and the tear cuts across padding instead of across the
+  /// wrapper. Trimming to the opaque bounds gives back both the true aspect
+  /// ratio and a cut-out that lines up with the torn shapes.
+  func trimmingTransparentEdges(threshold: UInt8 = 8) -> UIImage? {
+    guard let cgImage else { return nil }
+
+    let width = cgImage.width
+    let height = cgImage.height
+    guard width > 0, height > 0 else { return nil }
+
+    var alpha = [UInt8](repeating: 0, count: width * height)
+    guard
+      let context = CGContext(
+        data: &alpha,
+        width: width,
+        height: height,
+        bitsPerComponent: 8,
+        bytesPerRow: width,
+        space: CGColorSpaceCreateDeviceGray(),
+        bitmapInfo: CGImageAlphaInfo.alphaOnly.rawValue
+      )
+    else { return nil }
+
+    context.draw(cgImage, in: CGRect(x: 0, y: 0, width: width, height: height))
+
+    var minX = width, minY = height, maxX = -1, maxY = -1
+    for y in 0..<height {
+      let row = y * width
+      for x in 0..<width where alpha[row + x] > threshold {
+        if x < minX { minX = x }
+        if x > maxX { maxX = x }
+        if y < minY { minY = y }
+        if y > maxY { maxY = y }
+      }
+    }
+
+    // Fully transparent, or already tight against its edges.
+    guard maxX >= minX, maxY >= minY else { return nil }
+    guard minX > 0 || minY > 0 || maxX < width - 1 || maxY < height - 1 else { return self }
+
+    let crop = CGRect(x: minX, y: minY, width: maxX - minX + 1, height: maxY - minY + 1)
+    guard let cropped = cgImage.cropping(to: crop) else { return nil }
+
+    return UIImage(cgImage: cropped, scale: scale, orientation: imageOrientation)
   }
 }

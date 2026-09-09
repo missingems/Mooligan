@@ -2,6 +2,7 @@ import DesignComponents
 import ComposableArchitecture
 import SwiftUI
 import Networking
+import NukeUI
 
 struct QueryInfoView: View {
   @Bindable var store: StoreOf<QueryFeature>
@@ -38,9 +39,39 @@ struct QueryInfoView: View {
             }
           }
         }
+        
+        packOptions
       }
       .padding(.vertical, 11)
       .presentationCompactAdaptation(.popover)
+    }
+  }
+  
+  /// Sealed product for this set, if it was ever sold in one.
+  ///
+  /// This is how a pack gets opened now — there is no shelf of every set, you
+  /// go to the set you want and open one from here — so the options belong
+  /// with the set's own details rather than in a tab of their own.
+  @ViewBuilder private var packOptions: some View {
+    if case let .querySet(set, _) = store.queryType, set.sellsBoosters {
+      Divider().safeAreaPadding(.leading, systemHorizontalMargin)
+      
+      ForEach(set.stockedPackKinds) { kind in
+        Button {
+          store.send(.didSelectOpenPack(set, kind))
+        } label: {
+          HStack {
+            Text("Open \(kind.title)")
+            Spacer(minLength: 40)
+            PackRowArtwork(product: PackProduct(set: set, kind: kind))
+          }
+          .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .padding(.vertical, 8.0)
+        .safeAreaPadding(.horizontal, systemHorizontalMargin)
+        .accessibilityIdentifier("query.openPack.\(kind.rawValue)")
+      }
     }
   }
 }
@@ -111,5 +142,41 @@ public extension QueryType {
         .titleDetail(title: String(localized: "Number of Cards"), detail: "\(value.cardCount)"),
       ]
     }
+  }
+}
+
+/// The wrapper itself, at row height, so the two products are told apart by
+/// what they look like on a shelf rather than by their names.
+///
+/// Falls back to a box glyph: coverage of the photographs thins out for older
+/// sets, and a row with a missing image would otherwise collapse.
+private struct PackRowArtwork: View {
+  let product: PackProduct
+
+  @State private var isLoaded = false
+
+  var body: some View {
+    Group {
+      if let url = PackArtwork.thumbnailURL(for: product, width: 120) {
+        LazyImage(url: url) { state in
+          if let image = state.image {
+            image.resizable().scaledToFit()
+          } else if state.error != nil {
+            placeholder
+          } else {
+            Color.clear
+          }
+        }
+      } else {
+        placeholder
+      }
+    }
+    .frame(width: 26, height: 44)
+    .accessibilityHidden(true)
+  }
+
+  private var placeholder: some View {
+    Image(systemName: "shippingbox.fill")
+      .foregroundStyle(.secondary)
   }
 }

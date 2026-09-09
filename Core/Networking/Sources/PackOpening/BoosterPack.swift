@@ -144,29 +144,59 @@ public struct PulledCard: Equatable, Identifiable, Sendable {
   public let slot: PackSlotKind
   public let isFoil: Bool
 
-  public init(id: UUID = UUID(), card: Card, slot: PackSlotKind, isFoil: Bool) {
+  /// Chance a slot of this kind yields this exact printing, or nil when the
+  /// set's rarity counts were not available to work it out from.
+  public let pullChance: Double?
+
+  public init(
+    id: UUID = UUID(),
+    card: Card,
+    slot: PackSlotKind,
+    isFoil: Bool,
+    pullChance: Double? = nil
+  ) {
     self.id = id
     self.card = card
     self.slot = slot
     self.isFoil = isFoil
+    self.pullChance = pullChance
+  }
+
+  /// The chance as "1 in n", which is how pull rates are always quoted.
+  public var oddsDescription: String? {
+    guard let pullChance, pullChance > 0 else { return nil }
+    return "1 in \((1 / pullChance).rounded().formatted(.number.grouping(.automatic)))"
   }
 
   public var rarity: Card.Rarity { card.rarity }
 
-  /// Market price for the finish that was actually pulled, and only that
-  /// finish.
+  /// Market price for the pulled card, quoting the finish it was actually
+  /// pulled in wherever that finish has a price of its own.
   ///
-  /// No cross-finish fallback: a foil and its non-foil printing are separate
-  /// products at materially different prices, so quoting one for the other
-  /// misreports the pull. Plenty of cards have a price for one finish and not
-  /// the other — most of The Hobbit lists no non-foil price at all — and those
-  /// are shown as rarity alone rather than a borrowed number.
+  /// Falls back to the other finish rather than reporting nothing. Refusing to
+  /// cross finishes is more precise in principle — a foil and its non-foil
+  /// printing are separate products at different prices — but in practice
+  /// Scryfall lists only one of the two for a great many printings, and the
+  /// rares and mythics people most want a number for were the ones most often
+  /// coming back blank. A near-enough price beats a card that shows its rarity
+  /// and nothing else, and it keeps the pack total honest: summing only the
+  /// finishes that happened to have a price was under-reporting every pack.
   ///
   /// Parsed against a fixed locale: Scryfall always writes "1.50", which a
   /// comma-decimal locale would otherwise misread.
   public var price: Decimal? {
-    let raw = isFoil ? card.prices.usdFoil : card.prices.usd
+    let preferred = isFoil ? card.prices.usdFoil : card.prices.usd
+    let alternate = isFoil ? card.prices.usd : card.prices.usdFoil
+    let raw = preferred ?? alternate ?? card.prices.usdEtched
+
     return raw.flatMap { Decimal(string: $0, locale: Locale(identifier: "en_US_POSIX")) }
+  }
+
+  /// `true` when the price shown had to be borrowed from the other finish, so
+  /// the UI can mark it as approximate rather than quoting it as exact.
+  public var isPriceApproximate: Bool {
+    guard price != nil else { return false }
+    return (isFoil ? card.prices.usdFoil : card.prices.usd) == nil
   }
 
   /// Ranking used to pick the pack's headline card, and to decide which pulls
@@ -237,5 +267,19 @@ public struct BoosterPack: Equatable, Identifiable, Sendable {
         return lhs.element.excitement < rhs.element.excitement
       }
       .map(\.element)
+  }
+}
+
+
+public extension Card {
+  /// `true` if this printing only exists as a foil, `false` if it only exists
+  /// non-foil, and `nil` when both were printed and the slot's own odds decide.
+  var availableFoilness: Bool? {
+    let hasFoil = finishes.contains(.foil) || finishes.contains(.etched)
+    let hasNonFoil = finishes.contains(.nonfoil)
+
+    if hasFoil, hasNonFoil == false { return true }
+    if hasNonFoil, hasFoil == false { return false }
+    return nil
   }
 }

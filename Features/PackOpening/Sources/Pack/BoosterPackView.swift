@@ -22,29 +22,32 @@ struct BoosterPackArtwork: View {
   let product: PackProduct
   var theme: PackTheme
 
+  /// The size this is being drawn at. Measured rather than read from a
+  /// `GeometryReader`: the printing is sized in proportion to the wrapper, but
+  /// the wrapper's size is decided by whoever is showing it — a reader here
+  /// would claim that space instead of filling it.
+  @State private var size: CGSize = .zero
+
   var body: some View {
-    GeometryReader { proxy in
-      let size = proxy.size
+    ZStack {
+      theme.bodyGradient
 
-      ZStack {
-        theme.bodyGradient
+      setIconWatermark(size: size)
 
-        setIconWatermark(size: size)
-
-        // Printing: a darkened band under the crimp, the set's name down the
-        // middle, and the product strip at the foot of the pack.
-        VStack(spacing: 0) {
-          crimpBand(size: size)
-          Spacer(minLength: 0)
-          nameplate(size: size)
-          Spacer(minLength: 0)
-          productStrip(size: size)
-        }
-        .padding(.vertical, PackGeometry.crimpDepth + 2)
-
-        specularSheen(size: size)
+      // Printing: a darkened band under the crimp, the set's name down the
+      // middle, and the product strip at the foot of the pack.
+      VStack(spacing: 0) {
+        crimpBand(size: size)
+        Spacer(minLength: 0)
+        nameplate(size: size)
+        Spacer(minLength: 0)
+        productStrip(size: size)
       }
+      .padding(.vertical, PackGeometry.crimpDepth + 2)
+
+      specularSheen(size: size)
     }
+    .onGeometryChange(for: CGSize.self) { $0.size } action: { size = $0 }
   }
 
   // MARK: - Printing

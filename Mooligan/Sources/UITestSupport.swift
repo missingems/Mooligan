@@ -2,6 +2,7 @@
 import ComposableArchitecture
 import Foundation
 import Networking
+import PackOpening
 
 /// Deterministic, offline dependency wiring for UI tests.
 ///
@@ -31,6 +32,9 @@ enum UITestSupport {
       $0.boosterPackClient = MockBoosterPackClient()
       $0.boosterPoolSource = MockBoosterPoolSource()
       $0.boosterOddsSource = MockBoosterOddsSource()
+      // The mock cards' art does not resolve offline; without this the pack
+      // would sit in its preparing phase until every request timed out.
+      $0.packImagePrefetcher = ImmediatePackImagePrefetcher()
       $0.priceHistoryClient = MockPriceHistoryClient()
 
       $0.databasePreparer = InertDatabasePreparer()

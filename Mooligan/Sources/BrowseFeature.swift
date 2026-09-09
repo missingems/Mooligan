@@ -19,14 +19,12 @@ public struct Feature {
   
   public enum TabInfo: Equatable, CaseIterable, Identifiable {
     case sets
-    case packs
     case scan
     case collection
     
     public var title: String {
       switch self {
       case .sets: return String(localized: "Sets")
-      case .packs: return String(localized: "Packs")
       case .scan: return String(localized: "Scan")
       case .collection: return String(localized: "Collection")
       }
@@ -35,7 +33,6 @@ public struct Feature {
     public var systemIconName: String {
       switch self {
       case .sets: return "text.page"
-      case .packs: return "shippingbox.fill"
       case .scan: return "camera.fill"
       case .collection: return "folder"
       }
@@ -49,16 +46,18 @@ public struct Feature {
     public var selectedTab: TabInfo = .sets
     public var sets: Browse.BrowseFeature.State
     public var scan: CardScannerFeature.State
-    public var packs: PackOpeningFeature.State
     public var bulkSync: BulkSyncFeature.State
     public var selectedSet: MTGSet?
     public var path: StackState<Path.State>
+    
+    /// The pack currently being opened, presented over whatever set it came
+    /// from.
+    @Presents public var packSession: PackSessionFeature.State?
     
     public init(
       selectedTab: TabInfo = .sets,
       sets: Browse.BrowseFeature.State = .init(),
       scan: CardScannerFeature.State = .init(),
-      packs: PackOpeningFeature.State = .init(),
       bulkSync: BulkSyncFeature.State = .init(),
       selectedSet: MTGSet? = nil,
       path: StackState<Path.State> = .init()
@@ -66,7 +65,6 @@ public struct Feature {
       self.selectedTab = selectedTab
       self.sets = sets
       self.scan = scan
-      self.packs = packs
       self.bulkSync = bulkSync
       self.selectedSet = selectedSet
       self.path = path
@@ -78,7 +76,7 @@ public struct Feature {
     case setup
     case sets(BrowseFeature.Action)
     case scan(CardScannerFeature.Action)
-    case packs(PackOpeningFeature.Action)
+    case packSession(PresentationAction<PackSessionFeature.Action>)
     case bulkSync(BulkSyncFeature.Action)
     case path(StackActionOf<Path>)
     case cardPagerStatePrepared(CardPagerFeature.State)
@@ -97,16 +95,15 @@ public struct Feature {
       CardScannerFeature()
     }
     
-    Scope(state: \.packs, action: \.packs) {
-      PackOpeningFeature()
-    }
-    
     Scope(state: \.bulkSync, action: \.bulkSync) {
       BulkSyncFeature()
     }
     
     Reduce(coreReduce)
       .forEach(\.path, action: \.path)
+      .ifLet(\.$packSession, action: \.packSession) {
+        PackSessionFeature()
+      }
   }
   
   public init() {}
@@ -141,7 +138,11 @@ public struct Feature {
     case .scan:
       return .none
       
-    case .packs:
+    case .packSession(.presented(.delegate(.finished))):
+      state.packSession = nil
+      return .none
+      
+    case .packSession:
       return .none
       
     case .bulkSync:
@@ -157,6 +158,12 @@ public struct Feature {
         switch action {
         case let .showSetDetail(value):
           switch value {
+          case let .didSelectOpenPack(set, kind):
+            state.packSession = PackSessionFeature.State(
+              product: PackProduct(set: set, kind: kind)
+            )
+            return .none
+            
           case let .didSelectCard(card, queryType):
             guard
               case let .showSetDetail(queryState) = state.path[id: id]

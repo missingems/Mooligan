@@ -43,6 +43,15 @@ struct RootView: View {
   @Environment(\.horizontalSizeClass) private var horizontalSizeClass
   
   var body: some View {
+    layout
+      .fullScreenCover(
+        item: $store.scope(state: \.packSession, action: \.packSession)
+      ) { sessionStore in
+        PackSessionView(store: sessionStore)
+      }
+  }
+  
+  @ViewBuilder private var layout: some View {
     if horizontalSizeClass == .regular {
       NavigationSplitView {
         List(selection: Binding(
@@ -64,10 +73,6 @@ struct RootView: View {
         case .sets:
           Browse.RootView(store: store.scope(state: \.sets, action: \.sets))
             .navigationTitle(Feature.TabInfo.sets.title)
-          
-        case .packs:
-          PackOpening.RootView(store: store.scope(state: \.packs, action: \.packs))
-            .navigationTitle(Feature.TabInfo.packs.title)
           
         case .collection:
           Text(Feature.TabInfo.collection.title)
@@ -121,14 +126,6 @@ struct RootView: View {
                 case let .showSetDetail(value):
                   Query.RootView(store: value)
                 }
-              }
-              
-            case .packs:
-              NavigationStack {
-                PackOpening
-                  .RootView(store: store.scope(state: \.packs, action: \.packs))
-                  .navigationTitle(info.title)
-                  .toolbarTitleDisplayMode(.inlineLarge)
               }
               
             case .collection:

@@ -22,6 +22,10 @@ struct PackTearView: View {
   @State private var haptics = PackHaptics()
   @State private var art = PackWrapperArtLoader()
 
+  /// The space the tear has to work in. Seeded so the first pass draws
+  /// something sensible; corrected on the first measurement.
+  @State private var viewSize = CGSize(width: 393, height: 780)
+
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
   /// Past this the pack is committed: letting go finishes the tear rather than
@@ -39,25 +43,26 @@ struct PackTearView: View {
   }
 
   var body: some View {
-    GeometryReader { proxy in
-      let packWidth = min(proxy.size.width * 0.68, 320)
-      // Sized to the photograph's own ratio when there is one, so the torn
-      // shapes cut across what is actually drawn rather than a slightly
-      // different box.
-      let ratio = art.aspectRatio ?? PackGeometry.widthToHeight
-      let packSize = CGSize(width: packWidth, height: packWidth / ratio)
+    let packWidth = min(viewSize.width * 0.68, 320)
+    // Sized to the photograph's own ratio when there is one, so the torn shapes
+    // cut across what is actually drawn rather than a slightly different box.
+    let ratio = art.aspectRatio ?? PackGeometry.widthToHeight
+    let packSize = CGSize(width: packWidth, height: packWidth / ratio)
 
-      ZStack {
-        cardsPeeking(packSize: packSize)
-        wrapper(packSize: packSize)
-        hint(packSize: packSize)
-      }
-      .frame(width: proxy.size.width, height: proxy.size.height)
-      .contentShape(Rectangle())
-      .gesture(tearGesture(packWidth: packWidth))
+    return ZStack {
+      cardsPeeking(packSize: packSize)
+      wrapper(packSize: packSize)
     }
+    .frame(maxWidth: .infinity, maxHeight: .infinity)
+    .contentShape(Rectangle())
+    .gesture(tearGesture(packWidth: packWidth))
+    // Measured, not laid out. A `GeometryReader` would take the space and hand
+    // its children a proposal of its own; the tear only needs to know how wide
+    // the screen is in order to size the pack.
+    .onGeometryChange(for: CGSize.self) { $0.size } action: { viewSize = $0 }
     .onAppear { haptics.prepare() }
     .task { await art.load(for: pack.product) }
+    .task { await demonstrateTear() }
     .accessibilityElement(children: .ignore)
     .accessibilityLabel("Sealed \(pack.product.kind.title) from \(pack.product.set.name)")
     .accessibilityHint("Swipe right to left across the pack to tear it open")
@@ -133,31 +138,33 @@ struct PackTearView: View {
 
   // MARK: - Cards behind the wrapper
 
-  /// The top edges of the cards, showing through the widening gap. Nothing here
-  /// is a real card image — it is the white edge you see before the first card
-  /// actually comes out.
+  /// The cards themselves, showing through the widening gap.
+  ///
+  /// These used to be blank white rectangles standing in for "the edge you see
+  /// before the first card comes out". The pack has already downloaded every
+  /// card it contains by the time it can be torn, so there is no reason to show
+  /// a placeholder: the real cards peek out instead, which turns the rip into a
+  /// glimpse of what is inside rather than a look at some white card stock.
+  ///
+  /// Deliberately the first cards of the reveal order, which is filler-first —
+  /// the pack gives away its commons here, never its rare.
   private func cardsPeeking(packSize: CGSize) -> some View {
     let lift = progress * packSize.height * 0.1
+    let cardWidth = packSize.width * 0.84
+    let cardHeight = cardWidth / MagicCardImageRatio.widthToHeight.rawValue
+    let peeking = Array(pack.revealOrder.prefix(3))
 
     return ZStack {
-      ForEach(0..<3, id: \.self) { index in
-        RoundedRectangle(cornerRadius: 6, style: .continuous)
-          .fill(
-            LinearGradient(
-              colors: [Color(white: 0.97), Color(white: 0.72)],
-              startPoint: .top,
-              endPoint: .bottom
-            )
-          )
-          .frame(
-            width: packSize.width * 0.84,
-            height: packSize.height * 0.8
-          )
+      ForEach(Array(peeking.enumerated()), id: \.element.id) { index, pulled in
+        PulledCardImage(pulled: pulled, width: cardWidth)
           .rotationEffect(.degrees(Double(index - 1) * 2.5))
           .offset(
-            y: packSize.height * 0.12 - lift - CGFloat(index) * 2
+            y: packSize.height * 0.17 - lift - CGFloat(index) * 3
+              + cardHeight / 2 - packSize.height / 2
           )
           .shadow(color: .black.opacity(0.3), radius: 6, y: 3)
+          // The first card of the pack sits at the front of the fan.
+          .zIndex(-Double(index))
       }
     }
     .frame(width: packSize.width, height: packSize.height)
@@ -166,31 +173,29 @@ struct PackTearView: View {
 
   // MARK: - Affordance
 
-  private func hint(packSize: CGSize) -> some View {
-    VStack {
-      HStack(spacing: 6) {
-        Image(systemName: "hand.draw.fill")
-        Text("Tear")
-          .font(.callout.weight(.semibold))
-      }
-      .foregroundStyle(.white.opacity(0.9))
-      .padding(.horizontal, 12)
-      .padding(.vertical, 7)
-      .background(.ultraThinMaterial, in: Capsule())
-      .overlay(alignment: .trailing) {
-        Image(systemName: "chevron.compact.left")
-          .foregroundStyle(.white.opacity(0.8))
-          .offset(x: 18)
-          .symbolEffect(.pulse)
-      }
-      .offset(x: -packSize.width * 0.18, y: packSize.height * PackGeometry.tearBaseline - packSize.height / 2)
+  /// Nudges the seal open every few seconds until the reader takes over.
+  ///
+  /// This replaces a pill reading "Tear" with a chevron, pinned at the height
+  /// the tear runs. The pack photograph is shot at a slight angle, so a marker
+  /// placed on a horizontal line never sat where the pack's own seal is — and
+  /// it pointed at one spot when the drag in fact works from anywhere, which
+  /// made it read as an instruction the pack then failed to follow. Showing a
+  /// little of the real rip says the same thing with none of that: it is the
+  /// gesture itself, in miniature, in the right place by construction.
+  private func demonstrateTear() async {
+    guard reduceMotion == false else { return }
 
-      Spacer()
+    while Task.isCancelled == false {
+      try? await Task.sleep(for: .seconds(2.4))
+
+      guard isDragging == false, isOpening == false, progress == 0 else { continue }
+      withAnimation(.easeOut(duration: 0.5)) { progress = 0.1 }
+
+      try? await Task.sleep(for: .milliseconds(620))
+
+      guard isDragging == false, isOpening == false else { continue }
+      withAnimation(.easeInOut(duration: 0.45)) { progress = 0 }
     }
-    .frame(width: packSize.width, height: packSize.height)
-    .opacity(progress > 0.05 || isOpening ? 0 : 1)
-    .animation(.easeOut(duration: 0.2), value: progress > 0.05)
-    .allowsHitTesting(false)
   }
 
   // MARK: - Gesture

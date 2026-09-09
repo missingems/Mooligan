@@ -56,12 +56,25 @@ public struct ScryfallBoosterPoolSource: BoosterPoolSource {
     let mythic = (try? await mythics) ?? []
 
     func pool(eligible: (Card) -> Bool) -> BoosterCardPool {
-      BoosterCardPool(
-        commons: common.filter { eligible($0) && $0.isBasicLand == false },
+      let commons = common.filter { eligible($0) && $0.isBasicLand == false }
+      let lands = common.filter(\.isBasicLand)
+
+      return BoosterCardPool(
+        commons: commons,
         uncommons: uncommon.filter(eligible),
         rares: rare.filter(eligible),
         mythics: mythic.filter(eligible),
-        lands: common.filter(\.isBasicLand)
+        lands: lands,
+        // Unlike the database path this is not a sample — it is the first page
+        // of each rarity, which for all but the largest sets is the whole
+        // bucket — so counting what came back is a fair denominator.
+        rarityCounts: BoosterRarityCounts(
+          common: commons.count,
+          uncommon: uncommon.count,
+          rare: rare.count,
+          mythic: mythic.count,
+          land: lands.count
+        )
       )
     }
 
