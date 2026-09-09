@@ -17,6 +17,7 @@ struct CardGridContentView: View {
           usdFoil: cardInfo.displayPriceUSDFoil,
           usd: cardInfo.displayPriceUSD
         ),
+        isFoilOnly: cardInfo.card.availableFoilness == true,
         send: { _ in
           store.send(.cardFaceToggled(id: cardInfo.id))
         }

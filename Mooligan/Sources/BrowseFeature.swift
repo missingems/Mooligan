@@ -114,6 +114,9 @@ public struct Feature {
       return .none
       
     case .setup:
+      // Both of these have to finish before launch does: the database so the
+      // first screen does not read a blank one, and the background task because
+      // `BGTaskScheduler` refuses a handler registered any later.
       databasePreparer.prepare()
       return .send(.bulkSync(.registerBackgroundTask))
       

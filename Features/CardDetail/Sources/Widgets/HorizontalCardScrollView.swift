@@ -4,7 +4,17 @@ import Networking
 import ScryfallKit
 import SwiftUI
 
-struct HorizontalCardScrollView: View {
+struct HorizontalCardScrollView: View, Equatable {
+  /// Compared on what it draws, not on `send`, which is a closure and so never
+  /// equal. A row of card images is expensive to rebuild and none of these
+  /// rows changes after its own request lands.
+  nonisolated static func == (lhs: HorizontalCardScrollView, rhs: HorizontalCardScrollView) -> Bool {
+    lhs.title == rhs.title
+      && lhs.subtitle == rhs.subtitle
+      && lhs.isInitial == rhs.isInitial
+      && lhs.cards == rhs.cards
+  }
+
   enum Action: Equatable {
     case didSelectCard(Card)
     case didShowCardAtIndex(Int)

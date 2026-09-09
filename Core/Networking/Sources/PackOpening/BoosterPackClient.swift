@@ -65,11 +65,17 @@ public struct LiveBoosterPackClient: BoosterPackClient {
 
     let pool: BoosterCardPool
 
-    if let cached = await cache.pool(forSet: product.set.code) {
+    // Keyed by the product, not the set: a Collector Booster of a set draws
+    // from a wider pool than a Play Booster of the same set, so the two cannot
+    // share an entry.
+    if let cached = await cache.pool(for: product) {
       pool = cached
     } else {
-      pool = try await poolSource.pool(forSet: product.set.code)
-      await cache.store(pool, forSet: product.set.code)
+      pool = try await poolSource.pool(
+        forSet: product.set.code,
+        companions: await companionSetCodes(for: product)
+      )
+      await cache.store(pool, for: product)
     }
 
     // Odds never fail the open: a set MTGJSON doesn't cover, a network drop, or
@@ -86,6 +92,22 @@ public struct LiveBoosterPackClient: BoosterPackClient {
 
     return BoosterPack(id: seed, product: product, cards: cards)
   }
+
+  /// The companion products a Collector Booster of this set also contains.
+  ///
+  /// Read from the set list rather than hard-coded: Scryfall already models the
+  /// relationship, as a child set of type `eternal` or `commander`. The list is
+  /// served from the local store, so this is a database read and not another
+  /// trip to Scryfall.
+  ///
+  /// Returns nothing rather than failing when the list is unavailable: a
+  /// collector pack of the main set alone is what this shipped as until now,
+  /// and is a better outcome than a pack that will not open.
+  private func companionSetCodes(for product: PackProduct) async -> [String] {
+    guard product.kind == .collector else { return [] }
+    guard let sets = try? await setClient.getSets(queryType: .all).1 else { return [] }
+    return product.set.companionSetCodes(in: sets)
+  }
 }
 
 /// Keeps a set's sampled pool for the life of the process.
@@ -95,12 +117,16 @@ public struct LiveBoosterPackClient: BoosterPackClient {
 actor BoosterPoolCache {
   private var pools: [String: BoosterCardPool] = [:]
 
-  func pool(forSet setCode: String) -> BoosterCardPool? {
-    pools[setCode.lowercased()]
+  func pool(for product: PackProduct) -> BoosterCardPool? {
+    pools[Self.key(for: product)]
   }
 
-  func store(_ pool: BoosterCardPool, forSet setCode: String) {
-    pools[setCode.lowercased()] = pool
+  func store(_ pool: BoosterCardPool, for product: PackProduct) {
+    pools[Self.key(for: product)] = pool
+  }
+
+  private static func key(for product: PackProduct) -> String {
+    "\(product.set.code.lowercased())/\(product.kind.rawValue)"
   }
 }
 
@@ -122,6 +148,27 @@ public extension MTGSet {
     default:
       false
     }
+  }
+
+  /// The sets a Collector Booster of this set draws from besides this one.
+  ///
+  /// Checked against MTGJSON's real sheets for two sets. The Hobbit's collector
+  /// `boosterfun` sheet is half The Hobbit Eternal — 66 of its 132 cards — and
+  /// its box topper is that set outright; Bloomburrow's carries a 40-card sheet
+  /// of Bloomburrow Commander cards and more of them among the showcase rares.
+  /// Both are exactly what Scryfall files as a child set of type `eternal` or
+  /// `commander`, which is what this looks for.
+  ///
+  /// Play Boosters are not covered by this, and should not be: every sheet of
+  /// The Hobbit's play booster is The Hobbit alone. (Bloomburrow's has ten
+  /// Special Guests in it, which are a set of their own with no parent, so they
+  /// are out of reach here — a small, known gap in both products.)
+  func companionSetCodes(in sets: [MTGSet]) -> [String] {
+    sets
+      .filter { $0.parentSetCode?.lowercased() == code.lowercased() }
+      .filter { $0.setType == .commander || $0.setType == .eternal }
+      .filter { $0.digital == false && $0.cardCount > 0 }
+      .map(\.code)
   }
 
   /// Collector boosters only exist for sets from roughly Throne of Eldraine on,

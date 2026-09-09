@@ -11,17 +11,18 @@ using namespace metal;
 ///
 /// Three layers stacked on top of whatever the view already drew:
 ///   1. interference bands, which give foil its rainbow;
-///   2. one bright specular streak that travels as the device tilts;
+///   2. one bright specular streak that travels across the surface;
 ///   3. a fine crinkle, so the surface reads as plastic rather than glass.
 ///
-/// `tilt` is the device roll in radians and `time` a slow clock, so the sheen
-/// moves both when the phone moves and when it is sitting still.
+/// `time` is a slow clock, and it is the only thing that moves the sheen. An
+/// earlier version also took the device's roll from Core Motion, so the foil
+/// caught the light as the phone turned — which sounds right and, on a screen
+/// you are already holding still to read, mostly read as the card twitching.
 [[ stitchable ]] half4 holographicFoil(
   float2 position,
   half4 color,
   float2 bounds,
   float time,
-  float tilt,
   float intensity
 ) {
   if (bounds.x <= 0.0 || bounds.y <= 0.0) {
@@ -41,7 +42,7 @@ using namespace metal;
 
   // Diagonal sweep coordinate. Tilt shifts it, so the rainbow slides when the
   // phone rolls; time keeps it alive when the phone is flat on a table.
-  float sweep = (uv.x * 0.75 + uv.y * 0.45) + tilt * 0.55 + time * 0.09;
+  float sweep = (uv.x * 0.75 + uv.y * 0.45) + time * 0.09;
 
   // 1. Interference bands.
   float band = sweep * 14.0;

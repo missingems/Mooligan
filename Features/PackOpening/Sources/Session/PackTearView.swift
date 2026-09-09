@@ -102,18 +102,35 @@ struct PackTearView: View {
           perspective: 0.4
         )
 
-      // The strip that comes away, lifting and twisting out of the way as the
-      // tear runs and then thrown clear once the pack is open.
+      // Light out of the seam. A pack coming open is the one moment the screen
+      // is built around, and the wrapper leaving quietly under its own steam
+      // never read as an event — this is what makes it one.
+      seamLight(packSize: packSize)
+
+      // The strip that comes away, lifting and twisting as the tear runs and
+      // then thrown clear once the pack is open.
+      //
+      // On the way out it crumples rather than simply sliding off: it turns
+      // about two axes at once, shrinks as it tumbles away, and spins further
+      // than a rigid sheet would. Foil has no stiffness, and a piece of it
+      // pulled off a pack collapses in the hand.
       artwork
         .frame(width: packSize.width, height: packSize.height)
         .clipShape(stripClip)
+        .rotation3DEffect(
+          .degrees(reduceMotion || isOpening == false ? 0 : 54),
+          axis: (x: 0.7, y: 1, z: 0.2),
+          anchor: .bottomLeading,
+          perspective: 0.6
+        )
+        .scaleEffect(isOpening && reduceMotion == false ? 0.62 : 1, anchor: .bottomLeading)
         .rotationEffect(
-          .degrees(reduceMotion ? 0 : Double(progress) * -7 + (isOpening ? -22 : 0)),
+          .degrees(reduceMotion ? 0 : Double(progress) * -7 + (isOpening ? -46 : 0)),
           anchor: .bottomLeading
         )
         .offset(
-          x: isOpening ? packSize.width * 1.4 : progress * packSize.width * 0.06,
-          y: isOpening ? -packSize.height * 0.7 : -progress * packSize.height * 0.05
+          x: isOpening ? packSize.width * 1.5 : progress * packSize.width * 0.06,
+          y: isOpening ? -packSize.height * 0.85 : -progress * packSize.height * 0.05
         )
         .opacity(isOpening ? 0 : 1)
         .shadow(color: .black.opacity(0.5), radius: 10, y: 6)
@@ -123,6 +140,34 @@ struct PackTearView: View {
     .shadow(color: .black.opacity(0.5), radius: 24, y: 16)
     .animation(.spring(duration: 0.55, bounce: 0.25), value: isOpening)
     .animation(.snappy(duration: 0.2), value: isDragging)
+  }
+
+  /// A band of light along the tear, thrown wide as the pack gives way.
+  ///
+  /// Deliberately additive and short-lived: it is the flash of the seal
+  /// breaking, not a glow the pack carries around. Sits between the body and
+  /// the strip so the strip is lit from behind as it comes away.
+  private func seamLight(packSize: CGSize) -> some View {
+    let openness = isOpening ? 1 : Double(progress)
+
+    return Ellipse()
+      .fill(
+        RadialGradient(
+          colors: [.white, .white.opacity(0.55), .clear],
+          center: .center,
+          startRadius: 0,
+          endRadius: packSize.width * 0.55
+        )
+      )
+      .frame(
+        width: packSize.width * (isOpening ? 1.9 : 1.1),
+        height: packSize.height * (isOpening ? 0.5 : 0.16)
+      )
+      .blur(radius: isOpening ? 26 : 12)
+      .blendMode(.plusLighter)
+      .opacity(reduceMotion ? openness * 0.35 : openness * (isOpening ? 0.9 : 0.32))
+      .offset(y: packSize.height * (PackGeometry.tearBaseline - 0.5))
+      .allowsHitTesting(false)
   }
 
   @ViewBuilder

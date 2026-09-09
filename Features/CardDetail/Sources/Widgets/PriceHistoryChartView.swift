@@ -13,7 +13,7 @@ import SwiftUI
 /// The section is always laid out, in all three states. An absent section that
 /// appears when a fetch lands grows the scroll content under the reader, and the
 /// page jumps; a card with no history says so in place instead.
-struct PriceHistoryChartView: View {
+struct PriceHistoryChartView: View, Equatable {
   /// A finish's price as Scryfall quotes it today.
   ///
   /// Shown the moment the screen opens, and independently of the chart. The
@@ -32,6 +32,20 @@ struct PriceHistoryChartView: View {
   private let title: String
   private let sourceLabel: String
   private let unavailableLabel: String
+
+  /// How many legend rows to hold space for: one per finish this printing was
+  /// made in, which is what the series below end up being.
+  private let legendRows: Int
+
+  /// One legend row: a caption-height line with its own vertical padding.
+  /// Scaled, so the space reserved for the legend is still the space it takes
+  /// at the reader's text size rather than at the default one.
+  @ScaledMetric(relativeTo: .caption) private var legendRowHeight = 23.0
+
+  /// The space the legend occupies, including the padding above it.
+  private var legendHeight: CGFloat {
+    8.0 + CGFloat(max(legendRows, 1)) * legendRowHeight
+  }
 
   @Environment(\.colorScheme) private var colorScheme
 
@@ -55,18 +69,32 @@ struct PriceHistoryChartView: View {
     var scrubbedDate: Date?
   }
 
+  /// Compares the data it draws, so the one store change that matters to this
+  /// view — the history landing — rebuilds it and the others do not. The scrub
+  /// and the isolated finish are `@State` and survive the comparison.
+  nonisolated static func == (lhs: PriceHistoryChartView, rhs: PriceHistoryChartView) -> Bool {
+    lhs.state == rhs.state
+      && lhs.quotes == rhs.quotes
+      && lhs.title == rhs.title
+      && lhs.sourceLabel == rhs.sourceLabel
+      && lhs.unavailableLabel == rhs.unavailableLabel
+      && lhs.legendRows == rhs.legendRows
+  }
+
   init(
     state: PriceHistoryState,
     quotes: [Quote] = [],
     title: String,
     sourceLabel: String,
-    unavailableLabel: String
+    unavailableLabel: String,
+    legendRows: Int
   ) {
     self.state = state
     self.quotes = quotes
     self.title = title
     self.sourceLabel = sourceLabel
     self.unavailableLabel = unavailableLabel
+    self.legendRows = legendRows
   }
 
   var body: some View {
@@ -95,8 +123,16 @@ struct PriceHistoryChartView: View {
             // Swift Charts does not re-lay-out its axes when the trait
             // collection flips; the y axis and sometimes the whole plot survive
             // as a stale, zero-sized layer until an unrelated gesture forces a
-            // pass. Rebuilding on the appearance change is cheap and
-            // deterministic.
+            // pass. Rebuilding on the scheme is the only way out of that.
+            //
+            // Whether a scrub is in progress used to be part of this identity
+            // too, to force the focus marks to be torn down on release. That
+            // could not stay: the scrub reader is a `UIView` living in this
+            // chart's own overlay, so changing identity on the first moved
+            // pixel destroyed the view holding the touch. The finger carried
+            // on, nothing was listening, and the dot stopped where the scrub
+            // began and stayed there after the finger lifted. The focus
+            // drawing moved out of the chart instead — see `focusOverlay`.
             .id(colorScheme)
         }
       }
@@ -108,11 +144,23 @@ struct PriceHistoryChartView: View {
       .clipShape(RoundedRectangle(cornerRadius: Self.cornerRadius))
       .padding(.top, 10.0)
 
-      if case let .data(section) = state {
-        legend(for: section)
+      // Held open whether or not there is a legend to put in it.
+      //
+      // This is the one part of the section whose size depends on the fetch: the
+      // header, today's quotes and the chart box are the same height in all
+      // three states. Letting it grow when the history lands meant the section
+      // got taller under a reader who was already scrolling past it, and
+      // everything below moved — which is the jolt, and no amount of confining
+      // the re-render fixes it. Reserved from the printing's own finishes, which
+      // are known the moment the card is, so the box is the right size before
+      // there is anything to draw in it.
+      ZStack(alignment: .top) {
+        if case let .data(section) = state {
+          legend(for: section)
+        }
       }
+      .frame(height: legendHeight, alignment: .top)
     }
-    .frame(minHeight: Self.reservedHeight, alignment: .top)
     // Plain padding rather than `safeAreaPadding`: an inset safe area feeds into
     // the chart's plot-area arithmetic, and this section has nothing that needs
     // to bleed to the edge.
@@ -126,10 +174,7 @@ struct PriceHistoryChartView: View {
   static let cornerRadius: CGFloat = 13.0
   static let chartInset: CGFloat = 10.0
   static let chartHeight: CGFloat = 200.0
-  /// Header plus the chart box plus two legend rows — the layout all but a
-  /// handful of cards end up with, so every state occupies the same box.
-  static let reservedHeight: CGFloat =
-    20.0 + 5.0 + 10.0 + chartHeight + chartInset * 2.0 + 8.0 + 46.0
+
 }
 
 // MARK: - Derived data
@@ -286,10 +331,13 @@ private extension PriceHistoryChartView {
   func placeholder(_ kind: PlaceholderKind) -> some View {
     switch kind {
     case .shimmer:
+      // Still, not shimmering. `shimmering()` animates a gradient *mask*, which
+      // is an offscreen pass on every frame for as long as it runs — over an
+      // area this size, inside a scroll view, for the whole time the history is
+      // in flight. That is exactly the window the screen was stuttering in.
       RoundedRectangle(cornerRadius: Self.cornerRadius - Self.chartInset)
         .fill(.quaternary)
         .frame(height: Self.chartHeight)
-        .shimmering()
 
     case let .message(text):
       VStack(spacing: 6.0) {
@@ -324,6 +372,7 @@ private extension PriceHistoryChartView {
       }
     }
     .padding(.top, 8.0)
+    .frame(maxWidth: .infinity, alignment: .leading)
   }
 
   @ViewBuilder
@@ -459,22 +508,9 @@ private extension PriceHistoryChartView {
             )
           }
         }
-
-        if let focusDate, let point = nearestPoint(in: series, to: focusDate) {
-          PointMark(
-            x: .value("Date", point.date),
-            y: .value("Price", point.amount.doubleValue)
-          )
-          .foregroundStyle(color(for: series.kind))
-          .symbolSize(56)
-        }
       }
-
-      if let focusDate {
-        RuleMark(x: .value("Focus", focusDate))
-          .foregroundStyle(.secondary.opacity(0.45))
-          .lineStyle(StrokeStyle(lineWidth: 1))
-      }
+      // The scrub's own rule and dots are drawn over the chart, not as marks
+      // inside it. See `focusOverlay`.
     }
     .chartLegend(.hidden)
     // Explicit domains. `.automatic(includesZero: false)` collapses to zero span
@@ -504,10 +540,15 @@ private extension PriceHistoryChartView {
       // proxy — but it does not need a `GeometryReader`, which would insert a
       // layout container into the overlay. `onGeometryChange` hands over the
       // same proxy and changes nothing about how the overlay is laid out.
+      // The anchor is pulled out here rather than inside the closure: it is
+      // `Sendable` where `ChartProxy` is not, and the geometry closure is
+      // `@Sendable`.
+      let plotAnchor = proxy.plotFrame
+
       ZStack(alignment: .topLeading) {
         Color.clear
           .onGeometryChange(for: CGRect.self) { geometry in
-            proxy.plotFrame.map { geometry[$0] } ?? .zero
+            plotAnchor.map { geometry[$0] } ?? .zero
           } action: { plot = $0 }
 
         if plot.width > 0 {
@@ -516,8 +557,50 @@ private extension PriceHistoryChartView {
             // stacked above it.
             .allowsHitTesting(false)
 
+          focusOverlay(section, proxy: proxy, plot: plot)
+            .allowsHitTesting(false)
+
           ChartTouchReader { positions in
             updateInteraction(positions, proxy: proxy, plot: plot)
+          }
+        }
+      }
+    }
+  }
+
+  /// Where the reader is scrubbing: a rule down the plot and a dot on each line.
+  ///
+  /// Drawn over the chart rather than as `RuleMark` and `PointMark` inside it.
+  /// Swift Charts strands a point's layer where it last drew: letting go of a
+  /// scrub cleared the legend and the rule, and left both dots sitting where
+  /// the finger had been, whatever the marks were told afterwards. The release
+  /// symbols along the top are positioned off the proxy for their own reasons,
+  /// and this uses the same route — plain SwiftUI, which cannot go stale.
+  ///
+  /// The dot matches the `symbolSize(56)` it replaces: that is an area in
+  /// square points, so the diameter is `2 * sqrt(56 / π)`.
+  @ViewBuilder
+  func focusOverlay(
+    _ section: PriceHistorySection,
+    proxy: ChartProxy,
+    plot: CGRect
+  ) -> some View {
+    if let focusDate, let focusX = proxy.position(forX: focusDate), focusX.isFinite {
+      ZStack(alignment: .topLeading) {
+        Rectangle()
+          .fill(.secondary.opacity(0.45))
+          .frame(width: 1.0, height: plot.height)
+          .position(x: plot.minX + focusX, y: plot.midY)
+
+        ForEach(displayedSeries(of: section)) { series in
+          if let point = nearestPoint(in: series, to: focusDate),
+             let x = proxy.position(forX: point.date),
+             let y = proxy.position(forY: point.amount.doubleValue),
+             x.isFinite, y.isFinite {
+            Circle()
+              .fill(color(for: series.kind))
+              .frame(width: 8.44, height: 8.44)
+              .position(x: plot.minX + x, y: plot.minY + y)
           }
         }
       }

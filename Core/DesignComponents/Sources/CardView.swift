@@ -2,8 +2,29 @@ import ScryfallKit
 import SwiftUI
 import Networking
 
-public struct CardView: View {
-  public enum ShadowConfiguration {
+/// `Equatable` so that a parent rebuilding does not become a card rebuilding.
+///
+/// A card view is a decoded image behind a `clipShape` and a stroked overlay,
+/// and on a foil it is a Metal shader as well. Without an `==` SwiftUI compares
+/// this by its stored properties, and the `send` closure it carries is never
+/// equal to another closure — so every re-run of an enclosing body rebuilt the
+/// card. Both grids and the card detail rebuild their bodies for reasons that
+/// have nothing to do with any individual card.
+public struct CardView: View, Equatable {
+  /// Compares what is drawn. `send` is deliberately excluded: it is a closure,
+  /// which is never equal, and every caller's does the same thing for the same
+  /// card — reports that its face was tapped.
+  public nonisolated static func == (lhs: CardView, rhs: CardView) -> Bool {
+    lhs.displayableCard == rhs.displayableCard
+      && lhs.layoutConfiguration == rhs.layoutConfiguration
+      && lhs.accessoryInfo == rhs.accessoryInfo
+      && lhs.shadowConfiguration == rhs.shadowConfiguration
+      && lhs.callToActionHorizontalOffset == rhs.callToActionHorizontalOffset
+      && lhs.isFoilOnly == rhs.isFoilOnly
+      && lhs.isFoilAnimated == rhs.isFoilAnimated
+  }
+
+  public enum ShadowConfiguration: Equatable {
     case `default`
     
     case custom(
@@ -47,14 +68,14 @@ public struct CardView: View {
     case toggledFaceDirection
   }
   
-  public enum AccessoryInfo {
+  public enum AccessoryInfo: Equatable {
     case hidden
     case display(usdFoil: String?, usd: String?)
     case displaySet(String, usdFoil: String?, usd: String?)
   }
   
-  public struct LayoutConfiguration {
-    public enum Rotation {
+  public struct LayoutConfiguration: Equatable {
+    public enum Rotation: Equatable {
       case landscape
       case portrait
       
@@ -87,6 +108,22 @@ public struct CardView: View {
   private let displayableCard: DisplayableCardImage
   private let accessoryInfo: AccessoryInfo
   private let send: ((Action) -> Void)?
+
+  /// Whether this printing exists only as a foil.
+  ///
+  /// Not "was pulled as a foil" — a card view outside a pack has no pull to
+  /// speak of. It is a property of the printing, so a foil-only card looks foil
+  /// wherever it is shown: in a set's grid, on its own detail screen, and in a
+  /// pack alike.
+  private let isFoilOnly: Bool
+
+  /// Whether the foil sheen runs on a clock.
+  ///
+  /// The shader sits inside a `TimelineView` driving a redraw thirty times a
+  /// second, so a grid of foils is that many clocks ticking behind a scroll — a
+  /// whole collector booster's worth, in the pack summary. A screen showing one
+  /// card can afford the movement; a grid draws the sheen once and leaves it.
+  private let isFoilAnimated: Bool
   
   @State private var isImageLoaded: Bool = false
   @Environment(\.displayScale) private var displayScale
@@ -94,7 +131,11 @@ public struct CardView: View {
   
   public var body: some View {
     VStack(spacing: 5.0) {
-      mainCardContent
+      if isFoilOnly {
+        mainCardContent.holographicFoil(intensity: 0.34, isAnimated: isFoilAnimated)
+      } else {
+        mainCardContent
+      }
     }
     .geometryGroup()
   }
@@ -186,10 +227,14 @@ public struct CardView: View {
     callToActionHorizontalOffset: CGFloat = 5.0,
     priceVisibility: AccessoryInfo,
     shadowConfiguration: ShadowConfiguration? = nil,
+    isFoilOnly: Bool = false,
+    isFoilAnimated: Bool = true,
     send: ((Action) -> Void)? = nil
   ) {
     guard let displayableCard else { return nil }
     self.displayableCard = displayableCard
+    self.isFoilOnly = isFoilOnly
+    self.isFoilAnimated = isFoilAnimated
     self.accessoryInfo = priceVisibility
     self.layoutConfiguration = layoutConfiguration
     self.callToActionHorizontalOffset = callToActionHorizontalOffset

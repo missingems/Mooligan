@@ -44,6 +44,44 @@ public struct BoosterCardPool: Equatable, Sendable {
   public var cardCount: Int {
     commons.count + uncommons.count + rares.count + mythics.count + lands.count
   }
+
+  /// Folds a companion product's pool into this one, keeping only `rarities`.
+  ///
+  /// A Collector Booster does not draw from its set alone. Read off MTGJSON's
+  /// own sheets: The Hobbit's collector `boosterfun` sheet is 132 cards, of
+  /// which 66 are from The Hobbit Eternal, and its box topper is that set
+  /// entirely; Bloomburrow's has a dedicated 40-card sheet of Bloomburrow
+  /// Commander cards, with more of them among the showcase rares. Play Boosters
+  /// stay inside the main set, which is why this is only used for the one
+  /// product.
+  ///
+  /// Rarity-filtered because every companion card on a real collector sheet is
+  /// a rare or a mythic — The Hobbit Eternal contributes 54 mythics and 12
+  /// rares and nothing else, Bloomburrow Commander 29 rares and 11 mythics.
+  /// Taking a companion's commons and uncommons as well would fill the pack's
+  /// ordinary slots with cards that were never in it.
+  public mutating func merge(_ other: BoosterCardPool, keeping rarities: Set<Card.Rarity>) {
+    if rarities.contains(.common) {
+      commons += other.commons
+      lands += other.lands
+    }
+    if rarities.contains(.uncommon) { uncommons += other.uncommons }
+    if rarities.contains(.rare) { rares += other.rares }
+    if rarities.contains(.mythic) { mythics += other.mythics }
+
+    // The denominators grow with the pool: a rare out of a set plus its
+    // commander deck really is rarer than one out of the set alone, and quoting
+    // it against the set's own count would overstate every collector pull.
+    if let mine = rarityCounts, let theirs = other.rarityCounts {
+      rarityCounts = BoosterRarityCounts(
+        common: mine.common + (rarities.contains(.common) ? theirs.common : 0),
+        uncommon: mine.uncommon + (rarities.contains(.uncommon) ? theirs.uncommon : 0),
+        rare: mine.rare + (rarities.contains(.rare) ? theirs.rare : 0),
+        mythic: mine.mythic + (rarities.contains(.mythic) ? theirs.mythic : 0),
+        land: mine.land + (rarities.contains(.common) ? theirs.land : 0)
+      )
+    }
+  }
 }
 
 /// Distinct printings per rarity in a set.
@@ -257,16 +295,18 @@ extension BoosterPackRoller {
   /// choose between. A mythic in a set with 20 mythics, out of a slot that goes
   /// mythic one time in seven, is `(1/7) / 20`.
   ///
-  /// Nil when the set's rarity counts are unknown, because a chance quoted
-  /// against a sample would be wrong in the flattering direction, and a wrong
-  /// number here is worse than none.
+  /// The second term prefers MTGJSON's per-card weight and only falls back to
+  /// an even split across the rarity. Nil when neither is available, because a
+  /// chance quoted against the sampled pool would be wrong in the flattering
+  /// direction, and a wrong number here is worse than none.
   static func pullChance(
     of card: Card,
     slot: PackSlotKind,
     odds: BoosterPackOdds,
     counts: BoosterRarityCounts?
   ) -> Double? {
-    guard let counts else { return nil }
+    guard counts != nil || odds.share(of: card) != nil else { return nil }
+    let counts = counts ?? BoosterRarityCounts(common: 0, uncommon: 0, rare: 0, mythic: 0, land: 0)
 
     let slotChance: Double =
       switch slot {
@@ -282,8 +322,18 @@ extension BoosterPackRoller {
         odds.foilWildcardWeights.first { $0.rarity == card.rarity }?.weight ?? 0
       }
 
+    guard slotChance > 0 else { return nil }
+
+    // The set's own sheet weights where MTGJSON has them: cards of one rarity
+    // are not printed in equal numbers, and quoting every rare at the average
+    // makes the deliberately scarce ones look ordinary. Only where it has
+    // nothing to say does this fall back to splitting the rarity evenly.
+    if slot != .land, let share = odds.share(of: card) {
+      return slotChance * share
+    }
+
     let pool = slot == .land ? counts.land : counts.count(for: card.rarity)
-    guard pool > 0, slotChance > 0 else { return nil }
+    guard pool > 0 else { return nil }
 
     return slotChance / Double(pool)
   }

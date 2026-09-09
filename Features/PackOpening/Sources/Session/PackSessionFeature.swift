@@ -97,6 +97,7 @@ import ScryfallKit
       case .showSummary:
         guard state.phase != .summary else { return .none }
         state.phase = .summary
+        if let pack = state.pack { state.history.add(pack) }
         return .none
 
       case let .didSelectCard(pulled):
@@ -178,6 +179,11 @@ public extension PackSessionFeature {
     /// Cards opened out of the pack, stacked over it.
     public var path = StackState<Path.State>()
 
+    /// What this sitting has come to so far. Survives "open another", because
+    /// the session is reset in place rather than rebuilt — opening ten packs
+    /// back to back is one run, and the interesting number is the run's.
+    public var history = History()
+
     public init(product: PackProduct) {
       self.product = product
     }
@@ -228,6 +234,33 @@ public extension PackSessionFeature {
 }
 
 public extension PackSessionFeature.State {
+  /// A running tally of everything ripped without leaving the session.
+  struct History: Equatable {
+    public private(set) var packs = 0
+    public private(set) var cards = 0
+    public private(set) var value = Decimal.zero
+    public private(set) var best: PulledCard?
+    /// Distinct sets, because opening another from the summary can be a
+    /// different product than the one before it.
+    public private(set) var setCodes: Set<String> = []
+
+    mutating func add(_ pack: BoosterPack) {
+      packs += 1
+      cards += pack.cards.count
+      value += pack.totalValue
+      setCodes.insert(pack.product.set.code.uppercased())
+
+      if let candidate = pack.bestPull,
+        best.map({ candidate.excitement > $0.excitement }) ?? true
+      {
+        best = candidate
+      }
+    }
+
+    /// Nothing to say until a second pack makes it a run rather than a pack.
+    public var isWorthShowing: Bool { packs > 1 }
+  }
+
   enum Phase: Equatable {
     /// Rolling the pack and downloading its art.
     case preparing
@@ -251,6 +284,22 @@ public extension PulledCard {
   /// pack did not make and a picture that has to fade in when it arrives.
   var imageURL: URL? {
     card.getImageURL(types: [.normal, .large, .small])
+  }
+
+  /// The pulled card as the shared `CardView` draws it, so the pack's summary
+  /// is the same grid of cards a set is.
+  ///
+  /// Falls back to the URL the pack prefetched for the handful of printings
+  /// Scryfall has no `normal` image for — `DisplayableCardImage` asks for that
+  /// size alone, and a cell with nothing in it would be worse than a card that
+  /// cannot be turned over.
+  var displayableCardImage: DisplayableCardImage? {
+    if let displayable = DisplayableCardImage(card) {
+      return displayable
+    }
+
+    guard let imageURL else { return nil }
+    return .single(displayingImageURL: imageURL, id: card.id.uuidString)
   }
 }
 

@@ -2,7 +2,10 @@ import DesignComponents
 import Networking
 import SwiftUI
 
-struct LegalityView: View {
+/// `Equatable` for the same reason as `CardDetailTableView`: this is twenty
+/// pills laid out in a grid, and nothing about a card's legalities changes
+/// after the screen opens.
+struct LegalityView: View, Equatable {
   let title: String
   let displayReleaseDate: String
   let legalities: [MagicCardLegalitiesValue]

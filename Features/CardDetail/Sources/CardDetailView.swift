@@ -34,28 +34,27 @@ public struct CardDetailView: View {
           layoutConfiguration: configuration,
           callToActionHorizontalOffset: 21.0,
           priceVisibility: .hidden,
-          shadowConfiguration: .default
+          shadowConfiguration: .default,
+          isFoilOnly: content.card.availableFoilness == true
         ) { action in
           store.send(.descriptionCallToActionTapped, animation: .bouncy)
         }
+        .equatable()
         .padding(
           EdgeInsets(top: 13, leading: 55, bottom: 34, trailing: 55)
         )
         .zIndex(1)
         
         CardDetailTableView(descriptions: content.getDescriptions(faceDirection: faceDirection))
+          .equatable()
         
-        InformationView(
-          title: content.infoLabel,
-          power: content.getPower(faceDirection: faceDirection),
-          toughness: content.getToughtness(faceDirection: faceDirection),
-          loyaltyCounters: content.getLoyalty(faceDirection: faceDirection),
-          manaValue: content.card.cmc,
-          rarity: content.card.rarity,
-          collectorNumber: content.card.collectorNumber,
-          colorIdentity: content.getColorIdentity(),
-          setCode: content.card.set,
-          setIconURL: store.setIconURL
+        // Reads `store.setIconURL` inside its own body rather than here: the
+        // icon is fetched after the screen is already up, and reading it from
+        // this body made that late arrival rebuild the whole card.
+        InformationSectionView(
+          store: store,
+          content: content,
+          faceDirection: faceDirection
         )
         
         if let label = content.card.layout.callToActionLabel,
@@ -94,6 +93,7 @@ public struct CardDetailView: View {
           displayReleaseDate: content.card.releasedAt,
           legalities: content.card.legalities.all
         )
+        .equatable()
         
         // Reads `store.priceHistory` inside its own body rather than here, so
         // the history landing re-renders this section and nothing else.
@@ -102,7 +102,10 @@ public struct CardDetailView: View {
           quotes: content.todaysQuotes,
           title: content.priceHistoryLabel,
           sourceLabel: content.priceHistorySourceLabel,
-          unavailableLabel: content.priceHistoryUnavailableLabel
+          unavailableLabel: content.priceHistoryUnavailableLabel,
+          // One legend row per finish this printing was made in, so the section
+          // is already the height it will be when the history lands.
+          legendRows: max(content.card.finishes.count, 1)
         )
 
         // Buying comes after the history, not before it: the chart is what tells
@@ -122,101 +125,19 @@ public struct CardDetailView: View {
             }
           }
         )
+        .equatable()
 
-        ObservedSection(store: store) { store in
-          if let section = store.variants.state.value {
-            HorizontalCardScrollView(
-              title: store.variants.title,
-              subtitle: store.variants.subtitle,
-              cards: section,
-              isInitial: store.variants.state.isInitial
-            ) { action in
-              switch action {
-            case let .didSelectCard(card):
-                store.send(.didSelectVariant(card: card, queryType: store.content.queryType))
-              case let .didShowCardAtIndex(index):
-                store.send(.didShowVariant(index: index))
-              }
-            }
-          }
-        }
-        
-        ObservedSection(store: store) { store in
-          if let relatedTokensSection = store.relatedTokens,
-             let cards = relatedTokensSection.state.value {
-            HorizontalCardScrollView(
-              title: relatedTokensSection.title,
-              subtitle: relatedTokensSection.subtitle,
-              cards: cards,
-              isInitial: relatedTokensSection.state.isInitial
-            ) { action in
-            switch action {
-            case let .didSelectCard(card):
-                print(card)
-              case let .didShowCardAtIndex(index):
-                print(index)
-              }
-            }
-          }
-        }
-        
-        ObservedSection(store: store) { store in
-          if let relatedComboPiecesSection = store.relatedComboPieces,
-             let cards = relatedComboPiecesSection.state.value {
-            HorizontalCardScrollView(
-              title: relatedComboPiecesSection.title,
-              subtitle: relatedComboPiecesSection.subtitle,
-              cards: cards,
-              isInitial: relatedComboPiecesSection.state.isInitial
-            ) { action in
-            switch action {
-            case let .didSelectCard(card):
-                print(card)
-              case let .didShowCardAtIndex(index):
-                print(index)
-              }
-            }
-          }
-        }
-        
-        ObservedSection(store: store) { store in
-          if let relatedMeldPiecesSection = store.relatedMeldPieces,
-             let cards = relatedMeldPiecesSection.state.value {
-            HorizontalCardScrollView(
-              title: relatedMeldPiecesSection.title,
-              subtitle: relatedMeldPiecesSection.subtitle,
-              cards: cards,
-              isInitial: relatedMeldPiecesSection.state.isInitial
-            ) { action in
-            switch action {
-            case let .didSelectCard(card):
-                print(card)
-              case let .didShowCardAtIndex(index):
-                print(index)
-              }
-            }
-          }
-        }
-        
-        ObservedSection(store: store) { store in
-          if let relatedMeldResultSection = store.relatedMeldResult,
-             let cards = relatedMeldResultSection.state.value {
-            HorizontalCardScrollView(
-              title: relatedMeldResultSection.title,
-              subtitle: relatedMeldResultSection.subtitle,
-              cards: cards,
-              isInitial: relatedMeldResultSection.state.isInitial
-            ) { action in
-            switch action {
-            case let .didSelectCard(card):
-                print(card)
-              case let .didShowCardAtIndex(index):
-                print(index)
-              }
-            }
-          }
-        }
-        
+        // Each row below reads one slice of the store, inside a body of its
+        // own. Observation is recorded where a value is read, so a list landing
+        // re-renders the row that was waiting on it and nothing else — read
+        // them from here and the whole card rebuilds, which is what the reader
+        // feels as a stutter when a request finishes mid-scroll.
+        VariantsSectionView(store: store)
+        RelatedTokensSectionView(store: store)
+        RelatedComboPiecesSectionView(store: store)
+        RelatedMeldPiecesSectionView(store: store)
+        RelatedMeldResultSectionView(store: store)
+
         SelectionView(
           items: [
             SelectionView.Item(
@@ -232,6 +153,7 @@ public struct CardDetailView: View {
             },
           ]
         )
+        .equatable()
       }
       .onGeometryChange(for: CGFloat.self, of: { proxy in
         proxy.size.width
@@ -299,6 +221,7 @@ private struct PriceHistorySectionView: View {
   let title: String
   let sourceLabel: String
   let unavailableLabel: String
+  let legendRows: Int
 
   var body: some View {
     PriceHistoryChartView(
@@ -306,24 +229,133 @@ private struct PriceHistorySectionView: View {
       quotes: quotes,
       title: title,
       sourceLabel: sourceLabel,
-      unavailableLabel: unavailableLabel
+      unavailableLabel: unavailableLabel,
+      legendRows: legendRows
     )
+    .equatable()
   }
 }
 
 
-/// Renders its content inside a body of its own.
+/// The card's tiles: power, mana value, rarity, collector number, set.
 ///
-/// Observation is recorded where a value is *read*, so a section that reads its
-/// slice of the store in here depends on that slice alone — a token list
-/// arriving re-renders this wrapper and nothing else. Read from the parent's
-/// body instead and the whole card detail screen rebuilds, which lands as a
-/// stutter whenever one of these requests finishes mid-scroll.
-private struct ObservedSection<Body: View>: View {
+/// Split out for one read. The set icon is fetched after the screen is already
+/// up, and while `store.setIconURL` was read from `CardDetailView.body` that
+/// late arrival invalidated the card image, the tables, the chart and every
+/// list along with it.
+private struct InformationSectionView: View {
   let store: StoreOf<CardDetailFeature>
-  @ViewBuilder var content: (StoreOf<CardDetailFeature>) -> Body
+  let content: Content
+  let faceDirection: MagicCardFaceDirection?
 
   var body: some View {
-    content(store)
+    InformationView(
+      title: content.infoLabel,
+      power: content.getPower(faceDirection: faceDirection),
+      toughness: content.getToughtness(faceDirection: faceDirection),
+      loyaltyCounters: content.getLoyalty(faceDirection: faceDirection),
+      manaValue: content.card.cmc,
+      rarity: content.card.rarity,
+      collectorNumber: content.card.collectorNumber,
+      colorIdentity: content.getColorIdentity(),
+      setCode: content.card.set,
+      setIconURL: store.setIconURL
+    )
+    .equatable()
+  }
+}
+
+
+/// Every other printing of this card.
+private struct VariantsSectionView: View {
+  let store: StoreOf<CardDetailFeature>
+
+  var body: some View {
+    let variants = store.variants
+
+    if let cards = variants.state.value {
+      HorizontalCardScrollView(
+        title: variants.title,
+        subtitle: variants.subtitle,
+        cards: cards,
+        isInitial: variants.state.isInitial
+      ) { [store] action in
+        switch action {
+        case let .didSelectCard(card):
+          // Read when the row is tapped rather than when it is drawn, so the
+          // query type is not part of what this view observes.
+          store.send(.didSelectVariant(card: card, queryType: store.content.queryType))
+
+        case let .didShowCardAtIndex(index):
+          store.send(.didShowVariant(index: index))
+        }
+      }
+      .equatable()
+    }
+  }
+}
+
+
+/// The tokens this card makes.
+private struct RelatedTokensSectionView: View {
+  let store: StoreOf<CardDetailFeature>
+
+  var body: some View {
+    RelatedCardsSectionView(section: store.relatedTokens)
+  }
+}
+
+
+/// The cards this one is usually played with.
+private struct RelatedComboPiecesSectionView: View {
+  let store: StoreOf<CardDetailFeature>
+
+  var body: some View {
+    RelatedCardsSectionView(section: store.relatedComboPieces)
+  }
+}
+
+
+/// The other half of a meld pair.
+private struct RelatedMeldPiecesSectionView: View {
+  let store: StoreOf<CardDetailFeature>
+
+  var body: some View {
+    RelatedCardsSectionView(section: store.relatedMeldPieces)
+  }
+}
+
+
+/// What this card melds into.
+private struct RelatedMeldResultSectionView: View {
+  let store: StoreOf<CardDetailFeature>
+
+  var body: some View {
+    RelatedCardsSectionView(section: store.relatedMeldResult)
+  }
+}
+
+
+/// The body the four related-card rows share.
+///
+/// Handed the section it draws rather than reaching into the store for it: the
+/// wrappers above exist precisely so that each read is recorded against a view
+/// that depends on that one slice, and a shared view that took the store would
+/// have to read all four to know which to show.
+private struct RelatedCardsSectionView: View {
+  let section: Content.SubContent?
+
+  var body: some View {
+    if let section, let cards = section.state.value {
+      // Selection is not wired up for these rows yet; tapping one is a no-op
+      // rather than a route that does not exist.
+      HorizontalCardScrollView(
+        title: section.title,
+        subtitle: section.subtitle,
+        cards: cards,
+        isInitial: section.state.isInitial
+      ) { _ in }
+      .equatable()
+    }
   }
 }

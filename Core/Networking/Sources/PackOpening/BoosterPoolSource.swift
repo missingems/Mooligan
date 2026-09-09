@@ -7,6 +7,25 @@ public protocol BoosterPoolSource: Sendable {
   func pool(forSet setCode: String) async throws -> BoosterCardPool
 }
 
+public extension BoosterPoolSource {
+  /// The pool a product draws from: its own set, and — for a Collector Booster
+  /// — the rares and mythics of the companion products printed alongside it.
+  ///
+  /// A companion that cannot be read is skipped rather than failing the open:
+  /// a pack short of its eternal cards is still the pack, where no pack at all
+  /// is not.
+  func pool(forSet setCode: String, companions: [String]) async throws -> BoosterCardPool {
+    var pool = try await self.pool(forSet: setCode)
+
+    for companion in companions {
+      guard let extra = try? await self.pool(forSet: companion) else { continue }
+      pool.merge(extra, keeping: [.rare, .mythic])
+    }
+
+    return pool
+  }
+}
+
 public enum BoosterPoolSourceError: Error, Equatable {
   /// No source could produce enough cards for the set — usually a set the bulk
   /// sync hasn't reached and that Scryfall has no boosterable printings for.

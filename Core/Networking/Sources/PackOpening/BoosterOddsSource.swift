@@ -36,14 +36,36 @@ public struct BoosterPackOdds: Equatable, Sendable, Codable {
   /// silently wrongs whichever slot borrows the other's numbers.
   public let foilWildcardWeights: [RarityWeight]
 
+  /// Scryfall id to that printing's share of its own rarity, where MTGJSON
+  /// says the sheets are not flat.
+  ///
+  /// Cards of one rarity are not printed in equal numbers. A set's sheets give
+  /// each card its own weight, and some are deliberately scarce — the reason a
+  /// particular rare feels harder to hit than the rest of the rares is that it
+  /// literally is. Without this every card of a rarity would be quoted at
+  /// `1 / (number of that rarity)`, which is the average and true of almost
+  /// none of them.
+  ///
+  /// Keyed by lowercased uuid string rather than `UUID` so the cached JSON
+  /// stays a plain object.
+  public let cardShares: [String: Double]
+
   public init(
     mythicChance: Double,
     wildcardWeights: [RarityWeight],
-    foilWildcardWeights: [RarityWeight]
+    foilWildcardWeights: [RarityWeight],
+    cardShares: [String: Double] = [:]
   ) {
     self.mythicChance = mythicChance
     self.wildcardWeights = wildcardWeights
     self.foilWildcardWeights = foilWildcardWeights
+    self.cardShares = cardShares
+  }
+
+  /// This printing's share of its rarity, if the set's sheets say.
+  public func share(of card: Card) -> Double? {
+    let value = cardShares[card.id.uuidString.lowercased()]
+    return (value ?? 0) > 0 ? value : nil
   }
 
   /// Used whenever MTGJSON has nothing usable for a set: no booster entry, or

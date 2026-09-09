@@ -9,11 +9,24 @@ import SwiftUI
 /// that were all TCGplayer's — the same number the chart above already plots —
 /// and hid the vendor links inside a menu on each tile. Splitting by marketplace
 /// instead puts a distinct number on every row and makes the link the row.
-struct PurchaseLinksView: View {
+struct PurchaseLinksView: View, Equatable {
   private let title: String
   private let subtitle: String
   private let listings: [MarketplaceListing]
   private let finishLabel: (PriceSeriesKind) -> String
+
+  /// Compares everything drawn, and deliberately not `finishLabel`.
+  ///
+  /// A closure is never equal to another closure, which is enough on its own to
+  /// make SwiftUI rebuild this view every time the card detail's body runs —
+  /// which is every time anything on the store changes. This one only maps a
+  /// finish to a fixed localized string, so two views with the same listings
+  /// draw the same rows whichever copy of it they hold.
+  nonisolated static func == (lhs: PurchaseLinksView, rhs: PurchaseLinksView) -> Bool {
+    lhs.title == rhs.title
+      && lhs.subtitle == rhs.subtitle
+      && lhs.listings == rhs.listings
+  }
 
   init(
     title: String,

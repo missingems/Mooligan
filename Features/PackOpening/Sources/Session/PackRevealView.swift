@@ -29,6 +29,9 @@ struct PackRevealView: View {
   let onOpenAnother: () -> Void
   let onDone: () -> Void
 
+  /// Everything ripped in this sitting so far.
+  let history: PackSessionFeature.State.History
+
   /// The card currently in hand.
   @State private var topIndex = 0
 
@@ -43,6 +46,11 @@ struct PackRevealView: View {
   /// it is going.
   @State private var deckFrame: CGRect = .zero
   @State private var stripFrame: CGRect = .zero
+
+  /// How much of the screen the next pack covers where it peeks up from the
+  /// bottom edge, so the grid can be scrolled clear of it. Measured rather than
+  /// guessed: it is a pack drawn at its own aspect ratio, not a fixed bar.
+  @State private var nextPackHeight: CGFloat = 0
 
   /// The space the reveal has to work in. Seeded so the first pass lays out
   /// something sensible; corrected on the first real measurement.
@@ -64,7 +72,9 @@ struct PackRevealView: View {
 
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-  private static let space = "packReveal"
+  // `nonisolated` because the geometry closures that name it are `@Sendable`,
+  // and a `static let` on a main-actor view is main-actor isolated by default.
+  private nonisolated static let space = "packReveal"
 
   private var revealOrder: [PulledCard] { pack.revealOrder }
 
@@ -90,11 +100,13 @@ struct PackRevealView: View {
       .reduce(Decimal.zero) { $0 + ($1.price ?? 0) }
   }
 
-  /// The pack by rarity, best first, keeping pack order within a rarity.
-  private var groups: [(rarity: Card.Rarity, cards: [PulledCard])] {
-    Dictionary(grouping: pack.cards, by: \.rarity)
-      .map { (rarity: $0.key, cards: $0.value) }
-      .sorted { $0.rarity > $1.rarity }
+  /// What the sitting has come to: packs opened, cards pulled, and what the
+  /// lot is worth.
+  private var sessionTally: String {
+    let packs = history.packs == 1 ? "1 pack" : "\(history.packs) packs"
+    let sets = history.setCodes.count > 1 ? " · \(history.setCodes.count) sets" : ""
+
+    return "\(packs)\(sets) · \(history.cards) cards · \(history.value.formatted(.currency(code: "USD")))"
   }
 
   private var setting: CardStackSetting {
@@ -152,6 +164,16 @@ struct PackRevealView: View {
     VStack(spacing: 14) {
       header
       grid
+    }
+    // The next pack waits at the bottom edge, showing just enough of itself to
+    // be grabbed. Opening another is the thing people do most from here, and a
+    // pack you pull out is a better invitation than a button that says so.
+    .overlay(alignment: .bottom) {
+      NextPackView(
+        product: pack.product,
+        visibleHeight: $nextPackHeight,
+        onOpenAnother: onOpenAnother
+      )
     }
   }
 
@@ -222,6 +244,13 @@ struct PackRevealView: View {
           .font(.headline.monospacedDigit())
           .foregroundStyle(.white)
           .contentTransition(.numericText())
+
+        if isSummary, history.isWorthShowing {
+          Text(sessionTally)
+            .font(.caption2.monospacedDigit())
+            .foregroundStyle(.white.opacity(0.45))
+            .lineLimit(1)
+        }
       }
       .animation(.snappy, value: revealed.count)
       .accessibilityElement(children: .combine)
@@ -352,95 +381,28 @@ struct PackRevealView: View {
   // MARK: - The grid
 
   /// The row of slots, opened out. Same cards, same view, more room.
+  ///
+  /// A view of its own, and deliberately so. Measured with `_printChanges`, a
+  /// single `@State` change on `PackRevealView` — and it has a dozen of them,
+  /// several written while a finger is down — re-evaluated this whole body,
+  /// which meant rebuilding all fifteen grid cells. Each cell is a decoded card
+  /// image behind a `clipShape` and a stroked overlay, so that is fifteen
+  /// offscreen passes thrown away and redone for a change that had nothing to
+  /// do with the grid. Taking only what it needs means nothing else can reach
+  /// it.
+  ///
+  /// Shown in reveal order, which is the order the row along the bottom is in,
+  /// so opening the row out moves every card the shortest distance to where it
+  /// already was — and the pack still finishes on the card it built up to.
   private var grid: some View {
-    let columns = [
-      GridItem(.flexible(), spacing: 12),
-      GridItem(.flexible(), spacing: 12),
-    ]
-
-    return ScrollView {
-      // Not pinned. A pinned header has to be repositioned on every scrolled
-      // frame, and with fifteen card images under it that was a visible hitch.
-      LazyVGrid(columns: columns, spacing: 16) {
-        ForEach(groups, id: \.rarity) { group in
-          Section {
-            ForEach(group.cards) { pulled in
-              VStack(spacing: 6) {
-                // No fixed width: the cell takes what the column offers, which
-                // is what lets the grid lay itself out without being told how
-                // wide the screen is.
-                PulledCardImage(pulled: pulled)
-                  .modifier(
-                    CardMorph(id: pulled.id, namespace: cardMorph, isActive: isMorphing)
-                  )
-
-                priceLabel(for: pulled)
-              }
-              .onTapGesture { onSelect(pulled) }
-              .accessibilityElement(children: .ignore)
-              .accessibilityAddTraits(.isButton)
-              .accessibilityLabel(
-                "\(pulled.card.name), \(pulled.rarity.displayName)\(pulled.isFoil ? ", foil" : "")"
-              )
-              .accessibilityIdentifier("packOpening.summaryCard.\(pulled.id.uuidString)")
-            }
-          } header: {
-            sectionHeader(rarity: group.rarity, count: group.cards.count)
-          }
-        }
-      }
-      .padding(.horizontal, 16)
-
-      actions
-    }
-    .scrollBounceBehavior(.basedOnSize)
-  }
-
-  private func sectionHeader(rarity: Card.Rarity, count: Int) -> some View {
-    HStack(spacing: 6) {
-      Text(rarity.displayName)
-        .font(.subheadline.weight(.semibold))
-        .foregroundStyle(.white.opacity(0.85))
-
-      Text("\(count)")
-        .font(.caption.weight(.semibold).monospacedDigit())
-        .foregroundStyle(.white.opacity(0.45))
-
-      Spacer()
-    }
-    .padding(.vertical, 8)
-    .background(.black.opacity(0.85))
-    .accessibilityElement(children: .combine)
-    .accessibilityLabel("\(rarity.displayName), \(count) cards")
-  }
-
-  private func priceLabel(for pulled: PulledCard) -> some View {
-    HStack(spacing: 4) {
-      if pulled.isFoil {
-        Image(systemName: "sparkles").imageScale(.small)
-      }
-
-      if let price = pulled.price, price > 0 {
-        Text(price, format: .currency(code: "USD"))
-          .font(.caption2.monospacedDigit())
-      } else {
-        Text(pulled.rarity.displayName)
-          .font(.caption2)
-      }
-
-      if let odds = pulled.oddsDescription {
-        Text(verbatim: "·")
-          .font(.caption2)
-          .foregroundStyle(.white.opacity(0.25))
-
-        Text(odds)
-          .font(.caption2.monospacedDigit())
-          .foregroundStyle(.white.opacity(0.45))
-      }
-    }
-    .foregroundStyle(.white.opacity(0.6))
-    .lineLimit(1)
-    .minimumScaleFactor(0.75)
+    PackGrid(
+      cards: revealOrder,
+      cardMorph: cardMorph,
+      isMorphing: isMorphing,
+      bottomInset: nextPackHeight,
+      onSelect: onSelect,
+      actions: { actions }
+    )
   }
 
   private var actions: some View {
@@ -460,9 +422,10 @@ struct PackRevealView: View {
         .foregroundStyle(.white)
         .accessibilityIdentifier("packOpening.done")
     }
-    .padding(.horizontal, 24)
+    // Left to the grid's own margins: the buttons line up with the cards
+    // above them, and the room to scroll clear of the next pack is the scroll
+    // view's bottom inset rather than padding this block carries around.
     .padding(.top, 20)
-    .padding(.bottom, 32)
   }
 
   // MARK: - The deck
@@ -542,12 +505,12 @@ struct PackRevealView: View {
 /// A pulled card's artwork, at whatever size it is being shown.
 ///
 /// One view and, crucially, one image request whatever the size: the slot along
-/// the bottom, the card in hand and the cell in the grid all ask for the same
-/// URL, which is the one the pack prefetched before it opened. Asking for the
-/// small printing in the row and the normal one on the stack meant the row's
-/// copy was a separate, uncached download that faded in on arrival — the card
-/// blinked at the end of every throw, and the pack quietly fetched a second
-/// image of every card it had already downloaded.
+/// the bottom and the card in hand ask for the same URL, and so does the
+/// `CardView` in the finished grid — the one the pack prefetched before it
+/// opened. Asking for the small printing in the row and the normal one on the
+/// stack meant the row's copy was a separate, uncached download that faded in
+/// on arrival: the card blinked at the end of every throw, and the pack quietly
+/// fetched a second image of every card it had already downloaded.
 struct PulledCardImage: View {
   let pulled: PulledCard
 
@@ -557,9 +520,9 @@ struct PulledCardImage: View {
   /// Whether the foil sheen runs on a clock.
   ///
   /// Only the card being looked at earns that. The shader sits inside a
-  /// `TimelineView` driving a redraw thirty times a second, and a grid of
-  /// fifteen foils — an entire collector booster — is fifteen of them ticking
-  /// at once behind a scroll. Everywhere else the sheen is drawn once and left.
+  /// `TimelineView` driving a redraw thirty times a second, and a row of
+  /// fifteen foil slots is fifteen of them ticking at once. Everywhere else the
+  /// sheen is drawn once and left.
   var isFoilAnimated = false
 
   @State private var isImageLoaded = false
@@ -628,6 +591,212 @@ private struct CardMorph: ViewModifier {
       content.matchedGeometryEffect(id: id, in: namespace)
     } else {
       content
+    }
+  }
+}
+
+
+/// The finished pack, laid out the way this app lays out any grid of cards.
+///
+/// Deliberately the set grid's arrangement rather than one of its own: a plain
+/// `LazyVGrid` of `CardView`s sized from the measured width, with no rarity
+/// sections, no headers, and no price or odds under each card. Those numbers
+/// belong to the reveal, where they are read one at a time against the card
+/// they describe; repeated fifteen times under a grid they are a wall of small
+/// type over the only thing worth looking at. Reusing `CardView` also means the
+/// grid scrolled here is the grid scrolled in a set — including turning a
+/// double-faced card over — rather than a second implementation that has to be
+/// made smooth separately.
+///
+/// Split out of `PackRevealView` so that view's state cannot invalidate it.
+/// Everything it needs is passed in, and none of it changes while the grid is
+/// being scrolled.
+private struct PackGrid<Actions: View>: View {
+  let cards: [PulledCard]
+  let cardMorph: Namespace.ID
+  let isMorphing: Bool
+
+  /// Room at the foot of the scroll for the pack peeking up over it, so the
+  /// last row and the buttons can be brought out from behind it.
+  let bottomInset: CGFloat
+
+  let onSelect: (PulledCard) -> Void
+  @ViewBuilder let actions: () -> Actions
+
+  /// Resolved from the measured width, exactly as the set grid does it, so each
+  /// cell is laid out at a size that is already known rather than working one
+  /// out from the image that turns up in it.
+  @State private var layout: CardView.LayoutConfiguration?
+
+  private static var columnCount: CGFloat { 2 }
+  private static var spacing: CGFloat { 8 }
+
+  private var columns: [GridItem] {
+    [GridItem](
+      repeating: GridItem(spacing: Self.spacing, alignment: .center),
+      count: Int(Self.columnCount)
+    )
+  }
+
+  var body: some View {
+    ScrollView {
+      LazyVGrid(columns: columns, spacing: Self.spacing) {
+        if let layout {
+          ForEach(cards) { pulled in
+            PackGridCell(
+              pulled: pulled,
+              layout: layout,
+              cardMorph: cardMorph,
+              isMorphing: isMorphing,
+              onSelect: onSelect
+            )
+          }
+        }
+      }
+
+      actions()
+    }
+    .scrollBounceBehavior(.basedOnSize)
+    .contentMargins(
+      .all,
+      EdgeInsets(
+        top: 0,
+        leading: systemHorizontalMargin,
+        bottom: bottomInset,
+        trailing: systemHorizontalMargin
+      ),
+      for: .scrollContent
+    )
+    .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width in
+      let gutters = Self.spacing * (Self.columnCount - 1)
+      let columnWidth =
+        ((width - systemHorizontalMargin * 2 - gutters) / Self.columnCount).rounded(.down)
+
+      guard columnWidth > 0, layout?.size.width != columnWidth else { return }
+      layout = CardView.LayoutConfiguration(rotation: .portrait, maxWidth: columnWidth)
+    }
+  }
+}
+
+
+/// One card in the finished pack.
+private struct PackGridCell: View {
+  let pulled: PulledCard
+  let layout: CardView.LayoutConfiguration
+  let cardMorph: Namespace.ID
+  let isMorphing: Bool
+  let onSelect: (PulledCard) -> Void
+
+  /// Which way up a double-faced card is being shown.
+  ///
+  /// Held by the cell rather than for the grid as a whole: turning one card
+  /// over should redraw that card and not the fourteen around it.
+  @State private var face: DisplayableCardImage?
+
+  private var displayable: DisplayableCardImage? { face ?? pulled.displayableCardImage }
+
+  var body: some View {
+    CardView(
+      displayableCard: displayable,
+      layoutConfiguration: layout,
+      callToActionHorizontalOffset: -3.0,
+      priceVisibility: .hidden,
+      // A card pulled as a foil looks foil, but the sheen is drawn once and
+      // left: a whole collector booster of animated foils is fifteen shaders
+      // redrawing thirty times a second behind the scroll.
+      isFoilOnly: pulled.isFoil,
+      isFoilAnimated: false,
+      send: { _ in face = displayable?.toggled() }
+    )
+    .modifier(CardMorph(id: pulled.id, namespace: cardMorph, isActive: isMorphing))
+    .contentShape(.rect)
+    .onTapGesture { onSelect(pulled) }
+    .accessibilityElement(children: .ignore)
+    .accessibilityAddTraits(.isButton)
+    .accessibilityLabel(
+      "\(pulled.card.name), \(pulled.rarity.displayName)\(pulled.isFoil ? ", foil" : "")"
+    )
+    .accessibilityIdentifier("packOpening.summaryCard.\(pulled.id.uuidString)")
+  }
+}
+
+
+/// The next pack, waiting at the bottom edge to be pulled out.
+///
+/// Owns the drag rather than reporting it upwards. While the travel lived on
+/// `PackRevealView` every frame of the pull re-evaluated that view's body, and
+/// with it the grid of fifteen cards sitting behind this one — a redraw of the
+/// whole screen for a gesture that moves one wrapper.
+private struct NextPackView: View {
+  let product: PackProduct
+
+  /// How much of itself it covers the screen with while parked, reported back
+  /// so the grid behind it knows how far it has to be able to scroll.
+  @Binding var visibleHeight: CGFloat
+
+  let onOpenAnother: () -> Void
+
+  /// How far the pack has been pulled up out of the bottom of the screen.
+  @State private var pull: CGFloat = 0
+
+  /// How much of the pack shows before anything is dragged, and how far it has
+  /// to come to count as opened.
+  private let peek: CGFloat = 96
+  private let travel: CGFloat = 130
+
+  var body: some View {
+    VStack(spacing: 8) {
+      Capsule()
+        .fill(.white.opacity(0.35))
+        .frame(width: 36, height: 4)
+
+      Text("Pull up for another")
+        .font(.caption.weight(.semibold))
+        .foregroundStyle(.white.opacity(0.6))
+
+      BoosterPackView(product: product)
+        .frame(maxWidth: 150)
+    }
+    .padding(.top, 10)
+    .frame(maxWidth: .infinity)
+    .background(
+      LinearGradient(
+        colors: [.clear, Color(white: 0.06).opacity(0.9), Color(white: 0.06)],
+        startPoint: .top,
+        endPoint: .bottom
+      )
+      .ignoresSafeArea()
+    )
+    // Parked below the fold with only its head showing, and pulled up as the
+    // finger moves.
+    .offset(y: peek - pull)
+    .gesture(
+      DragGesture(minimumDistance: 4)
+        .onChanged { value in
+          pull = min(max(-value.translation.height, 0), travel)
+        }
+        .onEnded { value in
+          let pulled = min(max(-value.predictedEndTranslation.height, 0), travel * 2)
+
+          if pulled >= travel * 0.6 {
+            // Carry it the rest of the way, then hand over: the new pack
+            // arrives sealed in the same place this one was pulled from.
+            withAnimation(.easeOut(duration: 0.22)) { pull = travel }
+            onOpenAnother()
+          } else {
+            withAnimation(.spring(duration: 0.4, bounce: 0.3)) { pull = 0 }
+          }
+        }
+    )
+    .accessibilityElement(children: .combine)
+    .accessibilityLabel("Open another pack")
+    .accessibilityAddTraits(.isButton)
+    .accessibilityAction { onOpenAnother() }
+    .accessibilityIdentifier("packOpening.nextPack")
+    // Measured whole and trimmed here rather than in the geometry closure,
+    // which is `@Sendable` and so cannot reach `peek` on a main-actor view.
+    .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height in
+      visibleHeight = max(height - peek, 0)
     }
   }
 }

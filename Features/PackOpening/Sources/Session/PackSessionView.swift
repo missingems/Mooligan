@@ -71,7 +71,8 @@ public struct PackSessionView: View {
             onSelect: { store.send(.didSelectCard($0)) },
             onRevealAll: { store.send(.revealAll) },
             onOpenAnother: { store.send(.openAnotherTapped) },
-            onDone: { store.send(.doneTapped) }
+            onDone: { store.send(.doneTapped) },
+            history: store.history
           )
           .transition(.opacity)
         }
