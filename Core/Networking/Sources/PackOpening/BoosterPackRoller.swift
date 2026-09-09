@@ -38,19 +38,11 @@ public struct BoosterCardPool: Equatable, Sendable {
 // MARK: - Rolling
 
 public enum BoosterPackRoller {
-  /// Chance the rare slot upgrades to a mythic. Wizards' stated rate is about
-  /// one in every 7.4 packs.
-  static let mythicChance = 1.0 / 7.4
-
-  /// Rarity mix for the wildcard slots, which may come back as anything.
-  static let wildcardWeights: [(rarity: Card.Rarity, weight: Double)] = [
-    (.common, 0.58),
-    (.uncommon, 0.30),
-    (.rare, 0.10),
-    (.mythic, 0.02),
-  ]
-
   /// Fills every slot of `kind` from `pool`.
+  ///
+  /// `odds` supplies the mythic rate and the two wildcard rarity tables —
+  /// `BoosterPackOdds.fallback` if the caller has nothing better, real per-set
+  /// numbers from `MTGJSONBoosterOddsSource` otherwise.
   ///
   /// Draws without replacement while the pool allows it, so a 14-card pack from
   /// a healthy set never shows you the same common twice; once a bucket is
@@ -58,6 +50,7 @@ public enum BoosterPackRoller {
   public static func roll(
     kind: BoosterPackKind,
     from pool: BoosterCardPool,
+    odds: BoosterPackOdds = .fallback,
     using generator: inout some RandomNumberGenerator
   ) -> [PulledCard] {
     var remaining = pool
@@ -66,7 +59,7 @@ public enum BoosterPackRoller {
       let isFoil = Double.random(in: 0..<1, using: &generator) < slot.foilChance
 
       guard
-        let card = draw(slot: slot.kind, from: &remaining, fallback: pool, using: &generator)
+        let card = draw(slot: slot.kind, from: &remaining, fallback: pool, odds: odds, using: &generator)
       else {
         return nil
       }
@@ -79,6 +72,7 @@ public enum BoosterPackRoller {
     slot: PackSlotKind,
     from remaining: inout BoosterCardPool,
     fallback: BoosterCardPool,
+    odds: BoosterPackOdds,
     using generator: inout some RandomNumberGenerator
   ) -> Card? {
     let rarity: Card.Rarity = switch slot {
@@ -86,9 +80,11 @@ public enum BoosterPackRoller {
     case .uncommon: .uncommon
     case .land: .common
     case .rareOrMythic:
-      Double.random(in: 0..<1, using: &generator) < mythicChance ? .mythic : .rare
-    case .wildcard, .foilWildcard:
-      weightedRarity(using: &generator)
+      Double.random(in: 0..<1, using: &generator) < odds.mythicChance ? .mythic : .rare
+    case .wildcard:
+      weightedRarity(odds.wildcardWeights, using: &generator)
+    case .foilWildcard:
+      weightedRarity(odds.foilWildcardWeights, using: &generator)
     }
 
     // The land slot has its own bucket and quietly falls back to commons for
@@ -151,11 +147,15 @@ public enum BoosterPackRoller {
     return fallback[Int.random(in: 0..<fallback.count, using: &generator)]
   }
 
-  private static func weightedRarity(using generator: inout some RandomNumberGenerator) -> Card.Rarity {
-    let total = wildcardWeights.reduce(0) { $0 + $1.weight }
+  private static func weightedRarity(
+    _ weights: [RarityWeight],
+    using generator: inout some RandomNumberGenerator
+  ) -> Card.Rarity {
+    let total = weights.reduce(0) { $0 + $1.weight }
+    guard total > 0 else { return .common }
     var roll = Double.random(in: 0..<total, using: &generator)
 
-    for entry in wildcardWeights {
+    for entry in weights {
       roll -= entry.weight
       if roll <= 0 { return entry.rarity }
     }

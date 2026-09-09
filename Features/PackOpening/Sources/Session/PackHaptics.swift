@@ -2,13 +2,13 @@ import CoreHaptics
 import SwiftUI
 import UIKit
 
-/// Physical feedback for the tear.
+/// Physical feedback for the pack's two drag interactions: tearing it open,
+/// and dragging each card into view.
 ///
-/// The tear is the one interaction in the app where haptics carry most of the
-/// realism, so it gets a Core Haptics engine rather than the canned impact
-/// generators: a continuous, roughening rumble while plastic is giving way, and
-/// a sharp transient every time the tear jumps a notch. Falls back to
-/// `UIImpactFeedbackGenerator` wherever Core Haptics is unavailable.
+/// Both get a continuous, roughening rumble that tracks the finger rather than
+/// a canned pattern, with a sharp transient every time progress crosses a
+/// notch. Falls back to `UIImpactFeedbackGenerator` wherever Core Haptics is
+/// unavailable.
 @MainActor
 final class PackHaptics {
   private var engine: CHHapticEngine?
@@ -36,8 +36,8 @@ final class PackHaptics {
     lastNotch = 0
   }
 
-  /// Starts the continuous rumble. Call when the drag begins.
-  func beginTear() {
+  /// Starts the continuous rumble. Call when a drag begins.
+  func beginRumble() {
     guard let engine else { return }
 
     let event = CHHapticEvent(
@@ -55,9 +55,9 @@ final class PackHaptics {
     try? tearPlayer?.start(atTime: CHHapticTimeImmediate)
   }
 
-  /// Drives the rumble's intensity and fires a click each time the tear crosses
+  /// Drives the rumble's intensity and fires a click each time progress crosses
   /// a notch, so the feedback tracks the finger rather than a timer.
-  func updateTear(progress: Double) {
+  func updateRumble(progress: Double) {
     let clamped = min(max(progress, 0), 1)
 
     if let tearPlayer {
@@ -86,16 +86,23 @@ final class PackHaptics {
   }
 
   /// Stops the rumble without the success thump — the drag was abandoned.
-  func cancelTear() {
+  func cancelRumble() {
     try? tearPlayer?.stop(atTime: CHHapticTimeImmediate)
     tearPlayer = nil
     lastNotch = 0
   }
 
-  /// The pack gives way.
-  func completeTear() {
-    cancelTear()
+  /// The drag commits: the pack gives way, or a card lands face up.
+  func completeRumble() {
+    cancelRumble()
     notification.notificationOccurred(.success)
+  }
+
+  /// The drag has carried the card far enough that letting go will send it
+  /// away. A light tick here is what lets the threshold be felt rather than
+  /// guessed at, which is most of why a swipe stops feeling vague.
+  func swipeThresholdCrossed() {
+    impact.impactOccurred(intensity: 0.55)
   }
 
   /// A card turning over. Heavier for the pulls worth caring about.

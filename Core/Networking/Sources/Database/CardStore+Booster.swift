@@ -48,19 +48,29 @@ public extension CardStore {
       return (byRank, lands)
     }
 
-    func cards(_ rank: Int) -> [Card] {
+    func cards(_ rank: Int, eligible: (Card) -> Bool) -> [Card] {
       (byRank[rank] ?? [])
         .map(\.card)
-        .filter { $0.isBoosterEligible && $0.isBasicLand == false }
+        .filter { eligible($0) && $0.isBasicLand == false }
     }
 
-    return BoosterCardPool(
-      commons: cards(BoosterRarityRank.common),
-      uncommons: cards(BoosterRarityRank.uncommon),
-      rares: cards(BoosterRarityRank.rare),
-      mythics: cards(BoosterRarityRank.mythic),
-      lands: landRecords.map(\.card).filter(\.isBasicLand)
-    )
+    func pool(eligible: (Card) -> Bool) -> BoosterCardPool {
+      BoosterCardPool(
+        commons: cards(BoosterRarityRank.common, eligible: eligible),
+        uncommons: cards(BoosterRarityRank.uncommon, eligible: eligible),
+        rares: cards(BoosterRarityRank.rare, eligible: eligible),
+        mythics: cards(BoosterRarityRank.mythic, eligible: eligible),
+        lands: landRecords.map(\.card).filter(\.isBasicLand)
+      )
+    }
+
+    let strict = pool(eligible: \.isBoosterEligible)
+    if strict.isUsable { return strict }
+
+    // See `Card.isBoosterEligibleIgnoringBoosterFlag`: a handful of real sets
+    // report `booster: false` on every card, which starves this bucket even
+    // though the data was already fetched. Reuse it rather than re-read.
+    return pool(eligible: \.isBoosterEligibleIgnoringBoosterFlag)
   }
 }
 

@@ -38,6 +38,15 @@ import Networking
         }
         return .none
 
+      case let .revealed(upTo: count):
+        guard state.phase == .revealing else { return .none }
+        // Set outright rather than stepping: a flick can carry the scroll past
+        // several cards at once, and the count has to follow where it landed.
+        // Deliberately never reaches the summary — that is the scroll running
+        // off the end of the pack, which arrives as `revealAll`.
+        state.revealedCount = min(max(state.revealedCount, count), state.revealOrder.count)
+        return .none
+
       case .revealAll:
         guard state.phase == .revealing else { return .none }
         state.revealedCount = state.revealOrder.count
@@ -93,6 +102,9 @@ public extension PackSessionFeature {
     case tearCompleted
     case wrapperCleared
     case revealNext
+    /// The reader scrolled onto a card; the payload is how many have now been
+    /// seen, not a step.
+    case revealed(upTo: Int)
     case revealAll
     case showSummary
     case openAnotherTapped

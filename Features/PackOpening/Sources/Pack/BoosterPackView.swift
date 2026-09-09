@@ -44,7 +44,6 @@ struct BoosterPackArtwork: View {
 
         specularSheen(size: size)
       }
-      .holographicFoil(intensity: theme.prefersDarkInk ? 0.55 : 0.72)
     }
   }
 
@@ -141,10 +140,13 @@ struct BoosterPackArtwork: View {
   }
 }
 
-/// A sealed booster: crimped outline, edge light and shadow.
+/// A sealed booster: the real product photograph where one exists, and the
+/// drawn wrapper — crimped outline, edge light and shadow — where it doesn't.
 struct BoosterPackView: View {
   let product: PackProduct
   var shadowRadius: CGFloat = 14
+
+  @State private var art = PackWrapperArtLoader()
 
   private var theme: PackTheme {
     PackTheme(setCode: product.set.code, kind: product.kind)
@@ -158,6 +160,24 @@ struct BoosterPackView: View {
   }
 
   var body: some View {
+    Group {
+      if let photo = art.photo {
+        // The photograph is a cut-out with its own crimped edges, so it wants
+        // neither the crimp clip nor the drawn outline over the top.
+        photo
+          .resizable()
+          .aspectRatio(contentMode: .fit)
+      } else {
+        drawn
+      }
+    }
+    .shadow(color: .black.opacity(0.45), radius: shadowRadius, y: shadowRadius * 0.55)
+    .task { await art.load(for: product) }
+    .accessibilityElement(children: .ignore)
+    .accessibilityLabel("\(product.set.name) \(product.kind.title)")
+  }
+
+  private var drawn: some View {
     BoosterPackArtwork(product: product, theme: theme)
       .clipShape(crimp)
       .overlay {
@@ -171,8 +191,5 @@ struct BoosterPackView: View {
         )
       }
       .aspectRatio(PackGeometry.widthToHeight, contentMode: .fit)
-      .shadow(color: .black.opacity(0.45), radius: shadowRadius, y: shadowRadius * 0.55)
-      .accessibilityElement(children: .ignore)
-      .accessibilityLabel("\(product.set.name) \(product.kind.title)")
   }
 }

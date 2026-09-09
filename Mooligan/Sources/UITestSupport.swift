@@ -30,6 +30,7 @@ enum UITestSupport {
       $0.cardDetailRequestClient = MockCardDetailRequestClient()
       $0.boosterPackClient = MockBoosterPackClient()
       $0.boosterPoolSource = MockBoosterPoolSource()
+      $0.boosterOddsSource = MockBoosterOddsSource()
       $0.priceHistoryClient = MockPriceHistoryClient()
 
       $0.databasePreparer = InertDatabasePreparer()

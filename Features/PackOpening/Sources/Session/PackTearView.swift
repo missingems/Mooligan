@@ -20,6 +20,7 @@ struct PackTearView: View {
   @State private var dragOrigin: CGFloat?
   @State private var isDragging = false
   @State private var haptics = PackHaptics()
+  @State private var art = PackWrapperArtLoader()
 
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -40,7 +41,11 @@ struct PackTearView: View {
   var body: some View {
     GeometryReader { proxy in
       let packWidth = min(proxy.size.width * 0.68, 320)
-      let packSize = CGSize(width: packWidth, height: packWidth / PackGeometry.widthToHeight)
+      // Sized to the photograph's own ratio when there is one, so the torn
+      // shapes cut across what is actually drawn rather than a slightly
+      // different box.
+      let ratio = art.aspectRatio ?? PackGeometry.widthToHeight
+      let packSize = CGSize(width: packWidth, height: packWidth / ratio)
 
       ZStack {
         cardsPeeking(packSize: packSize)
@@ -52,6 +57,7 @@ struct PackTearView: View {
       .gesture(tearGesture(packWidth: packWidth))
     }
     .onAppear { haptics.prepare() }
+    .task { await art.load(for: pack.product) }
     .accessibilityElement(children: .ignore)
     .accessibilityLabel("Sealed \(pack.product.kind.title) from \(pack.product.set.name)")
     .accessibilityHint("Swipe right to left across the pack to tear it open")
@@ -71,12 +77,19 @@ struct PackTearView: View {
       toothDepth: PackGeometry.crimpDepth
     )
 
+    // A photograph already has its crimped edges printed into it; clipping the
+    // drawn crimp over the top would serrate it twice.
+    let stripClip: AnyShape =
+      art.photo == nil ? AnyShape(strip.intersection(crimp)) : AnyShape(strip)
+    let bodyClip: AnyShape =
+      art.photo == nil ? AnyShape(body.intersection(crimp)) : AnyShape(body)
+
     ZStack {
       // Lower two thirds: still holding the cards, and sagging open a little as
       // the seal goes.
       artwork
         .frame(width: packSize.width, height: packSize.height)
-        .clipShape(body.intersection(crimp))
+        .clipShape(bodyClip)
         .rotation3DEffect(
           .degrees(reduceMotion ? 0 : Double(progress) * 5),
           axis: (x: 1, y: 0, z: 0),
@@ -88,7 +101,7 @@ struct PackTearView: View {
       // tear runs and then thrown clear once the pack is open.
       artwork
         .frame(width: packSize.width, height: packSize.height)
-        .clipShape(strip.intersection(crimp))
+        .clipShape(stripClip)
         .rotationEffect(
           .degrees(reduceMotion ? 0 : Double(progress) * -7 + (isOpening ? -22 : 0)),
           anchor: .bottomLeading
@@ -107,8 +120,15 @@ struct PackTearView: View {
     .animation(.snappy(duration: 0.2), value: isDragging)
   }
 
+  @ViewBuilder
   private var artwork: some View {
-    BoosterPackArtwork(product: pack.product, theme: theme)
+    if let photo = art.photo {
+      photo
+        .resizable()
+        .aspectRatio(contentMode: .fill)
+    } else {
+      BoosterPackArtwork(product: pack.product, theme: theme)
+    }
   }
 
   // MARK: - Cards behind the wrapper
@@ -183,7 +203,7 @@ struct PackTearView: View {
         if dragOrigin == nil {
           dragOrigin = value.startLocation.x
           isDragging = true
-          haptics.beginTear()
+          haptics.beginRumble()
         }
 
         // Right to left, mapped over roughly one pack width of travel.
@@ -191,7 +211,7 @@ struct PackTearView: View {
         let newProgress = min(max(travelled / (packWidth * 0.9), 0), 1)
 
         progress = newProgress
-        haptics.updateTear(progress: Double(newProgress))
+        haptics.updateRumble(progress: Double(newProgress))
 
         if newProgress >= 0.97 {
           complete()
@@ -205,7 +225,7 @@ struct PackTearView: View {
         if progress >= Self.commitThreshold {
           complete()
         } else {
-          haptics.cancelTear()
+          haptics.cancelRumble()
           withAnimation(.spring(duration: 0.4, bounce: 0.3)) {
             progress = 0
           }
@@ -218,7 +238,7 @@ struct PackTearView: View {
 
     isDragging = false
     dragOrigin = nil
-    haptics.completeTear()
+    haptics.completeRumble()
 
     withAnimation(.easeOut(duration: 0.18)) {
       progress = 1

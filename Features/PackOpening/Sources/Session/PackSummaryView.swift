@@ -54,8 +54,44 @@ struct PackSummaryView: View {
         }
       }
       .padding(.top, 4)
+
+      rarityBreakdown
+        .padding(.top, 2)
     }
     .padding(.horizontal, 24)
+  }
+
+  /// What the pack was made of, by rarity — the count people actually check a
+  /// pack against.
+  private var rarityBreakdown: some View {
+    HStack(spacing: 6) {
+      ForEach(pack.rarityCounts, id: \.rarity) { entry in
+        HStack(spacing: 4) {
+          Circle()
+            .fill(entry.rarity.revealGlow)
+            .frame(width: 6, height: 6)
+
+          Text("\(entry.count)")
+            .font(.caption.weight(.semibold))
+            .monospacedDigit()
+
+          Text(entry.rarity.displayName)
+            .font(.caption)
+            .foregroundStyle(.secondary)
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(Color.primary.opacity(0.06), in: Capsule())
+      }
+    }
+    .lineLimit(1)
+    .minimumScaleFactor(0.7)
+    .accessibilityElement(children: .combine)
+    .accessibilityLabel(
+      pack.rarityCounts
+        .map { "\($0.count) \($0.rarity.displayName)" }
+        .joined(separator: ", ")
+    )
   }
 
   private func stat(title: String, value: String) -> some View {
@@ -113,7 +149,6 @@ private struct SummaryCardCell: View {
             .aspectRatio(MagicCardImageRatio.widthToHeight.rawValue, contentMode: .fit)
         }
       }
-      .modifier(FoilFinish(isFoil: pulled.isFoil))
       .overlay(alignment: .topTrailing) {
         if pulled.isFoil {
           Image(systemName: "sparkles")

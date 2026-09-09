@@ -14,10 +14,7 @@ public struct RootView: View {
   }
 
   public var body: some View {
-    VendingMachineView(store: store, dispenseNamespace: dispenseNamespace)
-      .background(VendingMachineChrome.cabinet)
-      .toolbarColorScheme(.dark, for: .navigationBar)
-      .preferredColorScheme(.dark)
+    PackShelfView(store: store, dispenseNamespace: dispenseNamespace)
       .task { store.send(.task) }
       .fullScreenCover(
         item: $store.scope(state: \.session, action: \.session)

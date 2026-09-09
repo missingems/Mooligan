@@ -135,14 +135,6 @@ public extension PackOpeningFeature {
           || product.setCode.localizedCaseInsensitiveContains(trimmed)
       }
     }
-
-    /// Three to a shelf, which is what fits at a readable pack size.
-    var shelves: [PackShelf] {
-      stride(from: 0, to: visibleProducts.count, by: PackShelf.slotsPerShelf).map { start in
-        let end = min(start + PackShelf.slotsPerShelf, visibleProducts.count)
-        return PackShelf(index: start / PackShelf.slotsPerShelf, products: Array(visibleProducts[start..<end]))
-      }
-    }
   }
 
   // `@Reducer` only applies this to an `Action` nested directly in the reducer;
@@ -181,12 +173,3 @@ public extension PackOpeningFeature.State {
   }
 }
 
-/// One row of the machine.
-struct PackShelf: Equatable, Identifiable {
-  static let slotsPerShelf = 3
-
-  let index: Int
-  let products: [PackProduct]
-
-  var id: Int { index }
-}

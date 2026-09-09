@@ -78,15 +78,6 @@ public enum BoosterPackKind: String, Equatable, Sendable, CaseIterable, Identifi
     }
   }
 
-  /// Sticker price, only ever used as flavour on the shelf label.
-  public var priceLabel: String {
-    switch self {
-    case .play: "$5.99"
-    case .draft: "$4.49"
-    case .collector: "$27.99"
-    }
-  }
-
   public var slots: [PackSlotTemplate] {
     switch self {
     case .play:
@@ -162,10 +153,20 @@ public struct PulledCard: Equatable, Identifiable, Sendable {
 
   public var rarity: Card.Rarity { card.rarity }
 
-  /// Market price for the finish that was actually pulled.
+  /// Market price for the finish that was actually pulled, and only that
+  /// finish.
+  ///
+  /// No cross-finish fallback: a foil and its non-foil printing are separate
+  /// products at materially different prices, so quoting one for the other
+  /// misreports the pull. Plenty of cards have a price for one finish and not
+  /// the other — most of The Hobbit lists no non-foil price at all — and those
+  /// are shown as rarity alone rather than a borrowed number.
+  ///
+  /// Parsed against a fixed locale: Scryfall always writes "1.50", which a
+  /// comma-decimal locale would otherwise misread.
   public var price: Decimal? {
-    let raw = isFoil ? (card.prices.usdFoil ?? card.prices.usd) : card.prices.usd
-    return raw.flatMap { Decimal(string: $0) }
+    let raw = isFoil ? card.prices.usdFoil : card.prices.usd
+    return raw.flatMap { Decimal(string: $0, locale: Locale(identifier: "en_US_POSIX")) }
   }
 
   /// Ranking used to pick the pack's headline card, and to decide which pulls
@@ -205,6 +206,15 @@ public struct BoosterPack: Equatable, Identifiable, Sendable {
 
   public var totalValue: Decimal {
     cards.reduce(Decimal.zero) { $0 + ($1.price ?? 0) }
+  }
+
+  /// How many of each rarity came out, best first. Only rarities actually
+  /// present appear, so a pack with no mythic simply has no mythic entry
+  /// rather than a zero.
+  public var rarityCounts: [(rarity: Card.Rarity, count: Int)] {
+    Dictionary(grouping: cards, by: \.rarity)
+      .map { (rarity: $0.key, count: $0.value.count) }
+      .sorted { $0.rarity > $1.rarity }
   }
 
   public var bestPull: PulledCard? {

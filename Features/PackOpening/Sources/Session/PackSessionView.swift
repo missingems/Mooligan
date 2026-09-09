@@ -30,10 +30,9 @@ public struct PackSessionView: View {
 
       case .revealing:
         PackRevealView(
-          pack: store.pack,
           revealOrder: store.revealOrder,
           revealedCount: store.revealedCount,
-          onReveal: { store.send(.revealNext) },
+          onRevealed: { store.send(.revealed(upTo: $0)) },
           onSkip: { store.send(.revealAll) }
         )
         .transition(.opacity.combined(with: .scale(scale: 1.06)))

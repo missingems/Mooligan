@@ -51,14 +51,31 @@ public struct ScryfallBoosterPoolSource: BoosterPoolSource {
     async let mythics = cards(setCode: setCode, rarity: "mythic")
 
     let common = try await commons
+    let uncommon = (try? await uncommons) ?? []
+    let rare = (try? await rares) ?? []
+    let mythic = (try? await mythics) ?? []
 
-    return BoosterCardPool(
-      commons: common.filter { $0.isBasicLand == false },
-      uncommons: (try? await uncommons) ?? [],
-      rares: (try? await rares) ?? [],
-      mythics: (try? await mythics) ?? [],
-      lands: common.filter(\.isBasicLand)
-    )
+    func pool(eligible: (Card) -> Bool) -> BoosterCardPool {
+      BoosterCardPool(
+        commons: common.filter { eligible($0) && $0.isBasicLand == false },
+        uncommons: uncommon.filter(eligible),
+        rares: rare.filter(eligible),
+        mythics: mythic.filter(eligible),
+        lands: common.filter(\.isBasicLand)
+      )
+    }
+
+    let strict = pool(eligible: \.isBoosterEligible)
+    if strict.isUsable { return strict }
+
+    // `booster` reads false across the entire set for a handful of real
+    // products (Star Trek, Marvel Super Heroes, The Hobbit, Secrets of
+    // Strixhaven, at least) — Scryfall's booster-contents confirmation hasn't
+    // caught up with them, not a sign the set was never sold in packs. The
+    // shelf still offers these as products, so an empty pool here would be a
+    // dead end for something the app itself just sold. Retry with the flag
+    // dropped rather than leave it unopenable.
+    return pool(eligible: \.isBoosterEligibleIgnoringBoosterFlag)
   }
 
   private func cards(setCode: String, rarity: String) async throws -> [Card] {
@@ -72,7 +89,7 @@ public struct ScryfallBoosterPoolSource: BoosterPoolSource {
       page: 1
     )
     .data
-    .filter(\.isBoosterEligible)
+    .filter { $0.oversized == false }
   }
 }
 
@@ -128,5 +145,18 @@ public extension Card {
   /// showcase-only prints and oversized cards Scryfall returns alongside them.
   var isBoosterEligible: Bool {
     booster && oversized == false && games.contains(.paper)
+  }
+
+  /// The looser bar a pool source falls back to when `isBoosterEligible`
+  /// leaves nothing.
+  ///
+  /// Scryfall's `booster` flag reads false for every card in some real sets —
+  /// Star Trek, Marvel Super Heroes, The Hobbit and Secrets of Strixhaven all
+  /// do this, at minimum — which is a gap in Scryfall's own booster-contents
+  /// confirmation, not evidence the set was never sold in packs. This keeps
+  /// the paper/oversized checks, which are reliable, and drops only the one
+  /// flag that turned out not to be.
+  var isBoosterEligibleIgnoringBoosterFlag: Bool {
+    oversized == false && games.contains(.paper)
   }
 }

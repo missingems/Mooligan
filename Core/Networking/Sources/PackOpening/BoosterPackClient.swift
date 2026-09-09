@@ -39,6 +39,7 @@ public extension DependencyValues {
 public struct LiveBoosterPackClient: BoosterPackClient {
   @Dependency(\.gameSetRequestClient) private var setClient
   @Dependency(\.boosterPoolSource) private var poolSource
+  @Dependency(\.boosterOddsSource) private var oddsSource
 
   private let cache = BoosterPoolCache()
 
@@ -66,8 +67,13 @@ public struct LiveBoosterPackClient: BoosterPackClient {
       await cache.store(pool, forSet: product.set.code)
     }
 
+    // Odds never fail the open: a set MTGJSON doesn't cover, or a network drop,
+    // both just mean `BoosterPackOdds.fallback` — the cards are the only thing
+    // that has to be real for a pack to be worth opening.
+    let odds = await oddsSource.odds(forSet: product.set.code, kind: product.kind)
+
     var generator = SeededRandomNumberGenerator(seed: seed)
-    let cards = BoosterPackRoller.roll(kind: product.kind, from: pool, using: &generator)
+    let cards = BoosterPackRoller.roll(kind: product.kind, from: pool, odds: odds, using: &generator)
 
     guard cards.isEmpty == false else {
       throw BoosterPoolSourceError.emptyPool(setCode: product.set.code)
@@ -96,13 +102,17 @@ actor BoosterPoolCache {
 // MARK: - Which sets get shelf space
 
 extension MTGSet {
-  /// Sets that were actually sold in boosters. Keeps the machine free of token
-  /// sets, memorabilia, promo dumps and the digital-only releases.
+  /// Sets that were actually sold in randomised boosters. Keeps the shelf free
+  /// of token sets, memorabilia, promo dumps, digital-only releases, and two
+  /// things that look like they belong but aren't: Commander products (sold as
+  /// fixed preconstructed decks — there was never a random pack to open), and
+  /// a set that hasn't released yet, which cannot be bought as anything.
   var sellsBoosters: Bool {
-    guard digital == false, cardCount >= 60 else { return false }
+    @Dependency(\.date.now) var now: Date
+    guard digital == false, cardCount >= 60, date <= now else { return false }
 
     return switch setType {
-    case .core, .expansion, .masters, .draftInnovation, .starter, .commander:
+    case .core, .expansion, .masters, .draftInnovation, .starter:
       true
     default:
       false

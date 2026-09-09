@@ -53,10 +53,21 @@ struct TearLine {
   /// Vertical position of the tear as a fraction of the pack's height.
   let baseline: CGFloat
 
+  /// How many independent kinks the tear takes across the full pack width.
+  /// Real torn plastic wanders a handful of times, not on every millimetre —
+  /// this is the number of coarse random samples the fine point set below
+  /// interpolates between. The original version generated a fresh, uncorrelated
+  /// random offset at every one of 44 render points and joined them with
+  /// straight lines, which is exactly what reads as a sawtooth zigzag rather
+  /// than a torn edge; interpolating smoothly between far fewer control values
+  /// is what turns that into a wander.
+  private static let controlPointCount = 7
+
   /// Points across `width`, at the tear's height in a box of `size`.
-  func points(in size: CGSize, stepCount: Int = 44) -> [CGPoint] {
+  func points(in size: CGSize, stepCount: Int = 60) -> [CGPoint] {
     let y = size.height * baseline
     let front = size.width * (1 - progress)
+    let control = (0...Self.controlPointCount).map { TearLine.noise(seed: seed, index: $0) }
 
     return (0...stepCount).map { step in
       let t = CGFloat(step) / CGFloat(stepCount)
@@ -70,15 +81,29 @@ struct TearLine {
       // Torn: wander, and wander more the further it is from the front, where
       // the plastic has had time to relax.
       let distanceBehindFront = min(1, (x - front) / max(size.width * 0.25, 1))
-      let amplitude = size.height * 0.022 * (0.35 + distanceBehindFront)
-      let noise = TearLine.noise(seed: seed, index: step)
+      let amplitude = size.height * 0.016 * (0.35 + distanceBehindFront)
+      let noise = TearLine.smoothedNoise(control, at: t)
 
       return CGPoint(x: x, y: y + noise * amplitude)
     }
   }
 
-  /// Deterministic `-1...1` value per point. SplitMix-style mixing so adjacent
-  /// indices are uncorrelated and the edge looks ripped rather than wavy.
+  /// Smoothstep-interpolates between the two control values `t` falls between,
+  /// which is what keeps the wander looking torn rather than mechanically
+  /// sinusoidal: a plain linear blend has a visible kink at every control
+  /// point, and smoothstep's zero-slope endpoints hide it.
+  private static func smoothedNoise(_ control: [CGFloat], at t: CGFloat) -> CGFloat {
+    let span = CGFloat(control.count - 1) * min(max(t, 0), 1)
+    let index = min(control.count - 2, Int(span))
+    let local = span - CGFloat(index)
+    let eased = local * local * (3 - 2 * local)
+
+    return control[index] * (1 - eased) + control[index + 1] * eased
+  }
+
+  /// Deterministic `-1...1` value per control point. SplitMix-style mixing so
+  /// adjacent control points are uncorrelated; it is the interpolation between
+  /// them, not the samples themselves, that keeps the result smooth.
   static func noise(seed: UInt64, index: Int) -> CGFloat {
     var value = seed &+ UInt64(bitPattern: Int64(index)) &* 0x9E37_79B9_7F4A_7C15
     value = (value ^ (value >> 30)) &* 0xBF58_476D_1CE4_E5B9

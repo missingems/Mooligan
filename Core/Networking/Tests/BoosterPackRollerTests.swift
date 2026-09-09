@@ -106,4 +106,39 @@ struct BoosterPackRollerTests {
 
     #expect(cards.filter { $0.slot != .rareOrMythic }.allSatisfy { $0.isFoil })
   }
+
+  @Test("the wildcard and foil wildcard slots draw from their own odds, not a shared table")
+  func wildcardAndFoilWildcardAreIndependent() {
+    // Distinct enough that reading the wrong table is unmistakable: an all-
+    // common wildcard next to an all-mythic foil wildcard.
+    let odds = BoosterPackOdds(
+      mythicChance: 1.0 / 7.0,
+      wildcardWeights: [RarityWeight(rarity: .common, weight: 1.0)],
+      foilWildcardWeights: [RarityWeight(rarity: .mythic, weight: 1.0)]
+    )
+
+    for seed in UInt64(0)..<20 {
+      var generator = SeededRandomNumberGenerator(seed: seed)
+      let cards = BoosterPackRoller.roll(kind: .play, from: pool(), odds: odds, using: &generator)
+
+      #expect(cards.first { $0.slot == .wildcard }?.rarity == .common)
+      #expect(cards.first { $0.slot == .foilWildcard }?.rarity == .mythic)
+    }
+  }
+
+  @Test("odds default to the fallback table when the caller supplies none")
+  func defaultsToFallbackOdds() {
+    var withDefault = SeededRandomNumberGenerator(seed: 21)
+    var withExplicitFallback = SeededRandomNumberGenerator(seed: 21)
+
+    let left = BoosterPackRoller.roll(kind: .play, from: pool(), using: &withDefault)
+    let right = BoosterPackRoller.roll(
+      kind: .play,
+      from: pool(),
+      odds: .fallback,
+      using: &withExplicitFallback
+    )
+
+    #expect(left.map(\.card.id) == right.map(\.card.id))
+  }
 }
