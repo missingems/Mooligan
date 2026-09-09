@@ -53,30 +53,36 @@ import Testing
     Content(card: card, queryType: queryType)
   }
 
+  // The sections that load in now live on the feature's state rather than on
+  // `Content`, so their starting values are asserted through it.
+  private var state: CardDetailFeature.State {
+    CardDetailFeature.State(card: card, queryType: queryType)
+  }
+
   @Test func whenBuiltFromASearch_shouldNotHaveASetIcon() {
-    #expect(content.setIconURL == nil)
+    #expect(state.setIconURL == nil)
   }
 
   @Test func whenBuiltFromASet_shouldTakeTheSetIcon() {
     let set = MockGameSetRequestClient.mockSets[0]
-    let content = Content(
+    let state = CardDetailFeature.State(
       card: card,
       queryType: .querySet(set, SearchQuery(page: 1, sortMode: .name, sortDirection: .auto))
     )
 
-    #expect(content.setIconURL == URL(string: set.iconSvgUri))
+    #expect(state.setIconURL == URL(string: set.iconSvgUri))
   }
 
   @Test func whenBuilt_shouldStartVariantsWithTheCardItself() {
-    #expect(content.variants.state.isInitial)
-    #expect(content.variants.state.value?.cardDetails.count == 1)
+    #expect(state.variants.state.isInitial)
+    #expect(state.variants.state.value?.cardDetails.count == 1)
   }
 
   @Test func whenBuilt_shouldStartRelatedSectionsEmpty() {
-    #expect(content.relatedTokens?.state.value == nil)
-    #expect(content.relatedComboPieces?.state.value == nil)
-    #expect(content.relatedMeldPieces?.state.value == nil)
-    #expect(content.relatedMeldResult?.state.value == nil)
+    #expect(state.relatedTokens?.state.value == nil)
+    #expect(state.relatedComboPieces?.state.value == nil)
+    #expect(state.relatedMeldPieces?.state.value == nil)
+    #expect(state.relatedMeldResult?.state.value == nil)
   }
 
   @Test func whenCardHasNoColourIdentity_shouldReportColourless() {

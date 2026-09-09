@@ -14,7 +14,21 @@ import SwiftUI
 /// appears when a fetch lands grows the scroll content under the reader, and the
 /// page jumps; a card with no history says so in place instead.
 struct PriceHistoryChartView: View {
+  /// A finish's price as Scryfall quotes it today.
+  ///
+  /// Shown the moment the screen opens, and independently of the chart. The
+  /// history comes from MTGGraphQL and can be slow, rate limited, or simply
+  /// missing for a printing — but Scryfall's own numbers arrived with the card
+  /// itself, so there is no reason for "no history yet" to also mean "no price".
+  struct Quote: Identifiable, Equatable {
+    let label: String
+    let amount: Decimal
+
+    var id: String { label }
+  }
+
   private let state: PriceHistoryState
+  private let quotes: [Quote]
   private let title: String
   private let sourceLabel: String
   private let unavailableLabel: String
@@ -23,6 +37,9 @@ struct PriceHistoryChartView: View {
 
   /// The finish the reader has isolated, if any. `nil` draws every finish.
   @State private var isolatedKind: PriceSeriesKind?
+
+  /// The plot's rectangle inside the chart, resolved from Swift Charts' anchor.
+  @State private var plot: CGRect = .zero
   @State private var interaction = ChartInteraction()
 
   /// Touch state lives on a reference type rather than in `@State`.
@@ -40,11 +57,13 @@ struct PriceHistoryChartView: View {
 
   init(
     state: PriceHistoryState,
+    quotes: [Quote] = [],
     title: String,
     sourceLabel: String,
     unavailableLabel: String
   ) {
     self.state = state
+    self.quotes = quotes
     self.title = title
     self.sourceLabel = sourceLabel
     self.unavailableLabel = unavailableLabel
@@ -56,6 +75,7 @@ struct PriceHistoryChartView: View {
 
     VStack(alignment: .leading, spacing: 5.0) {
       header
+      todaysQuotes
 
       Group {
         switch state {
@@ -231,6 +251,29 @@ private extension PriceHistoryChartView {
       Text(sourceLabel)
         .font(.caption2)
         .foregroundStyle(.tertiary)
+    }
+  }
+
+  /// Today's prices, straight from the card. Never waits on anything.
+  @ViewBuilder
+  var todaysQuotes: some View {
+    if quotes.isEmpty == false {
+      HStack(spacing: 14.0) {
+        ForEach(quotes) { quote in
+          HStack(spacing: 4.0) {
+            Text(quote.label)
+              .font(.caption2)
+              .foregroundStyle(.secondary)
+
+            Text(quote.amount, format: .currency(code: "USD"))
+              .font(.subheadline.weight(.semibold).monospacedDigit())
+          }
+        }
+
+        Spacer(minLength: 0)
+      }
+      .lineLimit(1)
+      .minimumScaleFactor(0.8)
     }
   }
 
@@ -457,10 +500,17 @@ private extension PriceHistoryChartView {
       }
     }
     .chartOverlay { proxy in
-      GeometryReader { geometry in
-        if let anchor = proxy.plotFrame {
-          let plot = geometry[anchor]
+      // `plotFrame` is an anchor, and resolving an anchor needs a geometry
+      // proxy — but it does not need a `GeometryReader`, which would insert a
+      // layout container into the overlay. `onGeometryChange` hands over the
+      // same proxy and changes nothing about how the overlay is laid out.
+      ZStack(alignment: .topLeading) {
+        Color.clear
+          .onGeometryChange(for: CGRect.self) { geometry in
+            proxy.plotFrame.map { geometry[$0] } ?? .zero
+          } action: { plot = $0 }
 
+        if plot.width > 0 {
           releaseOverlay(section.releases, proxy: proxy, plot: plot)
             // Decoration only — every touch on the plot belongs to the reader
             // stacked above it.
