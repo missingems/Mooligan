@@ -29,26 +29,24 @@ public actor CachingPriceHistoryClient: PriceHistoryClient {
   public nonisolated func history(
     for card: Card,
     provider: PriceProvider,
-    listType: PriceListType,
-    window: DateInterval
+    listType: PriceListType
   ) async throws -> PriceHistory {
-    try await lookup(card: card, provider: provider, listType: listType, window: window)
+    try await lookup(card: card, provider: provider, listType: listType)
   }
 
   private func lookup(
     card: Card,
     provider: PriceProvider,
-    listType: PriceListType,
-    window: DateInterval
+    listType: PriceListType
   ) async throws -> PriceHistory {
     let key = Key(cardID: card.id.uuidString, provider: provider, listType: listType)
 
-    if let hit = cache[key], Date().timeIntervalSince(hit.fetchedAt) < ttl {
-      return hit.value.clipped(to: window)
-    }
-    if let running = inFlight[key] {
-      return try await running.value.clipped(to: window)
-    }
+//    if let hit = cache[key], Date().timeIntervalSince(hit.fetchedAt) < ttl {
+//      return hit.value.clipped(to: window)
+//    }
+//    if let running = inFlight[key] {
+//      return try await running.value.clipped(to: window)
+//    }
 
     let task = Task { [upstream] in
       // Always fetch the full retained history; `window` only trims what we return,
@@ -56,16 +54,15 @@ public actor CachingPriceHistoryClient: PriceHistoryClient {
       try await upstream.history(
         for: card,
         provider: provider,
-        listType: listType,
-        window: DateInterval(start: .distantPast, end: .now)
+        listType: listType
       )
     }
-    inFlight[key] = task
-
-    defer { inFlight[key] = nil }
+//    inFlight[key] = task
+//
+//    defer { inFlight[key] = nil }
     let value = try await task.value
-    cache[key] = (Date(), value)
-    return value.clipped(to: window)
+//    cache[key] = (Date(), value)
+    return value
   }
 }
 
@@ -75,11 +72,8 @@ private extension PriceHistory {
       cardID: cardID,
       provider: provider,
       listType: listType,
-      // Carry the currency the API reported through the clip. Dropping it fell
-      // back to the provider default, which silently relabels a Cardmarket
-      // series as USD.
       currency: currency,
-      series: series.mapValues { $0.filter { window.contains($0.date) } }
+      series: series
     )
   }
 }

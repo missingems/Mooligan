@@ -58,7 +58,7 @@ public struct CardPagerFeature: Sendable {
         
         return .merge(
           loadInitialCard,
-          .run { send in
+          .run(priority: .background) { send in
             let mapped = rawDetails.map { info in
               CardDetailFeature.State(
                 card: info.card,

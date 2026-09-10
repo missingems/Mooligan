@@ -96,8 +96,7 @@ import ScryfallKit
             try? await priceHistoryClient.history(
               for: card,
               provider: .tcgplayer,
-              listType: .retail,
-              window: .allPriceHistory
+              listType: .retail
             )
           }
           group.addTask {
@@ -187,7 +186,7 @@ import ScryfallKit
     case let .updateVariants(value, page):
       state.updateVariants(value, page: page)
       return .none
-
+      
     case let .updatePriceHistory(value):
       state.updatePriceHistory(value)
       return .none
@@ -223,21 +222,7 @@ public extension CardDetailFeature {
   @ObservableState struct State: Equatable, Identifiable, Sendable {
     public let id: UUID
     public var content: Content
-
-    /// Kept out of `content` deliberately.
-    ///
-    /// `CardDetailView.body` opens with `let content = store.content`, so it
-    /// depends on the whole struct: while the chart's state lived in there, the
-    /// history arriving invalidated the card image, the tables, the variants
-    /// and the token lists along with it. That rebuild landing mid-scroll is
-    /// what made the view stutter the moment the chart finished loading. Out
-    /// here, only the view that actually reads it re-renders.
     public var priceHistory: PriceHistoryState = .loading
-
-    // Each of these arrives on its own, from its own request, at its own time.
-    // Held as separate stored properties so that one landing re-renders one
-    // section: while they shared a struct, a token list arriving rebuilt the
-    // card image, the tables and the chart along with it.
     public var setIconURL: URL?
     var variants: Content.SubContent
     var relatedTokens: Content.SubContent?
@@ -245,13 +230,12 @@ public extension CardDetailFeature {
     var relatedMeldPieces: Content.SubContent?
     var relatedMeldResult: Content.SubContent?
     public var displayableCardImage: DisplayableCardImage?
-
     public var hasAppeared: Bool = false
     
     public init(card: Card, displayableCardImage: DisplayableCardImage? = nil, queryType: QueryType) {
       self.id = card.id
       self.content = Content(card: card, queryType: queryType)
-
+      
       setIconURL = Content.initialSetIconURL(queryType: queryType)
       variants = Content.initialVariants(card: card)
       relatedTokens = Content.initialRelatedTokens

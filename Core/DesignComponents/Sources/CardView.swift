@@ -108,21 +108,7 @@ public struct CardView: View, Equatable {
   private let displayableCard: DisplayableCardImage
   private let accessoryInfo: AccessoryInfo
   private let send: ((Action) -> Void)?
-
-  /// Whether this printing exists only as a foil.
-  ///
-  /// Not "was pulled as a foil" — a card view outside a pack has no pull to
-  /// speak of. It is a property of the printing, so a foil-only card looks foil
-  /// wherever it is shown: in a set's grid, on its own detail screen, and in a
-  /// pack alike.
   private let isFoilOnly: Bool
-
-  /// Whether the foil sheen runs on a clock.
-  ///
-  /// The shader sits inside a `TimelineView` driving a redraw thirty times a
-  /// second, so a grid of foils is that many clocks ticking behind a scroll — a
-  /// whole collector booster's worth, in the pack summary. A screen showing one
-  /// card can afford the movement; a grid draws the sheen once and leaves it.
   private let isFoilAnimated: Bool
   
   @State private var isImageLoaded: Bool = false

@@ -2,21 +2,8 @@ import Foundation
 import Networking
 import ScryfallKit
 
-/// Everything the price chart draws, assembled once in the reducer.
-///
-/// The chart view used to fetch and derive all of this itself, in `body`. That
-/// put a network call, a full set-list read and ~180 points of series splicing
-/// on the path of every page the card pager created — including the neighbours
-/// it renders ahead of time — which is what made swiping stutter. Building it in
-/// an effect keeps the work off the main actor and, because the pager only asks
-/// for the card that settled, does it once per card the reader actually looks at.
+
 public struct PriceHistorySection: Equatable, Sendable {
-  /// One finish's line, with the extents the chart needs already measured.
-  ///
-  /// The view used to derive these in `body`. That put a flatMap plus several
-  /// min/max passes over ~180 points on every redraw — and the body redraws on
-  /// every frame of a scrub, so it ran at 60hz while a finger was down. They are
-  /// fixed the moment the series is built, so they are measured once here.
   public struct Series: Identifiable, Equatable, Sendable {
     public let kind: PriceSeriesKind
     public let points: [PricePoint]
@@ -77,8 +64,6 @@ public struct PriceHistorySection: Equatable, Sendable {
 /// the reader, and the page jumps.
 public enum PriceHistoryState: Equatable, Sendable {
   case loading
-  /// The fetch resolved, and there is nothing to draw — no proxy configured, a
-  /// rate limit, or a printing MTGJSON has never priced.
   case unavailable
   case data(PriceHistorySection)
 }

@@ -14,8 +14,7 @@ public struct MockPriceHistoryClient: PriceHistoryClient {
   public func history(
     for card: Card,
     provider: PriceProvider,
-    listType: PriceListType,
-    window: DateInterval
+    listType: PriceListType
   ) async throws -> PriceHistory {
     var calendar = Calendar(identifier: .gregorian)
     calendar.timeZone = TimeZone(identifier: "UTC") ?? .gmt
@@ -32,7 +31,6 @@ public struct MockPriceHistoryClient: PriceHistoryClient {
           return nil
         }
         let day = calendar.startOfDay(for: date)
-        guard window.contains(day) else { return nil }
         let drift = Double(offset) * 0.02 * (seed > 0.5 ? 1 : -0.4)
         let wobble = sin(Double(offset) / 7 + seed * 6) * base * 0.08
         let value = max(0.05, (base + drift + wobble) * scale)

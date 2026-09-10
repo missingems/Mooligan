@@ -16,8 +16,11 @@ public struct CardDetailView: View {
   }
   
   public var body: some View {
+    let _ = Self._printChanges()
+    
     let content = store.content
     let faceDirection = store.displayableCardImage?.faceDirection
+    
     ScrollView(.vertical) {
       VStack(spacing: 0) {
         let cardImageWidth = content.card.isLandscape
@@ -39,18 +42,14 @@ public struct CardDetailView: View {
         ) { action in
           store.send(.descriptionCallToActionTapped, animation: .bouncy)
         }
-        .equatable()
+        // NOTE: .equatable() only works if CardView conforms to `Equatable`.
         .padding(
           EdgeInsets(top: 13, leading: 55, bottom: 34, trailing: 55)
         )
         .zIndex(1)
         
         CardDetailTableView(descriptions: content.getDescriptions(faceDirection: faceDirection))
-          .equatable()
         
-        // Reads `store.setIconURL` inside its own body rather than here: the
-        // icon is fetched after the screen is already up, and reading it from
-        // this body made that late arrival rebuild the whole card.
         InformationSectionView(
           store: store,
           content: content,
@@ -93,23 +92,16 @@ public struct CardDetailView: View {
           displayReleaseDate: content.card.releasedAt,
           legalities: content.card.legalities.all
         )
-        .equatable()
         
-        // Reads `store.priceHistory` inside its own body rather than here, so
-        // the history landing re-renders this section and nothing else.
         PriceHistorySectionView(
           store: store,
           quotes: content.todaysQuotes,
           title: content.priceHistoryLabel,
           sourceLabel: content.priceHistorySourceLabel,
           unavailableLabel: content.priceHistoryUnavailableLabel,
-          // One legend row per finish this printing was made in, so the section
-          // is already the height it will be when the history lands.
           legendRows: max(content.card.finishes.count, 1)
         )
-
-        // Buying comes after the history, not before it: the chart is what tells
-        // you whether now is the moment, and these are the places to act on it.
+        
         PurchaseLinksView(
           title: content.purchaseLabel,
           subtitle: content.purchaseSubtitleLabel,
@@ -125,19 +117,13 @@ public struct CardDetailView: View {
             }
           }
         )
-        .equatable()
-
-        // Each row below reads one slice of the store, inside a body of its
-        // own. Observation is recorded where a value is read, so a list landing
-        // re-renders the row that was waiting on it and nothing else — read
-        // them from here and the whole card rebuilds, which is what the reader
-        // feels as a stutter when a request finishes mid-scroll.
+        
         VariantsSectionView(store: store)
         RelatedTokensSectionView(store: store)
         RelatedComboPiecesSectionView(store: store)
         RelatedMeldPiecesSectionView(store: store)
         RelatedMeldResultSectionView(store: store)
-
+        
         SelectionView(
           items: [
             SelectionView.Item(
@@ -153,12 +139,11 @@ public struct CardDetailView: View {
             },
           ]
         )
-        .equatable()
       }
       .onGeometryChange(for: CGFloat.self, of: { proxy in
         proxy.size.width
       }, action: { newValue in
-        if abs(maxWidth - newValue) > 1.0 {
+        if abs(maxWidth - newValue) > 5.0 {
           maxWidth = newValue
         }
       })
@@ -168,10 +153,10 @@ public struct CardDetailView: View {
       ZStack {
         backdrop(for: content.card.getImageURL(type: .normal))
           .opacity((store.displayableCardImage?.faceDirection == .front) ? 1 : 0)
-          
+        
         backdrop(for: content.card.getImageURL(type: .normal, getSecondFace: true))
           .opacity((store.displayableCardImage?.faceDirection == .back) ? 1 : 0)
-          
+        
         Color(asset: DesignComponentsAsset.backgroundPlaceholder)
       }
       .ignoresSafeArea()
@@ -193,11 +178,6 @@ public struct CardDetailView: View {
 }
 
 private extension CGFloat {
-  /// Width of the active window scene's screen.
-  ///
-  /// `UIScreen.main` is deprecated in iOS 26 — the screen must be reached
-  /// through the view's context instead. This is used purely as a pre-layout
-  /// seed, so falling back to zero is safe.
   @MainActor static var initialScreenWidth: CGFloat {
     UIApplication.shared.connectedScenes
       .lazy
@@ -207,14 +187,6 @@ private extension CGFloat {
   }
 }
 
-
-/// The price-history chart, isolated from the rest of the card.
-///
-/// Its whole reason for existing as a separate view is observation scope: the
-/// chart arrives seconds after everything else, often while the reader is still
-/// scrolling, and re-rendering the entire card detail at that moment is what
-/// they feel as a stutter. Reading `store.priceHistory` here and nowhere else
-/// confines the update to this section.
 private struct PriceHistorySectionView: View {
   let store: StoreOf<CardDetailFeature>
   let quotes: [PriceHistoryChartView.Quote]
@@ -222,8 +194,10 @@ private struct PriceHistorySectionView: View {
   let sourceLabel: String
   let unavailableLabel: String
   let legendRows: Int
-
+  
   var body: some View {
+    let _ = Self._printChanges()
+    
     PriceHistoryChartView(
       state: store.priceHistory,
       quotes: quotes,
@@ -232,22 +206,14 @@ private struct PriceHistorySectionView: View {
       unavailableLabel: unavailableLabel,
       legendRows: legendRows
     )
-    .equatable()
   }
 }
 
-
-/// The card's tiles: power, mana value, rarity, collector number, set.
-///
-/// Split out for one read. The set icon is fetched after the screen is already
-/// up, and while `store.setIconURL` was read from `CardDetailView.body` that
-/// late arrival invalidated the card image, the tables, the chart and every
-/// list along with it.
 private struct InformationSectionView: View {
   let store: StoreOf<CardDetailFeature>
   let content: Content
   let faceDirection: MagicCardFaceDirection?
-
+  
   var body: some View {
     InformationView(
       title: content.infoLabel,
@@ -261,18 +227,15 @@ private struct InformationSectionView: View {
       setCode: content.card.set,
       setIconURL: store.setIconURL
     )
-    .equatable()
   }
 }
 
-
-/// Every other printing of this card.
 private struct VariantsSectionView: View {
   let store: StoreOf<CardDetailFeature>
-
+  
   var body: some View {
     let variants = store.variants
-
+    
     if let cards = variants.state.value {
       HorizontalCardScrollView(
         title: variants.title,
@@ -282,80 +245,47 @@ private struct VariantsSectionView: View {
       ) { [store] action in
         switch action {
         case let .didSelectCard(card):
-          // Read when the row is tapped rather than when it is drawn, so the
-          // query type is not part of what this view observes.
           store.send(.didSelectVariant(card: card, queryType: store.content.queryType))
-
+          
         case let .didShowCardAtIndex(index):
           store.send(.didShowVariant(index: index))
         }
       }
-      .equatable()
     }
   }
 }
 
-
-/// The tokens this card makes.
 private struct RelatedTokensSectionView: View {
   let store: StoreOf<CardDetailFeature>
-
-  var body: some View {
-    RelatedCardsSectionView(section: store.relatedTokens)
-  }
+  var body: some View { RelatedCardsSectionView(section: store.relatedTokens) }
 }
 
-
-/// The cards this one is usually played with.
 private struct RelatedComboPiecesSectionView: View {
   let store: StoreOf<CardDetailFeature>
-
-  var body: some View {
-    RelatedCardsSectionView(section: store.relatedComboPieces)
-  }
+  var body: some View { RelatedCardsSectionView(section: store.relatedComboPieces) }
 }
 
-
-/// The other half of a meld pair.
 private struct RelatedMeldPiecesSectionView: View {
   let store: StoreOf<CardDetailFeature>
-
-  var body: some View {
-    RelatedCardsSectionView(section: store.relatedMeldPieces)
-  }
+  var body: some View { RelatedCardsSectionView(section: store.relatedMeldPieces) }
 }
 
-
-/// What this card melds into.
 private struct RelatedMeldResultSectionView: View {
   let store: StoreOf<CardDetailFeature>
-
-  var body: some View {
-    RelatedCardsSectionView(section: store.relatedMeldResult)
-  }
+  var body: some View { RelatedCardsSectionView(section: store.relatedMeldResult) }
 }
 
-
-/// The body the four related-card rows share.
-///
-/// Handed the section it draws rather than reaching into the store for it: the
-/// wrappers above exist precisely so that each read is recorded against a view
-/// that depends on that one slice, and a shared view that took the store would
-/// have to read all four to know which to show.
 private struct RelatedCardsSectionView: View {
   let section: Content.SubContent?
-
+  
   var body: some View {
     if let section, let cards = section.state.value {
-      // Selection is not wired up for these rows yet; tapping one is a no-op
-      // rather than a route that does not exist.
       HorizontalCardScrollView(
         title: section.title,
         subtitle: section.subtitle,
         cards: cards,
         isInitial: section.state.isInitial
       ) { _ in }
-      .equatable()
     }
   }
 }
