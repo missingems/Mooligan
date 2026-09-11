@@ -82,7 +82,7 @@ import ScryfallKit
       }
       
     case let .fetchPriceHistory(card):
-      return .run { send in
+      return .run(priority: .background) { send in
         async let history = withTaskGroup(of: PriceHistory?.self) { group in
           group.addTask {
             try? await priceHistoryClient.history(
@@ -100,16 +100,16 @@ import ScryfallKit
           group.cancelAll()
           return first
         }
-//        async let releases = SetReleaseMarkerStore.shared.markers(in: .allPriceHistory) {
-//          (try? await setClient.getSets(queryType: .all).1) ?? []
-//        }
+        async let releases = SetReleaseMarkerStore.shared.markers(in: .allPriceHistory) {
+          (try? await setClient.getSets(queryType: .all).1) ?? []
+        }
 
         await send(
           .updatePriceHistory(
             PriceHistorySection.makeState(
               card: card,
               history: await history,
-              releases: []
+              releases: await releases
             )
           )
         )

@@ -54,26 +54,15 @@ struct PriceHistoryChartView: View {
         DynamicSpanTextView(section: section, derivedData: derivedData, interaction: interaction)
       }
       
-      Group {
-        switch state {
-        case .loading:
-          placeholder(.shimmer).frame(height: 143, alignment: .leading)
-          
-        case .unavailable:
-          placeholder(.message(unavailableLabel)).frame(height: 143, alignment: .leading)
-          
-        case let .data(section):
-          chart(for: section)
-            .id(colorScheme)
-            .frame(height: 165, alignment: .leading)
-            .onAppear {
-              updateDerivedData(for: section)
-            }
-            .onChange(of: isolatedKind) {
-              updateDerivedData(for: section)
-            }
+      chart(for: state.data)
+        .id(colorScheme)
+        .frame(height: 165, alignment: .leading)
+        .onAppear {
+          updateDerivedData(for: state.data)
         }
-      }
+        .onChange(of: isolatedKind) {
+          updateDerivedData(for: state.data)
+        }
     }
     .padding(.horizontal, systemHorizontalMargin)
     .padding(.vertical, 13.0)
@@ -106,40 +95,6 @@ struct PriceHistoryChartView: View {
       priceRange: priceExtents,
       dateRange: dateExtents
     )
-  }
-}
-
-// MARK: - Header & Placeholder
-
-private extension PriceHistoryChartView {
-  enum PlaceholderKind {
-    case shimmer
-    case message(String)
-  }
-  
-  @ViewBuilder
-  func placeholder(_ kind: PlaceholderKind) -> some View {
-    switch kind {
-    case .shimmer:
-      RoundedRectangle(cornerRadius: Self.cornerRadius - Self.chartInset)
-        .fill(.quaternary)
-        .frame(height: Self.chartHeight)
-      
-    case let .message(text):
-      VStack(spacing: 6.0) {
-        Image(systemName: "chart.line.uptrend.xyaxis")
-          .font(.title2)
-          .foregroundStyle(.tertiary)
-        
-        Text(text)
-          .font(.caption)
-          .foregroundStyle(.secondary)
-          .multilineTextAlignment(.center)
-      }
-      .padding(.horizontal, 21.0)
-      .frame(maxWidth: .infinity)
-      .frame(height: Self.chartHeight)
-    }
   }
 }
 

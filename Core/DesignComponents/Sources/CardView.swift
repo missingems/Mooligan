@@ -2,28 +2,7 @@ import ScryfallKit
 import SwiftUI
 import Networking
 
-/// `Equatable` so that a parent rebuilding does not become a card rebuilding.
-///
-/// A card view is a decoded image behind a `clipShape` and a stroked overlay,
-/// and on a foil it is a Metal shader as well. Without an `==` SwiftUI compares
-/// this by its stored properties, and the `send` closure it carries is never
-/// equal to another closure — so every re-run of an enclosing body rebuilt the
-/// card. Both grids and the card detail rebuild their bodies for reasons that
-/// have nothing to do with any individual card.
-public struct CardView: View, Equatable {
-  /// Compares what is drawn. `send` is deliberately excluded: it is a closure,
-  /// which is never equal, and every caller's does the same thing for the same
-  /// card — reports that its face was tapped.
-  public nonisolated static func == (lhs: CardView, rhs: CardView) -> Bool {
-    lhs.displayableCard == rhs.displayableCard
-      && lhs.layoutConfiguration == rhs.layoutConfiguration
-      && lhs.accessoryInfo == rhs.accessoryInfo
-      && lhs.shadowConfiguration == rhs.shadowConfiguration
-      && lhs.callToActionHorizontalOffset == rhs.callToActionHorizontalOffset
-      && lhs.isFoilOnly == rhs.isFoilOnly
-      && lhs.isFoilAnimated == rhs.isFoilAnimated
-  }
-
+public struct CardView: View {
   public enum ShadowConfiguration: Equatable {
     case `default`
     
