@@ -87,12 +87,6 @@ public struct CardDetailView: View {
           Spacer(minLength: 13.0)
         }
         
-        LegalityView(
-          title: content.legalityLabel,
-          displayReleaseDate: content.card.releasedAt,
-          legalities: content.card.legalities.all
-        )
-        
         PriceHistorySectionView(
           store: store,
           quotes: content.todaysQuotes,
@@ -116,6 +110,12 @@ public struct CardDetailView: View {
             case .etched: content.usdEtchedLabel
             }
           }
+        )
+        
+        LegalityView(
+          title: content.legalityLabel,
+          displayReleaseDate: content.card.releasedAt,
+          legalities: content.card.legalities.all
         )
         
         VariantsSectionView(store: store)

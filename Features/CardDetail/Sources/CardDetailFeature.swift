@@ -83,14 +83,6 @@ import ScryfallKit
       
     case let .fetchPriceHistory(card):
       return .run { send in
-        // Both sides are independent and both can fail to nothing: a card with
-        // no history still gets its markers, and a set list that never loads
-        // just means no symbols on the axis.
-        // Bounded. Apollo's fetch has no deadline of its own, and a request
-        // whose callback never fires leaves the chart shimmering for ever —
-        // which is what certain printings were doing. Past the deadline the
-        // section reports itself unavailable, and the Scryfall quotes beside
-        // the title carry on showing a price regardless.
         async let history = withTaskGroup(of: PriceHistory?.self) { group in
           group.addTask {
             try? await priceHistoryClient.history(
@@ -108,16 +100,16 @@ import ScryfallKit
           group.cancelAll()
           return first
         }
-        async let releases = SetReleaseMarkerStore.shared.markers(in: .allPriceHistory) {
-          (try? await setClient.getSets(queryType: .all).1) ?? []
-        }
+//        async let releases = SetReleaseMarkerStore.shared.markers(in: .allPriceHistory) {
+//          (try? await setClient.getSets(queryType: .all).1) ?? []
+//        }
 
         await send(
           .updatePriceHistory(
             PriceHistorySection.makeState(
               card: card,
               history: await history,
-              releases: await releases
+              releases: []
             )
           )
         )

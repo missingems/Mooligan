@@ -20,21 +20,9 @@ struct PriceHistoryChartView: View {
   private let unavailableLabel: String
   private let legendRows: Int
   
-  @ScaledMetric(relativeTo: .caption) private var legendRowHeight = 23.0
-  
-  private var legendHeight: CGFloat {
-    8.0 + CGFloat(max(legendRows, 1)) * legendRowHeight
-  }
-  
   @Environment(\.colorScheme) private var colorScheme
-  
-  /// The finish the reader has isolated, if any. `nil` draws every finish.
   @State private var isolatedKind: PriceSeriesKind?
-  
-  /// Memoized data to avoid calculating filter and extents during layout
   @State private var derivedData = ChartDerivedData()
-  
-  /// The plot's rectangle inside the chart, resolved from Swift Charts' anchor.
   @State private var plot: CGRect = .zero
   @State private var interaction = ChartInteraction()
   
@@ -59,52 +47,39 @@ struct PriceHistoryChartView: View {
       .safeAreaPadding(.leading, systemHorizontalMargin)
     
     VStack(alignment: .leading, spacing: 5.0) {
-      header
-      todaysQuotes
+      Text(title)
+        .font(.headline)
+      
+      if case let .data(section) = state {
+        DynamicSpanTextView(section: section, derivedData: derivedData, interaction: interaction)
+      }
       
       Group {
         switch state {
         case .loading:
-          placeholder(.shimmer)
+          placeholder(.shimmer).frame(height: 143, alignment: .leading)
           
         case .unavailable:
-          placeholder(.message(unavailableLabel))
+          placeholder(.message(unavailableLabel)).frame(height: 143, alignment: .leading)
           
         case let .data(section):
           chart(for: section)
             .id(colorScheme)
+            .frame(height: 165, alignment: .leading)
+            .onAppear {
+              updateDerivedData(for: section)
+            }
+            .onChange(of: isolatedKind) {
+              updateDerivedData(for: section)
+            }
         }
       }
-      .frame(height: Self.chartHeight)
-      .padding(Self.chartInset)
-      .background(Color(.systemFill))
-      .clipShape(RoundedRectangle(cornerRadius: Self.cornerRadius))
-      .padding(.top, 10.0)
-      
-      ZStack(alignment: .top) {
-        if case let .data(section) = state {
-          DynamicLegendView(
-            section: section,
-            interaction: interaction,
-            currencyCode: currencyCode,
-            isolatedKind: $isolatedKind
-          )
-        }
-      }
-      .frame(height: legendHeight, alignment: .top)
     }
     .padding(.horizontal, systemHorizontalMargin)
     .padding(.vertical, 13.0)
-    // Synchronize derived data calculations to avoid mid-layout evaluation
-    .onChange(of: state, initial: true) { _, newState in
-      if case let .data(section) = newState { updateDerivedData(for: section) }
-    }
-    .onChange(of: isolatedKind) { _, _ in
-      if case let .data(section) = state { updateDerivedData(for: section) }
-    }
   }
   
-  static let cornerRadius: CGFloat = 13.0
+  static let cornerRadius: CGFloat = 21
   static let chartInset: CGFloat = 10.0
   static let chartHeight: CGFloat = 200.0
   
@@ -137,45 +112,6 @@ struct PriceHistoryChartView: View {
 // MARK: - Header & Placeholder
 
 private extension PriceHistoryChartView {
-  var header: some View {
-    HStack(alignment: .firstTextBaseline, spacing: 8.0) {
-      Text(title)
-        .font(.headline)
-      
-      Spacer(minLength: 8.0)
-      
-      if case let .data(section) = state {
-        // Extracted so the main view isn't invalidated by scrubs
-        DynamicSpanTextView(section: section, derivedData: derivedData, interaction: interaction)
-      }
-      
-      Text(sourceLabel)
-        .font(.caption2)
-        .foregroundStyle(.tertiary)
-    }
-  }
-  
-  @ViewBuilder
-  var todaysQuotes: some View {
-    if quotes.isEmpty == false {
-      HStack(spacing: 14.0) {
-        ForEach(quotes) { quote in
-          HStack(spacing: 4.0) {
-            Text(quote.label)
-              .font(.caption2)
-              .foregroundStyle(.secondary)
-            
-            Text(quote.amount, format: .currency(code: "USD"))
-              .font(.subheadline.weight(.semibold).monospacedDigit())
-          }
-        }
-        Spacer(minLength: 0)
-      }
-      .lineLimit(1)
-      .minimumScaleFactor(0.8)
-    }
-  }
-  
   enum PlaceholderKind {
     case shimmer
     case message(String)
@@ -215,27 +151,25 @@ private extension PriceHistoryChartView {
     let fractionDigits = derivedData.priceRange.upperBound < 10 ? 2 : 0
     
     return Chart {
-      ForEach(section.releases) { release in
-        RuleMark(x: .value("Release", release.date))
-          .foregroundStyle(.secondary.opacity(0.3))
-          .lineStyle(StrokeStyle(lineWidth: 1, dash: [3, 3]))
-      }
-      
       ForEach(derivedData.displayedSeries) { series in
+        // Extract the label once per series
+        let seriesLabel = chartLabel(for: series.kind)
+        
         ForEach(series.points) { point in
           LineMark(
             x: .value("Date", point.date),
             y: .value("Price", point.amount.doubleValue),
-            series: .value("Finish", series.id)
+            series: .value("ID", series.id) // 1. Restored explicit series grouping
           )
           .interpolationMethod(.monotone)
-          .foregroundStyle(chartColor(for: series.kind))
+          .foregroundStyle(by: .value("Finish", seriesLabel))
           
           if derivedData.displayedSeries.count == 1 {
             AreaMark(
               x: .value("Date", point.date),
               yStart: .value("Floor", domain.lowerBound),
-              yEnd: .value("Price", point.amount.doubleValue)
+              yEnd: .value("Price", point.amount.doubleValue),
+              series: .value("ID", series.id) // 2. Added explicit series grouping here too
             )
             .interpolationMethod(.monotone)
             .foregroundStyle(
@@ -252,13 +186,22 @@ private extension PriceHistoryChartView {
         }
       }
     }
-    .chartLegend(.hidden)
+    // 3. Safer domain/range array mapping instead of dictionary
+    .chartForegroundStyleScale(
+      domain: [chartLabel(for: .normal), chartLabel(for: .foil), chartLabel(for: .etched)],
+      range: [chartColor(for: .normal), chartColor(for: .foil), chartColor(for: .etched)]
+    )
+    .chartLegend(position: .bottom, alignment: .leading, spacing: 16)
     .chartYScale(domain: domain)
     .chartXScale(domain: derivedData.dateRange)
     .chartYAxis {
-      AxisMarks(position: .leading, values: .automatic(desiredCount: 4)) { value in
-        AxisGridLine().foregroundStyle(.secondary.opacity(0.15))
-        AxisValueLabel {
+      AxisMarks(position: .leading, values: .automatic) { value in
+        AxisGridLine().foregroundStyle(
+          (colorScheme == .dark ? Color.white.opacity(0.169) : Color.black.opacity(0.225))
+            .blendMode(colorScheme == .dark ? .plusLighter : .plusDarker)
+        )
+        
+        AxisValueLabel(anchor: .trailing) {
           if let amount = value.as(Double.self) {
             Text(amount, format: .number.precision(.fractionLength(fractionDigits)))
               .font(.caption2)
@@ -267,29 +210,16 @@ private extension PriceHistoryChartView {
       }
     }
     .chartXAxis {
-      AxisMarks(values: .automatic(desiredCount: 4)) { _ in
-        AxisGridLine().foregroundStyle(.secondary.opacity(0.15))
-        AxisValueLabel(format: axisDateStyle(forDays: spanInDays(of: derivedData.dateRange)))
-      }
-    }
-    .chartOverlay { proxy in
-      let plotAnchor = proxy.plotFrame
-      
-      ZStack(alignment: .topLeading) {
-        Color.clear
-          .onGeometryChange(for: CGRect.self) { geometry in
-            plotAnchor.map { geometry[$0] } ?? .zero
-          } action: { plot = $0 }
+      AxisMarks(values: .automatic(desiredCount: 3)) { value in
+        AxisGridLine().foregroundStyle(
+          (colorScheme == .dark ? Color.white.opacity(0.169) : Color.black.opacity(0.225))
+            .blendMode(colorScheme == .dark ? .plusLighter : .plusDarker)
+        )
         
-        if plot.width > 0 {
-          DynamicChartOverlayView(
-            section: section,
-            derivedData: derivedData,
-            interaction: interaction,
-            proxy: proxy,
-            plot: plot
-          )
-        }
+        AxisValueLabel(
+          format: axisDateStyle(forDays: spanInDays(of: derivedData.dateRange)),
+          anchor: .top
+        )
       }
     }
   }
@@ -392,7 +322,6 @@ final class ChartInteraction {
   }
 }
 
-
 // MARK: - Performance Subviews
 
 /// A tiny view bound to the interaction state. Redraws only this text on scrub.
@@ -425,98 +354,6 @@ private struct DynamicSpanTextView: View {
       let months = max(1, Int((Double(days) / 30.0).rounded()))
       return String(localized: "Past \(months) Months")
     }
-  }
-}
-
-/// Computes all rows of the legend. Pulls readout dynamically so the main
-/// body is immune to scrub invalidations.
-private struct DynamicLegendView: View {
-  let section: PriceHistorySection
-  let interaction: ChartInteraction
-  let currencyCode: String
-  @Binding var isolatedKind: PriceSeriesKind?
-  
-  var body: some View {
-    VStack(alignment: .leading, spacing: 2.0) {
-      ForEach(section.series) { entry in
-        if let readout = interaction.readout(for: entry) {
-          legendRow(for: entry, readout: readout, canFilter: section.series.count > 1)
-        }
-      }
-    }
-    .padding(.top, 8.0)
-    .frame(maxWidth: .infinity, alignment: .leading)
-  }
-  
-  @ViewBuilder
-  private func legendRow(
-    for entry: PriceHistorySection.Series,
-    readout: (point: PricePoint, change: PriceChange?),
-    canFilter: Bool
-  ) -> some View {
-    if canFilter {
-      Button {
-        isolatedKind = isolatedKind == entry.kind ? nil : entry.kind
-      } label: {
-        legendRowContent(for: entry, readout: readout)
-      }
-      .buttonStyle(.plain)
-      .animation(.snappy(duration: 0.2), value: isolatedKind)
-      .accessibilityLabel(Text(chartLabel(for: entry.kind)))
-      .accessibilityHint(
-        Text(
-          isolatedKind == entry.kind
-          ? String(localized: "Show every finish")
-          : String(localized: "Show only this finish")
-        )
-      )
-    } else {
-      legendRowContent(for: entry, readout: readout)
-        .accessibilityElement(children: .combine)
-    }
-  }
-  
-  private func legendRowContent(
-    for entry: PriceHistorySection.Series,
-    readout: (point: PricePoint, change: PriceChange?)
-  ) -> some View {
-    let isDimmed = isolatedKind != nil && isolatedKind != entry.kind
-    
-    return HStack(alignment: .firstTextBaseline, spacing: 6.0) {
-      Circle()
-        .fill(chartColor(for: entry.kind))
-        .frame(width: 7.0, height: 7.0)
-      
-      Text(chartLabel(for: entry.kind))
-        .font(.caption)
-        .foregroundStyle(.secondary)
-      
-      Text(readout.point.amount, format: .currency(code: currencyCode))
-        .font(.caption)
-        .fontWeight(.semibold)
-        .monospacedDigit()
-        .foregroundStyle(.primary)
-        .contentTransition(.numericText())
-      
-      Spacer(minLength: 6.0)
-      
-      if let change = readout.change {
-        Text(changeText(for: change, currencyCode: currencyCode))
-          .font(.caption)
-          .fontWeight(.medium)
-          .monospacedDigit()
-          .foregroundStyle(trendColor(change))
-          .contentTransition(.numericText())
-      }
-    }
-    .padding(.horizontal, 6.0)
-    .padding(.vertical, 3.0)
-    .background(
-      isolatedKind == entry.kind ? AnyShapeStyle(.quaternary) : AnyShapeStyle(.clear),
-      in: RoundedRectangle(cornerRadius: 8.0)
-    )
-    .opacity(isDimmed ? 0.45 : 1.0)
-    .contentShape(RoundedRectangle(cornerRadius: 8.0))
   }
 }
 
@@ -625,6 +462,99 @@ private struct DynamicChartOverlayView: View {
     let clamped = min(max(x - plot.minX, 0.0), plot.width)
     guard let date = proxy.value(atX: clamped, as: Date.self) else { return }
     interaction.scrubbedDate = date
+  }
+}
+
+// MARK: - Legacy Legend (Unused but preserved)
+
+/// Computes all rows of the legend. Pulls readout dynamically so the main
+/// body is immune to scrub invalidations.
+private struct DynamicLegendView: View {
+  let section: PriceHistorySection
+  let interaction: ChartInteraction
+  let currencyCode: String
+  @Binding var isolatedKind: PriceSeriesKind?
+  
+  var body: some View {
+    VStack(alignment: .leading, spacing: 2.0) {
+      ForEach(section.series) { entry in
+        if let readout = interaction.readout(for: entry) {
+          legendRow(for: entry, readout: readout, canFilter: section.series.count > 1)
+        }
+      }
+    }
+    .frame(maxWidth: .infinity, alignment: .leading)
+  }
+  
+  @ViewBuilder
+  private func legendRow(
+    for entry: PriceHistorySection.Series,
+    readout: (point: PricePoint, change: PriceChange?),
+    canFilter: Bool
+  ) -> some View {
+    if canFilter {
+      Button {
+        isolatedKind = isolatedKind == entry.kind ? nil : entry.kind
+      } label: {
+        legendRowContent(for: entry, readout: readout)
+      }
+      .buttonStyle(.plain)
+      .animation(.snappy(duration: 0.2), value: isolatedKind)
+      .accessibilityLabel(Text(chartLabel(for: entry.kind)))
+      .accessibilityHint(
+        Text(
+          isolatedKind == entry.kind
+          ? String(localized: "Show every finish")
+          : String(localized: "Show only this finish")
+        )
+      )
+    } else {
+      legendRowContent(for: entry, readout: readout)
+        .accessibilityElement(children: .combine)
+    }
+  }
+  
+  private func legendRowContent(
+    for entry: PriceHistorySection.Series,
+    readout: (point: PricePoint, change: PriceChange?)
+  ) -> some View {
+    let isDimmed = isolatedKind != nil && isolatedKind != entry.kind
+    
+    return HStack(alignment: .firstTextBaseline, spacing: 6.0) {
+      Circle()
+        .fill(chartColor(for: entry.kind))
+        .frame(width: 7.0, height: 7.0)
+      
+      Text(chartLabel(for: entry.kind))
+        .font(.caption)
+        .foregroundStyle(.secondary)
+      
+      Text(readout.point.amount, format: .currency(code: currencyCode))
+        .font(.caption)
+        .fontWeight(.semibold)
+        .monospacedDigit()
+        .foregroundStyle(.primary)
+        .contentTransition(.numericText())
+      
+      Spacer(minLength: 6.0)
+      
+      if let change = readout.change {
+        Text(changeText(for: change, currencyCode: currencyCode))
+          .font(.caption)
+          .fontWeight(.medium)
+          .monospacedDigit()
+          .foregroundStyle(trendColor(change))
+          .contentTransition(.numericText())
+      }
+    }
+    .padding(.horizontal, 6.0)
+    .padding(.vertical, 3.0)
+    .background(
+      isolatedKind == entry.kind ? AnyShapeStyle(.quaternary) : AnyShapeStyle(.clear),
+      in: RoundedRectangle(cornerRadius: 8.0)
+    )
+    .opacity(isDimmed ? 0.45 : 1.0)
+    .contentShape(RoundedRectangle(cornerRadius: 8.0))
   }
 }
 

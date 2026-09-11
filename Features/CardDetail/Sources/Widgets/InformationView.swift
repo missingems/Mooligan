@@ -257,13 +257,13 @@ private extension Widget {
               endPoint: .bottomTrailing
             )
             .overlay(
-              RoundedRectangle(cornerRadius: 13.0).strokeBorder(.black.opacity(0.31), lineWidth: 1 / strokeScale)
+              RoundedRectangle(cornerRadius: 21).strokeBorder(.black.opacity(0.31), lineWidth: 1 / strokeScale)
             )
           } else {
             Color(.systemFill)
           }
         }
-        .clipShape(RoundedRectangle(cornerRadius: 13.0))
+        .clipShape(.capsule)
 
         Text("\(rarity.rawValue.capitalized)\n ")
           .font(.caption)
@@ -300,8 +300,7 @@ extension Widget {
     }
     .frame(minWidth: 66, minHeight: 34)
     .padding(EdgeInsets(top: 5, leading: 11, bottom: 5, trailing: 11))
-    .background(Color(.systemFill))
-    .clipShape(RoundedRectangle(cornerRadius: 13.0))
+    .glassEffect()
   }
 }
 
