@@ -20,12 +20,16 @@ public struct VibrantVerticalDivider: View {
   @Environment(\.colorScheme) private var colorScheme
   @Environment(\.displayScale) var displayScale
   
+  let width: CGFloat?
+  
   public var body: some View {
     Rectangle()
       .fill(colorScheme == .dark ? Color.white.opacity(0.169) : Color.black.opacity(0.225))
       .blendMode(colorScheme == .dark ? .plusLighter : .plusDarker)
-      .frame(width: 1 / displayScale)
+      .frame(width: width ?? (1 / displayScale))
   }
   
-  public init() {}
+  public init(width: CGFloat? = nil) {
+    self.width = width
+  }
 }

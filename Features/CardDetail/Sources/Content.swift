@@ -125,22 +125,6 @@ public struct Content: Equatable, Sendable {
     )
   }
 
-  /// Scryfall's prices for whichever finishes this printing has, ready to show
-  /// without waiting on anything.
-  var todaysQuotes: [PriceHistoryChartView.Quote] {
-    func amount(_ raw: String?) -> Decimal? {
-      raw.flatMap { Decimal(string: $0, locale: Locale(identifier: "en_US_POSIX")) }
-        .flatMap { $0 > 0 ? $0 : nil }
-    }
-
-    return [
-      amount(card.prices.usd).map { PriceHistoryChartView.Quote(label: usdLabel, amount: $0) },
-      amount(card.prices.usdFoil).map { PriceHistoryChartView.Quote(label: usdFoilLabel, amount: $0) },
-      amount(card.prices.usdEtched).map { PriceHistoryChartView.Quote(label: usdEtchedLabel, amount: $0) },
-    ]
-    .compactMap { $0 }
-  }
-
   func getColorIdentity() -> [String] {
     let identity = card.colorIdentity.map { "{\($0.rawValue)}" }
     return identity.isEmpty ? ["{C}"] : identity

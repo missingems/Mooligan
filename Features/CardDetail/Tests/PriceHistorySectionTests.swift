@@ -18,10 +18,22 @@ struct PriceHistorySectionTests {
     PricePoint(date: today.addingTimeInterval(-Double(days) * 86_400), amount: decimal(amount))
   }
 
-  private func card(usd: String? = nil, usdFoil: String? = nil) -> Card {
+  /// `Card.mock()` reports `releasedAt` as "1", which is not a day, so a card
+  /// built without one exercises the "no release date to trim against" path.
+  private func card(
+    usd: String? = nil,
+    usdFoil: String? = nil,
+    releasedAt: String? = nil
+  ) -> Card {
     var card = Card.mock()
     card.prices = Card.Prices(usd: usd, usdFoil: usdFoil)
+    if let releasedAt { card.releasedAt = releasedAt }
     return card
+  }
+
+  /// A release day the way Scryfall spells it, `days` before `today`.
+  private func releaseDay(daysBefore days: Int) -> String {
+    UTCDay.formatter.string(from: today.addingTimeInterval(-Double(days) * 86_400))
   }
 
   private func history(_ series: [PriceSeriesKind: [PricePoint]]) -> PriceHistory {
@@ -168,5 +180,94 @@ struct PriceHistorySectionTests {
       return
     }
     #expect(section.releases.map(\.id) == ["in"])
+  }
+
+  /// TCGplayer lists a card weeks before it is legal to sell, so MTGJSON's feed
+  /// opens with preorder quotes. Those are speculation on an unopened product,
+  /// and they are usually the highest numbers in the series — leaving them in
+  /// drags the y scale up and makes every card look like it crashed on release.
+  @Test func whenHistoryPredatesTheRelease_shouldStartAtTheReleaseDay() {
+    let state = PriceHistorySection.makeState(
+      card: card(releasedAt: releaseDay(daysBefore: 3)),
+      history: history([
+        .normal: [
+          point(daysBefore: 6, "9.00"),
+          point(daysBefore: 5, "8.00"),
+          point(daysBefore: 3, "4.00"),
+          point(daysBefore: 2, "4.20"),
+          point(daysBefore: 1, "4.10"),
+        ],
+      ]),
+      releases: [],
+      today: today
+    )
+
+    guard case let .data(section) = state else {
+      Issue.record("expected data, got \(state)")
+      return
+    }
+    let points = section.series[0].points
+    #expect(points.count == 3)
+    #expect(points.first?.amount == decimal("4.00"))
+    // The preorder run no longer drives the y scale.
+    #expect(section.priceRange.upperBound < 5.0)
+  }
+
+  /// Nothing to trim against, so nothing is trimmed — a printing whose release
+  /// date we cannot read should still draw everything the feed has.
+  @Test func whenTheReleaseDateIsUnreadable_shouldKeepEveryPoint() {
+    let state = PriceHistorySection.makeState(
+      card: card(),
+      history: history([
+        .normal: [point(daysBefore: 40, "1.00"), point(daysBefore: 1, "1.20")],
+      ]),
+      releases: [],
+      today: today
+    )
+
+    guard case let .data(section) = state else {
+      Issue.record("expected data")
+      return
+    }
+    #expect(section.series[0].points.count == 2)
+  }
+
+  /// A printing released today has no post-release market yet. Saying so beats
+  /// charting a week of preorder speculation as if it were price action.
+  @Test func whenEveryQuotePredatesTheRelease_shouldBeUnavailable() {
+    let state = PriceHistorySection.makeState(
+      card: card(releasedAt: releaseDay(daysBefore: 0)),
+      history: history([
+        .normal: [point(daysBefore: 6, "9.00"), point(daysBefore: 5, "8.00")],
+      ]),
+      releases: [],
+      today: today
+    )
+
+    #expect(state == .unavailable)
+  }
+
+  /// The live quote is spliced onto what survives the trim, so a card released
+  /// two days ago still draws a line instead of falling back to unavailable.
+  @Test func whenOnlyOneQuoteSurvivesTheTrim_shouldStillJoinTheLiveQuote() {
+    let state = PriceHistorySection.makeState(
+      card: card(usd: "5.00", releasedAt: releaseDay(daysBefore: 2)),
+      history: history([
+        .normal: [
+          point(daysBefore: 6, "9.00"),
+          point(daysBefore: 2, "4.00"),
+        ],
+      ]),
+      releases: [],
+      today: today
+    )
+
+    guard case let .data(section) = state else {
+      Issue.record("expected data")
+      return
+    }
+    let points = section.series[0].points
+    #expect(points.map(\.amount) == [decimal("4.00"), decimal("5.00")])
+    #expect(points.last?.date == today)
   }
 }

@@ -89,11 +89,9 @@ public struct CardDetailView: View {
         
         PriceHistorySectionView(
           store: store,
-          quotes: content.todaysQuotes,
           title: content.priceHistoryLabel,
           sourceLabel: content.priceHistorySourceLabel,
-          unavailableLabel: content.priceHistoryUnavailableLabel,
-          legendRows: max(content.card.finishes.count, 1)
+          unavailableLabel: content.priceHistoryUnavailableLabel
         )
         
         PurchaseLinksView(
@@ -189,22 +187,16 @@ private extension CGFloat {
 
 private struct PriceHistorySectionView: View {
   let store: StoreOf<CardDetailFeature>
-  let quotes: [PriceHistoryChartView.Quote]
   let title: String
   let sourceLabel: String
   let unavailableLabel: String
-  let legendRows: Int
   
   var body: some View {
-    let _ = Self._printChanges()
-    
-    PriceHistoryChartView(
+    PriceHistoryView(
       state: store.priceHistory,
-      quotes: quotes,
       title: title,
       sourceLabel: sourceLabel,
-      unavailableLabel: unavailableLabel,
-      legendRows: legendRows
+      unavailableLabel: unavailableLabel
     )
   }
 }
