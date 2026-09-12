@@ -7,10 +7,6 @@ import Testing
 struct PriceHistoryMapperTests {
   private let cardID = "d8b3e4f1-0000-4000-8000-000000000001"
 
-  private var wideWindow: DateInterval {
-    DateInterval(start: .distantPast, end: .distantFuture)
-  }
-
   private func row(
     provider: String = "tcgplayer",
     date: String,
@@ -32,15 +28,13 @@ struct PriceHistoryMapperTests {
   private func map(
     _ rows: [MTGGraphQLPriceRow],
     provider: PriceProvider = .tcgplayer,
-    listType: PriceListType = .retail,
-    window: DateInterval? = nil
+    listType: PriceListType = .retail
   ) -> PriceHistory {
     PriceHistoryMapper.makeHistory(
       cardID: cardID,
       rows: rows,
       provider: provider,
-      listType: listType,
-      window: window ?? wideWindow
+      listType: listType
     )
   }
 
@@ -106,24 +100,19 @@ struct PriceHistoryMapperTests {
     #expect(parts.hour == 0)
   }
 
-  @Test("Drops points outside the requested window")
-  func clipsToWindow() throws {
-    var utc = Calendar(identifier: .gregorian)
-    utc.timeZone = try #require(TimeZone(identifier: "UTC"))
-    let start = try #require(PriceHistoryMapper.dayFormatter.date(from: "2026-06-02"))
-    let end = try #require(PriceHistoryMapper.dayFormatter.date(from: "2026-06-03"))
+  /// The mapper no longer takes a window. MTGJSON retains what it retains —
+  /// around 90 days for a card in print, a handful for one released last week —
+  /// so clipping could only ever hide history the chart was free to draw.
+  @Test("Keeps every dated point the feed returns")
+  func keepsTheWholeFeed() {
+    let history = map([
+      row(date: "2026-06-01", price: 10),
+      row(date: "2026-06-02", price: 20),
+      row(date: "2026-06-03", price: 30),
+      row(date: "2026-06-04", price: 40),
+    ])
 
-    let history = map(
-      [
-        row(date: "2026-06-01", price: 10),
-        row(date: "2026-06-02", price: 20),
-        row(date: "2026-06-03", price: 30),
-        row(date: "2026-06-04", price: 40),
-      ],
-      window: DateInterval(start: start, end: end)
-    )
-
-    #expect(history.series[.normal]?.map(\.amount) == [20, 30])
+    #expect(history.series[.normal]?.map(\.amount) == [10, 20, 30, 40])
   }
 
   @Test("Skips rows with missing or unusable fields")

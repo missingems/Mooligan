@@ -39,7 +39,8 @@ struct BoosterCompanionPoolTests {
     )
   }
 
-  private var hobbit: MTGSet { set(code: "hob", name: "The Hobbit", type: .expansion) }
+  // Qualified: a bare `set(` opening a computed property body parses as a setter.
+  private var hobbit: MTGSet { self.set(code: "hob", name: "The Hobbit", type: .expansion) }
 
   private var sets: [MTGSet] {
     [
