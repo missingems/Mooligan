@@ -5,6 +5,7 @@ import ComposableArchitecture
 import Foundation
 import DesignComponents
 import Networking
+import PackOpening
 import Query
 import SwiftUI
 
@@ -42,6 +43,15 @@ struct RootView: View {
   @Environment(\.horizontalSizeClass) private var horizontalSizeClass
   
   var body: some View {
+    layout
+      .fullScreenCover(
+        item: $store.scope(state: \.packSession, action: \.packSession)
+      ) { sessionStore in
+        PackSessionView(store: sessionStore)
+      }
+  }
+  
+  @ViewBuilder private var layout: some View {
     if horizontalSizeClass == .regular {
       NavigationSplitView {
         List(selection: Binding(

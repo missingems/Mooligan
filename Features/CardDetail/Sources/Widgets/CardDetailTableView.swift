@@ -2,7 +2,14 @@ import DesignComponents
 import Networking
 import SwiftUI
 
-struct CardDetailTableView: View {
+/// `Equatable` so a card-detail rebuild does not become a table rebuild.
+///
+/// Every store change re-runs `CardDetailView.body` — TCA registers a store
+/// read against the whole state, so a set icon or a price history landing
+/// invalidates the screen whatever the reads are split across. Without an `==`
+/// SwiftUI compares this view's freshly built `sections` array by its buffer,
+/// which is never the same one twice, so the table was re-laid out every time.
+struct CardDetailTableView: View, Equatable {
   let sections: [SectionType]
   
   var body: some View {

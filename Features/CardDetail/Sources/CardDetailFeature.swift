@@ -24,17 +24,17 @@ import ScryfallKit
       
     case let .didShowVariant(index):
       guard
-        state.content.variants.state.value?.hasNextPage == true,
-        index == (state.content.variants.state.value?.cardDetails.count ?? 0) - 1
+        state.variants.state.value?.hasNextPage == true,
+        index == (state.variants.state.value?.cardDetails.count ?? 0) - 1
           else { return .none }
       
-      return .run { [card = state.content.card, page = state.content.variants.page] send in
+      return .run { [card = state.content.card, page = state.variants.page] send in
         await send(.fetchVariants(card: card, page: page + 1))
       }
       
     case let .fetchAdditionalInformation(card):
       state.markAsAppeared()
-      let needsSetIcon = state.content.setIconURL == nil
+      let needsSetIcon = state.setIconURL == nil
       
       return .merge(
         needsSetIcon ? .send(.fetchSetIcon(card: card)) : .none,
@@ -54,7 +54,7 @@ import ScryfallKit
       }
       
     case let .fetchVariants(card, page):
-      return .run { [existingVariants = state.content.variants.state.value] send in
+      return .run { [existingVariants = state.variants.state.value] send in
         do {
           let result = try await client.getVariants(of: card, page: page)
           var _existingVariants = existingVariants
@@ -82,16 +82,24 @@ import ScryfallKit
       }
       
     case let .fetchPriceHistory(card):
-      return .run { send in
-        // Both sides are independent and both can fail to nothing: a card with
-        // no history still gets its markers, and a set list that never loads
-        // just means no symbols on the axis.
-        async let history = try? priceHistoryClient.history(
-          for: card,
-          provider: .tcgplayer,
-          listType: .retail,
-          window: .allPriceHistory
-        )
+      return .run(priority: .background) { send in
+        async let history = withTaskGroup(of: PriceHistory?.self) { group in
+          group.addTask {
+            try? await priceHistoryClient.history(
+              for: card,
+              provider: .tcgplayer,
+              listType: .retail
+            )
+          }
+          group.addTask {
+            try? await Task.sleep(for: .seconds(12))
+            return nil
+          }
+
+          let first = await group.next() ?? nil
+          group.cancelAll()
+          return first
+        }
         async let releases = SetReleaseMarkerStore.shared.markers(in: .allPriceHistory) {
           (try? await setClient.getSets(queryType: .all).1) ?? []
         }
@@ -170,7 +178,7 @@ import ScryfallKit
     case let .updateVariants(value, page):
       state.updateVariants(value, page: page)
       return .none
-
+      
     case let .updatePriceHistory(value):
       state.updatePriceHistory(value)
       return .none
@@ -206,15 +214,27 @@ public extension CardDetailFeature {
   @ObservableState struct State: Equatable, Identifiable, Sendable {
     public let id: UUID
     public var content: Content
+    public var priceHistory: PriceHistoryState = .loading
+    public var setIconURL: URL?
+    var variants: Content.SubContent
+    var relatedTokens: Content.SubContent?
+    var relatedComboPieces: Content.SubContent?
+    var relatedMeldPieces: Content.SubContent?
+    var relatedMeldResult: Content.SubContent?
+    public var displayableCardImage: DisplayableCardImage?
     public var hasAppeared: Bool = false
     
     public init(card: Card, displayableCardImage: DisplayableCardImage? = nil, queryType: QueryType) {
       self.id = card.id
       self.content = Content(card: card, queryType: queryType)
       
-      if let displayableCardImage {
-        self.content.displayableCardImage = displayableCardImage
-      }
+      setIconURL = Content.initialSetIconURL(queryType: queryType)
+      variants = Content.initialVariants(card: card)
+      relatedTokens = Content.initialRelatedTokens
+      relatedComboPieces = Content.initialRelatedComboPieces
+      relatedMeldPieces = Content.initialRelatedMeldPieces
+      relatedMeldResult = Content.initialRelatedMeldResult
+      self.displayableCardImage = displayableCardImage ?? DisplayableCardImage(card)
     }
   }
   
@@ -254,43 +274,43 @@ private extension CardDetailFeature.State {
   }
   
   mutating func updateSetIconURL(_ url: URL?) {
-    if let url { content.setIconURL = url }
+    if let url { setIconURL = url }
   }
   
   mutating func updateVariants(_ dataSource: CardDataSource, page: Int) {
-    content.variants = content.variants.updating(page: page, state: .data(dataSource))
+    variants = variants.updating(page: page, state: .data(dataSource))
   }
 
   mutating func updatePriceHistory(_ value: PriceHistoryState) {
-    content.priceHistory = value
+    priceHistory = value
   }
   
   mutating func updateRelatedTokens(_ dataSource: CardDataSource) {
-    content.relatedTokens = content.relatedTokens?.updating(page: 1, state: .data(dataSource))
+    relatedTokens = relatedTokens?.updating(page: 1, state: .data(dataSource))
   }
   
   mutating func updateComboPieces(_ dataSource: CardDataSource) {
-    content.relatedComboPieces = content.relatedComboPieces?.updating(page: 1, state: .data(dataSource))
+    relatedComboPieces = relatedComboPieces?.updating(page: 1, state: .data(dataSource))
   }
   
   mutating func updateMeldPieces(_ dataSource: CardDataSource) {
-    content.relatedMeldPieces = content.relatedMeldPieces?.updating(page: 1, state: .data(dataSource))
+    relatedMeldPieces = relatedMeldPieces?.updating(page: 1, state: .data(dataSource))
   }
   
   mutating func updateMeldResult(_ dataSource: CardDataSource) {
-    content.relatedMeldResult = content.relatedMeldResult?.updating(page: 1, state: .data(dataSource))
+    relatedMeldResult = relatedMeldResult?.updating(page: 1, state: .data(dataSource))
   }
   
   mutating func toggleCardImageDescription() {
-    switch content.displayableCardImage {
+    switch displayableCardImage {
     case let .transformable(direction, frontImageURL, backImageURL, callToActionIconName, id):
-      content.displayableCardImage = .transformable(
+      displayableCardImage = .transformable(
         direction: direction.toggled(), frontImageURL: frontImageURL,
         backImageURL: backImageURL, callToActionIconName: callToActionIconName, id: id
       )
       
     case let .flippable(direction, displayingImageURL, callToActionIconName, id):
-      content.displayableCardImage = .flippable(
+      displayableCardImage = .flippable(
         direction: direction.toggled(), displayingImageURL: displayingImageURL,
         callToActionIconName: callToActionIconName, id: id
       )

@@ -118,7 +118,9 @@ private extension Array where Element == MTGSet {
   }
 }
 
-private extension MTGSet {
+// Not `private`: `BoosterPackClient.swift` reads it too, to keep an unreleased
+// set's product off the shelf until it has actually come out.
+extension MTGSet {
   var date: Date {
     guard let releasedAt else { return Date() }
     

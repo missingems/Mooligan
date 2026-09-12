@@ -133,5 +133,21 @@ public func migrator() -> DatabaseMigrator {
     .execute(connection)
   }
 
+  migrator.registerMigration("v2.boosterOdds") { connection in
+    try #sql(
+      """
+      CREATE TABLE "boosterOdds" (
+        "id" TEXT NOT NULL PRIMARY KEY,
+        "setCode" TEXT NOT NULL,
+        "kind" TEXT NOT NULL,
+        "payload" BLOB NOT NULL,
+        "mtgjsonVersion" TEXT,
+        "fetchedAt" INTEGER NOT NULL
+      ) STRICT
+      """
+    )
+    .execute(connection)
+  }
+
   return migrator
 }

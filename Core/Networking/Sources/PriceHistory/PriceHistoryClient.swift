@@ -8,8 +8,7 @@ public protocol PriceHistoryClient: Sendable {
   func history(
     for card: Card,
     provider: PriceProvider,
-    listType: PriceListType,
-    window: DateInterval
+    listType: PriceListType
   ) async throws -> PriceHistory
 }
 
@@ -19,8 +18,7 @@ public extension PriceHistoryClient {
     try await history(
       for: card,
       provider: .tcgplayer,
-      listType: .retail,
-      window: DateInterval(start: .now.addingTimeInterval(-90 * 86_400), end: .now)
+      listType: .retail
     )
   }
 }
@@ -67,7 +65,6 @@ public struct UnavailablePriceHistoryClient: PriceHistoryClient {
     for card: Card,
     provider: PriceProvider,
     listType: PriceListType,
-    window: DateInterval
   ) async throws -> PriceHistory {
     throw PriceHistoryClientError.notConfigured
   }

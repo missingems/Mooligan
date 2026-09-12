@@ -41,6 +41,7 @@ let project = Project(
         .project(target: "Browse", path: .relativeToManifest("Features/Browse")),
         .project(target: "CardDetail", path: .relativeToManifest("Features/CardDetail")),
         .project(target: "CardScanner", path: .relativeToManifest("Features/CardScanner")),
+        .project(target: "PackOpening", path: .relativeToManifest("Features/PackOpening")),
         .project(target: "DesignComponents", path: .relativeToManifest("Core/DesignComponents")),
         .project(target: "Networking", path: .relativeToManifest("Core/Networking")),
         .external(name: "ComposableArchitecture"),

@@ -3,9 +3,18 @@ import Networking
 import ScryfallKit
 import SwiftUI
 
-struct InformationView: View {
+struct InformationView: View, Equatable {
   private let title: String
   private let widgets: [Widget]
+
+  /// The tiles are built in `init` from values that do not change once the card
+  /// is on screen — bar the set icon, which is fetched and arrives later, and is
+  /// carried inside `widgets`. Comparing them is what stops every other store
+  /// change from rebuilding the row.
+  nonisolated static func == (lhs: InformationView, rhs: InformationView) -> Bool {
+    lhs.title == rhs.title && lhs.widgets.map(\.id) == rhs.widgets.map(\.id)
+  }
+
   @Environment(\.displayScale) private var displayScale
   private var strokeScale: CGFloat { max(displayScale, 1) }
   
@@ -248,13 +257,13 @@ private extension Widget {
               endPoint: .bottomTrailing
             )
             .overlay(
-              RoundedRectangle(cornerRadius: 13.0).strokeBorder(.black.opacity(0.31), lineWidth: 1 / strokeScale)
+              RoundedRectangle(cornerRadius: 21).strokeBorder(.black.opacity(0.31), lineWidth: 1 / strokeScale)
             )
           } else {
             Color(.systemFill)
           }
         }
-        .clipShape(RoundedRectangle(cornerRadius: 13.0))
+        .clipShape(.capsule)
 
         Text("\(rarity.rawValue.capitalized)\n ")
           .font(.caption)
@@ -291,8 +300,7 @@ extension Widget {
     }
     .frame(minWidth: 66, minHeight: 34)
     .padding(EdgeInsets(top: 5, leading: 11, bottom: 5, trailing: 11))
-    .background(Color(.systemFill))
-    .clipShape(RoundedRectangle(cornerRadius: 13.0))
+    .glassEffect()
   }
 }
 

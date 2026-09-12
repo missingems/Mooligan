@@ -3,7 +3,7 @@ import SwiftUI
 import Networking
 
 public struct CardView: View {
-  public enum ShadowConfiguration {
+  public enum ShadowConfiguration: Equatable {
     case `default`
     
     case custom(
@@ -47,14 +47,14 @@ public struct CardView: View {
     case toggledFaceDirection
   }
   
-  public enum AccessoryInfo {
+  public enum AccessoryInfo: Equatable {
     case hidden
     case display(usdFoil: String?, usd: String?)
     case displaySet(String, usdFoil: String?, usd: String?)
   }
   
-  public struct LayoutConfiguration {
-    public enum Rotation {
+  public struct LayoutConfiguration: Equatable {
+    public enum Rotation: Equatable {
       case landscape
       case portrait
       
@@ -87,6 +87,8 @@ public struct CardView: View {
   private let displayableCard: DisplayableCardImage
   private let accessoryInfo: AccessoryInfo
   private let send: ((Action) -> Void)?
+  private let isFoilOnly: Bool
+  private let isFoilAnimated: Bool
   
   @State private var isImageLoaded: Bool = false
   @Environment(\.displayScale) private var displayScale
@@ -94,7 +96,11 @@ public struct CardView: View {
   
   public var body: some View {
     VStack(spacing: 5.0) {
-      mainCardContent
+      if isFoilOnly {
+        mainCardContent.holographicFoil(intensity: 0.34, isAnimated: isFoilAnimated)
+      } else {
+        mainCardContent
+      }
     }
     .geometryGroup()
   }
@@ -186,10 +192,14 @@ public struct CardView: View {
     callToActionHorizontalOffset: CGFloat = 5.0,
     priceVisibility: AccessoryInfo,
     shadowConfiguration: ShadowConfiguration? = nil,
+    isFoilOnly: Bool = false,
+    isFoilAnimated: Bool = true,
     send: ((Action) -> Void)? = nil
   ) {
     guard let displayableCard else { return nil }
     self.displayableCard = displayableCard
+    self.isFoilOnly = isFoilOnly
+    self.isFoilAnimated = isFoilAnimated
     self.accessoryInfo = priceVisibility
     self.layoutConfiguration = layoutConfiguration
     self.callToActionHorizontalOffset = callToActionHorizontalOffset

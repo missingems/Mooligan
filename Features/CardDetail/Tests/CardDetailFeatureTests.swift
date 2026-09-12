@@ -97,7 +97,7 @@ import Testing
     store.exhaustivity = .off
 
     // Given the set icon is already known from the query type.
-    #expect(store.state.content.setIconURL == URL(string: set.iconSvgUri))
+    #expect(store.state.setIconURL == URL(string: set.iconSvgUri))
 
     // When
     await store.send(.fetchAdditionalInformation(card: card)) { state in
@@ -115,7 +115,7 @@ import Testing
     let url = URL(string: "https://mooligan.com/icon.svg")
 
     await store.send(.updateSetIconURL(url)) { state in
-      state.content.setIconURL = url
+      state.setIconURL = url
     }
   }
 
@@ -125,7 +125,7 @@ import Testing
 
     // Given
     await store.send(.updateSetIconURL(url)) { state in
-      state.content.setIconURL = url
+      state.setIconURL = url
     }
 
     // When / Then the nil is ignored rather than clearing the icon.
@@ -137,7 +137,7 @@ import Testing
     let dataSource = CardDataSource(cards: [.mock(id: nil)], hasNextPage: true, total: 1)
 
     await store.send(.updateVariants(dataSource, page: 2)) { state in
-      state.content.variants = state.content.variants.updating(page: 2, state: .data(dataSource))
+      state.variants = state.variants.updating(page: 2, state: .data(dataSource))
     }
   }
 
@@ -146,7 +146,7 @@ import Testing
     let dataSource = CardDataSource(cards: [.mock(id: nil)], hasNextPage: false, total: 1)
 
     await store.send(.updateRelatedTokens(dataSource)) { state in
-      state.content.relatedTokens = state.content.relatedTokens?.updating(page: 1, state: .data(dataSource))
+      state.relatedTokens = state.relatedTokens?.updating(page: 1, state: .data(dataSource))
     }
   }
 
@@ -155,7 +155,7 @@ import Testing
     let dataSource = CardDataSource(cards: [.mock(id: nil)], hasNextPage: false, total: 1)
 
     await store.send(.updateComboPieces(dataSource)) { state in
-      state.content.relatedComboPieces = state.content.relatedComboPieces?.updating(page: 1, state: .data(dataSource))
+      state.relatedComboPieces = state.relatedComboPieces?.updating(page: 1, state: .data(dataSource))
     }
   }
 
@@ -164,7 +164,7 @@ import Testing
     let dataSource = CardDataSource(cards: [.mock(id: nil)], hasNextPage: false, total: 1)
 
     await store.send(.updateMeldPieces(dataSource)) { state in
-      state.content.relatedMeldPieces = state.content.relatedMeldPieces?.updating(page: 1, state: .data(dataSource))
+      state.relatedMeldPieces = state.relatedMeldPieces?.updating(page: 1, state: .data(dataSource))
     }
   }
 
@@ -173,7 +173,7 @@ import Testing
     let dataSource = CardDataSource(cards: [.mock(id: nil)], hasNextPage: false, total: 1)
 
     await store.send(.updateMeldResult(dataSource)) { state in
-      state.content.relatedMeldResult = state.content.relatedMeldResult?.updating(page: 1, state: .data(dataSource))
+      state.relatedMeldResult = state.relatedMeldResult?.updating(page: 1, state: .data(dataSource))
     }
   }
 
@@ -182,11 +182,11 @@ import Testing
 
     // When a fetch finds nothing it still reports an empty data source.
     await store.send(.updateRelatedTokens(emptyDataSource)) { state in
-      state.content.relatedTokens = state.content.relatedTokens?.updating(page: 1, state: .data(self.emptyDataSource))
+      state.relatedTokens = state.relatedTokens?.updating(page: 1, state: .data(self.emptyDataSource))
     }
 
     // Then the section reads as absent so the view never builds it.
-    #expect(store.state.content.relatedTokens?.state.value == nil)
+    #expect(store.state.relatedTokens?.state.value == nil)
   }
 
   @Test func whenShowingLastVariant_shouldFetchNextPage() async {
@@ -200,7 +200,7 @@ import Testing
 
     // Given
     await store.send(.updateVariants(dataSource, page: 1)) { state in
-      state.content.variants = state.content.variants.updating(page: 1, state: .data(dataSource))
+      state.variants = state.variants.updating(page: 1, state: .data(dataSource))
     }
 
     // When the last variant comes into view.
@@ -222,7 +222,7 @@ import Testing
 
     // Given
     await store.send(.updateVariants(dataSource, page: 1)) { state in
-      state.content.variants = state.content.variants.updating(page: 1, state: .data(dataSource))
+      state.variants = state.variants.updating(page: 1, state: .data(dataSource))
     }
 
     // When / Then no pagination is triggered.
@@ -239,7 +239,7 @@ import Testing
 
     // Given
     await store.send(.updateVariants(dataSource, page: 1)) { state in
-      state.content.variants = state.content.variants.updating(page: 1, state: .data(dataSource))
+      state.variants = state.variants.updating(page: 1, state: .data(dataSource))
     }
 
     // When / Then no pagination is triggered.

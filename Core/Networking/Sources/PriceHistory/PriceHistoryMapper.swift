@@ -46,8 +46,7 @@ public enum PriceHistoryMapper {
     cardID: String,
     rows: [MTGGraphQLPriceRow],
     provider: PriceProvider,
-    listType: PriceListType,
-    window: DateInterval
+    listType: PriceListType
   ) -> PriceHistory {
     var series: [PriceSeriesKind: [PricePoint]] = [:]
     var currency: String?
@@ -60,14 +59,12 @@ public enum PriceHistoryMapper {
         let kind = PriceSeriesKind(mtgGraphQLCardType: rawCardType),
         let rawDate = row.date,
         let date = dayFormatter.date(from: rawDate),
-        window.contains(date),
         let price = row.price,
         price > 0
       else {
         continue
       }
 
-      // Take the currency the API reports rather than assuming one per provider.
       if currency == nil, let reported = row.currency, reported.isEmpty == false {
         currency = reported.uppercased()
       }

@@ -5,6 +5,15 @@ import Networking
 import ScryfallKit
 import SwiftUI
 
+/// The parts of a card detail screen that are settled the moment it opens: its
+/// card, and the labels around it.
+///
+/// Everything that *arrives later* — the prints, the token and combo lists, the
+/// set icon, the price history — deliberately lives on `CardDetailFeature.State`
+/// instead. `CardDetailView.body` reads this whole struct, so anything stored
+/// here invalidates the entire screen when it changes, and these all load
+/// asynchronously and often while the reader is mid-scroll. Kept apart, each
+/// one re-renders only the section that shows it.
 public struct Content: Equatable, Sendable {
   struct Description: Equatable, Sendable {
     let name: String
@@ -35,14 +44,6 @@ public struct Content: Equatable, Sendable {
   let rulingSelectionIcon: Image
   let relatedSelectionIcon: Image
   let queryType: QueryType
-  var setIconURL: URL?
-  var priceHistory: PriceHistoryState = .loading
-  var variants: SubContent
-  var relatedTokens: SubContent?
-  var relatedComboPieces: SubContent?
-  var relatedMeldPieces: SubContent?
-  var relatedMeldResult: SubContent?
-  var displayableCardImage: DisplayableCardImage?
   
   init(
     card: Card,
@@ -72,74 +73,82 @@ public struct Content: Equatable, Sendable {
     rulingSelectionIcon = Image(systemName: "text.book.closed.fill")
     relatedSelectionIcon = Image(systemName: "ellipsis.circle")
     
+  }
+  
+  /// Starting values for the sections that load in. They belong to the card
+  /// rather than to the screen, so they are derived here and held by the state.
+  static func initialSetIconURL(queryType: QueryType) -> URL? {
     switch queryType {
-    case .search:
-      setIconURL = nil
-      
-    case let .querySet(value, _):
-      setIconURL = URL(string: value.iconSvgUri)
+    case .search: nil
+    case let .querySet(value, _): URL(string: value.iconSvgUri)
     }
-    
-    variants = SubContent(
+  }
+
+  static func initialVariants(card: Card) -> Content.SubContent {
+    SubContent(
       page: 1,
       state: .initial(card),
       title: String(localized: "Prints"),
       subtitleSuffix: String(localized: "Results")
     )
-    
-    relatedTokens = SubContent(
+  }
+
+  static var initialRelatedTokens: Content.SubContent {
+    SubContent(
       state: .initial(nil),
       title: String(localized: "Tokens"),
       subtitleSuffix: String(localized: "Results")
     )
-    
-    relatedComboPieces = SubContent(
+  }
+
+  static var initialRelatedComboPieces: Content.SubContent {
+    SubContent(
       state: .initial(nil),
       title: String(localized: "Combo Pieces"),
       subtitleSuffix: String(localized: "Results")
     )
-    
-    relatedMeldPieces = SubContent(
+  }
+
+  static var initialRelatedMeldPieces: Content.SubContent {
+    SubContent(
       state: .initial(nil),
       title: String(localized: "Meld Pieces"),
       subtitleSuffix: String(localized: "Results")
     )
-    
-    relatedMeldResult = SubContent(
+  }
+
+  static var initialRelatedMeldResult: Content.SubContent {
+    SubContent(
       state: .initial(nil),
       title: String(localized: "Meld Result"),
       subtitleSuffix: String(localized: "Results")
     )
-    
-    displayableCardImage = DisplayableCardImage(card)
   }
-  
+
   func getColorIdentity() -> [String] {
     let identity = card.colorIdentity.map { "{\($0.rawValue)}" }
     return identity.isEmpty ? ["{C}"] : identity
   }
   
-  func getPower() -> String? {
-    let face = card.getCardFace(for: displayableCardImage?.faceDirection)
-    return face?.power ?? card.power
+  // The face being shown is no longer part of `Content`, so it is passed in.
+  // These read whichever side of a double-faced card is currently up.
+  func getPower(faceDirection: MagicCardFaceDirection?) -> String? {
+    card.getCardFace(for: faceDirection)?.power ?? card.power
   }
-  
-  func getToughtness() -> String? {
-    let face = card.getCardFace(for: displayableCardImage?.faceDirection)
-    return face?.toughness ?? card.toughness
+
+  func getToughtness(faceDirection: MagicCardFaceDirection?) -> String? {
+    card.getCardFace(for: faceDirection)?.toughness ?? card.toughness
   }
-  
-  func getLoyalty() -> String? {
-    let face = card.getCardFace(for: displayableCardImage?.faceDirection)
-    return face?.loyalty ?? card.loyalty
+
+  func getLoyalty(faceDirection: MagicCardFaceDirection?) -> String? {
+    card.getCardFace(for: faceDirection)?.loyalty ?? card.loyalty
   }
-  
-  func getArtistName() -> String? {
-    let face = card.getCardFace(for: displayableCardImage?.faceDirection)
-    return face?.artist ?? card.artist
+
+  func getArtistName(faceDirection: MagicCardFaceDirection?) -> String? {
+    card.getCardFace(for: faceDirection)?.artist ?? card.artist
   }
-  
-  func getDescriptions() -> [Description] {
+
+  func getDescriptions(faceDirection: MagicCardFaceDirection? = nil) -> [Description] {
     func makeDescription(faceDirection: MagicCardFaceDirection?, card: Card) -> Description {
       Description(
         name: card.name(faceDirection: faceDirection),
@@ -154,7 +163,7 @@ public struct Content: Equatable, Sendable {
       makeDescription(faceDirection: .front, card: card),
       makeDescription(faceDirection: .back, card: card)
     ] : [
-      makeDescription(faceDirection: displayableCardImage?.faceDirection, card: card)
+      makeDescription(faceDirection: faceDirection, card: card)
     ]
   }
 }

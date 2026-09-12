@@ -6,6 +6,7 @@ import ScryfallKit
 import Networking
 import Foundation
 import CardScanner
+import PackOpening
 
 @Reducer
 public struct Feature {
@@ -49,6 +50,10 @@ public struct Feature {
     public var selectedSet: MTGSet?
     public var path: StackState<Path.State>
     
+    /// The pack currently being opened, presented over whatever set it came
+    /// from.
+    @Presents public var packSession: PackSessionFeature.State?
+    
     public init(
       selectedTab: TabInfo = .sets,
       sets: Browse.BrowseFeature.State = .init(),
@@ -71,6 +76,7 @@ public struct Feature {
     case setup
     case sets(BrowseFeature.Action)
     case scan(CardScannerFeature.Action)
+    case packSession(PresentationAction<PackSessionFeature.Action>)
     case bulkSync(BulkSyncFeature.Action)
     case path(StackActionOf<Path>)
     case cardPagerStatePrepared(CardPagerFeature.State)
@@ -95,6 +101,9 @@ public struct Feature {
     
     Reduce(coreReduce)
       .forEach(\.path, action: \.path)
+      .ifLet(\.$packSession, action: \.packSession) {
+        PackSessionFeature()
+      }
   }
   
   public init() {}
@@ -105,6 +114,9 @@ public struct Feature {
       return .none
       
     case .setup:
+      // Both of these have to finish before launch does: the database so the
+      // first screen does not read a blank one, and the background task because
+      // `BGTaskScheduler` refuses a handler registered any later.
       databasePreparer.prepare()
       return .send(.bulkSync(.registerBackgroundTask))
       
@@ -129,6 +141,13 @@ public struct Feature {
     case .scan:
       return .none
       
+    case .packSession(.presented(.delegate(.finished))):
+      state.packSession = nil
+      return .none
+      
+    case .packSession:
+      return .none
+      
     case .bulkSync:
       return .none
       
@@ -142,6 +161,12 @@ public struct Feature {
         switch action {
         case let .showSetDetail(value):
           switch value {
+          case let .didSelectOpenPack(set, kind):
+            state.packSession = PackSessionFeature.State(
+              product: PackProduct(set: set, kind: kind)
+            )
+            return .none
+            
           case let .didSelectCard(card, queryType):
             guard
               case let .showSetDetail(queryState) = state.path[id: id]

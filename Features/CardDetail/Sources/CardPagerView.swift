@@ -12,14 +12,10 @@ public struct CardPagerView: View {
     let store: StoreOf<CardDetailFeature>
   }
   
-  @MainActor private var pages: [Page] {
-    store.scope(state: \.cards, action: \.cards).map { Page(id: $0.state.id, store: $0) }
-  }
-  
   public var body: some View {
     ScrollView(.horizontal, showsIndicators: false) {
       LazyHStack(spacing: 0) {
-        ForEach(pages) { page in
+        ForEach(Array(store.scope(state: \.cards, action: \.cards).map { Page(id: $0.state.id, store: $0) })) { page in
           CardDetailView(store: page.store)
             .containerRelativeFrame(.horizontal)
             .geometryGroup()

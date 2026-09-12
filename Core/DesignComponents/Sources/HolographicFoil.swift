@@ -1,0 +1,51 @@
+import SwiftUI
+
+/// Overlays the `holographicFoil` shader on whatever it is attached to.
+///
+/// Applied to the wrapper it makes a booster look like printed foil; applied at
+/// a lower `intensity` to a card image it reads as a traditional foil pull.
+public struct HolographicFoilModifier: ViewModifier {
+  private let intensity: Double
+  private let isAnimated: Bool
+
+  @State private var size: CGSize = .zero
+
+  public init(intensity: Double, isAnimated: Bool) {
+    self.intensity = intensity
+    self.isAnimated = isAnimated
+  }
+
+  public func body(content: Content) -> some View {
+    TimelineView(.animation(minimumInterval: 1 / 30, paused: isAnimated == false)) { context in
+      // Wrapped, not absolute. `timeIntervalSinceReferenceDate` is around
+      // 7.8e8 by now, and the shader takes it as a 32-bit float, where the gap
+      // between representable values at that magnitude is tens of seconds — so
+      // a frame's worth of elapsed time rounded away to nothing and the sheen
+      // sat perfectly still. Folding it into a ten-minute window keeps the
+      // clock smooth; the shader only ever uses it as a phase, so the wrap is
+      // invisible.
+      let time = context.date.timeIntervalSinceReferenceDate
+        .truncatingRemainder(dividingBy: 600)
+
+      content
+        .colorEffect(
+          ShaderLibrary.designComponents.holographicFoil(
+            .float2(size),
+            .float(time),
+            .float(intensity)
+          )
+        )
+    }
+    .onGeometryChange(for: CGSize.self, of: { $0.size }) { size = $0 }
+  }
+}
+
+public extension View {
+  /// - Parameters:
+  ///   - intensity: `0` leaves the view untouched, `1` is full wrapper foil.
+  ///     Around `0.35` is right for a foil card, where the art still has to read.
+  ///   - isAnimated: pause the clock for views that are off screen or static.
+  func holographicFoil(intensity: Double = 1, isAnimated: Bool = true) -> some View {
+    modifier(HolographicFoilModifier(intensity: intensity, isAnimated: isAnimated))
+  }
+}

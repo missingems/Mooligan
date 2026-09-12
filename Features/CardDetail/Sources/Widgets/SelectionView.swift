@@ -1,8 +1,18 @@
 import DesignComponents
 import SwiftUI
 
-struct SelectionView: View {
+struct SelectionView: View, Equatable {
   let items: [Item]
+
+  /// Rows are compared by what they show. Their actions are closures, which are
+  /// never equal, and each only sends a fixed action to a store that outlives
+  /// the comparison.
+  nonisolated static func == (lhs: SelectionView, rhs: SelectionView) -> Bool {
+    lhs.items.count == rhs.items.count
+      && zip(lhs.items, rhs.items).allSatisfy { left, right in
+        left.title == right.title && left.detail == right.detail
+      }
+  }
   
   var body: some View {
     VibrantDivider().safeAreaPadding(.leading, systemHorizontalMargin)

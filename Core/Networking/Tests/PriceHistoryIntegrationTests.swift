@@ -120,8 +120,7 @@ struct PriceHistoryIntegrationTests {
           cardID: scryfallID,
           rows: rows,
           provider: provider,
-          listType: .retail,
-          window: DateInterval(start: .distantPast, end: .distantFuture)
+          listType: .retail
         )
       }
 
