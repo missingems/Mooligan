@@ -38,11 +38,18 @@ public struct MockPriceHistoryClient: PriceHistoryClient {
       }
     }
 
+    // Vendors buy below what they sell for, so the buylist sits under retail —
+    // otherwise every mocked card shows a negative spread.
+    let listScale = listType == .buylist ? 0.62 : 1.0
+
     return PriceHistory(
       cardID: card.id.uuidString,
       provider: provider,
       listType: listType,
-      series: [.normal: makeSeries(scale: 1), .foil: makeSeries(scale: 2.4)]
+      series: [
+        .normal: makeSeries(scale: listScale),
+        .foil: makeSeries(scale: 2.4 * listScale),
+      ]
     )
   }
 }

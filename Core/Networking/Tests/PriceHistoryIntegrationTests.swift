@@ -12,7 +12,32 @@ import Testing
 /// it defaults to talking to MTGJSON directly.
 ///
 /// Each run costs one request against the 500/hour token budget.
-@Suite(.enabled(if: ProcessInfo.processInfo.environment["MTGGRAPHQL_TOKEN"] != nil))
+/// Declared outside the suite: referencing the annotated type from its own
+/// `@Suite` argument is a circular macro reference.
+///
+/// A present-but-empty `MTGGRAPHQL_TOKEN` used to enable the suite and then send
+/// `Bearer ` upstream, which comes back as "Access denied!" — a credentials error
+/// that reads like a server problem. An empty token is no token. `MTGGRAPHQL_URL`
+/// alone also counts: the proxy holds the real token server-side and ignores
+/// whatever the client sends.
+enum MTGGraphQLEnvironment {
+  static var isConfigured: Bool {
+    value("MTGGRAPHQL_TOKEN") != nil || value("MTGGRAPHQL_URL") != nil
+  }
+
+  static func value(_ key: String) -> String? {
+    guard
+      let raw = ProcessInfo.processInfo.environment[key]?
+        .trimmingCharacters(in: .whitespacesAndNewlines),
+      raw.isEmpty == false
+    else {
+      return nil
+    }
+    return raw
+  }
+}
+
+@Suite(.enabled(if: MTGGraphQLEnvironment.isConfigured))
 struct PriceHistoryIntegrationTests {
   /// Phelddagrif, Alliances — the card MTGJSON uses in its own documentation.
   /// Deliberately the paper printing: the default Scryfall print (`me1`) is
@@ -21,9 +46,7 @@ struct PriceHistoryIntegrationTests {
   private let scryfallID = "d9631cb2-d53b-4401-b53b-29d27bdefc44"
 
   private var endpoint: URL {
-    let raw = ProcessInfo.processInfo.environment["MTGGRAPHQL_URL"]
-      ?? "https://graphql.mtgjson.com/"
-    return URL(string: raw)!
+    URL(string: MTGGraphQLEnvironment.value("MTGGRAPHQL_URL") ?? "https://graphql.mtgjson.com/")!
   }
 
   private func post() async throws -> (Data, HTTPURLResponse) {
@@ -46,7 +69,7 @@ struct PriceHistoryIntegrationTests {
     var request = URLRequest(url: endpoint)
     request.httpMethod = "POST"
     request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-    if let token = ProcessInfo.processInfo.environment["MTGGRAPHQL_TOKEN"] {
+    if let token = MTGGraphQLEnvironment.value("MTGGRAPHQL_TOKEN") {
       request.setValue("Bearer \(token)", forHTTPHeaderField: "authorization")
     }
     request.httpBody = try JSONSerialization.data(withJSONObject: [
@@ -92,7 +115,7 @@ struct PriceHistoryIntegrationTests {
     // `__typename` — the proxy rebuilds the query and Apollo iOS cannot decode a
     // response without it. This is the exact regression that shipped a blank
     // chart: every other test parses with hand-rolled Codable and never noticed.
-    if ProcessInfo.processInfo.environment["MTGGRAPHQL_URL"] != nil {
+    if MTGGraphQLEnvironment.value("MTGGRAPHQL_URL") != nil {
       #expect(
         String(decoding: data, as: UTF8.self).contains("__typename"),
         "proxy response is missing __typename — Apollo will fail to decode it"
@@ -109,6 +132,14 @@ struct PriceHistoryIntegrationTests {
     #expect(card.name == "Phelddagrif")
     let rows = try #require(card.prices, "card returned without a prices field")
     #expect(rows.isEmpty == false, "\(card.name ?? "card") came back with no price rows")
+
+    // Which vendor publishes what changes over time, and the card detail view's
+    // spread and buylist figures depend on a vendor that quotes both. Printed
+    // rather than asserted: a vendor dropping its buylist feed is news, not a
+    // regression in this code.
+    let quoted = Dictionary(grouping: rows) { $0.provider?.lowercased() ?? "?" }
+      .mapValues { Set($0.compactMap { $0.listType?.lowercased() }).sorted() }
+    print("MTGGraphQL list types by provider: \(quoted.sorted { $0.key < $1.key })")
 
     // Whatever providers happen to be quoting today, at least one must yield a
     // drawable line — that is the contract the card detail view relies on.

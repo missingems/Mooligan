@@ -54,6 +54,29 @@ public final class ApolloPriceHistoryClient: PriceHistoryClient, @unchecked Send
     }.value
   }
   
+  public func histories(
+    for card: Card,
+    requests: [PriceSeriesRequest]
+  ) async throws -> [PriceSeriesRequest: PriceHistory] {
+    guard let apollo else { throw PriceHistoryClientError.notConfigured }
+
+    let rows = try await Self.fetchRows(apollo: apollo, scryfallID: card.id.uuidString)
+    let cardID = card.id.uuidString
+
+    return await Task.detached(priority: .background) {
+      var result: [PriceSeriesRequest: PriceHistory] = [:]
+      for request in requests {
+        result[request] = PriceHistoryMapper.makeHistory(
+          cardID: cardID,
+          rows: rows,
+          provider: request.provider,
+          listType: request.listType
+        )
+      }
+      return result
+    }.value
+  }
+
   static func fetchRows(
     apollo: ApolloClient,
     scryfallID: String
