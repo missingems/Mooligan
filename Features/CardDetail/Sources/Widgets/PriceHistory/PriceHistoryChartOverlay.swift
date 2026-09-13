@@ -62,7 +62,7 @@ struct PriceHistoryChartOverlay: View {
   private var releaseBand: some View {
     ForEach(releasePositions(), id: \.release.id) { entry in
       releaseIcon(entry.release)
-        .offset(x: entry.x, y: plot.minY + Self.releaseBandInset)
+        .offset(x: entry.x, y: plot.minY - 3.0)
         .allowsHitTesting(false)
     }
   }
@@ -81,15 +81,11 @@ struct PriceHistoryChartOverlay: View {
   }
 
   private func releaseIcon(_ release: SetReleaseMarker) -> some View {
-    IconLazyImage(release.iconURL, tintColor: .primary)
+    IconLazyImage(release.iconURL, tintColor: .secondary)
       .frame(
         width: PriceChartStyle.releaseIconSize,
         height: PriceChartStyle.releaseIconSize
       )
-      .padding(.horizontal, 7.0)
-      .padding(.vertical, 5.0)
-      .glassEffect()
-      .fixedSize()
       .accessibilityLabel(Text(release.name))
   }
 
