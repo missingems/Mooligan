@@ -3,9 +3,43 @@ import Networking
 import ScryfallKit
 
 extension PriceHistorySection {
+  /// The series the chart plots.
+  public static let chartProvider: PriceProvider = .tcgplayer
+
+  /// The vendor the buylist and spread figures come from.
+  ///
+  /// TCGplayer is the market the chart follows, but it publishes retail only —
+  /// the feed carries a buylist for Card Kingdom alone. Both figures therefore
+  /// come from Card Kingdom, and the spread is computed against Card Kingdom's
+  /// own retail rather than TCGplayer's: a spread across two vendors is not a
+  /// spread, it is an arbitrage.
+  public static let buylistProvider: PriceProvider = .cardkingdom
+
+  public static let chartRequest = PriceSeriesRequest(
+    provider: chartProvider,
+    listType: .retail
+  )
+
+  public static let priceRequests: [PriceSeriesRequest] = [
+    chartRequest,
+    PriceSeriesRequest(provider: buylistProvider, listType: .retail),
+    PriceSeriesRequest(provider: buylistProvider, listType: .buylist),
+  ]
+
+  public static func buylistQuote(
+    from histories: [PriceSeriesRequest: PriceHistory]
+  ) -> BuylistQuote? {
+    BuylistQuote(
+      provider: buylistProvider,
+      retail: histories[PriceSeriesRequest(provider: buylistProvider, listType: .retail)],
+      buylist: histories[PriceSeriesRequest(provider: buylistProvider, listType: .buylist)]
+    )
+  }
+
   public static func makeState(
     card: Card,
     history: PriceHistory?,
+    buylistQuote: BuylistQuote? = nil,
     releases: [SetReleaseMarker],
     today: Date = PriceHistorySection.today
   ) -> PriceHistoryState {
@@ -31,7 +65,8 @@ extension PriceHistorySection {
     let section = PriceHistorySection(
       series: series,
       currency: history.currency,
-      releases: releases.filter { bounds.dateRange.contains($0.date) }
+      releases: releases.filter { bounds.dateRange.contains($0.date) },
+      buylistQuote: buylistQuote
     )
 
     return .data(section)

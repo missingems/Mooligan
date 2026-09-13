@@ -83,12 +83,11 @@ import ScryfallKit
       
     case let .fetchPriceHistory(card):
       return .run(priority: .background) { send in
-        async let history = withTaskGroup(of: PriceHistory?.self) { group in
+        async let histories = withTaskGroup(of: [PriceSeriesRequest: PriceHistory]?.self) { group in
           group.addTask {
-            try? await priceHistoryClient.history(
+            try? await priceHistoryClient.histories(
               for: card,
-              provider: .tcgplayer,
-              listType: .retail
+              requests: PriceHistorySection.priceRequests
             )
           }
           group.addTask {
@@ -104,11 +103,14 @@ import ScryfallKit
           (try? await setClient.getSets(queryType: .all).1) ?? []
         }
 
+        let resolved = await histories ?? [:]
+
         await send(
           .updatePriceHistory(
             PriceHistorySection.makeState(
               card: card,
-              history: await history,
+              history: resolved[PriceHistorySection.chartRequest],
+              buylistQuote: PriceHistorySection.buylistQuote(from: resolved),
               releases: await releases
             )
           )

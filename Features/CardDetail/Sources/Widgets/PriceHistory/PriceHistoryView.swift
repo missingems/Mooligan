@@ -5,30 +5,42 @@ import SwiftUI
 struct PriceHistoryView: View {
   private let state: PriceHistoryState
   private let title: String
-  private let sourceLabel: String
+  private let finishesLabel: String
+  private let lowLabel: String
+  private let highLabel: String
+  private let spreadLabel: String
+  private let buylistLabel: String
   private let unavailableLabel: String
 
   @Environment(\.colorScheme) private var colorScheme
+  @Environment(\.displayScale) private var displayScale
 
-  @State private var isolatedKind: PriceSeriesKind?
-  @State private var range: PriceHistoryRange = .quarter
-  @State private var rangedFeed: ClosedRange<Date>?
   @State private var derivedData = ChartDerivedData()
   @State private var interaction = ChartInteraction()
-  @State private var readoutOverhang: CGFloat = 0.0
   @State private var chartOpacity: Double = 0.0
-  @State private var readoutOpacity: Double = 0.0
-  private static let stackSpacing: CGFloat = 21
+  @State private var isUnavailable = false
+  @State private var layout = ScrubLayout()
+
+  private static let stackSpacing: CGFloat = 8
+  private static let chartGap: CGFloat = 13.0
 
   init(
     state: PriceHistoryState,
     title: String,
-    sourceLabel: String,
+    finishesLabel: String,
+    lowLabel: String,
+    highLabel: String,
+    spreadLabel: String,
+    buylistLabel: String,
     unavailableLabel: String
   ) {
     self.state = state
     self.title = title
-    self.sourceLabel = sourceLabel
+    self.finishesLabel = finishesLabel
+    self.lowLabel = lowLabel
+    self.highLabel = highLabel
+    self.spreadLabel = spreadLabel
+    self.buylistLabel = buylistLabel
     self.unavailableLabel = unavailableLabel
   }
 
@@ -36,38 +48,91 @@ struct PriceHistoryView: View {
     VibrantDivider()
       .safeAreaPadding(.leading, systemHorizontalMargin)
 
-    VStack(alignment: .leading, spacing: Self.stackSpacing) {
+    VStack(alignment: .leading, spacing: 0.0) {
       PriceHistoryHeaderView(
         title: title,
-        placeholderSubtitle: placeholderSubtitle,
         currencyCode: currencyCode,
         isLoading: isLoading,
-        readoutOpacity: readoutOpacity,
         derivedData: derivedData,
         interaction: interaction,
-        availableRanges: availableRanges,
-        range: $range,
-        readoutOverhang: $readoutOverhang
+        summaryTop: $layout.summaryTop
       )
+      .onGeometryChange(for: CGFloat.self) { $0.size.width.snapped(to: displayScale) } action: { width in
+        if layout.headerWidth != width { layout.headerWidth = width }
+      }
 
       PriceHistoryChart(
         derivedData: derivedData,
         interaction: interaction,
-        currencyCode: currencyCode,
-        needleOvershoot: needleOvershoot
+        currencyCode: currencyCode
       )
       .id(colorScheme)
       .opacity(chartOpacity)
+      .overlay {
+        if isUnavailable {
+          Text(unavailableLabel)
+            .font(.title)
+            .foregroundStyle(.secondary)
+            .allowsHitTesting(false)
+        }
+      }
       .frame(height: 233.0, alignment: .leading)
-      .onChange(of: state, initial: true) { syncRange() }
-      .task(id: derivationKey) { await deriveChartData() }
+      .onGeometryChange(for: CGPoint.self) { geometry in
+        geometry.frame(in: .named(ScrubLayout.space)).origin.snapped(to: displayScale)
+      } action: { origin in
+        if layout.chartOrigin != origin { layout.chartOrigin = origin }
+      }
+      .padding(.vertical, 13.00)
+      .padding(.horizontal, 5.0)
+      .background(
+        Color(.tertiarySystemFill),
+        in: RoundedRectangle(cornerRadius: PriceChartStyle.cardCornerRadius)
+      )
+      .overlay {
+        RoundedRectangle(cornerRadius: PriceChartStyle.cardCornerRadius)
+          .strokeBorder(PriceChartStyle.gridColor(colorScheme), lineWidth: 1.0 / displayScale)
+      }
+      .padding(.top, Self.chartGap)
+
+      PriceHistoryStatsView(
+        derivedData: derivedData,
+        currencyCode: currencyCode,
+        finishesLabel: finishesLabel,
+        lowLabel: lowLabel,
+        highLabel: highLabel,
+        spreadLabel: spreadLabel,
+        buylistLabel: buylistLabel
+      )
+      .padding(.top, Self.stackSpacing)
+      .transaction { transaction in
+        transaction.animation = nil
+      }
     }
+    .background(alignment: .topLeading) {
+      PriceHistoryNeedle(
+        interaction: interaction,
+        isEnabled: hasData,
+        layout: layout
+      )
+    }
+    .overlay(alignment: .topLeading) {
+      PriceHistoryScrubReadout(
+        derivedData: derivedData,
+        interaction: interaction,
+        currencyCode: currencyCode,
+        isEnabled: hasData,
+        layout: layout,
+        size: $layout.readoutSize
+      )
+    }
+    .coordinateSpace(.named(ScrubLayout.space))
     .padding(.horizontal, systemHorizontalMargin)
-    .padding(.vertical, 13.0)
+    .padding(EdgeInsets(top: 13.0, leading: 0.0, bottom: 18.0, trailing: 0.0))
+    .task(id: derivationKey) { await deriveChartData() }
   }
 
-  private var needleOvershoot: CGFloat {
-    max(0.0, Self.stackSpacing - readoutOverhang)
+  private var hasData: Bool {
+    derivedData.plotSeries.isEmpty == false
   }
 
   private var isLoading: Bool {
@@ -78,29 +143,6 @@ struct PriceHistoryView: View {
     if case let .data(section) = state { section.currency } else { "USD" }
   }
 
-  private var placeholderSubtitle: String? {
-    switch state {
-    case .loading: sourceLabel
-    case .unavailable: unavailableLabel
-    case .data: nil
-    }
-  }
-
-  private var fullSpanInDays: Int {
-    PriceChartStyle.spanInDays(of: state.data.dateRange)
-  }
-
-  private var availableRanges: [PriceHistoryRange] {
-    PriceHistoryRange.available(forSpanOfDays: fullSpanInDays)
-  }
-
-  private func syncRange() {
-    let feed = state.data.dateRange
-    guard rangedFeed != feed else { return }
-    rangedFeed = feed
-    range = PriceHistoryRange.widest(forSpanOfDays: fullSpanInDays)
-  }
-
   private var derivationKey: DerivationKey {
     let section = state.data
     return DerivationKey(
@@ -109,9 +151,7 @@ struct PriceHistoryView: View {
       prices: section.priceRange,
       kinds: section.series.map(\.kind),
       currency: section.currency,
-      releases: section.releases.count,
-      isolatedKind: isolatedKind,
-      range: range
+      releases: section.releases.count
     )
   }
 
@@ -122,34 +162,36 @@ struct PriceHistoryView: View {
     let kinds: [PriceSeriesKind]
     let currency: String
     let releases: Int
-    let isolatedKind: PriceSeriesKind?
-    let range: PriceHistoryRange
   }
 
   private func deriveChartData() async {
     interaction.endScrub()
 
     let section = state.data
-    let isolatedKind = isolatedKind
-    let range = range
+    let isLoading = isLoading
 
     let derived = await Task.detached(priority: .userInitiated) {
-      ChartDerivedData(section: section, isolatedKind: isolatedKind, range: range)
+      ChartDerivedData(section: section)
     }.value
 
     guard Task.isCancelled == false else { return }
 
     var transaction = Transaction()
     transaction.disablesAnimations = true
-    withTransaction(transaction) { derivedData = derived }
 
-    let chartTarget: Double = isLoading ? 0.0 : 1.0
-    let readoutTarget: Double = derived.plotSeries.isEmpty ? 0.0 : 1.0
-    guard chartOpacity != chartTarget || readoutOpacity != readoutTarget else { return }
+    if derivedData.plotSeries.isEmpty, derived.plotSeries.isEmpty == false {
+      withAnimation(.easeInOut(duration: 0.3)) { derivedData = derived }
+    } else {
+      withTransaction(transaction) { derivedData = derived }
+    }
 
-    withAnimation(.easeOut(duration: 0.25)) {
-      chartOpacity = chartTarget
-      readoutOpacity = readoutTarget
+    let unavailable = isLoading == false && derived.plotSeries.isEmpty
+    if isUnavailable != unavailable {
+      withTransaction(transaction) { isUnavailable = unavailable }
+    }
+
+    if chartOpacity != 1.0 {
+      withAnimation(.easeOut(duration: 0.25)) { chartOpacity = 1.0 }
     }
   }
 }

@@ -32,7 +32,11 @@ public struct Content: Equatable, Sendable {
   let purchaseLabel: String
   let purchaseSubtitleLabel: String
   let priceHistoryLabel: String
-  let priceHistorySourceLabel: String
+  let priceHistoryFinishesLabel: String
+  let priceHistoryLowLabel: String
+  let priceHistoryHighLabel: String
+  let priceHistorySpreadLabel: String
+  let priceHistoryBuylistLabel: String
   let priceHistoryUnavailableLabel: String
   let usdLabel: String
   let usdFoilLabel: String
@@ -61,8 +65,12 @@ public struct Content: Equatable, Sendable {
     priceHistoryLabel = String(localized: "Price History")
     // Attribution only. The line under the title now carries the price move,
     // which is the thing a reader actually looks at a price chart to learn.
-    priceHistorySourceLabel = String(localized: "TCGplayer · MTGJSON")
-    priceHistoryUnavailableLabel = String(localized: "No price history for this printing")
+    priceHistoryFinishesLabel = String(localized: "Finishes")
+    priceHistoryLowLabel = String(localized: "Low")
+    priceHistoryHighLabel = String(localized: "High")
+    priceHistorySpreadLabel = String(localized: "Spread")
+    priceHistoryBuylistLabel = String(localized: "Buy List")
+    priceHistoryUnavailableLabel = String(localized: "No data available")
     usdLabel = String(localized: "Regular")
     usdFoilLabel = String(localized: "Foil")
     usdEtchedLabel = String(localized: "Etched Foil")

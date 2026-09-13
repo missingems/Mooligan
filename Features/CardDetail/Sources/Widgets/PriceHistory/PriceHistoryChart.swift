@@ -6,17 +6,28 @@ struct PriceHistoryChart: View {
   let derivedData: ChartDerivedData
   let interaction: ChartInteraction
   let currencyCode: String
-  let needleOvershoot: CGFloat
 
   @Environment(\.colorScheme) private var colorScheme
+  @Environment(\.displayScale) private var displayScale
 
   @State private var plot: CGRect = .zero
 
   var body: some View {
+    if derivedData.plotSeries.isEmpty {
+      chart
+    } else {
+      chart.chartForegroundStyleScale(
+        domain: derivedData.plotSeries.map { PriceChartStyle.label(for: $0.kind) },
+        range: derivedData.plotSeries.map { PriceChartStyle.color(for: $0.kind) }
+      )
+    }
+  }
+
+  private var chart: some View {
     let domain = yDomain(for: derivedData.priceRange)
     let fractionDigits = derivedData.priceRange.upperBound < 10 ? 2 : 0
 
-    Chart {
+    return Chart {
       ForEach(derivedData.plotSeries) { series in
         let seriesLabel = PriceChartStyle.label(for: series.kind)
 
@@ -51,11 +62,7 @@ struct PriceHistoryChart: View {
         }
       }
     }
-    .chartForegroundStyleScale(
-      domain: derivedData.plotSeries.map { PriceChartStyle.label(for: $0.kind) },
-      range: derivedData.plotSeries.map { PriceChartStyle.color(for: $0.kind) }
-    )
-    .chartLegend(position: .bottom, alignment: .leading, spacing: 16)
+    .chartLegend(.hidden)
     .chartYScale(domain: domain)
     .chartXScale(domain: derivedData.dateRange)
     .chartYAxis {
@@ -65,19 +72,24 @@ struct PriceHistoryChart: View {
         AxisValueLabel(anchor: .leading) {
           if let amount = value.as(Double.self) {
             Text(amount, format: PriceChartStyle.axisPrice(currencyCode, fractionDigits: fractionDigits))
-              .font(.caption2)
+              .font(.caption)
+              .monospaced()
+              .foregroundStyle(PriceChartStyle.vibrantLabelColor(colorScheme))
           }
         }
       }
     }
     .chartXAxis {
-      AxisMarks(values: .automatic(desiredCount: 3)) { _ in
+      AxisMarks(values: .automatic(desiredCount: 3)) { value in
         AxisGridLine().foregroundStyle(PriceChartStyle.gridColor(colorScheme))
 
-        AxisValueLabel(
-          format: PriceChartStyle.axisDateStyle(forDays: derivedData.spanInDays),
-          anchor: .top
-        )
+        AxisValueLabel(anchor: .top) {
+          if let date = value.as(Date.self) {
+            Text(date, format: PriceChartStyle.axisDateStyle(forDays: derivedData.spanInDays))
+              .font(.caption)
+              .foregroundStyle(PriceChartStyle.vibrantLabelColor(colorScheme))
+          }
+        }
       }
     }
     .chartOverlay { proxy in
@@ -87,15 +99,21 @@ struct PriceHistoryChart: View {
         Color.clear
           .onGeometryChange(for: CGRect.self) { geometry in
             Self.drawable(plotAnchor.map { geometry[$0] } ?? .zero)
-          } action: { plot = $0 }
+          } action: { rect in
+            let snapped = CGRect(
+              origin: rect.origin.snapped(to: displayScale),
+              size: rect.size.snapped(to: displayScale)
+            )
+            guard rect != .zero, plot != snapped else { return }
+            plot = snapped
+          }
 
         if plot.width > 0, plot.height > 0 {
           PriceHistoryChartOverlay(
             derivedData: derivedData,
             interaction: interaction,
             proxy: proxy,
-            plot: plot,
-            needleOvershoot: needleOvershoot
+            plot: plot
           )
         }
       }

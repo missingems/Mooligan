@@ -18,37 +18,22 @@ struct PriceReadoutTests {
     return PriceHistorySection.Series(kind: kind, points: points)!
   }
 
-  @Test func latestReadout_shouldMeasureFromTheStartOfTheRange() {
+  @Test func latestReadout_shouldCompareTheLastTwoObservations() {
     let readout = series(["1.00", "5.00", "4.00"]).latestReadout
 
     #expect(readout?.point.amount == decimal("4.00"))
-    #expect(readout?.change?.start.amount == decimal("1.00"))
-    #expect(readout?.change?.absolute == decimal("3.00"))
-    #expect(readout?.change?.isIncrease == true)
+    #expect(readout?.change?.start.amount == decimal("5.00"))
+    #expect(readout?.change?.absolute == decimal("-1.00"))
+    #expect(readout?.change?.isDecrease == true)
     #expect(readout?.isScrubbing == false)
   }
 
-  @Test func whenTheRangeNarrows_theChangeShouldFollowItsBaseline() {
-    let section = PriceHistorySection(
-      series: [series((0..<60).map { "\($0 + 1).00" })],
-      currency: "USD"
-    )
-
-    let wide = ChartDerivedData(section: section, isolatedKind: nil, range: .quarter)
-    let narrow = ChartDerivedData(section: section, isolatedKind: nil, range: .week)
-
-    #expect(wide.anchorSeries?.latestReadout?.change?.start.amount == decimal("1.00"))
-    #expect(narrow.anchorSeries?.latestReadout?.change?.start.amount == decimal("53.00"))
-    #expect(wide.anchorSeries?.latestReadout?.point.amount == decimal("60.00"))
-    #expect(narrow.anchorSeries?.latestReadout?.point.amount == decimal("60.00"))
+  @Test func dayChange_atTheFirstObservation_shouldBeNil() {
+    #expect(series(["1.00", "2.00"]).dayChange(endingAt: 0) == nil)
   }
 
-  @Test func rangeChange_atTheFirstObservation_shouldBeNil() {
-    #expect(series(["1.00", "2.00"]).rangeChange(endingAt: 0) == nil)
-  }
-
-  @Test func rangeChange_outsideTheSeries_shouldBeNil() {
-    #expect(series(["1.00", "2.00"]).rangeChange(endingAt: 9) == nil)
+  @Test func dayChange_outsideTheSeries_shouldBeNil() {
+    #expect(series(["1.00", "2.00"]).dayChange(endingAt: 9) == nil)
   }
 
   @Test func indexOfPoint_shouldSnapToTheNearestObservation() {
@@ -68,8 +53,8 @@ struct PriceReadoutTests {
     let readout = interaction.readout(for: subject)
 
     #expect(readout?.point.amount == decimal("3.00"))
-    #expect(readout?.change?.start.amount == decimal("1.00"))
-    #expect(readout?.change?.absolute == decimal("2.00"))
+    #expect(readout?.change?.start.amount == decimal("2.00"))
+    #expect(readout?.change?.absolute == decimal("1.00"))
     #expect(readout?.isScrubbing == true)
   }
 
@@ -110,25 +95,22 @@ struct PriceReadoutTests {
       currency: "USD"
     )
 
-    #expect(ChartDerivedData(section: section, isolatedKind: nil, range: .quarter).anchorSeries?.kind == .foil)
-    #expect(ChartDerivedData(section: section, isolatedKind: .normal, range: .quarter).anchorSeries?.kind == .normal)
-    #expect(ChartDerivedData(section: section, isolatedKind: .foil, range: .quarter).displayedSeries.count == 1)
+    #expect(ChartDerivedData(section: section).anchorSeries?.kind == .normal)
   }
 
-  @Test func displayedSeries_shouldBeOrderedFoilFirst() {
+  @Test func series_shouldBeOrderedRegularFoilEtched() {
     let section = PriceHistorySection(
       series: [
-        series(["1.00", "2.00"]),
-        series(["8.00", "9.00"], kind: .foil),
         series(["4.00", "5.00"], kind: .etched),
+        series(["8.00", "9.00"], kind: .foil),
+        series(["1.00", "2.00"]),
       ],
       currency: "USD"
     )
 
-    #expect(section.series.map(\.kind) == [.normal, .foil, .etched])
     #expect(
-      ChartDerivedData(section: section, isolatedKind: nil, range: .quarter)
-        .displayedSeries.map(\.kind) == [.foil, .etched, .normal]
+      ChartDerivedData(section: section)
+        .series.map(\.kind) == [.normal, .foil, .etched]
     )
   }
 }

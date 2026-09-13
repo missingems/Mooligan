@@ -24,16 +24,16 @@ extension PriceHistorySection.Series {
     return previous <= candidate ? low - 1 : low
   }
 
-  func rangeChange(endingAt index: Int) -> PriceChange? {
-    guard points.indices.contains(index), index > 0, let first = points.first else { return nil }
-    return PriceChange(start: first, end: points[index])
+  func dayChange(endingAt index: Int) -> PriceChange? {
+    guard points.indices.contains(index), index > 0 else { return nil }
+    return PriceChange(start: points[index - 1], end: points[index])
   }
 
   func readout(at index: Int, isScrubbing: Bool) -> PriceReadout? {
     guard points.indices.contains(index) else { return nil }
     return PriceReadout(
       point: points[index],
-      change: rangeChange(endingAt: index),
+      change: dayChange(endingAt: index),
       isScrubbing: isScrubbing
     )
   }

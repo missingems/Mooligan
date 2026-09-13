@@ -8,6 +8,14 @@ final class ChartInteraction {
 
   var needleX: CGFloat?
 
+  var restingNeedleX: CGFloat?
+
+  var plotTopY: CGFloat?
+
+  var plotBottomY: CGFloat?
+
+  var anchorX: CGFloat? { needleX ?? restingNeedleX }
+
   func endScrub() {
     guard scrubbedDate != nil || needleX != nil else { return }
     scrubbedDate = nil

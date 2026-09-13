@@ -90,7 +90,11 @@ public struct CardDetailView: View {
         PriceHistorySectionView(
           store: store,
           title: content.priceHistoryLabel,
-          sourceLabel: content.priceHistorySourceLabel,
+          finishesLabel: content.priceHistoryFinishesLabel,
+          lowLabel: content.priceHistoryLowLabel,
+          highLabel: content.priceHistoryHighLabel,
+          spreadLabel: content.priceHistorySpreadLabel,
+          buylistLabel: content.priceHistoryBuylistLabel,
           unavailableLabel: content.priceHistoryUnavailableLabel
         )
         
@@ -188,14 +192,22 @@ private extension CGFloat {
 private struct PriceHistorySectionView: View {
   let store: StoreOf<CardDetailFeature>
   let title: String
-  let sourceLabel: String
+  let finishesLabel: String
+  let lowLabel: String
+  let highLabel: String
+  let spreadLabel: String
+  let buylistLabel: String
   let unavailableLabel: String
   
   var body: some View {
     PriceHistoryView(
       state: store.priceHistory,
       title: title,
-      sourceLabel: sourceLabel,
+      finishesLabel: finishesLabel,
+      lowLabel: lowLabel,
+      highLabel: highLabel,
+      spreadLabel: spreadLabel,
+      buylistLabel: buylistLabel,
       unavailableLabel: unavailableLabel
     )
   }

@@ -34,10 +34,17 @@ public struct PriceHistorySection: Equatable, Sendable {
   public let series: [Series]
   public let currency: String
   public let releases: [SetReleaseMarker]
+  public let buylistQuote: BuylistQuote?
   public let priceRange: ClosedRange<Double>
   public let dateRange: ClosedRange<Date>
 
-  init(series: [Series] = [], currency: String = "", releases: [SetReleaseMarker] = []) {
+  init(
+    series: [Series] = [],
+    currency: String = "",
+    releases: [SetReleaseMarker] = [],
+    buylistQuote: BuylistQuote? = nil,
+    dateRange: ClosedRange<Date>? = nil
+  ) {
     let low = series.map(\.priceRange.lowerBound).min() ?? 0
     let high = series.map(\.priceRange.upperBound).max() ?? 0
     let first = series.map(\.dateRange.lowerBound).min() ?? Date()
@@ -46,8 +53,9 @@ public struct PriceHistorySection: Equatable, Sendable {
     self.series = series
     self.currency = currency
     self.releases = releases
+    self.buylistQuote = buylistQuote
     self.priceRange = low...max(high, low)
-    self.dateRange = first...max(last, first.addingTimeInterval(86_400))
+    self.dateRange = dateRange ?? (first...max(last, first.addingTimeInterval(86_400)))
   }
 }
 
@@ -56,7 +64,12 @@ public enum PriceHistoryState: Equatable, Sendable {
   case unavailable
   case data(PriceHistorySection)
 
-  static let empty = PriceHistorySection()
+  static let empty: PriceHistorySection = {
+    let end = UTCDay.today
+    return PriceHistorySection(
+      dateRange: end.addingTimeInterval(-Double(ChartDerivedData.windowInDays) * 86_400)...end
+    )
+  }()
 
   var data: PriceHistorySection {
     switch self {

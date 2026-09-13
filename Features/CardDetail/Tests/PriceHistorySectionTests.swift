@@ -270,4 +270,48 @@ struct PriceHistorySectionTests {
     #expect(points.map(\.amount) == [decimal("4.00"), decimal("5.00")])
     #expect(points.last?.date == today)
   }
+
+  @Test func whenBuylistIsProvided_shouldCarryTheLatestPerFinish() {
+    let state = PriceHistorySection.makeState(
+      card: card(),
+      history: history([
+        .normal: [point(daysBefore: 2, "1.00"), point(daysBefore: 1, "1.20")],
+      ]),
+      buylistQuote: BuylistQuote(
+        provider: .cardkingdom,
+        retail: history([
+          .normal: [point(daysBefore: 2, "1.10"), point(daysBefore: 1, "1.40")],
+        ]),
+        buylist: history([
+          .normal: [point(daysBefore: 2, "0.60"), point(daysBefore: 1, "0.70")],
+        ])
+      ),
+      releases: [],
+      today: today
+    )
+
+    guard case let .data(section) = state else {
+      Issue.record("expected data")
+      return
+    }
+    #expect(section.buylistQuote?.buylist(for: .normal) == decimal("0.70"))
+    #expect(section.buylistQuote?.spread(for: .normal) == 0.5)
+  }
+
+  @Test func whenThereIsNoBuylist_shouldCarryNone() {
+    let state = PriceHistorySection.makeState(
+      card: card(),
+      history: history([
+        .normal: [point(daysBefore: 2, "1.00"), point(daysBefore: 1, "1.20")],
+      ]),
+      releases: [],
+      today: today
+    )
+
+    guard case let .data(section) = state else {
+      Issue.record("expected data")
+      return
+    }
+    #expect(section.buylistQuote == nil)
+  }
 }
