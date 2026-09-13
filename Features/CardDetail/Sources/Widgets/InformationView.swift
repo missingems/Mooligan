@@ -280,6 +280,7 @@ private extension Widget {
         Self.wrappedContent {
           Text(manaValue)
             .font(.body)
+            .fontWeight(.medium)
             .fontDesign(.monospaced)
         }
 
