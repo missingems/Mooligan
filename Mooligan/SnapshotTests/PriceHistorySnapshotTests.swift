@@ -119,7 +119,7 @@ struct PriceHistorySnapshotTests {
         onPurchaseLinksRequested: {}
       )
     }
-    .environment(\.priceHistoryShimmers, false)
+    .environment(\.priceHistoryPlaceholderAnimates, false)
   }
 
   @Test func loadedSection() async throws {

@@ -111,6 +111,10 @@ enum PriceChartStyle {
     colorScheme == .dark ? Color.white.opacity(0.3) : Color.black.opacity(0.35)
   }
 
+  static func vibrantDotHighlight(_ colorScheme: ColorScheme) -> Color {
+    colorScheme == .dark ? Color.white.opacity(0.75) : Color.black.opacity(0.7)
+  }
+
   static func borderGradient(_ colorScheme: ColorScheme) -> LinearGradient {
     let tint = colorScheme == .dark ? Color.white.opacity(0.169) : Color.black.opacity(0.225)
     return LinearGradient(colors: [tint.opacity(0.0), tint], startPoint: .top, endPoint: .bottom)

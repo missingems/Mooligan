@@ -3,16 +3,17 @@ import SwiftUI
 struct PriceHistoryDotMatrix: View {
   let plot: CGRect?
   let tickRows: [CGFloat]
+  var isHighlighted = false
 
   @Environment(\.colorScheme) private var colorScheme
 
   var body: some View {
-    let tint = PriceChartStyle.vibrantDotTint(colorScheme)
+    let tint = isHighlighted ? PriceChartStyle.vibrantDotHighlight(colorScheme) : PriceChartStyle.vibrantDotTint(colorScheme)
+    let radius = isHighlighted ? DotMatrixLayout.highlightRadius : DotMatrixLayout.radius
     let blendMode: GraphicsContext.BlendMode = colorScheme == .dark ? .plusLighter : .plusDarker
 
     Canvas { context, size in
       let layout = DotMatrixLayout(plot: plot ?? CGRect(origin: .zero, size: size), tickRows: tickRows)
-      let radius = DotMatrixLayout.radius
       context.blendMode = blendMode
 
       var path = Path()
@@ -29,6 +30,7 @@ struct PriceHistoryDotMatrix: View {
 struct DotMatrixLayout: Equatable {
   static let targetSpacing: CGFloat = 11.0
   static let radius: CGFloat = 0.6
+  static let highlightRadius: CGFloat = 1.1
 
   let plot: CGRect
   let tickRows: [CGFloat]
@@ -65,37 +67,42 @@ struct DotMatrixLayout: Equatable {
 }
 
 extension EnvironmentValues {
-  @Entry var priceHistoryShimmers: Bool = true
+  @Entry var priceHistoryPlaceholderAnimates: Bool = true
 }
 
 struct PriceHistoryChartPlaceholder: View {
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
-  @Environment(\.priceHistoryShimmers) private var shimmers
+  @Environment(\.priceHistoryPlaceholderAnimates) private var animates
   @State private var phase: CGFloat = -1.0
 
   var body: some View {
     PriceHistoryDotMatrix(plot: nil, tickRows: [])
       .overlay {
-        if shimmers, reduceMotion == false {
-          LinearGradient(
-            colors: [.clear, Color.primary.opacity(0.08), .clear],
-            startPoint: .leading,
-            endPoint: .trailing
-          )
-          .scaleEffect(x: 0.6, anchor: .center)
-          .offset(x: 0.0)
-          .visualEffect { [phase] content, proxy in
-            content.offset(x: phase * proxy.size.width)
-          }
-          .blendMode(.plusLighter)
-          .onAppear {
-            withAnimation(.linear(duration: 1.4).repeatForever(autoreverses: false)) {
-              phase = 1.0
+        if animates, reduceMotion == false {
+          // A wave of brighter, larger dots rolling across the matrix. Both matrices are drawn once
+          // and the wave is a gradient mask sliding over the bright one, so only an offset animates;
+          // redrawing the canvas itself would be a GPU draw on the main thread every frame.
+          PriceHistoryDotMatrix(plot: nil, tickRows: [], isHighlighted: true)
+            .mask {
+              LinearGradient(stops: Self.wave, startPoint: .leading, endPoint: .trailing)
+                .visualEffect { [phase] content, proxy in
+                  content.offset(x: phase * proxy.size.width)
+                }
             }
-          }
+            .onAppear {
+              withAnimation(.linear(duration: 1.8).repeatForever(autoreverses: false)) {
+                phase = 1.0
+              }
+            }
         }
       }
-      .clipped()
       .accessibilityHidden(true)
+  }
+
+  /// A soft crest: a squared raised cosine, fading to nothing at both edges of the band.
+  private static let wave: [Gradient.Stop] = (0...16).map { step in
+    let location = Double(step) / 16.0
+    let crest = 0.5 + 0.5 * cos((location - 0.5) * 2.0 * .pi)
+    return Gradient.Stop(color: .white.opacity(crest * crest), location: location)
   }
 }
