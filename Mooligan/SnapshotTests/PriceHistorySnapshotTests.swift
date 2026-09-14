@@ -242,6 +242,51 @@ struct PriceHistorySnapshotTests {
     #expect(abs(quarter.timeIntervalSince(try #require(probe.quarterDate))) < 3_600.0)
   }
 
+  @Test func scrubbingOverAReleaseShowsItsTitle() async throws {
+    let base = Self.section
+    let releases = [
+      SetReleaseMarker(id: "EARLY", code: "EAR", name: "Innistrad: Crimson Vow", date: base.dateRange.lowerBound.addingTimeInterval(4 * 86_400), iconURL: nil),
+      SetReleaseMarker(id: "LATE", code: "LAT", name: "Murders at Karlov Manor", date: base.dateRange.upperBound.addingTimeInterval(-12 * 86_400), iconURL: nil),
+    ]
+    let section = PriceHistorySection(series: base.series, currency: base.currency, releases: releases, buylistQuote: base.buylistQuote)
+    let display = display(.data(section))
+
+    for release in releases {
+      let interaction = ChartInteraction()
+      let size = CGSize(width: Self.width - 32.0, height: PriceHistoryView.chartHeight)
+      let chart = PriceHistoryChart(derivedData: display.chart, axis: display.axis, interaction: interaction)
+        .frame(width: size.width, height: size.height)
+        .padding(16.0)
+        .environment(\.priceHistoryPlaceholderAnimates, false)
+
+      let controller = UIHostingController(rootView: chart.background(Color(.systemBackground)).environment(\.colorScheme, .light))
+      controller.safeAreaRegions = []
+      let scene = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+      let window = UIWindow(windowScene: scene)
+      window.overrideUserInterfaceStyle = .light
+      window.frame = CGRect(x: 0.0, y: 0.0, width: Self.width, height: size.height + 32.0)
+      window.rootViewController = controller
+      window.makeKeyAndVisible()
+      controller.view.frame = window.bounds
+      try await Task.sleep(for: .seconds(1.0))
+
+      let scale = PlotScale(plot: interaction.plot, dates: display.chart.dateRange, prices: display.axis.domain)
+      let entry = try #require(ReleaseMarkerLayout(releases: display.chart.releases, scale: scale).entries.first { $0.release.id == release.id })
+      interaction.scrubbedDate = scale.date(atX: entry.iconCenter.x)
+      interaction.needleX = entry.iconCenter.x
+      try await Task.sleep(for: .seconds(1.0))
+
+      assertSnapshot(
+        of: controller.view,
+        as: .image(drawHierarchyInKeyWindow: true, precision: 0.98, perceptualPrecision: 0.98),
+        named: release.id.lowercased()
+      )
+
+      window.isHidden = true
+      window.rootViewController = nil
+    }
+  }
+
   @Test func emptyChartMessages() async throws {
     for reason in [PriceHistoryEmptyMessage.Reason.unavailable, .failed] {
       try await snapshot(

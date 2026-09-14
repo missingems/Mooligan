@@ -10,19 +10,25 @@ struct PriceHistoryChart: View {
 
   var body: some View {
     let scale = PlotScale(plot: interaction.plot, dates: derivedData.dateRange, prices: axis.domain)
+    let releases = ReleaseMarkerLayout(releases: derivedData.releases, scale: scale)
 
     PriceHistoryChartMarks(derivedData: derivedData, axis: axis, interaction: interaction)
       .background {
         let tickRows = axis.ticks.compactMap(scale.y(for:))
-        if isLoading {
-          PriceHistoryLoadingDotMatrix(plot: scale.plot, tickRows: tickRows)
-        } else {
-          PriceHistoryDotMatrix(plot: scale.plot, tickRows: tickRows)
+        ZStack {
+          if isLoading {
+            PriceHistoryLoadingDotMatrix(plot: scale.plot, tickRows: tickRows)
+          } else {
+            PriceHistoryDotMatrix(plot: scale.plot, tickRows: tickRows)
+          }
+
+          // Behind the marks, so a release's rule never crosses over the price lines.
+          PriceHistoryReleaseRules(layout: releases, interaction: interaction)
         }
       }
       .overlay {
         if scale.isMeasured {
-          PriceHistoryChartOverlay(derivedData: derivedData, interaction: interaction, scale: scale)
+          PriceHistoryChartOverlay(derivedData: derivedData, interaction: interaction, scale: scale, releases: releases)
         }
       }
       .coordinateSpace(.named(PlotScale.space))
@@ -48,6 +54,11 @@ private struct PriceHistoryChartMarks: View {
 
   @Environment(\.colorScheme) private var colorScheme
   @Environment(\.displayScale) private var displayScale
+
+  /// A solid hairline; Swift Charts would otherwise pick its own width and dash for each axis.
+  private var gridStroke: StrokeStyle {
+    StrokeStyle(lineWidth: 1.0 / max(displayScale, 1.0), dash: [])
+  }
 
   var body: some View {
     let domain = axis.domain
@@ -89,6 +100,9 @@ private struct PriceHistoryChartMarks: View {
     .chartXScale(domain: derivedData.dateRange)
     .chartYAxis {
       AxisMarks(position: .trailing, values: axis.ticks) { value in
+        AxisGridLine(stroke: gridStroke)
+          .foregroundStyle(PriceChartStyle.gridColor(colorScheme))
+
         AxisValueLabel(anchor: .leading) {
           Text(axis.label(at: value.index))
             .font(.caption2)
@@ -99,6 +113,9 @@ private struct PriceHistoryChartMarks: View {
     }
     .chartXAxis {
       AxisMarks(values: .automatic(desiredCount: 3)) { value in
+        AxisGridLine(stroke: gridStroke)
+          .foregroundStyle(PriceChartStyle.gridColor(colorScheme))
+
         AxisValueLabel(anchor: .top) {
           if let date = value.as(Date.self) {
             Text(date, format: PriceChartStyle.axisDateStyle(forDays: derivedData.spanInDays))

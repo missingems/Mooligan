@@ -83,6 +83,58 @@ struct PriceHistoryChartChromeTests {
     #expect(scale.date(atX: 0.0) == nil)
   }
 
+  private func releaseLayout(_ days: [Double]) -> ReleaseMarkerLayout {
+    let start = Date(timeIntervalSince1970: 1_780_000_000)
+    let scale = PlotScale(
+      plot: CGRect(x: 0.0, y: 10.0, width: 300.0, height: 200.0),
+      dates: start...start.addingTimeInterval(90 * 86_400),
+      prices: 0.0...1.0
+    )
+    let releases = days.enumerated().map { index, day in
+      SetReleaseMarker(id: "SET\(index)", code: "SET\(index)", name: "Set \(index)", date: start.addingTimeInterval(day * 86_400), iconURL: nil)
+    }
+    return ReleaseMarkerLayout(releases: releases, scale: scale)
+  }
+
+  @Test func releaseRulesShouldSitOnTheDateWhileIconsStayInsideThePlot() {
+    let layout = releaseLayout([0.0, 45.0, 90.0])
+    let half = PriceChartStyle.releaseIconSize / 2.0
+
+    #expect(layout.entries.map(\.ruleX) == [0.0, 150.0, 300.0])
+    #expect(layout.entries.map(\.iconCenter.x) == [half, 150.0, 300.0 - half])
+    #expect(layout.entries.allSatisfy { $0.iconCenter.y == 10.0 + half + ReleaseMarkerLayout.iconInset })
+    #expect(layout.ruleTop == 10.0 + PriceChartStyle.releaseIconSize + ReleaseMarkerLayout.iconInset * 2.0)
+  }
+
+  @Test func theNeedleShouldPickTheReleaseWhoseIconItIsOver() {
+    let layout = releaseLayout([30.0, 36.0, 80.0])
+    let reach = PriceChartStyle.releaseIconSize / 2.0
+
+    #expect(layout.entry(under: nil) == nil)
+    #expect(layout.entry(under: 100.0)?.release.id == "SET0")
+    #expect(layout.entry(under: 116.0)?.release.id == "SET1")
+    #expect(layout.entry(under: layout.entries[2].iconCenter.x + reach)?.release.id == "SET2")
+    #expect(layout.entry(under: layout.entries[2].iconCenter.x - reach - 1.0) == nil)
+  }
+
+  @Test func releaseTitlesShouldGoLeadingUnlessThatRunsPastThePlot() throws {
+    let layout = releaseLayout([10.0, 80.0])
+    let early = try #require(layout.entries.first)
+    let late = try #require(layout.entries.last)
+    let half = PriceChartStyle.releaseIconSize / 2.0
+
+    #expect(layout.titleIsLeading(for: late))
+    #expect(layout.titleIsLeading(for: early) == false)
+
+    let leading = layout.titleOrigin(for: late, isLeading: true)
+    #expect(abs(leading.width + ReleaseMarkerLayout.titleMaxWidth - (late.iconCenter.x - half - ReleaseMarkerLayout.titleGap)) < 0.001)
+    #expect(leading.width >= layout.plot.minX)
+    #expect(leading.height == late.iconCenter.y - half)
+
+    let trailing = layout.titleOrigin(for: early, isLeading: false)
+    #expect(abs(trailing.width - (early.iconCenter.x + half + ReleaseMarkerLayout.titleGap)) < 0.001)
+  }
+
   @Test func scrubbingShouldNeedAStillPressFirst() {
     let rule = ScrubPressRule.standard
     let origin = CGPoint(x: 100.0, y: 100.0)
