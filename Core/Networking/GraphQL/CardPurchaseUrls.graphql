@@ -1,0 +1,14 @@
+query CardPurchaseUrls($scryfallId: String!) {
+  cards(
+    filter: { identifiers: { scryfallId_eq: $scryfallId } }
+    page: { take: 1, skip: 0 }
+  ) {
+    uuid
+    purchaseUrls {
+      cardKingdom
+      cardKingdomFoil
+      cardmarket
+      tcgplayer
+    }
+  }
+}

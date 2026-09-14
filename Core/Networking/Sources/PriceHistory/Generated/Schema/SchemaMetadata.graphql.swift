@@ -30,6 +30,7 @@ extension MTGGraphQLAPI {
     private static let objectTypeMap: [String: ApolloAPI.Object] = [
       "Card": MTGGraphQLAPI.Objects.Card,
       "CardPrices": MTGGraphQLAPI.Objects.CardPrices,
+      "PurchaseUrls": MTGGraphQLAPI.Objects.PurchaseUrls,
       "Query": MTGGraphQLAPI.Objects.Query
     ]
 
