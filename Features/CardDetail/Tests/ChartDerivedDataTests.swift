@@ -196,12 +196,4 @@ struct ChartDerivedDataTests {
     #expect(plot.value(at: .distantPast) == plot.points.first?.value)
     #expect(plot.value(at: .distantFuture) == plot.points.last?.value)
   }
-
-  @Test func shouldKnowTheWidestReadoutSoThePopupKeepsItsWidth() {
-    let derived = ChartDerivedData(section: section(days: 40))
-
-    #expect(derived.widestAmount == decimal("40.00"))
-    #expect(derived.widestChange?.start.amount == decimal("1.00"))
-    #expect(derived.widestChange?.end.amount == decimal("2.00"))
-  }
 }

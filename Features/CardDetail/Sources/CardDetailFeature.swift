@@ -7,6 +7,8 @@ import ScryfallKit
 @Reducer public struct CardDetailFeature: Sendable {
   @Dependency(\.cardDetailRequestClient) private var client
   @Dependency(\.priceHistoryClient) private var priceHistoryClient
+  @Dependency(\.purchaseLinksClient) private var purchaseLinksClient
+  @Dependency(\.continuousClock) private var clock
   @Dependency(\.gameSetRequestClient) private var setClient
   
   public init() {}
@@ -39,7 +41,6 @@ import ScryfallKit
       return .merge(
         needsSetIcon ? .send(.fetchSetIcon(card: card)) : .none,
         .send(.fetchVariants(card: card, page: 1)),
-        .send(.fetchPriceHistory(card: card)),
         .send(.fetchRelatedTokens(card: card)),
         .send(.fetchRelatedComboPieces(card: card)),
         .send(.fetchRelatedMeldPieces(card: card)),
@@ -81,41 +82,46 @@ import ScryfallKit
         }
       }
       
+    case .priceHistoryAppeared:
+      guard state.priceHistory.status == .loading else { return .none }
+      return loadPriceHistory(
+        card: state.content.card,
+        labels: state.content.priceHistoryLabels,
+        after: Self.priceHistoryDebounce
+      )
+
+    case .priceHistoryDisappeared:
+      return .cancel(id: CancelID.priceHistory(state.id))
+
     case let .fetchPriceHistory(card):
-      return .run(priority: .background) { send in
-        async let histories = withTaskGroup(of: [PriceSeriesRequest: PriceHistory]?.self) { group in
-          group.addTask {
-            try? await priceHistoryClient.histories(
-              for: card,
-              requests: PriceHistorySection.priceRequests
-            )
-          }
-          group.addTask {
-            try? await Task.sleep(for: .seconds(12))
-            return nil
-          }
-
-          let first = await group.next() ?? nil
-          group.cancelAll()
-          return first
-        }
-        async let releases = SetReleaseMarkerStore.shared.markers(in: .allPriceHistory) {
-          (try? await setClient.getSets(queryType: .all).1) ?? []
-        }
-
-        let resolved = await histories ?? [:]
-
-        await send(
-          .updatePriceHistory(
-            PriceHistorySection.makeState(
-              card: card,
-              history: resolved[PriceHistorySection.chartRequest],
-              buylistQuote: PriceHistorySection.buylistQuote(from: resolved),
-              releases: await releases
-            )
-          )
-        )
+      let labels = state.content.priceHistoryLabels
+      if state.priceHistory.status != .loading {
+        state.updatePriceHistory(.loading(card: card, labels: labels))
       }
+      return loadPriceHistory(card: card, labels: labels, after: .zero)
+
+    case .retryPriceHistoryTapped:
+      return .send(.fetchPriceHistory(card: state.content.card))
+
+    case .purchaseLinksRequested:
+      switch state.purchaseLinks {
+      case .loading, .loaded:
+        return .none
+      case .idle, .failed:
+        break
+      }
+      state.updatePurchaseLinks(.loading)
+
+      return .run { [card = state.content.card] send in
+        do {
+          await send(.updatePurchaseLinks(.loaded(try await purchaseLinksClient.purchaseLinks(for: card))))
+        } catch let error as PriceHistoryClientError where error == .emptyResponse {
+          await send(.updatePurchaseLinks(.loaded([])))
+        } catch {
+          await send(.updatePurchaseLinks(.failed))
+        }
+      }
+      .cancellable(id: CancelID.purchaseLinks(state.content.card.id), cancelInFlight: true)
 
     case let .fetchRelatedTokens(card):
       return .run { send in
@@ -181,8 +187,12 @@ import ScryfallKit
       state.updateVariants(value, page: page)
       return .none
       
-    case let .updatePriceHistory(value):
-      state.updatePriceHistory(value)
+    case let .updatePriceHistory(update):
+      state.updatePriceHistory(update.display)
+      return .none
+
+    case let .updatePurchaseLinks(value):
+      state.updatePurchaseLinks(value)
       return .none
       
     case let .updateMeldPieces(value):
@@ -211,12 +221,59 @@ import ScryfallKit
   }
 }
 
+extension CardDetailFeature {
+  enum CancelID: Hashable, Sendable {
+    case priceHistory(UUID)
+    case purchaseLinks(UUID)
+  }
+
+  /// How long the pager has to rest on a card before its prices are requested. Swiping on to
+  /// another card within this cancels the load before any request is made.
+  static let priceHistoryDebounce: Duration = .milliseconds(400)
+
+  private func loadPriceHistory(card: Card, labels: PriceHistoryLabels, after delay: Duration) -> Effect<Action> {
+    let loader = PriceHistoryLoader(client: priceHistoryClient, clock: clock)
+
+    return .run(priority: .background) { [clock, setClient] send in
+      if delay > .zero {
+        try await clock.sleep(for: delay)
+      }
+
+      async let outcome = loader.load(card: card, requests: PriceHistorySection.priceRequests)
+      async let releases = SetReleaseMarkerStore.shared.markers(in: .allPriceHistory) {
+        (try? await setClient.getSets(queryType: .all).1) ?? []
+      }
+
+      let result: PriceHistoryState = switch await outcome {
+      case let .loaded(histories):
+        PriceHistorySection.makeState(
+          card: card,
+          history: histories[PriceHistorySection.chartRequest],
+          buylistQuote: PriceHistorySection.buylistQuote(from: histories),
+          retailQuotes: PriceHistorySection.retailQuotes(from: histories),
+          releases: await releases
+        )
+      case .noData:
+        .unavailable
+      case .failed:
+        .failed
+      }
+
+      let display = PriceHistoryDisplay.make(card: card, state: result, labels: labels)
+      await send(.updatePriceHistory(PriceHistoryUpdate(display: display)))
+    }
+    .cancellable(id: CancelID.priceHistory(card.id), cancelInFlight: true)
+  }
+}
+
 // MARK: - State & Action Definitions
 public extension CardDetailFeature {
   @ObservableState struct State: Equatable, Identifiable, Sendable {
     public let id: UUID
     public var content: Content
-    public var priceHistory: PriceHistoryState = .loading
+    var priceHistory: PriceHistoryDisplay
+    public var purchaseLinks: PurchaseLinksState = .idle
+    var purchaseDropdown: PurchaseDropdownState = .loading
     public var setIconURL: URL?
     var variants: Content.SubContent
     var relatedTokens: Content.SubContent?
@@ -228,7 +285,9 @@ public extension CardDetailFeature {
     
     public init(card: Card, displayableCardImage: DisplayableCardImage? = nil, queryType: QueryType) {
       self.id = card.id
-      self.content = Content(card: card, queryType: queryType)
+      let content = Content(card: card, queryType: queryType)
+      self.content = content
+      self.priceHistory = .loading(card: card, labels: content.priceHistoryLabels)
       
       setIconURL = Content.initialSetIconURL(queryType: queryType)
       variants = Content.initialVariants(card: card)
@@ -247,6 +306,12 @@ public extension CardDetailFeature {
     case didShowVariant(index: Int)
     case viewAppeared(initialAction: Action)
     case viewRulingsTapped
+    case retryPriceHistoryTapped
+    case purchaseLinksRequested
+    /// The pager settled on this card: load its price history after a short debounce.
+    case priceHistoryAppeared
+    /// The pager settled on another card: cancel a price history load that has not landed yet.
+    case priceHistoryDisappeared
     
     // Fetch Actions
     case fetchAdditionalInformation(card: Card)
@@ -261,7 +326,8 @@ public extension CardDetailFeature {
     // Update/Response Actions
     case updateSetIconURL(URL?)
     case updateVariants(CardDataSource, page: Int)
-    case updatePriceHistory(PriceHistoryState)
+    case updatePriceHistory(PriceHistoryUpdate)
+    case updatePurchaseLinks(PurchaseLinksState)
     case updateRelatedTokens(CardDataSource)
     case updateComboPieces(CardDataSource)
     case updateMeldPieces(CardDataSource)
@@ -283,8 +349,22 @@ private extension CardDetailFeature.State {
     variants = variants.updating(page: page, state: .data(dataSource))
   }
 
-  mutating func updatePriceHistory(_ value: PriceHistoryState) {
-    priceHistory = value
+  mutating func updatePriceHistory(_ display: PriceHistoryDisplay) {
+    priceHistory = display
+    refreshPurchaseDropdown()
+  }
+
+  mutating func updatePurchaseLinks(_ links: PurchaseLinksState) {
+    purchaseLinks = links
+    refreshPurchaseDropdown()
+  }
+
+  mutating func refreshPurchaseDropdown() {
+    purchaseDropdown = .make(
+      links: purchaseLinks,
+      quotes: priceHistory.retailQuotes,
+      scryfallPrices: content.card.prices
+    )
   }
   
   mutating func updateRelatedTokens(_ dataSource: CardDataSource) {

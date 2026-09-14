@@ -53,4 +53,40 @@ public struct MockPriceHistoryClient: PriceHistoryClient {
     )
   }
 }
+
+public actor FlakyPriceHistoryClient: PriceHistoryClient {
+  private let upstream: MockPriceHistoryClient
+  private let failuresPerCard: Int
+  private var attempts: [UUID: Int] = [:]
+
+  public init(failuresPerCard: Int, upstream: MockPriceHistoryClient = MockPriceHistoryClient()) {
+    self.failuresPerCard = failuresPerCard
+    self.upstream = upstream
+  }
+
+  public func history(
+    for card: Card,
+    provider: PriceProvider,
+    listType: PriceListType
+  ) async throws -> PriceHistory {
+    try recordAttempt(for: card)
+    return try await upstream.history(for: card, provider: provider, listType: listType)
+  }
+
+  public func histories(
+    for card: Card,
+    requests: [PriceSeriesRequest]
+  ) async throws -> [PriceSeriesRequest: PriceHistory] {
+    try recordAttempt(for: card)
+    return try await upstream.histories(for: card, requests: requests)
+  }
+
+  private func recordAttempt(for card: Card) throws {
+    let count = attempts[card.id, default: 0]
+    attempts[card.id] = count + 1
+    if count < failuresPerCard {
+      throw URLError(.timedOut)
+    }
+  }
+}
 #endif

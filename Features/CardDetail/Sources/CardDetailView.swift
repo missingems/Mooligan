@@ -16,8 +16,6 @@ public struct CardDetailView: View {
   }
   
   public var body: some View {
-    let _ = Self._printChanges()
-    
     let content = store.content
     let faceDirection = store.displayableCardImage?.faceDirection
     
@@ -87,32 +85,7 @@ public struct CardDetailView: View {
           Spacer(minLength: 13.0)
         }
         
-        PriceHistorySectionView(
-          store: store,
-          title: content.priceHistoryLabel,
-          finishesLabel: content.priceHistoryFinishesLabel,
-          lowLabel: content.priceHistoryLowLabel,
-          highLabel: content.priceHistoryHighLabel,
-          spreadLabel: content.priceHistorySpreadLabel,
-          buylistLabel: content.priceHistoryBuylistLabel,
-          unavailableLabel: content.priceHistoryUnavailableLabel
-        )
-        
-        PurchaseLinksView(
-          title: content.purchaseLabel,
-          subtitle: content.purchaseSubtitleLabel,
-          listings: MarketplaceListing.listings(
-            purchaseURIs: content.card.purchaseUris,
-            prices: content.card.prices
-          ),
-          finishLabel: { kind in
-            switch kind {
-            case .normal: content.usdLabel
-            case .foil: content.usdFoilLabel
-            case .etched: content.usdEtchedLabel
-            }
-          }
-        )
+        PriceHistorySectionView(store: store, labels: content.priceHistoryLabels)
         
         LegalityView(
           title: content.legalityLabel,
@@ -191,24 +164,15 @@ private extension CGFloat {
 
 private struct PriceHistorySectionView: View {
   let store: StoreOf<CardDetailFeature>
-  let title: String
-  let finishesLabel: String
-  let lowLabel: String
-  let highLabel: String
-  let spreadLabel: String
-  let buylistLabel: String
-  let unavailableLabel: String
+  let labels: PriceHistoryLabels
   
   var body: some View {
     PriceHistoryView(
-      state: store.priceHistory,
-      title: title,
-      finishesLabel: finishesLabel,
-      lowLabel: lowLabel,
-      highLabel: highLabel,
-      spreadLabel: spreadLabel,
-      buylistLabel: buylistLabel,
-      unavailableLabel: unavailableLabel
+      display: store.priceHistory,
+      purchaseDropdown: store.purchaseDropdown,
+      labels: labels,
+      onRetry: { store.send(.retryPriceHistoryTapped) },
+      onPurchaseLinksRequested: { store.send(.purchaseLinksRequested) }
     )
   }
 }

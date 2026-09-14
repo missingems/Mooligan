@@ -3,45 +3,41 @@ import Networking
 import SwiftUI
 
 struct PriceHistoryView: View {
-  private let state: PriceHistoryState
-  private let title: String
-  private let finishesLabel: String
-  private let lowLabel: String
-  private let highLabel: String
-  private let spreadLabel: String
-  private let buylistLabel: String
-  private let unavailableLabel: String
+  private let display: PriceHistoryDisplay
+  private let purchaseDropdown: PurchaseDropdownState
+  private let labels: PriceHistoryLabels
+  private let onRetry: () -> Void
+  private let onPurchaseLinksRequested: () -> Void
 
   @Environment(\.colorScheme) private var colorScheme
   @Environment(\.displayScale) private var displayScale
+  @Environment(\.openURL) private var openURL
 
-  @State private var derivedData = ChartDerivedData()
   @State private var interaction = ChartInteraction()
-  @State private var chartOpacity: Double = 0.0
-  @State private var isUnavailable = false
   @State private var layout = ScrubLayout()
+  @State private var isPurchaseLinksPresented = false
 
+  @Namespace private var purchaseGlass
+
+  static let chartHeight: CGFloat = 233.0
   private static let stackSpacing: CGFloat = 8
   private static let chartGap: CGFloat = 13.0
+  private static let purchaseGlassID = "priceHistory.purchase"
+  private static let dropdownAnimation: Animation = .bouncy(duration: 0.35)
+  private static let loadAnimation: Animation = .smooth(duration: 0.35)
 
   init(
-    state: PriceHistoryState,
-    title: String,
-    finishesLabel: String,
-    lowLabel: String,
-    highLabel: String,
-    spreadLabel: String,
-    buylistLabel: String,
-    unavailableLabel: String
+    display: PriceHistoryDisplay,
+    purchaseDropdown: PurchaseDropdownState,
+    labels: PriceHistoryLabels,
+    onRetry: @escaping () -> Void,
+    onPurchaseLinksRequested: @escaping () -> Void
   ) {
-    self.state = state
-    self.title = title
-    self.finishesLabel = finishesLabel
-    self.lowLabel = lowLabel
-    self.highLabel = highLabel
-    self.spreadLabel = spreadLabel
-    self.buylistLabel = buylistLabel
-    self.unavailableLabel = unavailableLabel
+    self.display = display
+    self.purchaseDropdown = purchaseDropdown
+    self.labels = labels
+    self.onRetry = onRetry
+    self.onPurchaseLinksRequested = onPurchaseLinksRequested
   }
 
   var body: some View {
@@ -50,148 +46,163 @@ struct PriceHistoryView: View {
 
     VStack(alignment: .leading, spacing: 0.0) {
       PriceHistoryHeaderView(
-        title: title,
-        currencyCode: currencyCode,
-        isLoading: isLoading,
-        derivedData: derivedData,
+        title: labels.title,
+        summary: display.summary,
         interaction: interaction,
-        summaryTop: $layout.summaryTop
+        summaryFrame: $layout.summaryFrame
       )
-      .onGeometryChange(for: CGFloat.self) { $0.size.width.snapped(to: displayScale) } action: { width in
+      .onGeometryChange(for: CGFloat.self) { [displayScale] in $0.size.width.snapped(to: displayScale) } action: { width in
         if layout.headerWidth != width { layout.headerWidth = width }
       }
 
-      PriceHistoryChart(
-        derivedData: derivedData,
-        interaction: interaction,
-        currencyCode: currencyCode
-      )
-      .id(colorScheme)
-      .opacity(chartOpacity)
-      .overlay {
-        if isUnavailable {
-          Text(unavailableLabel)
-            .font(.title)
-            .foregroundStyle(.secondary)
-            .allowsHitTesting(false)
-        }
-      }
-      .frame(height: 233.0, alignment: .leading)
-      .onGeometryChange(for: CGPoint.self) { geometry in
-        geometry.frame(in: .named(ScrubLayout.space)).origin.snapped(to: displayScale)
-      } action: { origin in
-        if layout.chartOrigin != origin { layout.chartOrigin = origin }
-      }
-      .padding(.vertical, 13.00)
-      .padding(.horizontal, 5.0)
-      .background(
-        Color(.tertiarySystemFill),
-        in: RoundedRectangle(cornerRadius: PriceChartStyle.cardCornerRadius)
-      )
-      .overlay {
-        RoundedRectangle(cornerRadius: PriceChartStyle.cardCornerRadius)
-          .strokeBorder(PriceChartStyle.gridColor(colorScheme), lineWidth: 1.0 / displayScale)
-      }
-      .padding(.top, Self.chartGap)
+      chartCard
+        .padding(.top, Self.chartGap)
 
       PriceHistoryStatsView(
-        derivedData: derivedData,
-        currencyCode: currencyCode,
-        finishesLabel: finishesLabel,
-        lowLabel: lowLabel,
-        highLabel: highLabel,
-        spreadLabel: spreadLabel,
-        buylistLabel: buylistLabel
+        titles: display.statsTitles,
+        columns: display.statsColumns,
+        rows: display.statsRows
       )
       .padding(.top, Self.stackSpacing)
-      .transaction { transaction in
-        transaction.animation = nil
-      }
     }
+    .animation(Self.loadAnimation, value: display.status)
     .background(alignment: .topLeading) {
       PriceHistoryNeedle(
         interaction: interaction,
-        isEnabled: hasData,
+        isEnabled: display.hasChart,
         layout: layout
       )
     }
     .overlay(alignment: .topLeading) {
       PriceHistoryScrubReadout(
-        derivedData: derivedData,
+        display: display,
         interaction: interaction,
-        currencyCode: currencyCode,
-        isEnabled: hasData,
+        isEnabled: display.hasChart,
         layout: layout,
         size: $layout.readoutSize
       )
     }
+    .overlay { dismissArea }
+    .overlay(alignment: .topTrailing) { toolbar }
     .coordinateSpace(.named(ScrubLayout.space))
+    .onChange(of: display.chart) { interaction.endScrub() }
     .padding(.horizontal, systemHorizontalMargin)
     .padding(EdgeInsets(top: 13.0, leading: 0.0, bottom: 18.0, trailing: 0.0))
-    .task(id: derivationKey) { await deriveChartData() }
   }
 
-  private var hasData: Bool {
-    derivedData.plotSeries.isEmpty == false
+  private var chartCard: some View {
+    // The card's size comes from this fixed frame alone. The placeholder, chart and messages sit
+    // in an overlay, which never feeds back into the size of the views around it, so swapping
+    // one for another when prices land re-lays out only the card rather than the whole page.
+    Color.clear
+      .frame(height: Self.chartHeight)
+      .overlay(alignment: .leading) { chartContent }
+      .onGeometryChange(for: CGPoint.self) { [displayScale] geometry in
+        geometry.frame(in: .named(ScrubLayout.space)).origin.snapped(to: displayScale)
+      } action: { origin in
+        if layout.chartOrigin != origin { layout.chartOrigin = origin }
+      }
+      .padding(.vertical, 13.0)
+      .padding(.horizontal, 5.0)
+      .background(
+        LinearGradient(
+          colors: [.clear, Color(.tertiarySystemFill)],
+          startPoint: .top,
+          endPoint: .bottom
+        ),
+        in: RoundedRectangle(cornerRadius: PriceChartStyle.cardCornerRadius)
+      )
+      .overlay {
+        // A gradient fill masked to the stroke rather than a gradient-painted `strokeBorder`:
+        // SwiftUI rasterizes a gradient stroke on the CPU into its own layer, which cost a few
+        // milliseconds every time a card detail page was built.
+        PriceChartStyle.borderGradient(colorScheme)
+          .mask {
+            RoundedRectangle(cornerRadius: PriceChartStyle.cardCornerRadius)
+              .strokeBorder(lineWidth: 1.0 / displayScale)
+          }
+          .blendMode(PriceChartStyle.vibrantBlendMode(colorScheme))
+          .allowsHitTesting(false)
+      }
   }
 
-  private var isLoading: Bool {
-    if case .loading = state { true } else { false }
-  }
-
-  private var currencyCode: String {
-    if case let .data(section) = state { section.currency } else { "USD" }
-  }
-
-  private var derivationKey: DerivationKey {
-    let section = state.data
-    return DerivationKey(
-      isLoading: isLoading,
-      dates: section.dateRange,
-      prices: section.priceRange,
-      kinds: section.series.map(\.kind),
-      currency: section.currency,
-      releases: section.releases.count
-    )
-  }
-
-  private struct DerivationKey: Equatable {
-    let isLoading: Bool
-    let dates: ClosedRange<Date>
-    let prices: ClosedRange<Double>
-    let kinds: [PriceSeriesKind]
-    let currency: String
-    let releases: Int
-  }
-
-  private func deriveChartData() async {
-    interaction.endScrub()
-
-    let section = state.data
-    let isLoading = isLoading
-
-    let derived = await Task.detached(priority: .userInitiated) {
-      ChartDerivedData(section: section)
-    }.value
-
-    guard Task.isCancelled == false else { return }
-
-    var transaction = Transaction()
-    transaction.disablesAnimations = true
-
-    if derivedData.plotSeries.isEmpty, derived.plotSeries.isEmpty == false {
-      withAnimation(.easeInOut(duration: 0.3)) { derivedData = derived }
-    } else {
-      withTransaction(transaction) { derivedData = derived }
+  private var chartContent: some View {
+    ZStack {
+      if display.status == .loading {
+        PriceHistoryChartPlaceholder()
+          .transition(.opacity)
+      } else {
+        PriceHistoryChart(
+          derivedData: display.chart,
+          axis: display.axis,
+          interaction: interaction
+        )
+        .id(colorScheme)
+        .transition(.opacity)
+        .overlay {
+          switch display.status {
+          case .unavailable:
+            PriceHistoryEmptyMessage(reason: .unavailable, labels: labels, onRetry: onRetry)
+          case .failed:
+            PriceHistoryEmptyMessage(reason: .failed, labels: labels, onRetry: onRetry)
+          case .loading, .loaded:
+            EmptyView()
+          }
+        }
+      }
     }
+  }
 
-    let unavailable = isLoading == false && derived.plotSeries.isEmpty
-    if isUnavailable != unavailable {
-      withTransaction(transaction) { isUnavailable = unavailable }
+  private var toolbar: some View {
+    GlassEffectContainer {
+      ZStack(alignment: .topTrailing) {
+        if isPurchaseLinksPresented {
+          PriceHistoryPurchaseLinksView(
+            state: purchaseDropdown,
+            labels: labels,
+            onRetry: onPurchaseLinksRequested,
+            onSelect: { offer in
+              closePurchaseLinks()
+              openURL(offer.url)
+            },
+            glass: (Self.purchaseGlassID, purchaseGlass)
+          )
+        } else {
+          GlassCapsuleAction(
+            title: labels.purchase,
+            systemImage: "cart",
+            accessibilityID: "priceHistory.cart",
+            action: openPurchaseLinks
+          )
+          .glassEffectID(Self.purchaseGlassID, in: purchaseGlass)
+        }
+      }
     }
+  }
 
-    if chartOpacity != 1.0 {
-      withAnimation(.easeOut(duration: 0.25)) { chartOpacity = 1.0 }
+  @ViewBuilder private var dismissArea: some View {
+    if isPurchaseLinksPresented {
+      // Tracking the global origin reports a change on every frame of a scroll or a pager
+      // swipe, so it only exists while there is a dropdown to close.
+      Color.clear
+        .contentShape(.rect)
+        .onTapGesture { closePurchaseLinks() }
+        .onGeometryChange(for: CGPoint.self) { $0.frame(in: .global).origin } action: { old, new in
+          if abs(new.y - old.y) > 1.0 || abs(new.x - old.x) > 1.0 {
+            closePurchaseLinks()
+          }
+        }
+        .accessibilityHidden(true)
     }
+  }
+
+  private func openPurchaseLinks() {
+    onPurchaseLinksRequested()
+    withAnimation(Self.dropdownAnimation) { isPurchaseLinksPresented = true }
+  }
+
+  private func closePurchaseLinks() {
+    guard isPurchaseLinksPresented else { return }
+    withAnimation(Self.dropdownAnimation) { isPurchaseLinksPresented = false }
   }
 }

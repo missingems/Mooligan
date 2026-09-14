@@ -10,6 +10,8 @@ public struct CardPagerFeature: Sendable {
     public var cards: IdentifiedArrayOf<CardDetailFeature.State>
     public var selectedId: UUID?
     @Presents public var showRulings: RulingFeature.State?
+    /// The card the pager last came to rest on, whose price history is loading or loaded.
+    var settledCardID: UUID?
     var rawCardDetails: [CardInfo]
     var queryType: QueryType
     
@@ -79,7 +81,7 @@ public struct CardPagerFeature: Sendable {
           return .none
         }
         
-        return .send(
+        let appeared: Effect<Action> = .send(
           .cards(
             .element(
               id: id,
@@ -87,6 +89,22 @@ public struct CardPagerFeature: Sendable {
             )
           )
         )
+
+        // Price history follows the settled card: its debounced load starts here and the card
+        // left behind has its load cancelled, so swiping through cards fetches nothing for the
+        // ones passed. This lives in the reducer rather than a view `.task`, because the lazy
+        // stack gives off-screen neighbour pages `onAppear` too, and driving it from view state
+        // re-rendered every page on each swipe.
+        let previous = state.settledCardID
+        guard previous != id else { return appeared }
+        state.settledCardID = id
+
+        let left: Effect<Action> = if let previous, state.cards[id: previous] != nil {
+          .send(.cards(.element(id: previous, action: .priceHistoryDisappeared)))
+        } else {
+          .none
+        }
+        return .merge(left, appeared, .send(.cards(.element(id: id, action: .priceHistoryAppeared))))
         
       case var .setRemainingCards(fullArray):
         for existingCard in state.cards {

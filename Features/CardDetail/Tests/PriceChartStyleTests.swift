@@ -78,4 +78,50 @@ struct PriceChartStyleTests {
     #expect(PriceChartStyle.statWindow(forSpanDays: 3).label == "3D")
     #expect(PriceChartStyle.statWindow(forSpanDays: 3).days == nil)
   }
+
+  @Test func priceAxisShouldStepInRoundNumbersWithAStepOfRoomBelowTheLow() {
+    let axis = PriceChartStyle.priceAxis(for: 20.23...62.0)
+
+    #expect(axis.ticks == [0.0, 20.0, 40.0, 60.0, 80.0])
+    #expect(axis.domain == 0.0...80.0)
+    #expect(axis.fractionDigits == 0)
+  }
+
+  @Test func priceAxisShouldKeepAHighPricedCardAwayFromZero() {
+    let axis = PriceChartStyle.priceAxis(for: 200.0...210.0)
+
+    #expect(axis.ticks == [190.0, 200.0, 210.0, 220.0])
+    #expect(axis.domain.lowerBound > 0.0)
+  }
+
+  @Test func priceAxisShouldLeaveAtLeastHalfAStepAboveAndBelowTheData() {
+    for range in [20.23...41.3, 3.1...4.9, 0.12...0.45, 980.0...1_450.0] {
+      let axis = PriceChartStyle.priceAxis(for: range)
+      let step = axis.ticks[1] - axis.ticks[0]
+
+      #expect(axis.domain.upperBound - range.upperBound >= step * 0.5 - 0.000_1)
+      #expect(range.lowerBound - axis.domain.lowerBound >= min(step * 0.5, range.lowerBound) - 0.000_1)
+      #expect(axis.ticks.first == axis.domain.lowerBound)
+      #expect(axis.ticks.last == axis.domain.upperBound)
+    }
+  }
+
+  @Test func priceAxisShouldUseCentsOnlyForFractionalSteps() {
+    #expect(PriceChartStyle.priceAxis(for: 0.12...0.45).fractionDigits == 2)
+    #expect(PriceChartStyle.priceAxis(for: 20.23...41.3).fractionDigits == 0)
+  }
+
+  @Test func priceAxisShouldNeverGoNegativeOrCollapse() {
+    #expect(PriceChartStyle.priceAxis(for: 0.1...40.0).domain.lowerBound == 0.0)
+    #expect(PriceChartStyle.priceAxis(for: 5.0...5.0).domain.lowerBound < 5.0)
+    #expect(PriceChartStyle.priceAxis(for: 5.0...5.0).domain.upperBound > 5.0)
+    #expect(PriceChartStyle.priceAxis(for: 0.0...0.0) == PriceChartStyle.fallbackPriceAxis)
+  }
+
+  @Test func niceStepShouldRoundUpToOneTwoTwoAndAHalfOrFive() {
+    #expect(PriceChartStyle.niceStep(14.0) == 20.0)
+    #expect(PriceChartStyle.niceStep(2.2) == 2.5)
+    #expect(abs(PriceChartStyle.niceStep(0.07) - 0.1) < 0.000_001)
+    #expect(PriceChartStyle.niceStep(300.0) == 500.0)
+  }
 }

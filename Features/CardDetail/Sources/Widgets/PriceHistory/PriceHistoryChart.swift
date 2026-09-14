@@ -4,85 +4,101 @@ import SwiftUI
 
 struct PriceHistoryChart: View {
   let derivedData: ChartDerivedData
+  let axis: PriceChartStyle.PriceAxis
   let interaction: ChartInteraction
-  let currencyCode: String
+
+  // The dot matrix and the overlay sit outside `chartBackground` / `chartOverlay` on purpose.
+  // Those closures hand out a `ChartProxy` whose anchors are re-resolved whenever the chart
+  // moves, so inside a pager or a scroll view they re-ran every frame of every swipe. Both
+  // scales have explicit domains, so a measured plot frame is all the positioning needs.
+  var body: some View {
+    let scale = PlotScale(plot: interaction.plot, dates: derivedData.dateRange, prices: axis.domain)
+
+    PriceHistoryChartMarks(derivedData: derivedData, axis: axis, interaction: interaction)
+      .background {
+        PriceHistoryDotMatrix(plot: scale.plot, tickRows: axis.ticks.compactMap(scale.y(for:)))
+      }
+      .overlay {
+        if scale.isMeasured {
+          PriceHistoryChartOverlay(derivedData: derivedData, interaction: interaction, scale: scale)
+        }
+      }
+      .coordinateSpace(.named(PlotScale.space))
+  }
+}
+
+private struct PriceHistoryChartMarks: View {
+  private struct LinePoint {
+    let series: String
+    let date: Date
+    let value: Double
+  }
+
+  private struct AreaPoint {
+    let date: Date
+    let floor: Double
+    let value: Double
+  }
+
+  let derivedData: ChartDerivedData
+  let axis: PriceChartStyle.PriceAxis
+  let interaction: ChartInteraction
 
   @Environment(\.colorScheme) private var colorScheme
   @Environment(\.displayScale) private var displayScale
 
-  @State private var plot: CGRect = .zero
-
   var body: some View {
-    if derivedData.plotSeries.isEmpty {
-      chart
-    } else {
-      chart.chartForegroundStyleScale(
-        domain: derivedData.plotSeries.map { PriceChartStyle.label(for: $0.kind) },
-        range: derivedData.plotSeries.map { PriceChartStyle.color(for: $0.kind) }
-      )
-    }
-  }
+    let domain = axis.domain
 
-  private var chart: some View {
-    let domain = yDomain(for: derivedData.priceRange)
-    let fractionDigits = derivedData.priceRange.upperBound < 10 ? 2 : 0
-
-    return Chart {
+    // Vectorized plots: one piece of chart content per series rather than a mark per day, which
+    // Swift Charts would otherwise have to create and diff one by one.
+    Chart {
       ForEach(derivedData.plotSeries) { series in
-        let seriesLabel = PriceChartStyle.label(for: series.kind)
+        let color = PriceChartStyle.color(for: series.kind)
 
-        ForEach(series.points) { point in
-          LineMark(
-            x: .value("Date", point.date),
-            y: .value("Price", point.value),
-            series: .value("ID", series.id)
+        if derivedData.plotSeries.count == 1 {
+          AreaPlot(
+            series.points.map { AreaPoint(date: $0.date, floor: domain.lowerBound, value: $0.value) },
+            x: .value("Date", \.date),
+            yStart: .value("Floor", \.floor),
+            yEnd: .value("Price", \.value)
           )
           .interpolationMethod(.monotone)
-          .foregroundStyle(by: .value("Finish", seriesLabel))
-
-          if derivedData.plotSeries.count == 1 {
-            AreaMark(
-              x: .value("Date", point.date),
-              yStart: .value("Floor", domain.lowerBound),
-              yEnd: .value("Price", point.value),
-              series: .value("ID", series.id)
+          .foregroundStyle(
+            .linearGradient(
+              colors: [color.opacity(0.26), color.opacity(0.0)],
+              startPoint: .top,
+              endPoint: .bottom
             )
-            .interpolationMethod(.monotone)
-            .foregroundStyle(
-              .linearGradient(
-                colors: [
-                  PriceChartStyle.color(for: series.kind).opacity(0.26),
-                  PriceChartStyle.color(for: series.kind).opacity(0.0),
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-              )
-            )
-          }
+          )
         }
+
+        // Without a series value, consecutive line plots are joined into a single line.
+        LinePlot(
+          series.points.map { LinePoint(series: series.id, date: $0.date, value: $0.value) },
+          x: .value("Date", \.date),
+          y: .value("Price", \.value),
+          series: .value("ID", \.series)
+        )
+        .interpolationMethod(.monotone)
+        .foregroundStyle(color)
       }
     }
     .chartLegend(.hidden)
     .chartYScale(domain: domain)
     .chartXScale(domain: derivedData.dateRange)
     .chartYAxis {
-      AxisMarks(position: .trailing, values: .automatic) { value in
-        AxisGridLine().foregroundStyle(PriceChartStyle.gridColor(colorScheme))
-
+      AxisMarks(position: .trailing, values: axis.ticks) { value in
         AxisValueLabel(anchor: .leading) {
-          if let amount = value.as(Double.self) {
-            Text(amount, format: PriceChartStyle.axisPrice(currencyCode, fractionDigits: fractionDigits))
-              .font(.caption)
-              .monospaced()
-              .foregroundStyle(PriceChartStyle.vibrantLabelColor(colorScheme))
-          }
+          Text(axis.label(at: value.index))
+            .font(.caption)
+            .monospaced()
+            .foregroundStyle(PriceChartStyle.vibrantLabelColor(colorScheme))
         }
       }
     }
     .chartXAxis {
       AxisMarks(values: .automatic(desiredCount: 3)) { value in
-        AxisGridLine().foregroundStyle(PriceChartStyle.gridColor(colorScheme))
-
         AxisValueLabel(anchor: .top) {
           if let date = value.as(Date.self) {
             Text(date, format: PriceChartStyle.axisDateStyle(forDays: derivedData.spanInDays))
@@ -92,35 +108,52 @@ struct PriceHistoryChart: View {
         }
       }
     }
-    .chartOverlay { proxy in
-      let plotAnchor = proxy.plotFrame
-
-      ZStack(alignment: .topLeading) {
-        Color.clear
-          .onGeometryChange(for: CGRect.self) { geometry in
-            Self.drawable(plotAnchor.map { geometry[$0] } ?? .zero)
-          } action: { rect in
-            let snapped = CGRect(
-              origin: rect.origin.snapped(to: displayScale),
-              size: rect.size.snapped(to: displayScale)
-            )
-            guard rect != .zero, plot != snapped else { return }
-            plot = snapped
-          }
-
-        if plot.width > 0, plot.height > 0 {
-          PriceHistoryChartOverlay(
-            derivedData: derivedData,
-            interaction: interaction,
-            proxy: proxy,
-            plot: plot
-          )
-        }
+    .chartPlotStyle { plotArea in
+      plotArea.onGeometryChange(for: CGRect.self) { [displayScale] geometry in
+        PlotScale.drawable(geometry.frame(in: .named(PlotScale.space)), snappedTo: displayScale)
+      } action: { rect in
+        guard rect != .zero, interaction.plot != rect else { return }
+        interaction.plot = rect
       }
     }
   }
+}
 
-  private nonisolated static func drawable(_ rect: CGRect) -> CGRect {
+/// Maps prices and dates onto the measured plot area, in the chart's own coordinate space.
+///
+/// Swift Charts maps a continuous scale with an explicit domain linearly across the plot
+/// dimension, so this reproduces `ChartProxy.position(forX:)` / `position(forY:)` without
+/// depending on the proxy.
+struct PlotScale: Equatable {
+  static let space = "PriceHistory.chart"
+
+  let plot: CGRect
+  let dates: ClosedRange<Date>
+  let prices: ClosedRange<Double>
+
+  var isMeasured: Bool { plot.width > 0.0 && plot.height > 0.0 }
+
+  func x(for date: Date) -> CGFloat? {
+    let span = dates.upperBound.timeIntervalSince(dates.lowerBound)
+    guard isMeasured, span > 0.0 else { return nil }
+    let x = plot.minX + CGFloat(date.timeIntervalSince(dates.lowerBound) / span) * plot.width
+    return x.isFinite ? x : nil
+  }
+
+  func y(for price: Double) -> CGFloat? {
+    let span = prices.upperBound - prices.lowerBound
+    guard isMeasured, span > 0.0 else { return nil }
+    let y = plot.maxY - CGFloat((price - prices.lowerBound) / span) * plot.height
+    return y.isFinite ? y : nil
+  }
+
+  func date(atX x: CGFloat) -> Date? {
+    guard isMeasured else { return nil }
+    let fraction = Double((min(max(x, plot.minX), plot.maxX) - plot.minX) / plot.width)
+    return dates.lowerBound.addingTimeInterval(fraction * dates.upperBound.timeIntervalSince(dates.lowerBound))
+  }
+
+  static func drawable(_ rect: CGRect, snappedTo displayScale: CGFloat) -> CGRect {
     let normalized = rect.standardized
     guard
       normalized.origin.x.isFinite,
@@ -132,19 +165,9 @@ struct PriceHistoryChart: View {
     else {
       return .zero
     }
-    return normalized
-  }
-
-  private func yDomain(for prices: ClosedRange<Double>) -> ClosedRange<Double> {
-    let low = prices.lowerBound
-    let high = prices.upperBound
-    guard low.isFinite, high.isFinite else { return 0.0...1.0 }
-
-    let span = high - low
-    let padding = span > 0 ? span * 0.12 : max(abs(high) * 0.1, 0.05)
-    let lower = max(0.0, low - padding)
-    let upper = high + padding * 2.5
-    guard lower.isFinite, upper.isFinite, upper > lower else { return 0.0...1.0 }
-    return lower...upper
+    return CGRect(
+      origin: normalized.origin.snapped(to: displayScale),
+      size: normalized.size.snapped(to: displayScale)
+    )
   }
 }

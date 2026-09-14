@@ -28,9 +28,10 @@ let project = Project(
           "CFBundleVersion": "$(CURRENT_PROJECT_VERSION)",
           // Base URL of the MTGGraphQL proxy (Tools/mtggraphql-proxy). Not a
           // secret: the proxy holds the access token server-side and only
-          // forwards the one allow-listed price-history operation, so a leaked
-          // URL grants nothing the app doesn't already expose. Empty would just
-          // hide the price-history section (MTGGraphQLEndpoint.fromBundle).
+          // forwards its allow-listed price-history and purchase-link
+          // operations, so a leaked URL grants nothing the app doesn't already
+          // expose. Empty would just hide the price-history section
+          // (MTGGraphQLEndpoint.fromBundle).
           "MTGGraphQLProxyURL": .string("https://mtggraphql-proxy.mooligan.workers.dev"),
         ]
       ),
@@ -80,7 +81,9 @@ let project = Project(
       resources: [],
       dependencies: [
         .target(name: "Mooligan"),
+        .project(target: "CardDetail", path: .relativeToManifest("Features/CardDetail")),
         .project(target: "DesignComponents", path: .relativeToManifest("Core/DesignComponents")),
+        .project(target: "Networking", path: .relativeToManifest("Core/Networking")),
         .external(name: "SnapshotTesting"),
       ],
       settings: Module.testSettings

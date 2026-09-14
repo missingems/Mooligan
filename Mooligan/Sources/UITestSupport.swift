@@ -15,6 +15,7 @@ import PackOpening
 /// `#if DEBUG`, so none of this reaches a Release build.
 enum UITestSupport {
   static let launchArgument = "-uiTestMode"
+  static let priceHistoryFailureArgument = "-uiTestPriceHistoryFailure"
 
   static var isActive: Bool {
     ProcessInfo.processInfo.arguments.contains(launchArgument)
@@ -35,7 +36,10 @@ enum UITestSupport {
       // The mock cards' art does not resolve offline; without this the pack
       // would sit in its preparing phase until every request timed out.
       $0.packImagePrefetcher = ImmediatePackImagePrefetcher()
-      $0.priceHistoryClient = MockPriceHistoryClient()
+      $0.priceHistoryClient = ProcessInfo.processInfo.arguments.contains(priceHistoryFailureArgument)
+        ? FlakyPriceHistoryClient(failuresPerCard: 3)
+        : MockPriceHistoryClient()
+      $0.purchaseLinksClient = MockPurchaseLinksClient()
 
       $0.databasePreparer = InertDatabasePreparer()
       $0.bulkSyncScheduler = InertBulkSyncScheduler()

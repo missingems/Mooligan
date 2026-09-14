@@ -35,6 +35,7 @@ public struct PriceHistorySection: Equatable, Sendable {
   public let currency: String
   public let releases: [SetReleaseMarker]
   public let buylistQuote: BuylistQuote?
+  public let retailQuotes: [PriceProvider: RetailQuote]
   public let priceRange: ClosedRange<Double>
   public let dateRange: ClosedRange<Date>
 
@@ -43,6 +44,7 @@ public struct PriceHistorySection: Equatable, Sendable {
     currency: String = "",
     releases: [SetReleaseMarker] = [],
     buylistQuote: BuylistQuote? = nil,
+    retailQuotes: [PriceProvider: RetailQuote] = [:],
     dateRange: ClosedRange<Date>? = nil
   ) {
     let low = series.map(\.priceRange.lowerBound).min() ?? 0
@@ -54,6 +56,7 @@ public struct PriceHistorySection: Equatable, Sendable {
     self.currency = currency
     self.releases = releases
     self.buylistQuote = buylistQuote
+    self.retailQuotes = retailQuotes
     self.priceRange = low...max(high, low)
     self.dateRange = dateRange ?? (first...max(last, first.addingTimeInterval(86_400)))
   }
@@ -62,6 +65,7 @@ public struct PriceHistorySection: Equatable, Sendable {
 public enum PriceHistoryState: Equatable, Sendable {
   case loading
   case unavailable
+  case failed
   case data(PriceHistorySection)
 
   static let empty: PriceHistorySection = {
@@ -73,11 +77,18 @@ public enum PriceHistoryState: Equatable, Sendable {
 
   var data: PriceHistorySection {
     switch self {
-    case .loading, .unavailable:
+    case .loading, .unavailable, .failed:
       return Self.empty
 
     case let .data(priceHistorySection):
       return priceHistorySection
     }
   }
+}
+
+public enum PurchaseLinksState: Equatable, Sendable {
+  case idle
+  case loading
+  case loaded([PurchaseLink])
+  case failed
 }

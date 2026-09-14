@@ -27,8 +27,6 @@ struct ChartDerivedData: Equatable, Sendable {
   var plotSeries: [PlotSeries] = []
   var releases: [SetReleaseMarker] = []
   var buylistQuote: BuylistQuote?
-  var widestAmount: Decimal = 0
-  var widestChange: PriceChange?
   var priceRange: ClosedRange<Double> = 0.0...1.0
   var dateRange: ClosedRange<Date> = Date()...Date()
 
@@ -76,10 +74,6 @@ struct ChartDerivedData: Equatable, Sendable {
   ) {
     self.series = series
     self.plotSeries = series.map(Self.plot)
-    self.widestAmount = series.flatMap(\.points).map(\.amount).max() ?? 0
-    self.widestChange = series
-      .flatMap { series in zip(series.points, series.points.dropFirst()).map(PriceChange.init) }
-      .max { abs($0.fraction ?? 0.0) < abs($1.fraction ?? 0.0) }
     self.releases = releases
     self.buylistQuote = buylistQuote
     self.priceRange = priceRange

@@ -17,6 +17,8 @@ import Testing
       initialState: CardDetailFeature.State(card: card, queryType: queryType)
     ) {
       CardDetailFeature()
+    } withDependencies: {
+      $0.continuousClock = ImmediateClock()
     }
   }
 
@@ -93,6 +95,8 @@ import Testing
       )
     ) {
       CardDetailFeature()
+    } withDependencies: {
+      $0.continuousClock = ImmediateClock()
     }
     store.exhaustivity = .off
 

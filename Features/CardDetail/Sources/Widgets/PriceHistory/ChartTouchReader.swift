@@ -48,27 +48,30 @@ struct ChartTouchReader: UIViewRepresentable {
   }
 }
 
-private final class ChartScrubRecognizer: UIGestureRecognizer, UIGestureRecognizerDelegate {
+struct ScrubPressRule: Equatable, Sendable {
+  static let standard = ScrubPressRule(minimumPressDuration: 0.3, allowableMovement: 10.0)
+
+  let minimumPressDuration: TimeInterval
+  let allowableMovement: CGFloat
+
+  func hasDrifted(from origin: CGPoint, to point: CGPoint) -> Bool {
+    hypot(point.x - origin.x, point.y - origin.y) > allowableMovement
+  }
+}
+
+private final class ChartScrubRecognizer: UIGestureRecognizer {
   var onChange: (([CGFloat]) -> Void)?
 
-  private static let slop: CGFloat = 5.0
-
+  private let rule = ScrubPressRule.standard
   private var origin: CGPoint?
   private var tracked: [UITouch] = []
+  private var pressTimer: Timer?
 
   override init(target: Any?, action: Selector?) {
     super.init(target: target, action: action)
-    delegate = self
     cancelsTouchesInView = false
     delaysTouchesBegan = false
     delaysTouchesEnded = false
-  }
-
-  func gestureRecognizer(
-    _ gestureRecognizer: UIGestureRecognizer,
-    shouldBeRequiredToFailBy other: UIGestureRecognizer
-  ) -> Bool {
-    other is UIPanGestureRecognizer && other.view is UIScrollView
   }
 
   override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent) {
@@ -76,10 +79,21 @@ private final class ChartScrubRecognizer: UIGestureRecognizer, UIGestureRecogniz
     for touch in touches where tracked.contains(touch) == false {
       tracked.append(touch)
     }
-    if origin == nil, let first = tracked.first, let view {
-      origin = first.location(in: view)
+
+    guard state == .possible else {
+      evaluate()
+      return
     }
-    evaluate()
+    guard tracked.count == 1, let view, let first = tracked.first else {
+      fail()
+      return
+    }
+
+    origin = first.location(in: view)
+    pressTimer?.invalidate()
+    pressTimer = Timer.scheduledTimer(withTimeInterval: rule.minimumPressDuration, repeats: false) { [weak self] _ in
+      MainActor.assumeIsolated { self?.activate() }
+    }
   }
 
   override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent) {
@@ -101,8 +115,24 @@ private final class ChartScrubRecognizer: UIGestureRecognizer, UIGestureRecogniz
 
   override func reset() {
     super.reset()
+    pressTimer?.invalidate()
+    pressTimer = nil
     tracked.removeAll()
     origin = nil
+    onChange?([])
+  }
+
+  private func activate() {
+    pressTimer = nil
+    guard state == .possible, tracked.count == 1, let view, let first = tracked.first else { return }
+    state = .began
+    onChange?([first.location(in: view).x])
+  }
+
+  private func fail() {
+    pressTimer?.invalidate()
+    pressTimer = nil
+    state = .failed
     onChange?([])
   }
 
@@ -110,34 +140,27 @@ private final class ChartScrubRecognizer: UIGestureRecognizer, UIGestureRecogniz
     guard let view else { return }
     let locations = tracked.map { $0.location(in: view) }
 
-    guard locations.isEmpty == false else {
-      state = (state == .began || state == .changed) ? .ended : .failed
-      onChange?([])
-      return
-    }
-
-    if locations.count >= 2 {
-      state = (state == .began || state == .changed) ? .cancelled : .failed
-      onChange?([])
-      return
-    }
-
     switch state {
     case .possible:
-      guard let origin, let point = locations.first else { return }
-      let dx = abs(point.x - origin.x)
-      let dy = abs(point.y - origin.y)
-      if dy > Self.slop, dy >= dx {
-        state = .failed
-        onChange?([])
-      } else if dx > Self.slop {
-        state = .began
-        onChange?(locations.map(\.x))
+      guard let origin, let point = locations.first, locations.count == 1 else {
+        fail()
+        return
+      }
+      if rule.hasDrifted(from: origin, to: point) {
+        fail()
       }
 
     case .began, .changed:
-      state = .changed
-      onChange?(locations.map(\.x))
+      if locations.isEmpty {
+        state = .ended
+        onChange?([])
+      } else if locations.count >= 2 {
+        state = .cancelled
+        onChange?([])
+      } else {
+        state = .changed
+        onChange?(locations.map(\.x))
+      }
 
     default:
       break

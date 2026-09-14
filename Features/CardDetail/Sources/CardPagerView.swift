@@ -6,20 +6,21 @@ import SwiftUI
 public struct CardPagerView: View {
   @Bindable var store: StoreOf<CardPagerFeature>
   @State private var scrolledId: UUID?
-  
-  private struct Page: Identifiable {
-    let id: UUID
-    let store: StoreOf<CardDetailFeature>
-  }
-  
+
   public var body: some View {
     ScrollView(.horizontal, showsIndicators: false) {
       LazyHStack(spacing: 0) {
-        ForEach(Array(store.scope(state: \.cards, action: \.cards).map { Page(id: $0.state.id, store: $0) })) { page in
-          CardDetailView(store: page.store)
-            .containerRelativeFrame(.horizontal)
-            .geometryGroup()
-            .accessibilityIdentifier("cardDetail.page.\(page.store.content.card.collectorNumber)")
+        // Scope a store only for the pages the lazy stack actually builds. Mapping the whole
+        // `store.scope(state: \.cards, action: \.cards)` collection created a child store per
+        // card, and every child store re-reads its state on every action anywhere in the app,
+        // so each swipe's burst of actions cost time proportional to the size of the result set.
+        ForEach(store.cards.ids, id: \.self) { id in
+          if let cardStore = store.scope(\.cards[id: id], action: \.cards[id: id]) {
+            CardDetailView(store: cardStore)
+              .containerRelativeFrame(.horizontal)
+              .geometryGroup()
+              .accessibilityIdentifier("cardDetail.page.\(cardStore.content.card.collectorNumber)")
+          }
         }
       }
       .scrollTargetLayout()

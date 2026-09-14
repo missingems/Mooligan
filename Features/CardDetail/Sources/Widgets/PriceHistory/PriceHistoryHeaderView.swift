@@ -3,120 +3,91 @@ import SwiftUI
 
 struct PriceHistoryHeaderView: View {
   let title: String
-  let currencyCode: String
-  let isLoading: Bool
-  let derivedData: ChartDerivedData
+  let summary: [PriceHistoryDisplay.SummaryItem]
   let interaction: ChartInteraction
-  @Binding var summaryTop: CGFloat
+  @Binding var summaryFrame: CGRect
 
   @Environment(\.displayScale) private var displayScale
 
   private static let columnSpacing: CGFloat = 13.0
-  private static let tightColumnSpacing: CGFloat = 10.0
+
+  /// Lays out exactly like a real column, so it gives the row its height without any prices.
+  private static let sizingItem = PriceHistoryDisplay.SummaryItem(kind: .normal, label: " ", priceText: " ", change: nil)
 
   var body: some View {
     VStack(alignment: .leading, spacing: 8.0) {
       Text(title).font(.headline)
-      summary
+      summaryRow
     }
     .frame(maxWidth: .infinity, alignment: .leading)
-    .overlay(alignment: .topTrailing) {
-      if isLoading {
-        ProgressView()
-      }
-    }
   }
 
   private var isScrubbing: Bool { interaction.scrubbedDate != nil }
 
-  private var summary: some View {
-    ProposedWidthLayout {
-      VStack(alignment: .leading, spacing: 5.0) {
-        ViewThatFits(in: .horizontal) {
-          columns(spacing: Self.columnSpacing)
-          columns(spacing: Self.tightColumnSpacing)
-        }
-        .onGeometryChange(for: CGFloat.self) { geometry in
-          geometry.frame(in: .named(ScrubLayout.space)).minY.snapped(to: displayScale)
-        } action: { top in
-          if summaryTop != top { summaryTop = top }
-        }
+  private var summaryRow: some View {
+    // The row's size comes from a stand-in column that never changes; the real columns sit in an
+    // overlay. Prices and change pills arriving then re-lay out only this row, instead of making
+    // the card detail page and the pager around it measure everything again.
+    column(Self.sizingItem)
+      .hidden()
+      .lineLimit(1)
+      .frame(maxWidth: .infinity, alignment: .leading)
+      .overlay(alignment: .topLeading) { columns }
+      .onGeometryChange(for: CGRect.self) { [displayScale] geometry in
+        let frame = geometry.frame(in: .named(ScrubLayout.space))
+        return CGRect(origin: frame.origin.snapped(to: displayScale), size: frame.size.snapped(to: displayScale))
+      } action: { frame in
+        if summaryFrame != frame { summaryFrame = frame }
       }
-    }
     .opacity(isScrubbing ? 0.35 : 1.0)
     .saturation(isScrubbing ? 0.0 : 1.0)
     .animation(ScrubLayout.slide, value: isScrubbing)
-    .transaction { $0.animation = $0.animation == ScrubLayout.slide ? $0.animation : nil }
     .accessibilityElement(children: .combine)
+    .accessibilityIdentifier("priceHistory.summary")
   }
 
-  private func columns(spacing: CGFloat) -> some View {
-    HStack(alignment: .top, spacing: spacing) {
-      if derivedData.series.isEmpty {
-        ForEach(PriceChartStyle.displayOrder, id: \.self) { kind in
-          column(kind: kind, readout: nil)
-        }
-      }
-
-      ForEach(derivedData.series) { series in
-        column(kind: series.kind, readout: series.latestReadout)
+  private var columns: some View {
+    HStack(alignment: .top, spacing: Self.columnSpacing) {
+      ForEach(summary) { item in
+        column(item)
       }
     }
     .lineLimit(1)
     .fixedSize(horizontal: false, vertical: true)
   }
 
-  private func column(kind: PriceSeriesKind, readout: PriceReadout?) -> some View {
+  private func column(_ item: PriceHistoryDisplay.SummaryItem) -> some View {
     VStack(alignment: .leading, spacing: 3.0) {
       HStack(alignment: .center, spacing: 5.0) {
         ZStack(alignment: .leading) {
-          PriceChangePill(change: nil)
+          PriceChangePill(change: .flat)
             .frame(width: 0.0, alignment: .leading)
             .hidden()
 
-          Group {
-            if let readout {
-              Text(readout.point.amount, format: PriceChartStyle.price(currencyCode))
-            } else {
-              Text(PriceChartStyle.missingValue)
-            }
-          }
-          .font(.body)
-          .fontWeight(.medium)
-          .monospaced()
+          Text(item.priceText)
+            .font(.body)
+            .fontWeight(.medium)
+            .monospaced()
+            .id(item.priceText)
+            .transition(.opacity)
         }
 
-        if let change = readout?.change {
+        if let change = item.change {
           PriceChangePill(change: change)
-            .monospacedDigit()
             .fixedSize()
+            .transition(.opacity)
         }
       }
-      
+
       HStack(spacing: 5.0) {
-        FinishSwatch(kind: kind)
-        
-        Text(PriceChartStyle.label(for: kind))
+        FinishSwatch(kind: item.kind)
+
+        Text(item.label)
           .font(.caption)
           .fontWeight(.medium)
           .foregroundStyle(.secondary)
       }
     }
-  }
-}
-
-struct ProposedWidthLayout: Layout {
-  func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
-    let width = proposal.width ?? 0.0
-    let height = subviews.first?.sizeThatFits(ProposedViewSize(width: width, height: nil)).height ?? 0.0
-    return CGSize(width: width, height: height)
-  }
-
-  func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
-    subviews.first?.place(
-      at: bounds.origin,
-      proposal: ProposedViewSize(width: bounds.width, height: bounds.height)
-    )
   }
 }
 

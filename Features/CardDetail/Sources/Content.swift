@@ -29,18 +29,7 @@ public struct Content: Equatable, Sendable {
   let viewRulingsLabel: String
   let legalityLabel: String
   let variantLabel: String
-  let purchaseLabel: String
-  let purchaseSubtitleLabel: String
-  let priceHistoryLabel: String
-  let priceHistoryFinishesLabel: String
-  let priceHistoryLowLabel: String
-  let priceHistoryHighLabel: String
-  let priceHistorySpreadLabel: String
-  let priceHistoryBuylistLabel: String
-  let priceHistoryUnavailableLabel: String
-  let usdLabel: String
-  let usdFoilLabel: String
-  let usdEtchedLabel: String
+  let priceHistoryLabels: PriceHistoryLabels
   let artistSelectionLabel: String
   let rulingSelectionLabel: String
   let relatedSelectionLabel: String
@@ -60,20 +49,7 @@ public struct Content: Equatable, Sendable {
     legalityLabel = String(localized: "Legality")
     infoLabel = String(localized: "Information")
     variantLabel = String(localized: "Prints")
-    purchaseLabel = String(localized: "Where to Buy")
-    purchaseSubtitleLabel = String(localized: "Live prices from Scryfall")
-    priceHistoryLabel = String(localized: "Price History")
-    // Attribution only. The line under the title now carries the price move,
-    // which is the thing a reader actually looks at a price chart to learn.
-    priceHistoryFinishesLabel = String(localized: "Finishes")
-    priceHistoryLowLabel = String(localized: "Low")
-    priceHistoryHighLabel = String(localized: "High")
-    priceHistorySpreadLabel = String(localized: "Spread")
-    priceHistoryBuylistLabel = String(localized: "Buy List")
-    priceHistoryUnavailableLabel = String(localized: "No data available")
-    usdLabel = String(localized: "Regular")
-    usdFoilLabel = String(localized: "Foil")
-    usdEtchedLabel = String(localized: "Etched Foil")
+    priceHistoryLabels = PriceHistoryLabels()
     artistSelectionLabel = String(localized: "Artist")
     rulingSelectionLabel = String(localized: "Rulings")
     relatedSelectionLabel = String(localized: "Related")

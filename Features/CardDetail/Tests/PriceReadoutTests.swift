@@ -50,7 +50,7 @@ struct PriceReadoutTests {
     let interaction = ChartInteraction()
 
     interaction.scrubbedDate = start.addingTimeInterval(2 * day)
-    let readout = interaction.readout(for: subject)
+    let readout = interaction.pointIndex(for: subject).flatMap { subject.readout(at: $0, isScrubbing: true) }
 
     #expect(readout?.point.amount == decimal("3.00"))
     #expect(readout?.change?.start.amount == decimal("2.00"))
@@ -63,12 +63,12 @@ struct PriceReadoutTests {
     let interaction = ChartInteraction()
 
     interaction.scrubbedDate = start
-    #expect(interaction.readout(for: subject)?.point.amount == decimal("1.00"))
+    #expect(interaction.pointIndex(for: subject).map { subject.points[$0].amount } == decimal("1.00"))
 
     interaction.scrubbedDate = nil
-    let readout = interaction.readout(for: subject)
-    #expect(readout?.point.amount == decimal("4.00"))
-    #expect(readout?.isScrubbing == false)
+    #expect(interaction.pointIndex(for: subject) == subject.points.indices.last)
+    #expect(subject.latestReadout?.point.amount == decimal("4.00"))
+    #expect(subject.latestReadout?.isScrubbing == false)
   }
 
   @Test func whenScrubbingAcrossContiguousDays_theCachedLookupShouldStayCorrect() {
@@ -77,16 +77,16 @@ struct PriceReadoutTests {
 
     for index in 0..<30 {
       interaction.scrubbedDate = subject.points[index].date
-      #expect(interaction.readout(for: subject)?.point == subject.points[index])
+      #expect(interaction.pointIndex(for: subject) == index)
     }
 
     for index in (0..<30).reversed() {
       interaction.scrubbedDate = subject.points[index].date
-      #expect(interaction.readout(for: subject)?.point == subject.points[index])
+      #expect(interaction.pointIndex(for: subject) == index)
     }
 
     interaction.scrubbedDate = subject.points[27].date
-    #expect(interaction.readout(for: subject)?.point == subject.points[27])
+    #expect(interaction.pointIndex(for: subject) == 27)
   }
 
   @Test func anchorSeries_shouldBeTheFirstFinishDrawn() {

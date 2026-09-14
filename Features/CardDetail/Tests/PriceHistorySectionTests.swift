@@ -314,4 +314,40 @@ struct PriceHistorySectionTests {
     }
     #expect(section.buylistQuote == nil)
   }
+
+  @Test func zeroPricedDaysShouldBeDroppedSoTheChartDoesNotPlungeToZero() {
+    let state = PriceHistorySection.makeState(
+      card: card(),
+      history: history([
+        .normal: [
+          point(daysBefore: 4, "200.00"),
+          point(daysBefore: 3, "0.00"),
+          point(daysBefore: 2, "205.00"),
+          point(daysBefore: 1, "210.00"),
+        ],
+      ]),
+      releases: [],
+      today: today
+    )
+
+    guard case let .data(section) = state else {
+      Issue.record("expected data")
+      return
+    }
+    #expect(section.series.first?.points.map(\.amount) == [decimal("200.00"), decimal("205.00"), decimal("210.00")])
+    #expect(section.priceRange.lowerBound == 200.0)
+  }
+
+  @Test func whenEveryDayIsZeroPriced_shouldBeUnavailable() {
+    let state = PriceHistorySection.makeState(
+      card: card(),
+      history: history([
+        .normal: [point(daysBefore: 2, "0.00"), point(daysBefore: 1, "0.00")],
+      ]),
+      releases: [],
+      today: today
+    )
+
+    #expect(state == .unavailable)
+  }
 }

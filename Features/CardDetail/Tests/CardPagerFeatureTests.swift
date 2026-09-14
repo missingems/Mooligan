@@ -26,6 +26,8 @@ import Testing
       )
     ) {
       CardPagerFeature()
+    } withDependencies: {
+      $0.continuousClock = ImmediateClock()
     }
   }
 
@@ -88,6 +90,48 @@ import Testing
     )
 
     await store.finish()
+  }
+
+  @Test func whenSettlingOnAnotherCard_shouldMovePriceHistoryLoadingToIt() async {
+    let store = makeStore()
+    store.exhaustivity = .off
+
+    // Given the full set is loaded and the first card is settled.
+    await store.send(.viewAppeared)
+    await store.receive(.currentCardSettled(id: firstCard.id))
+    await store.receive(.cards(.element(id: firstCard.id, action: .priceHistoryAppeared)))
+    await store.finish()
+    await store.skipReceivedActions()
+    #expect(store.state.cards.count == 2)
+
+    // When the user swipes to the second card.
+    await store.send(.currentCardSettled(id: secondCard.id))
+
+    // Then the first card's load is cancelled and the second card's starts.
+    await store.receive(.cards(.element(id: firstCard.id, action: .priceHistoryDisappeared)))
+    await store.receive(.cards(.element(id: secondCard.id, action: .priceHistoryAppeared)))
+    #expect(store.state.settledCardID == secondCard.id)
+
+    await store.finish()
+  }
+
+  @Test func whenSettlingOnTheSameCardAgain_shouldNotRestartItsPriceHistoryLoad() async {
+    let store = makeStore()
+    store.exhaustivity = .off
+
+    // Given the first card has settled and finished loading.
+    await store.send(.currentCardSettled(id: firstCard.id))
+    await store.finish()
+    await store.skipReceivedActions()
+    #expect(store.state.settledCardID == firstCard.id)
+
+    // When the pager comes to rest on the same card again, exhaustively, so any price history
+    // action sent to it would fail the test.
+    store.exhaustivity = .on
+    await store.send(.currentCardSettled(id: firstCard.id))
+    await store.receive(
+      .cards(.element(id: firstCard.id, action: .viewAppeared(initialAction: .fetchAdditionalInformation(card: firstCard))))
+    )
   }
 
   @Test func whenSettlingOnNoCard_shouldDoNothing() async {

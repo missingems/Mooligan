@@ -10,9 +10,12 @@ final class ChartInteraction {
 
   var restingNeedleX: CGFloat?
 
-  var plotTopY: CGFloat?
+  /// The chart's plot area in its own coordinate space; `.zero` until the chart has laid out.
+  var plot: CGRect = .zero
 
-  var plotBottomY: CGFloat?
+  var plotTopY: CGFloat? { plot.isEmpty ? nil : plot.minY }
+
+  var plotBottomY: CGFloat? { plot.isEmpty ? nil : plot.maxY }
 
   var anchorX: CGFloat? { needleX ?? restingNeedleX }
 
@@ -25,11 +28,9 @@ final class ChartInteraction {
   @ObservationIgnored
   private var lastFoundIndices: [String: Int] = [:]
 
-  func readout(for series: PriceHistorySection.Series) -> PriceReadout? {
-    guard let scrubbedDate, let index = index(in: series, nearest: scrubbedDate) else {
-      return series.latestReadout
-    }
-    return series.readout(at: index, isScrubbing: true)
+  func pointIndex(for series: PriceHistorySection.Series) -> Int? {
+    guard let scrubbedDate else { return series.points.indices.last }
+    return index(in: series, nearest: scrubbedDate)
   }
 
   func point(in series: PriceHistorySection.Series, at date: Date) -> PricePoint? {

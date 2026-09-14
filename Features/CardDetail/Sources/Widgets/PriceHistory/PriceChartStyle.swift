@@ -103,12 +103,78 @@ enum PriceChartStyle {
       .blendMode(vibrantBlendMode(colorScheme))
   }
 
+  static func vibrantDotTint(_ colorScheme: ColorScheme) -> Color {
+    colorScheme == .dark ? Color.white.opacity(0.3) : Color.black.opacity(0.35)
+  }
+
+  static func borderGradient(_ colorScheme: ColorScheme) -> LinearGradient {
+    let tint = colorScheme == .dark ? Color.white.opacity(0.169) : Color.black.opacity(0.225)
+    return LinearGradient(colors: [tint.opacity(0.0), tint], startPoint: .top, endPoint: .bottom)
+  }
+
   static func vibrantLabelTint(_ colorScheme: ColorScheme) -> Color {
     colorScheme == .dark ? Color.white.opacity(0.45) : Color.black.opacity(0.5)
   }
 
   static func vibrantLabelColor(_ colorScheme: ColorScheme) -> some ShapeStyle {
     vibrantLabelTint(colorScheme).blendMode(vibrantBlendMode(colorScheme))
+  }
+
+  struct PriceAxis: Equatable, Sendable {
+    let domain: ClosedRange<Double>
+    let ticks: [Double]
+    let fractionDigits: Int
+    var tickLabels: [String] = []
+
+    func labeled(currencyCode: String) -> PriceAxis {
+      var axis = self
+      axis.tickLabels = ticks.map { $0.formatted(PriceChartStyle.axisPrice(currencyCode, fractionDigits: fractionDigits)) }
+      return axis
+    }
+
+    func label(at index: Int) -> String {
+      tickLabels.indices.contains(index) ? tickLabels[index] : ""
+    }
+  }
+
+  static let fallbackPriceAxis = PriceAxis(domain: 0.0...1.0, ticks: [0.0, 0.5, 1.0], fractionDigits: 2)
+
+  static func priceAxis(for prices: ClosedRange<Double>, intervals: Double = 3.0) -> PriceAxis {
+    let low = max(prices.lowerBound, 0.0)
+    let high = prices.upperBound
+    guard low.isFinite, high.isFinite, high >= low, high > 0.0 else { return fallbackPriceAxis }
+
+    let span = max(high - low, high * 0.1, 0.01)
+    let step = niceStep(span / intervals)
+
+    var lower = (low / step).rounded(.down) * step
+    if low - lower < step * 0.5 { lower -= step }
+    lower = max(lower, 0.0)
+
+    var upper = (high / step).rounded(.up) * step
+    if upper - high < step * 0.5 { upper += step }
+
+    let count = Int(((upper - lower) / step).rounded())
+    let ticks = (0...count).map { index in
+      ((lower + Double(index) * step) / step).rounded() * step
+    }
+    let isWhole = ticks.allSatisfy { ($0 * 100.0).rounded().truncatingRemainder(dividingBy: 100.0) == 0.0 }
+
+    return PriceAxis(domain: lower...upper, ticks: ticks, fractionDigits: isWhole ? 0 : 2)
+  }
+
+  static func niceStep(_ raw: Double) -> Double {
+    guard raw.isFinite, raw > 0.0 else { return 1.0 }
+    let magnitude = pow(10.0, (log10(raw)).rounded(.down))
+    let fraction = raw / magnitude
+    let nice: Double = switch fraction {
+    case ...1.0: 1.0
+    case ...2.0: 2.0
+    case ...2.5: 2.5
+    case ...5.0: 5.0
+    default: 10.0
+    }
+    return nice * magnitude
   }
 
   static func spanInDays(of dates: ClosedRange<Date>) -> Int {

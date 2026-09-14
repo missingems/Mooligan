@@ -1,4 +1,3 @@
-import Charts
 import DesignComponents
 import Networking
 import SwiftUI
@@ -6,8 +5,7 @@ import SwiftUI
 struct PriceHistoryChartOverlay: View {
   let derivedData: ChartDerivedData
   let interaction: ChartInteraction
-  let proxy: ChartProxy
-  let plot: CGRect
+  let scale: PlotScale
 
   @Environment(\.colorScheme) private var colorScheme
 
@@ -19,27 +17,19 @@ struct PriceHistoryChartOverlay: View {
       releaseBand
       ChartTouchReader { positions in updateInteraction(positions) }
     }
-    .sensoryFeedback(trigger: scrubbedDay) { _, current in
-      current == nil ? nil : .selection
+    .sensoryFeedback(trigger: scrubbedDay) { previous, current in
+      guard current != nil else { return nil }
+      return previous == nil ? .impact(weight: .medium) : .selection
     }
     .onChange(of: restingNeedleX, initial: true) {
       interaction.restingNeedleX = restingNeedleX
     }
-    .onChange(of: plot.minY, initial: true) {
-      interaction.plotTopY = plot.minY
-    }
-    .onChange(of: plot.maxY, initial: true) {
-      interaction.plotBottomY = plot.maxY
-    }
   }
 
+  private var plot: CGRect { scale.plot }
+
   private var restingNeedleX: CGFloat? {
-    guard let date = derivedData.anchorSeries?.points.last?.date,
-          let x = proxy.position(forX: date), x.isFinite
-    else {
-      return nil
-    }
-    return plot.minX + x
+    derivedData.anchorSeries?.points.last.flatMap { scale.x(for: $0.date) }
   }
 
   private var isScrubbing: Bool { interaction.scrubbedDate != nil }
@@ -49,24 +39,20 @@ struct PriceHistoryChartOverlay: View {
     return derivedData.anchorSeries.flatMap { interaction.point(in: $0, at: scrubbedDate)?.date }
   }
 
-  private var focusDate: Date? {
-    interaction.scrubbedDate ?? derivedData.anchorSeries?.points.last?.date
-  }
-
   @ViewBuilder private var needle: some View {
-    if let focusDate {
+    if let focusDate = interaction.scrubbedDate {
       ForEach(derivedData.plotSeries) { series in
         if let first = series.points.first?.date,
            let last = series.points.last?.date,
            let value = series.value(at: focusDate),
-           let x = proxy.position(forX: min(max(focusDate, first), last)),
-           let y = proxy.position(forY: value),
-           x.isFinite, y.isFinite {
+           let x = scale.x(for: min(max(focusDate, first), last)),
+           let y = scale.y(for: value) {
           Circle()
             .fill(PriceChartStyle.color(for: series.kind))
             .frame(width: 8.44, height: 8.44)
-            .position(x: plot.minX + x, y: plot.minY + y)
+            .position(x: x, y: y)
             .allowsHitTesting(false)
+            .transition(.opacity)
         }
       }
     }
@@ -86,8 +72,8 @@ struct PriceHistoryChartOverlay: View {
     let last = max(plot.maxX - half, first)
 
     return derivedData.releases.compactMap { release in
-      guard let x = proxy.position(forX: release.date), x.isFinite else { return nil }
-      return (release, min(max(plot.minX + x, first), last))
+      guard let x = scale.x(for: release.date) else { return nil }
+      return (release, min(max(x, first), last))
     }
   }
 
@@ -108,9 +94,9 @@ struct PriceHistoryChartOverlay: View {
       return
     }
 
-    let clamped = min(max(x - plot.minX, 0.0), plot.width)
-    guard let date = proxy.value(atX: clamped, as: Date.self) else { return }
+    let clamped = min(max(x, plot.minX), plot.maxX)
+    guard let date = scale.date(atX: clamped) else { return }
     interaction.scrubbedDate = date
-    interaction.needleX = plot.minX + clamped
+    interaction.needleX = clamped
   }
 }

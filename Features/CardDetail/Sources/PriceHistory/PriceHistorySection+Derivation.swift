@@ -24,7 +24,21 @@ extension PriceHistorySection {
     chartRequest,
     PriceSeriesRequest(provider: buylistProvider, listType: .retail),
     PriceSeriesRequest(provider: buylistProvider, listType: .buylist),
+    PriceSeriesRequest(provider: .cardmarket, listType: .retail),
   ]
+
+  public static func retailQuotes(
+    from histories: [PriceSeriesRequest: PriceHistory]
+  ) -> [PriceProvider: RetailQuote] {
+    histories.reduce(into: [:]) { result, entry in
+      guard entry.key.listType == .retail else { return }
+      let prices = entry.value.series.compactMapValues { points in
+        points.last(where: { $0.amount > 0 })?.amount
+      }
+      guard prices.isEmpty == false else { return }
+      result[entry.key.provider] = RetailQuote(currency: entry.value.currency, prices: prices)
+    }
+  }
 
   public static func buylistQuote(
     from histories: [PriceSeriesRequest: PriceHistory]
@@ -40,6 +54,7 @@ extension PriceHistorySection {
     card: Card,
     history: PriceHistory?,
     buylistQuote: BuylistQuote? = nil,
+    retailQuotes: [PriceProvider: RetailQuote] = [:],
     releases: [SetReleaseMarker],
     today: Date = PriceHistorySection.today
   ) -> PriceHistoryState {
@@ -51,7 +66,7 @@ extension PriceHistorySection {
       Series(
         kind: kind,
         points: withLiveLatest(
-          onOrAfterRelease(history.series[kind] ?? [], releaseDate: releaseDate),
+          onOrAfterRelease(pricedPoints(history.series[kind] ?? []), releaseDate: releaseDate),
           scryfallQuote: scryfallQuote(card: card, kind: kind),
           today: today
         )
@@ -62,14 +77,27 @@ extension PriceHistorySection {
 
     let bounds = PriceHistorySection(series: series, currency: history.currency, releases: releases)
 
+    var quotes = retailQuotes
+    let chartPrices = Dictionary(uniqueKeysWithValues: series.compactMap { series in
+      series.points.last.map { (series.kind, $0.amount) }
+    })
+    if chartPrices.isEmpty == false {
+      quotes[chartProvider] = RetailQuote(currency: history.currency, prices: chartPrices)
+    }
+
     let section = PriceHistorySection(
       series: series,
       currency: history.currency,
       releases: releases.filter { bounds.dateRange.contains($0.date) },
-      buylistQuote: buylistQuote
+      buylistQuote: buylistQuote,
+      retailQuotes: quotes
     )
 
     return .data(section)
+  }
+
+  static func pricedPoints(_ points: [PricePoint]) -> [PricePoint] {
+    points.filter { $0.amount > 0 }
   }
 
   static func onOrAfterRelease(_ points: [PricePoint], releaseDate: Date?) -> [PricePoint] {
