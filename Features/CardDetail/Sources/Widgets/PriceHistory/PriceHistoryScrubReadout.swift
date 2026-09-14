@@ -32,7 +32,14 @@ struct PriceHistoryScrubReadout: View {
       .opacity(isShown ? 1.0 : 0.0)
       .frame(width: max(frame.width, 0.0), height: max(frame.height, 0.0))
       .clipShape(Self.shape)
-      .glassEffect(.regular, in: Self.shape)
+      .background {
+        // Glass only while the readout is out. The readout itself stays in the hierarchy so it can
+        // slide out of the summary, but glass left on it while hidden, even at zero opacity or as
+        // identity glass, was resolved again on every frame of every scroll and pager swipe.
+        if isShown {
+          Color.clear.glassEffect(.regular, in: Self.shape)
+        }
+      }
       .opacity(isShown ? 1.0 : 0.0)
       .offset(x: frame.minX, y: frame.minY)
       .animation(ScrubLayout.slide, value: isScrubbing)

@@ -25,8 +25,13 @@ struct InformationView: View, Equatable {
       Text(title).font(.headline)
       
       ScrollView(.horizontal, showsIndicators: false) {
-        HStack(spacing: 5.0) {
-          ForEach(widgets) { $0 }
+        // One container for the row's glass. On their own, each tile got a container of its own,
+        // and SwiftUI resolved every one of them again on each frame of a scroll or a pager swipe.
+        // Zero spacing keeps the tiles from merging into one shape.
+        GlassEffectContainer(spacing: 0.0) {
+          HStack(spacing: 5.0) {
+            ForEach(widgets) { $0 }
+          }
         }
       }
       .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
