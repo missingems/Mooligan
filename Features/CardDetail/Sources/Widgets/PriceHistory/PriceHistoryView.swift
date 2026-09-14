@@ -129,8 +129,16 @@ struct PriceHistoryView: View {
   private var chartContent: some View {
     ZStack {
       if display.status == .loading {
-        PriceHistoryChartPlaceholder()
-          .transition(.opacity)
+        // Already the chart the prices will land in: the last three months along the bottom and an
+        // axis estimated from the card's Scryfall price, so only the lines and the labels change.
+        PriceHistoryChart(
+          derivedData: display.chart,
+          axis: display.axis,
+          interaction: interaction,
+          isLoading: true
+        )
+        .id(colorScheme)
+        .transition(.opacity)
       } else {
         PriceHistoryChart(
           derivedData: display.chart,

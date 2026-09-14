@@ -70,19 +70,23 @@ extension EnvironmentValues {
   @Entry var priceHistoryPlaceholderAnimates: Bool = true
 }
 
-struct PriceHistoryChartPlaceholder: View {
+/// The dot matrix with a wave of brighter, larger dots rolling across it, shown while prices load.
+struct PriceHistoryLoadingDotMatrix: View {
+  let plot: CGRect?
+  let tickRows: [CGFloat]
+
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
   @Environment(\.priceHistoryPlaceholderAnimates) private var animates
   @State private var phase: CGFloat = -1.0
 
   var body: some View {
-    PriceHistoryDotMatrix(plot: nil, tickRows: [])
+    PriceHistoryDotMatrix(plot: plot, tickRows: tickRows)
       .overlay {
         if animates, reduceMotion == false {
-          // A wave of brighter, larger dots rolling across the matrix. Both matrices are drawn once
-          // and the wave is a gradient mask sliding over the bright one, so only an offset animates;
-          // redrawing the canvas itself would be a GPU draw on the main thread every frame.
-          PriceHistoryDotMatrix(plot: nil, tickRows: [], isHighlighted: true)
+          // Both matrices are drawn once and the wave is a gradient mask sliding over the bright one,
+          // so only an offset animates; redrawing the canvas itself would be a GPU draw on the main
+          // thread every frame.
+          PriceHistoryDotMatrix(plot: plot, tickRows: tickRows, isHighlighted: true)
             .mask {
               LinearGradient(stops: Self.wave, startPoint: .leading, endPoint: .trailing)
                 .visualEffect { [phase] content, proxy in

@@ -169,8 +169,10 @@ extension PriceHistoryDisplay {
       }
     }
 
+    // Without history (loading, or none to be had) the chart still spans the last three months, and
+    // its axis is estimated from the Scryfall prices, so landing prices only adjust it.
     let axis = (chart.plotSeries.isEmpty
-      ? PriceChartStyle.fallbackPriceAxis
+      ? PriceChartStyle.estimatedPriceAxis(around: quotes.values.map(\.doubleValue))
       : PriceChartStyle.priceAxis(for: chart.priceRange)
     ).labeled(currencyCode: currency)
 

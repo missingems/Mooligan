@@ -84,7 +84,6 @@ struct PriceChartStyleTests {
 
     #expect(axis.ticks == [0.0, 20.0, 40.0, 60.0, 80.0])
     #expect(axis.domain == 0.0...80.0)
-    #expect(axis.fractionDigits == 0)
   }
 
   @Test func priceAxisShouldKeepAHighPricedCardAwayFromZero() {
@@ -106,9 +105,15 @@ struct PriceChartStyleTests {
     }
   }
 
-  @Test func priceAxisShouldUseCentsOnlyForFractionalSteps() {
-    #expect(PriceChartStyle.priceAxis(for: 0.12...0.45).fractionDigits == 2)
-    #expect(PriceChartStyle.priceAxis(for: 20.23...41.3).fractionDigits == 0)
+  @Test func axisLabelsShouldAlwaysShowTwoDecimals() {
+    let twoDecimals = FloatingPointFormatStyle<Double>.Currency(code: "USD").presentation(.narrow).precision(.fractionLength(2))
+
+    for range in [0.12...0.45, 20.23...41.3, 980.0...1_450.0] {
+      let axis = PriceChartStyle.priceAxis(for: range).labeled(currencyCode: "USD")
+
+      #expect(axis.tickLabels == axis.ticks.map { $0.formatted(twoDecimals) })
+    }
+    #expect(PriceChartStyle.priceAxis(for: 20.23...62.0).labeled(currencyCode: "USD").label(at: 1) == 20.0.formatted(twoDecimals))
   }
 
   @Test func priceAxisShouldNeverGoNegativeOrCollapse() {

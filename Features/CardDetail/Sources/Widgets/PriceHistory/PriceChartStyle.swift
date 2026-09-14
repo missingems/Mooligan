@@ -89,13 +89,11 @@ enum PriceChartStyle {
       .precision(.fractionLength(2))
   }
 
-  static func axisPrice(
-    _ code: String,
-    fractionDigits: Int
-  ) -> FloatingPointFormatStyle<Double>.Currency {
+  /// Axis labels keep two decimals like every other price, whole-dollar ticks included.
+  static func axisPrice(_ code: String) -> FloatingPointFormatStyle<Double>.Currency {
     .currency(code: code)
       .presentation(.narrow)
-      .precision(.fractionLength(fractionDigits))
+      .precision(.fractionLength(2))
   }
 
   static func vibrantBlendMode(_ colorScheme: ColorScheme) -> BlendMode {
@@ -131,12 +129,11 @@ enum PriceChartStyle {
   struct PriceAxis: Equatable, Sendable {
     let domain: ClosedRange<Double>
     let ticks: [Double]
-    let fractionDigits: Int
     var tickLabels: [String] = []
 
     func labeled(currencyCode: String) -> PriceAxis {
       var axis = self
-      axis.tickLabels = ticks.map { $0.formatted(PriceChartStyle.axisPrice(currencyCode, fractionDigits: fractionDigits)) }
+      axis.tickLabels = ticks.map { $0.formatted(PriceChartStyle.axisPrice(currencyCode)) }
       return axis
     }
 
@@ -145,7 +142,18 @@ enum PriceChartStyle {
     }
   }
 
-  static let fallbackPriceAxis = PriceAxis(domain: 0.0...1.0, ticks: [0.0, 0.5, 1.0], fractionDigits: 2)
+  static let fallbackPriceAxis = PriceAxis(domain: 0.0...1.0, ticks: [0.0, 0.5, 1.0])
+
+  /// How far either side of the known prices an estimated axis reaches, so a typical three months of
+  /// movement already falls inside it.
+  static let estimatedAxisPadding = 0.15
+
+  /// An axis for before there is any price history, built around the prices already known from
+  /// Scryfall so it reads close to the axis the loaded chart will have.
+  static func estimatedPriceAxis(around prices: [Double]) -> PriceAxis {
+    guard let low = prices.min(), let high = prices.max() else { return fallbackPriceAxis }
+    return priceAxis(for: (low * (1.0 - estimatedAxisPadding))...(high * (1.0 + estimatedAxisPadding)))
+  }
 
   static func priceAxis(for prices: ClosedRange<Double>, intervals: Double = 3.0) -> PriceAxis {
     let low = max(prices.lowerBound, 0.0)
@@ -166,9 +174,7 @@ enum PriceChartStyle {
     let ticks = (0...count).map { index in
       ((lower + Double(index) * step) / step).rounded() * step
     }
-    let isWhole = ticks.allSatisfy { ($0 * 100.0).rounded().truncatingRemainder(dividingBy: 100.0) == 0.0 }
-
-    return PriceAxis(domain: lower...upper, ticks: ticks, fractionDigits: isWhole ? 0 : 2)
+    return PriceAxis(domain: lower...upper, ticks: ticks)
   }
 
   static func niceStep(_ raw: Double) -> Double {

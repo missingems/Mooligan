@@ -154,6 +154,26 @@ struct PriceHistoryDisplayTests {
     #expect(display.widestChange.text.count == frames?.changes.map(\.text.count).max())
   }
 
+  @Test func whileLoading_theChartShouldSpanTheLastThreeMonthsAroundTheScryfallPrice() {
+    let display = PriceHistoryDisplay.loading(
+      card: card(finishes: [.nonfoil, .foil], prices: Card.Prices(usd: "31.80", usdFoil: "240.90")),
+      labels: labels
+    )
+
+    #expect(display.chart.spanInDays == ChartDerivedData.windowInDays)
+    #expect(display.chart.dateRange.upperBound == PriceHistorySection.today)
+    #expect(display.axis.domain.contains(31.80 * (1.0 - PriceChartStyle.estimatedAxisPadding)))
+    #expect(display.axis.domain.contains(240.90 * (1.0 + PriceChartStyle.estimatedAxisPadding)))
+    #expect(display.axis.domain != PriceChartStyle.fallbackPriceAxis.domain)
+    #expect(display.axis.tickLabels.count == display.axis.ticks.count)
+  }
+
+  @Test func withoutAnyKnownPrice_theEstimatedAxisShouldFallBack() {
+    let display = PriceHistoryDisplay.loading(card: card(finishes: [.nonfoil]), labels: labels)
+
+    #expect(display.axis.domain == PriceChartStyle.fallbackPriceAxis.domain)
+  }
+
   @Test func theAxisShouldCarryItsFormattedLabels() {
     let display = PriceHistoryDisplay.make(
       card: card(finishes: [.nonfoil]),
@@ -162,7 +182,7 @@ struct PriceHistoryDisplayTests {
     )
 
     #expect(display.axis.tickLabels.count == display.axis.ticks.count)
-    #expect(display.axis.label(at: 0) == display.axis.ticks[0].formatted(PriceChartStyle.axisPrice("USD", fractionDigits: display.axis.fractionDigits)))
+    #expect(display.axis.label(at: 0) == display.axis.ticks[0].formatted(PriceChartStyle.axisPrice("USD")))
     #expect(display.axis.label(at: 99) == "")
   }
 }

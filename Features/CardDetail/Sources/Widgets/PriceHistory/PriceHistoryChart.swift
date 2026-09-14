@@ -6,6 +6,7 @@ struct PriceHistoryChart: View {
   let derivedData: ChartDerivedData
   let axis: PriceChartStyle.PriceAxis
   let interaction: ChartInteraction
+  var isLoading = false
 
   // The dot matrix and the overlay sit outside `chartBackground` / `chartOverlay` on purpose.
   // Those closures hand out a `ChartProxy` whose anchors are re-resolved whenever the chart
@@ -16,7 +17,12 @@ struct PriceHistoryChart: View {
 
     PriceHistoryChartMarks(derivedData: derivedData, axis: axis, interaction: interaction)
       .background {
-        PriceHistoryDotMatrix(plot: scale.plot, tickRows: axis.ticks.compactMap(scale.y(for:)))
+        let tickRows = axis.ticks.compactMap(scale.y(for:))
+        if isLoading {
+          PriceHistoryLoadingDotMatrix(plot: scale.plot, tickRows: tickRows)
+        } else {
+          PriceHistoryDotMatrix(plot: scale.plot, tickRows: tickRows)
+        }
       }
       .overlay {
         if scale.isMeasured {

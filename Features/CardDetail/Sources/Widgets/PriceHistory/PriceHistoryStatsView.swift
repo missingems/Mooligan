@@ -20,8 +20,8 @@ struct PriceHistoryStatsView: View {
           }
       }
     }
-    .font(.body)
-//    .fontWeight(.medium)
+    .font(.caption)
+    .fontWeight(.medium)
     .lineLimit(1)
   }
 
