@@ -204,7 +204,6 @@ private extension Widget {
 
             Text(counters)
               .font(.body)
-              .fontWeight(.medium)
               .fontDesign(.serif)
               .offset(y: 1)
               .colorInvert()
@@ -245,15 +244,16 @@ private extension Widget {
 
     if let code {
       VStack(alignment: .center, spacing: 3.0) {
-        HStack(spacing: 5.0) {
+        HStack(spacing: 3.0) {
           IconLazyImage(iconURL, tintColor: .primary).frame(width: 25, height: 25)
           Text(code.uppercased())
             .font(.body)
-            .fontWidth(.condensed)
             .fontWeight(.medium)
+            .fontWidth(.condensed)
         }
         .frame(minWidth: 66, minHeight: 34)
         .padding(EdgeInsets(top: 5, leading: 11, bottom: 5, trailing: 11))
+        .glassEffect(.clear)
         .background {
           if let colors {
             LinearGradient(
@@ -261,14 +261,11 @@ private extension Widget {
               startPoint: .topLeading,
               endPoint: .bottomTrailing
             )
-            .overlay(
-              RoundedRectangle(cornerRadius: 21).strokeBorder(.black.opacity(0.31), lineWidth: 1 / strokeScale)
-            )
+            .clipShape(.capsule)
           } else {
-            Color(.systemFill)
+            Color(.systemFill).clipShape(.capsule)
           }
         }
-        .clipShape(.capsule)
 
         Text("\(rarity.rawValue.capitalized)\n ")
           .font(.caption)
@@ -285,7 +282,6 @@ private extension Widget {
         Self.wrappedContent {
           Text(manaValue)
             .font(.body)
-            .fontWeight(.medium)
             .fontDesign(.monospaced)
         }
 

@@ -6,10 +6,11 @@ struct PriceHistoryDotMatrix: View {
   var isHighlighted = false
 
   @Environment(\.colorScheme) private var colorScheme
-
+  @Environment(\.displayScale) private var displayScale
+  
   var body: some View {
+    let radius = 1 / displayScale
     let tint = isHighlighted ? PriceChartStyle.vibrantDotHighlight(colorScheme) : PriceChartStyle.vibrantDotTint(colorScheme)
-    let radius = isHighlighted ? DotMatrixLayout.highlightRadius : DotMatrixLayout.radius
     let blendMode: GraphicsContext.BlendMode = colorScheme == .dark ? .plusLighter : .plusDarker
 
     Canvas { context, size in
@@ -18,7 +19,7 @@ struct PriceHistoryDotMatrix: View {
 
       var path = Path()
       for point in layout.dots() {
-        path.addEllipse(in: CGRect(x: point.x - radius, y: point.y - radius, width: radius * 2.0, height: radius * 2.0))
+        path.addEllipse(in: CGRect(x: point.x - radius, y: point.y - radius, width: radius * displayScale, height: radius * displayScale))
       }
       context.fill(path, with: .color(tint))
     }
@@ -28,9 +29,7 @@ struct PriceHistoryDotMatrix: View {
 }
 
 struct DotMatrixLayout: Equatable {
-  static let targetSpacing: CGFloat = 11.0
-  static let radius: CGFloat = 0.6
-  static let highlightRadius: CGFloat = 1.1
+  static let targetSpacing: CGFloat = 8.0
 
   let plot: CGRect
   let tickRows: [CGFloat]
@@ -70,22 +69,17 @@ extension EnvironmentValues {
   @Entry var priceHistoryPlaceholderAnimates: Bool = true
 }
 
-/// The dot matrix with a wave of brighter, larger dots rolling across it, shown while prices load.
 struct PriceHistoryLoadingDotMatrix: View {
   let plot: CGRect?
   let tickRows: [CGFloat]
 
-  @Environment(\.accessibilityReduceMotion) private var reduceMotion
   @Environment(\.priceHistoryPlaceholderAnimates) private var animates
   @State private var phase: CGFloat = -1.0
 
   var body: some View {
     PriceHistoryDotMatrix(plot: plot, tickRows: tickRows)
       .overlay {
-        if animates, reduceMotion == false {
-          // Both matrices are drawn once and the wave is a gradient mask sliding over the bright one,
-          // so only an offset animates; redrawing the canvas itself would be a GPU draw on the main
-          // thread every frame.
+        if animates {
           PriceHistoryDotMatrix(plot: plot, tickRows: tickRows, isHighlighted: true)
             .mask {
               LinearGradient(stops: Self.wave, startPoint: .leading, endPoint: .trailing)
@@ -103,7 +97,6 @@ struct PriceHistoryLoadingDotMatrix: View {
       .accessibilityHidden(true)
   }
 
-  /// A soft crest: a squared raised cosine, fading to nothing at both edges of the band.
   private static let wave: [Gradient.Stop] = (0...16).map { step in
     let location = Double(step) / 16.0
     let crest = 0.5 + 0.5 * cos((location - 0.5) * 2.0 * .pi)

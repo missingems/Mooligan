@@ -49,7 +49,7 @@ struct PriceHistoryChartOverlay: View {
            let y = scale.y(for: value) {
           Circle()
             .fill(PriceChartStyle.color(for: series.kind))
-            .frame(width: 8.44, height: 8.44)
+            .frame(width: 8, height: 8)
             .position(x: x, y: y)
             .allowsHitTesting(false)
             .transition(.opacity)
@@ -78,12 +78,11 @@ struct PriceHistoryChartOverlay: View {
   }
 
   private func releaseIcon(_ release: SetReleaseMarker) -> some View {
-    IconLazyImage(release.iconURL, tintColor: PriceChartStyle.vibrantLabelTint(colorScheme))
+    IconLazyImage(release.iconURL, tintColor: .primary.opacity(0.67))
       .frame(
         width: PriceChartStyle.releaseIconSize,
         height: PriceChartStyle.releaseIconSize
       )
-      .blendMode(PriceChartStyle.vibrantBlendMode(colorScheme))
       .accessibilityLabel(Text(release.name))
   }
 

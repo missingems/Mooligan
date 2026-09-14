@@ -28,9 +28,12 @@ struct PriceHistoryChartChromeTests {
   }
 
   @Test func dotSpacingShouldSubdivideTheTickGapNearTheTarget() {
-    let layout = DotMatrixLayout(plot: CGRect(x: 0.0, y: 0.0, width: 300.0, height: 200.0), tickRows: [0.0, 50.0])
+    let gap: CGFloat = 50.0
+    let layout = DotMatrixLayout(plot: CGRect(x: 0.0, y: 0.0, width: 300.0, height: 200.0), tickRows: [0.0, gap])
+    let divisions = (gap / layout.spacing).rounded()
 
-    #expect(layout.spacing == 10.0)
+    #expect(abs(layout.spacing * divisions - gap) < 0.001)
+    #expect(abs(layout.spacing - DotMatrixLayout.targetSpacing) <= layout.spacing / 2.0)
   }
 
   @Test func dotsShouldStayInsideThePlot() {

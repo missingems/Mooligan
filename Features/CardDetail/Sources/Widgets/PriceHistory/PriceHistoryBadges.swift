@@ -11,7 +11,8 @@ struct PriceChangePill: View {
     let symbol = Image(systemName: PriceChartStyle.symbol(for: change.direction))
 
     (change.isKnown ? Text("\(symbol)\(change.text)") : Text(change.text))
-      .font(.caption).fontWeight(.medium)
+      .font(.caption2)
+      .fontWeight(.medium)
       .monospacedDigit()
       .foregroundStyle(PriceChartStyle.pillForeground(for: change.direction, in: colorScheme))
       .padding(insets)
@@ -39,22 +40,28 @@ struct GlassCapsuleAction: View {
   let action: () -> Void
 
   var body: some View {
-    HStack(spacing: 5.0) {
+    Group {
       if let systemImage {
         Image(systemName: systemImage)
+          .fontWeight(.medium)
+          .frame(width: 44, height: 44)
+          .contentShape(.circle)
+          .glassEffect(.regular.interactive())
+      } else {
+        // Without an icon there is nothing else to show, so the title is the button.
+        Text(title)
+          .font(.subheadline)
+          .fontWeight(.semibold)
+          .lineLimit(1)
+          .padding(.horizontal, 13.0)
+          .padding(.vertical, 5.0)
+          .contentShape(.capsule)
+          .glassEffect(.regular.interactive(), in: .capsule)
       }
-
-      Text(title)
     }
-    .font(.subheadline)
-    .fontWeight(.semibold)
-    .lineLimit(1)
-    .padding(.horizontal, 13.0)
-    .padding(.vertical, 5.0)
-    .contentShape(.capsule)
-    .glassEffect(.regular.interactive(), in: .capsule)
     .onTapGesture(perform: action)
-    .accessibilityElement(children: .combine)
+    .accessibilityElement(children: .ignore)
+    .accessibilityLabel(Text(title))
     .accessibilityAddTraits(.isButton)
     .accessibilityAction { action() }
     .accessibilityIdentifier(accessibilityID)

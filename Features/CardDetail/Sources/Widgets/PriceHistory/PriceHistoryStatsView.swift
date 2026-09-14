@@ -21,7 +21,6 @@ struct PriceHistoryStatsView: View {
       }
     }
     .font(.caption)
-    .fontWeight(.medium)
     .lineLimit(1)
   }
 

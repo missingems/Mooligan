@@ -5,11 +5,8 @@ import SwiftUI
 
 enum PriceChartStyle {
   static let releaseIconSize: CGFloat = 24.0
-
   static let swatchSize: CGFloat = 5.0
-
   static let cardCornerRadius: CGFloat = 21.0
-
   static let needleWidth: CGFloat = 1.0
 
   static func color(for kind: PriceSeriesKind) -> Color {
@@ -63,7 +60,7 @@ enum PriceChartStyle {
 
   static func pillBackground(for direction: ChangeDirection, in colorScheme: ColorScheme) -> Color {
     guard direction != .flat else { return Color(.tertiarySystemFill) }
-    return tint(for: direction).opacity(colorScheme == .dark ? 0.2 : 0.14)
+    return tint(for: direction).opacity(0.14)
   }
 
   static func symbol(for direction: ChangeDirection) -> String {
@@ -110,7 +107,7 @@ enum PriceChartStyle {
   }
 
   static func vibrantDotHighlight(_ colorScheme: ColorScheme) -> Color {
-    colorScheme == .dark ? Color.white.opacity(0.75) : Color.black.opacity(0.7)
+    colorScheme == .dark ? Color.white.opacity(0.95) : Color.black.opacity(0.9)
   }
 
   static func borderGradient(_ colorScheme: ColorScheme) -> LinearGradient {

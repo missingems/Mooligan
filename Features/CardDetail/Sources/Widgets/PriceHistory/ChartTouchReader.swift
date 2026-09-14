@@ -14,10 +14,6 @@ struct ChartTouchReader: UIViewRepresentable {
     uiView.onChange = onChange
   }
 
-  func sizeThatFits(_ proposal: ProposedViewSize, uiView: TouchView, context: Context) -> CGSize? {
-    CGSize(width: proposal.width ?? 0.0, height: proposal.height ?? 0.0)
-  }
-
   static func dismantleUIView(_ uiView: TouchView, coordinator: ()) {
     uiView.onChange = nil
   }

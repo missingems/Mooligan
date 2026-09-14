@@ -11,9 +11,6 @@ struct PriceHistoryHeaderView: View {
 
   private static let columnSpacing: CGFloat = 13.0
 
-  /// Lays out exactly like a real column, so it gives the row its height without any prices.
-  private static let sizingItem = PriceHistoryDisplay.SummaryItem(kind: .normal, label: " ", priceText: " ", change: .flat)
-
   var body: some View {
     VStack(alignment: .leading, spacing: 8.0) {
       Text(title).font(.headline)
@@ -25,25 +22,12 @@ struct PriceHistoryHeaderView: View {
   private var isScrubbing: Bool { interaction.scrubbedDate != nil }
 
   private var summaryRow: some View {
-    // The row's size comes from a stand-in column that never changes; the real columns sit in an
-    // overlay. Prices and change pills arriving then re-lay out only this row, instead of making
-    // the card detail page and the pager around it measure everything again.
-    column(Self.sizingItem)
-      .hidden()
-      .lineLimit(1)
-      .frame(maxWidth: .infinity, alignment: .leading)
-      .overlay(alignment: .topLeading) { columns }
-      .onGeometryChange(for: CGRect.self) { [displayScale] geometry in
-        let frame = geometry.frame(in: .named(ScrubLayout.space))
-        return CGRect(origin: frame.origin.snapped(to: displayScale), size: frame.size.snapped(to: displayScale))
-      } action: { frame in
-        if summaryFrame != frame { summaryFrame = frame }
-      }
-    .opacity(isScrubbing ? 0.35 : 1.0)
-    .saturation(isScrubbing ? 0.0 : 1.0)
-    .animation(ScrubLayout.slide, value: isScrubbing)
-    .accessibilityElement(children: .combine)
-    .accessibilityIdentifier("priceHistory.summary")
+    columns
+      .opacity(isScrubbing ? 0.35 : 1.0)
+      .saturation(isScrubbing ? 0.0 : 1.0)
+      .animation(ScrubLayout.slide, value: isScrubbing)
+      .accessibilityElement(children: .combine)
+      .accessibilityIdentifier("priceHistory.summary")
   }
 
   private var columns: some View {
@@ -59,15 +43,10 @@ struct PriceHistoryHeaderView: View {
   private func column(_ item: PriceHistoryDisplay.SummaryItem) -> some View {
     VStack(alignment: .leading, spacing: 3.0) {
       HStack(alignment: .center, spacing: 5.0) {
-        // Stacked so the outgoing and incoming prices cross-fade in place rather than side by side.
-        ZStack(alignment: .leading) {
-          Text(item.priceText)
-            .font(.body)
-            .fontWeight(.medium)
-            .monospaced()
-            .id(item.priceText)
-            .transition(.opacity)
-        }
+        Text(item.priceText)
+          .font(.body)
+          .fontWeight(.medium)
+          .monospaced()
 
         PriceChangePill(change: item.change)
           .fixedSize()
@@ -78,7 +57,6 @@ struct PriceHistoryHeaderView: View {
 
         Text(item.label)
           .font(.caption)
-          .fontWeight(.medium)
           .foregroundStyle(.secondary)
       }
     }

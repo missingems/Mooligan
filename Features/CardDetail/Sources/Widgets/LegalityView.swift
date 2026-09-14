@@ -127,7 +127,6 @@ struct LegalityView: View, Equatable {
         .foregroundStyle(.white)
         .frame(minWidth: 0, maxWidth: .infinity)
         .font(.caption)
-        .fontWeight(.medium)
         .padding(.vertical, 5.0)
         .background {
           Color(
@@ -140,7 +139,6 @@ struct LegalityView: View, Equatable {
       Text(legality.title)
         .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
         .font(.caption)
-        .fontWeight(.medium)
         .multilineTextAlignment(.leading)
     }
   }

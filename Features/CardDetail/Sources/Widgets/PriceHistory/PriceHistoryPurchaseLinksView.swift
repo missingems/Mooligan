@@ -91,8 +91,6 @@ struct PriceHistoryPurchaseLinksView: View {
         .font(.caption.weight(.semibold))
         .foregroundStyle(.secondary)
     }
-    .font(.subheadline)
-    .fontWeight(.medium)
     .lineLimit(1)
     .padding(.horizontal, 16.0)
     .padding(.vertical, 6.0)
@@ -101,8 +99,6 @@ struct PriceHistoryPurchaseLinksView: View {
 
   private func message(_ text: String) -> some View {
     Text(text)
-      .font(.subheadline)
-      .fontWeight(.medium)
       .foregroundStyle(.secondary)
       .frame(maxWidth: .infinity)
       .padding(.vertical, 21.0)

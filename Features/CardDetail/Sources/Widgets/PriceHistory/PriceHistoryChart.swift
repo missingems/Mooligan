@@ -8,10 +8,6 @@ struct PriceHistoryChart: View {
   let interaction: ChartInteraction
   var isLoading = false
 
-  // The dot matrix and the overlay sit outside `chartBackground` / `chartOverlay` on purpose.
-  // Those closures hand out a `ChartProxy` whose anchors are re-resolved whenever the chart
-  // moves, so inside a pager or a scroll view they re-ran every frame of every swipe. Both
-  // scales have explicit domains, so a measured plot frame is all the positioning needs.
   var body: some View {
     let scale = PlotScale(plot: interaction.plot, dates: derivedData.dateRange, prices: axis.domain)
 
@@ -55,9 +51,7 @@ private struct PriceHistoryChartMarks: View {
 
   var body: some View {
     let domain = axis.domain
-
-    // Vectorized plots: one piece of chart content per series rather than a mark per day, which
-    // Swift Charts would otherwise have to create and diff one by one.
+    
     Chart {
       ForEach(derivedData.plotSeries) { series in
         let color = PriceChartStyle.color(for: series.kind)
@@ -97,7 +91,7 @@ private struct PriceHistoryChartMarks: View {
       AxisMarks(position: .trailing, values: axis.ticks) { value in
         AxisValueLabel(anchor: .leading) {
           Text(axis.label(at: value.index))
-            .font(.caption)
+            .font(.caption2)
             .monospaced()
             .foregroundStyle(PriceChartStyle.vibrantLabelColor(colorScheme))
         }
@@ -108,7 +102,7 @@ private struct PriceHistoryChartMarks: View {
         AxisValueLabel(anchor: .top) {
           if let date = value.as(Date.self) {
             Text(date, format: PriceChartStyle.axisDateStyle(forDays: derivedData.spanInDays))
-              .font(.caption)
+              .font(.caption2)
               .foregroundStyle(PriceChartStyle.vibrantLabelColor(colorScheme))
           }
         }
@@ -125,11 +119,6 @@ private struct PriceHistoryChartMarks: View {
   }
 }
 
-/// Maps prices and dates onto the measured plot area, in the chart's own coordinate space.
-///
-/// Swift Charts maps a continuous scale with an explicit domain linearly across the plot
-/// dimension, so this reproduces `ChartProxy.position(forX:)` / `position(forY:)` without
-/// depending on the proxy.
 struct PlotScale: Equatable {
   static let space = "PriceHistory.chart"
 

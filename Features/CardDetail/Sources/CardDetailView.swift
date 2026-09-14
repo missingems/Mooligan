@@ -85,13 +85,13 @@ public struct CardDetailView: View {
           Spacer(minLength: 13.0)
         }
         
-        PriceHistorySectionView(store: store, labels: content.priceHistoryLabels)
-        
         LegalityView(
           title: content.legalityLabel,
           displayReleaseDate: content.card.releasedAt,
           legalities: content.card.legalities.all
         )
+        
+        PriceHistorySectionView(store: store, labels: content.priceHistoryLabels)
         
         VariantsSectionView(store: store)
         RelatedTokensSectionView(store: store)

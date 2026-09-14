@@ -182,7 +182,7 @@ struct PriceHistorySnapshotTests {
       .chartYAxis {
         AxisMarks(position: .trailing, values: axis.ticks) { value in
           AxisValueLabel(anchor: .leading) {
-            Text(axis.label(at: value.index)).font(.caption).monospaced()
+            Text(axis.label(at: value.index)).font(.caption2).monospaced()
           }
         }
       }
@@ -190,7 +190,7 @@ struct PriceHistorySnapshotTests {
         AxisMarks(values: .automatic(desiredCount: 3)) { value in
           AxisValueLabel(anchor: .top) {
             if let date = value.as(Date.self) {
-              Text(date, format: PriceChartStyle.axisDateStyle(forDays: chart.spanInDays)).font(.caption)
+              Text(date, format: PriceChartStyle.axisDateStyle(forDays: chart.spanInDays)).font(.caption2)
             }
           }
         }

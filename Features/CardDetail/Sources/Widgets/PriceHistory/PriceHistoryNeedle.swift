@@ -53,8 +53,6 @@ struct PriceHistoryNeedle: View {
         )
         .opacity(isScrubbing ? 1.0 : 0.0)
         .allowsHitTesting(false)
-        .animation(ScrubLayout.slide, value: isScrubbing)
-        .transaction { $0.animation = $0.animation == ScrubLayout.slide ? $0.animation : nil }
       }
     }
   }
@@ -66,15 +64,6 @@ struct NeedleString: Shape {
   var bendBottom: CGFloat
 
   private static let cornerRadius: CGFloat = 13.0
-
-  var animatableData: AnimatablePair<AnimatablePair<CGPoint.AnimatableData, CGPoint.AnimatableData>, CGFloat> {
-    get { AnimatablePair(AnimatablePair(start.animatableData, end.animatableData), bendBottom) }
-    set {
-      start.animatableData = newValue.first.first
-      end.animatableData = newValue.first.second
-      bendBottom = newValue.second
-    }
-  }
 
   func path(in rect: CGRect) -> Path {
     Path { path in
