@@ -12,7 +12,7 @@ struct PriceHistoryHeaderView: View {
   private static let columnSpacing: CGFloat = 13.0
 
   /// Lays out exactly like a real column, so it gives the row its height without any prices.
-  private static let sizingItem = PriceHistoryDisplay.SummaryItem(kind: .normal, label: " ", priceText: " ", change: nil)
+  private static let sizingItem = PriceHistoryDisplay.SummaryItem(kind: .normal, label: " ", priceText: " ", change: .flat)
 
   var body: some View {
     VStack(alignment: .leading, spacing: 8.0) {
@@ -59,11 +59,8 @@ struct PriceHistoryHeaderView: View {
   private func column(_ item: PriceHistoryDisplay.SummaryItem) -> some View {
     VStack(alignment: .leading, spacing: 3.0) {
       HStack(alignment: .center, spacing: 5.0) {
+        // Stacked so the outgoing and incoming prices cross-fade in place rather than side by side.
         ZStack(alignment: .leading) {
-          PriceChangePill(change: .flat)
-            .frame(width: 0.0, alignment: .leading)
-            .hidden()
-
           Text(item.priceText)
             .font(.body)
             .fontWeight(.medium)
@@ -72,11 +69,8 @@ struct PriceHistoryHeaderView: View {
             .transition(.opacity)
         }
 
-        if let change = item.change {
-          PriceChangePill(change: change)
-            .fixedSize()
-            .transition(.opacity)
-        }
+        PriceChangePill(change: item.change)
+          .fixedSize()
       }
 
       HStack(spacing: 5.0) {

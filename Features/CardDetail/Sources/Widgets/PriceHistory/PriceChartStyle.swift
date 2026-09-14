@@ -70,7 +70,11 @@ enum PriceChartStyle {
     direction == .down ? "arrow.down" : "arrow.up"
   }
 
+  /// Holds a value's place while prices are loading.
   static let missingValue = "—"
+
+  /// Stands in for a value that is still missing once loading is over.
+  static let unavailableValue = String(localized: "N/A")
 
   static let flatChangeText = 0.0.formatted(.percent.precision(.fractionLength(1)))
 

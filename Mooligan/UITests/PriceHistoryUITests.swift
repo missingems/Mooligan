@@ -103,7 +103,7 @@ final class PriceHistoryRecoveryUITests: UITestCase {
     var loaded = false
     for _ in 0..<60 where loaded == false {
       let label = summary.label
-      loaded = label.contains("$") && label.contains("$0.00") == false && label.contains("—") == false
+      loaded = label.contains("$") && label.contains("$0.00") == false && label.contains("—") == false && label.contains("N/A") == false
       if loaded == false { Thread.sleep(forTimeInterval: 0.5) }
     }
     assert(loaded, "prices should load after retrying")

@@ -17,15 +17,17 @@ struct PriceHistoryDisplay: Equatable, Sendable {
   struct Change: Equatable, Sendable {
     let text: String
     let direction: PriceChartStyle.ChangeDirection
+    var isKnown = true
 
     static let flat = Change(text: PriceChartStyle.flatChangeText, direction: .flat)
+    static let unknown = Change(text: PriceChartStyle.unavailableValue, direction: .flat, isKnown: false)
   }
 
   struct SummaryItem: Equatable, Sendable, Identifiable {
     let kind: PriceSeriesKind
     let label: String
     let priceText: String
-    let change: Change?
+    let change: Change
 
     var id: PriceSeriesKind { kind }
   }
@@ -93,7 +95,12 @@ extension PriceHistoryDisplay {
     let currency = status == .loaded && section.currency.isEmpty == false ? section.currency : "USD"
     let kinds = finishes(of: card, charted: chart.series.map(\.kind))
     let format = PriceChartStyle.price(currency)
-    let missing = PriceChartStyle.missingValue
+    let isLoading = status == .loading
+    // A dash holds the place while prices load; once loading is over, anything still missing is N/A.
+    let missing = isLoading ? PriceChartStyle.missingValue : PriceChartStyle.unavailableValue
+    let quotes = kinds.reduce(into: [PriceSeriesKind: Decimal]()) { quotes, kind in
+      quotes[kind] = PriceHistorySection.scryfallQuote(card: card, kind: kind)
+    }
 
     let summary = kinds.map { kind -> SummaryItem in
       let label = PriceChartStyle.label(for: kind)
@@ -102,27 +109,40 @@ extension PriceHistoryDisplay {
           kind: kind,
           label: label,
           priceText: readout.point.amount.formatted(format),
-          change: change(readout.change)
+          change: change(readout.change) ?? .unknown
         )
       }
-      let quote = PriceHistorySection.scryfallQuote(card: card, kind: kind)
-      return SummaryItem(kind: kind, label: label, priceText: quote?.formatted(format) ?? missing, change: nil)
+      // The pill is there from the start, showing no change while loading, so prices landing only
+      // change its text instead of making it appear.
+      return SummaryItem(
+        kind: kind,
+        label: label,
+        priceText: quotes[kind]?.formatted(format) ?? missing,
+        change: isLoading ? .flat : .unknown
+      )
+    }
+
+    // Without a chart for a finish, its Scryfall price is the one figure there is, so once loading
+    // is over it stands in for that finish's low and high.
+    func rangeFallback(_ kind: PriceSeriesKind) -> String {
+      guard isLoading == false, let quote = quotes[kind] else { return missing }
+      return quote.formatted(format)
     }
 
     let columns = kinds.map { kind in
       StatsColumn(
         kind: kind,
         label: PriceChartStyle.label(for: kind),
-        isAvailable: status != .loaded || chart.isAvailable(kind) || chart.buylist(for: kind) != nil
+        isAvailable: isLoading || chart.isAvailable(kind) || chart.buylist(for: kind) != nil || quotes[kind] != nil
       )
     }
 
     let rows: [StatsRow] = [
       StatsRow(title: labels.low, values: kinds.map { kind in
-        chart.range(for: kind).map { $0.lowerBound.formatted(format) } ?? missing
+        chart.range(for: kind).map { $0.lowerBound.formatted(format) } ?? rangeFallback(kind)
       }),
       StatsRow(title: labels.high, values: kinds.map { kind in
-        chart.range(for: kind).map { $0.upperBound.formatted(format) } ?? missing
+        chart.range(for: kind).map { $0.upperBound.formatted(format) } ?? rangeFallback(kind)
       }),
       StatsRow(title: labels.buylist, values: kinds.map { kind in
         chart.buylist(for: kind).map { $0.formatted(format) } ?? missing

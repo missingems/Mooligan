@@ -43,24 +43,71 @@ struct PriceHistoryDisplayTests {
     #expect(display.status == .loading)
     #expect(display.summary.map(\.kind) == [.foil])
     #expect(display.summary.first?.priceText == dollars("12.50"))
-    #expect(display.summary.first?.change == nil)
+    #expect(display.summary.first?.change == .flat)
     #expect(display.statsColumns.map(\.kind) == [.foil])
     #expect(display.statsRows.map(\.values) == Array(repeating: [PriceChartStyle.missingValue], count: 4))
   }
 
   @Test func statsShouldOnlyListTheCardsFinishesEvenWhenOneHasNoData() {
     let display = PriceHistoryDisplay.make(
-      card: card(finishes: [.nonfoil, .foil], prices: Card.Prices(usd: "1.00", usdFoil: "4.00")),
+      card: card(finishes: [.nonfoil, .foil], prices: Card.Prices(usd: "1.00")),
       state: loaded([series(.normal, ["1.00", "2.00"])]),
       labels: labels
     )
 
     #expect(display.statsColumns.map(\.kind) == [.normal, .foil])
     #expect(display.statsColumns.map(\.isAvailable) == [true, false])
-    #expect(display.statsRows[0].values == [dollars("1.00"), PriceChartStyle.missingValue])
+    #expect(display.statsRows[0].values == [dollars("1.00"), PriceChartStyle.unavailableValue])
+    #expect(display.summary.map(\.priceText) == [dollars("2.00"), PriceChartStyle.unavailableValue])
+    #expect(display.summary[0].change.direction == .up)
+    #expect(display.summary[1].change == .unknown)
+  }
+
+  @Test func whenAFinishHasNoChart_itsScryfallPriceShouldStandInForItsPriceLowAndHigh() {
+    let display = PriceHistoryDisplay.make(
+      card: card(finishes: [.nonfoil, .foil], prices: Card.Prices(usd: "1.00", usdFoil: "4.00")),
+      state: loaded([series(.normal, ["1.00", "2.00"])]),
+      labels: labels
+    )
+
     #expect(display.summary.map(\.priceText) == [dollars("2.00"), dollars("4.00")])
-    #expect(display.summary[0].change?.direction == .up)
-    #expect(display.summary[1].change == nil)
+    #expect(display.statsColumns.map(\.isAvailable) == [true, true])
+    #expect(display.statsRows[0].values == [dollars("1.00"), dollars("4.00")])
+    #expect(display.statsRows[1].values == [dollars("2.00"), dollars("4.00")])
+    #expect(display.statsRows[2].values == [PriceChartStyle.unavailableValue, PriceChartStyle.unavailableValue])
+    #expect(display.statsRows[3].values == [PriceChartStyle.unavailableValue, PriceChartStyle.unavailableValue])
+  }
+
+  @Test(arguments: [PriceHistoryState.unavailable, .failed])
+  func withoutPriceHistory_shouldFallBackToScryfallAndShowNAForTheRest(state: PriceHistoryState) {
+    let display = PriceHistoryDisplay.make(
+      card: card(finishes: [.nonfoil, .foil], prices: Card.Prices(usd: "1.50")),
+      state: state,
+      labels: labels
+    )
+    let unavailable = PriceChartStyle.unavailableValue
+
+    #expect(display.summary.map(\.priceText) == [dollars("1.50"), unavailable])
+    #expect(display.summary.map(\.change) == [.unknown, .unknown])
+    #expect(display.statsColumns.map(\.isAvailable) == [true, false])
+    #expect(display.statsRows.map(\.values) == [
+      [dollars("1.50"), unavailable],
+      [dollars("1.50"), unavailable],
+      [unavailable, unavailable],
+      [unavailable, unavailable],
+    ])
+    #expect(display.statsRows.flatMap(\.values).contains(PriceChartStyle.missingValue) == false)
+  }
+
+  @Test func whileLoading_theChangeShouldReadZeroSoLandingPricesOnlyUpdateIt() {
+    let display = PriceHistoryDisplay.loading(
+      card: card(finishes: [.nonfoil, .foil], prices: Card.Prices(usd: "1.50")),
+      labels: labels
+    )
+
+    #expect(display.summary.map(\.change) == [.flat, .flat])
+    #expect(display.summary.allSatisfy { $0.change.text == PriceChartStyle.flatChangeText && $0.change.isKnown })
+    #expect(display.statsRows.map(\.values) == Array(repeating: [PriceChartStyle.missingValue, PriceChartStyle.missingValue], count: 4))
   }
 
   @Test func regularAndEtchedCardsShouldNeverShowFoil() {

@@ -10,7 +10,7 @@ struct PriceChangePill: View {
   var body: some View {
     let symbol = Image(systemName: PriceChartStyle.symbol(for: change.direction))
 
-    Text("\(symbol)\(change.text)")
+    (change.isKnown ? Text("\(symbol)\(change.text)") : Text(change.text))
       .font(.caption).fontWeight(.medium)
       .monospacedDigit()
       .foregroundStyle(PriceChartStyle.pillForeground(for: change.direction, in: colorScheme))

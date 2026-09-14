@@ -126,7 +126,7 @@ struct PriceHistorySnapshotTests {
     for scheme in [ColorScheme.light, .dark] {
       try await snapshot(
         section(.data(Self.section)),
-        height: 540.0,
+        height: 600.0,
         scheme: scheme,
         named: scheme == .dark ? "dark" : "light"
       )
@@ -140,7 +140,7 @@ struct PriceHistorySnapshotTests {
       ("failed", .failed),
     ]
     for (name, state) in states {
-      try await snapshot(section(state), height: 540.0, named: name)
+      try await snapshot(section(state), height: 600.0, named: name)
     }
   }
 
