@@ -1,8 +1,10 @@
 @testable import CardDetail
+import DesignComponents
 import Foundation
 import SwiftUI
 import Networking
 import Testing
+import UIKit
 
 struct PriceChartStyleTests {
   private func decimal(_ value: String) -> Decimal {
@@ -27,7 +29,7 @@ struct PriceChartStyleTests {
     #expect(PriceChartStyle.changeText(for: tiny) == 0.0004.formatted(.percent.precision(.fractionLength(1))))
     #expect(PriceChartStyle.direction(for: tiny) == .flat)
     #expect(PriceChartStyle.symbol(for: .flat) == "arrow.up")
-    #expect(PriceChartStyle.tint(for: .flat) == .gray)
+    #expect(PriceChartStyle.tint(for: .flat) == DesignComponentsAsset.notLegal.swiftUIColor)
     #expect(PriceChartStyle.pillForeground(for: .flat, in: .dark) == Color(.secondaryLabel))
   }
 
@@ -44,11 +46,41 @@ struct PriceChartStyleTests {
     #expect(PriceChartStyle.changeText(for: nil) == PriceChartStyle.flatChangeText)
   }
 
-  @Test func shouldTintMovesWithSystemGreenAndRed() {
-    #expect(PriceChartStyle.tint(for: .up) == .green)
-    #expect(PriceChartStyle.tint(for: .down) == .red)
-    #expect(PriceChartStyle.pillForeground(for: .up, in: .dark) == .green)
-    #expect(PriceChartStyle.pillForeground(for: .up, in: .light) != .green)
+  @Test func shouldTintMovesWithTheLegalityPalette() {
+    let legal = DesignComponentsAsset.legal.swiftUIColor
+    let banned = DesignComponentsAsset.banned.swiftUIColor
+
+    #expect(PriceChartStyle.tint(for: .up) == legal)
+    #expect(PriceChartStyle.tint(for: .down) == banned)
+    #expect(PriceChartStyle.pillForeground(for: .up, in: .light) == legal.mix(with: .black, by: 0.15))
+    #expect(PriceChartStyle.pillForeground(for: .up, in: .dark) == legal.mix(with: .white, by: 0.2))
+    #expect(PriceChartStyle.pillForeground(for: .down, in: .dark) == banned.mix(with: .white, by: 0.2))
+    #expect(PriceChartStyle.pillBackground(for: .down, in: .light) == banned.opacity(0.16))
+    #expect(PriceChartStyle.pillBackground(for: .down, in: .dark) == banned.opacity(0.28))
+  }
+
+  /// Small white text sits on the legality chips, and the pills darken or lighten the same hues,
+  /// so each chip colour keeps at least 4.3:1 against white.
+  @Test func legalityChipsShouldKeepWhiteCaptionTextReadable() throws {
+    let assets = [
+      ("legal", DesignComponentsAsset.legal),
+      ("banned", DesignComponentsAsset.banned),
+      ("restricted", DesignComponentsAsset.restricted),
+      ("notLegal", DesignComponentsAsset.notLegal),
+    ]
+    for (name, asset) in assets {
+      let color = UIColor(asset.swiftUIColor).resolvedColor(with: UITraitCollection(userInterfaceStyle: .light))
+      var red: CGFloat = 0.0, green: CGFloat = 0.0, blue: CGFloat = 0.0, alpha: CGFloat = 0.0
+      #expect(color.getRed(&red, green: &green, blue: &blue, alpha: &alpha))
+
+      func linear(_ channel: CGFloat) -> CGFloat {
+        channel <= 0.040_45 ? channel / 12.92 : pow((channel + 0.055) / 1.055, 2.4)
+      }
+      let luminance = 0.2126 * linear(red) + 0.7152 * linear(green) + 0.0722 * linear(blue)
+      let contrast = 1.05 / (luminance + 0.05)
+
+      #expect(contrast >= 4.3, "\(name) has \(contrast):1 against white")
+    }
   }
 
   @Test func spanTextShouldRoundToTheNearestUnit() {

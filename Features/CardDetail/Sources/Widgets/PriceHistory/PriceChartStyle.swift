@@ -44,23 +44,28 @@ enum PriceChartStyle {
     return tenths > 0 ? .up : .flat
   }
 
+  /// Price moves use the legality palette, so a rise reads like "legal" and a fall like "banned"
+  /// wherever the two sit together on a card's page.
   static func tint(for direction: ChangeDirection) -> Color {
     switch direction {
-    case .up: .green
-    case .down: .red
-    case .flat: .gray
+    case .up: DesignComponentsAsset.legal.swiftUIColor
+    case .down: DesignComponentsAsset.banned.swiftUIColor
+    case .flat: DesignComponentsAsset.notLegal.swiftUIColor
     }
   }
 
   static func pillForeground(for direction: ChangeDirection, in colorScheme: ColorScheme) -> Color {
     guard direction != .flat else { return Color(.secondaryLabel) }
+    // The palette is mid-toned, so small text needs darkening on light backgrounds and lightening on
+    // dark ones to stay readable against its own tint.
     let tint = tint(for: direction)
-    return colorScheme == .dark ? tint : tint.mix(with: .black, by: 0.3)
+    return colorScheme == .dark ? tint.mix(with: .white, by: 0.2) : tint.mix(with: .black, by: 0.15)
   }
 
   static func pillBackground(for direction: ChangeDirection, in colorScheme: ColorScheme) -> Color {
     guard direction != .flat else { return Color(.tertiarySystemFill) }
-    return tint(for: direction).opacity(0.14)
+    // Stronger on dark backgrounds, where a mid-toned tint otherwise all but disappears.
+    return tint(for: direction).opacity(colorScheme == .dark ? 0.28 : 0.16)
   }
 
   static func symbol(for direction: ChangeDirection) -> String {
