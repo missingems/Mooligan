@@ -22,11 +22,6 @@ struct PriceHistoryChartMarks: View {
   @Environment(\.colorScheme) private var colorScheme
   @Environment(\.displayScale) private var displayScale
 
-  /// A solid hairline; Swift Charts would otherwise pick its own width and dash for each axis.
-  private var gridStroke: StrokeStyle {
-    StrokeStyle(lineWidth: 1.0 / max(displayScale, 1.0), dash: [])
-  }
-
   var body: some View {
     let domain = axis.domain
     
@@ -64,27 +59,32 @@ struct PriceHistoryChartMarks: View {
     }
     .chartLegend(.hidden)
     .chartYScale(domain: domain)
-    .chartXScale(domain: derivedData.plotDateRange)
+    .chartXScale(domain: derivedData.dateRange)
     .chartYAxis {
       AxisMarks(position: .trailing, values: axis.ticks) { value in
-        AxisGridLine(stroke: gridStroke)
+        AxisGridLine(stroke: PriceChartStyle.gridStroke)
           .foregroundStyle(PriceChartStyle.gridColor(colorScheme))
 
         AxisValueLabel(anchor: .leading) {
           Text(axis.label(at: value.index))
             .font(.caption2)
-            .monospaced()
-            .foregroundStyle(PriceChartStyle.vibrantLabelColor(colorScheme))
+            .fontDesign(.rounded)
+            .compositingGroup()
+            .foregroundStyle(PriceChartStyle.vibrantLabelTint(colorScheme))
         }
       }
     }
     .chartXAxis {
       AxisMarks(values: .automatic(desiredCount: 3)) { value in
+        AxisGridLine(stroke: PriceChartStyle.gridStroke)
+          .foregroundStyle(PriceChartStyle.gridColor(colorScheme))
+
         AxisValueLabel(anchor: .top) {
           if let date = value.as(Date.self) {
             Text(date, format: PriceChartStyle.axisDateStyle(forDays: derivedData.spanInDays))
               .font(.caption2)
-              .foregroundStyle(PriceChartStyle.vibrantLabelColor(colorScheme))
+              .compositingGroup()
+              .foregroundStyle(PriceChartStyle.vibrantLabelTint(colorScheme))
           }
         }
       }

@@ -12,7 +12,6 @@ import Testing
   private func makeStore(
     status: PriceHistoryState = .loading,
     client: any PriceHistoryClient,
-    purchaseLinks: any PurchaseLinksClient = MockPurchaseLinksClient(),
     clock: TestClock<Duration>
   ) -> TestStoreOf<CardDetailFeature> {
     var state = CardDetailFeature.State(
@@ -25,7 +24,6 @@ import Testing
       CardDetailFeature()
     } withDependencies: {
       $0.priceHistoryClient = client
-      $0.purchaseLinksClient = purchaseLinks
       $0.continuousClock = clock
     }
   }
@@ -37,7 +35,6 @@ import Testing
     )
 
     #expect(state.priceHistory == PriceHistoryDisplay.loading(card: card, labels: labels))
-    #expect(state.purchaseDropdown == .loading)
   }
 
   @Test func whenTheCardAppears_shouldLoadPriceHistoryWithItsSections() async {
@@ -118,65 +115,5 @@ import Testing
     await store.receive(\.updatePriceHistory)
 
     #expect(store.state.priceHistory.status == .loaded)
-  }
-
-  @Test func whenPurchaseLinksAreRequested_shouldLoadThemOnceAndPriceThem() async {
-    let store = makeStore(client: MockPriceHistoryClient(), clock: TestClock())
-    let links = (try? await MockPurchaseLinksClient().purchaseLinks(for: card)) ?? []
-
-    await store.send(.purchaseLinksRequested) { state in
-      state.purchaseLinks = .loading
-    }
-    await store.receive(\.updatePurchaseLinks) { state in
-      state.purchaseLinks = .loaded(links)
-      state.purchaseDropdown = .loaded(
-        PurchaseVendorGroup.make(links: links, quotes: [:], scryfallPrices: card.prices)
-      )
-    }
-
-    await store.send(.purchaseLinksRequested)
-  }
-
-  @Test func whenPurchaseLinksFail_shouldAllowAnotherAttempt() async {
-    let links = FailingOncePurchaseLinksClient()
-    let store = makeStore(client: MockPriceHistoryClient(), purchaseLinks: links, clock: TestClock())
-    let loaded = PurchaseLinksMapper.makeLinks(from: FailingOncePurchaseLinksClient.urls)
-
-    await store.send(.purchaseLinksRequested) { state in
-      state.purchaseLinks = .loading
-    }
-    await store.receive(\.updatePurchaseLinks) { state in
-      state.purchaseLinks = .failed
-      state.purchaseDropdown = .failed
-    }
-
-    await store.send(.purchaseLinksRequested) { state in
-      state.purchaseLinks = .loading
-      state.purchaseDropdown = .loading
-    }
-    await store.receive(\.updatePurchaseLinks) { state in
-      state.purchaseLinks = .loaded(loaded)
-      state.purchaseDropdown = .loaded(
-        PurchaseVendorGroup.make(links: loaded, quotes: [:], scryfallPrices: card.prices)
-      )
-    }
-  }
-
-  @Test func loadedPricesShouldRepriceTheOpenDropdown() async {
-    let clock = TestClock()
-    let store = makeStore(client: MockPriceHistoryClient(), clock: clock)
-    store.exhaustivity = .off
-
-    await store.send(.purchaseLinksRequested)
-    await store.receive(\.updatePurchaseLinks)
-    await store.send(.fetchPriceHistory(card: card))
-    await store.receive(\.updatePriceHistory)
-
-    guard case let .loaded(groups) = store.state.purchaseDropdown else {
-      Issue.record("expected loaded links")
-      return
-    }
-    let tcgplayer = groups.first { $0.provider == .tcgplayer }
-    #expect(tcgplayer?.offers.allSatisfy { $0.priceText != nil } == true)
   }
 }

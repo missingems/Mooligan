@@ -4,10 +4,7 @@ import Networking
 import SwiftUI
 
 enum PriceChartStyle {
-  static let releaseIconSize: CGFloat = 24.0
   static let swatchSize: CGFloat = 5.0
-  static let cardCornerRadius: CGFloat = 21.0
-  static let needleWidth: CGFloat = 1.0
 
   static func color(for kind: PriceSeriesKind) -> Color {
     switch kind {
@@ -31,60 +28,25 @@ enum PriceChartStyle {
     }
   }
 
-  enum ChangeDirection {
-    case up
-    case down
-    case flat
-  }
-
-  static func direction(for change: PriceChange?) -> ChangeDirection {
-    guard let fraction = change?.fraction else { return .flat }
-    let tenths = (fraction * 1000.0).rounded()
-    if tenths < 0 { return .down }
-    return tenths > 0 ? .up : .flat
-  }
-
-  /// Price moves use the legality palette, so a rise reads like "legal" and a fall like "banned"
-  /// wherever the two sit together on a card's page.
-  static func tint(for direction: ChangeDirection) -> Color {
-    switch direction {
-    case .up: DesignComponentsAsset.legal.swiftUIColor
-    case .down: DesignComponentsAsset.banned.swiftUIColor
-    case .flat: DesignComponentsAsset.notLegal.swiftUIColor
-    }
-  }
-
-  /// A solid chip in a lighter shade of the move's colour, the same in light and dark mode, so it
-  /// reads like the legality chips. Dark text in a deep shade of the same hue keeps it readable.
-  static func pillBackground(for direction: ChangeDirection) -> Color {
-    tint(for: direction).mix(with: .white, by: 0.2)
-  }
-
-  static func pillForeground(for direction: ChangeDirection) -> Color {
-    tint(for: direction).mix(with: .black, by: 0.8)
-  }
-
-  static func symbol(for direction: ChangeDirection) -> String {
-    direction == .down ? "arrow.down" : "arrow.up"
-  }
-
-  /// Holds a value's place while prices are loading.
+  /// Holds the place of a value that is loading or missing.
   static let missingValue = "—"
-
-  /// Stands in for a value that is still missing once loading is over.
-  static let unavailableValue = String(localized: "N/A")
-
-  static let flatChangeText = 0.0.formatted(.percent.precision(.fractionLength(1)))
-
-  static func changeText(for change: PriceChange?) -> String {
-    guard let fraction = change?.fraction else { return flatChangeText }
-    return abs(fraction).formatted(.percent.precision(.fractionLength(1)))
-  }
 
   static func price(_ code: String) -> Decimal.FormatStyle.Currency {
     .currency(code: code)
       .presentation(.narrow)
       .precision(.fractionLength(2))
+  }
+
+  static func ratioText(_ ratio: Double) -> String {
+    ratio.formatted(.percent.precision(.fractionLength(0)))
+  }
+
+  /// The lowest and highest ratio as a range, or one figure when they read the same.
+  static func ratioRangeText(_ ratios: [Double]) -> String? {
+    guard let low = ratios.min(), let high = ratios.max() else { return nil }
+    let lowText = ratioText(low)
+    let highText = ratioText(high)
+    return lowText == highText ? lowText : "\(lowText)–\(highText)"
   }
 
   /// Axis labels keep two decimals like every other price, whole-dollar ticks included.
@@ -98,30 +60,23 @@ enum PriceChartStyle {
     colorScheme == .dark ? .plusLighter : .plusDarker
   }
 
+  static func gridTint(_ colorScheme: ColorScheme) -> Color {
+    colorScheme == .dark ? Color.white.opacity(0.169) : Color.black.opacity(0.225)
+  }
+
+  /// For Swift Charts marks, which take a shape style rather than a view, so there is no view to
+  /// put in a compositing group before the blend.
   static func gridColor(_ colorScheme: ColorScheme) -> some ShapeStyle {
-    (colorScheme == .dark ? Color.white.opacity(0.169) : Color.black.opacity(0.225))
-      .blendMode(vibrantBlendMode(colorScheme))
+    gridTint(colorScheme).blendMode(vibrantBlendMode(colorScheme))
   }
 
-  static func vibrantDotTint(_ colorScheme: ColorScheme) -> Color {
-    colorScheme == .dark ? Color.white.opacity(0.3) : Color.black.opacity(0.35)
-  }
+  static let needleWidth: CGFloat = 1.0
 
-  static func vibrantDotHighlight(_ colorScheme: ColorScheme) -> Color {
-    colorScheme == .dark ? Color.white.opacity(0.95) : Color.black.opacity(0.9)
-  }
-
-  static func borderGradient(_ colorScheme: ColorScheme) -> LinearGradient {
-    let tint = colorScheme == .dark ? Color.white.opacity(0.169) : Color.black.opacity(0.225)
-    return LinearGradient(colors: [tint.opacity(0.0), tint], startPoint: .top, endPoint: .bottom)
-  }
+  /// Round dots a point across, three points apart.
+  static let gridStroke = StrokeStyle(lineWidth: 1.0, lineCap: .round, dash: [0.0, 3.0])
 
   static func vibrantLabelTint(_ colorScheme: ColorScheme) -> Color {
     colorScheme == .dark ? Color.white.opacity(0.45) : Color.black.opacity(0.5)
-  }
-
-  static func vibrantLabelColor(_ colorScheme: ColorScheme) -> some ShapeStyle {
-    vibrantLabelTint(colorScheme).blendMode(vibrantBlendMode(colorScheme))
   }
 
   struct PriceAxis: Equatable, Sendable {
@@ -168,11 +123,13 @@ enum PriceChartStyle {
     var upper = (high / step).rounded(.up) * step
     if upper - high < step * 0.5 { upper += step }
 
-    let count = Int(((upper - lower) / step).rounded())
-    let ticks = (0...count).map { index in
-      ((lower + Double(index) * step) / step).rounded() * step
-    }
-    return PriceAxis(domain: lower...upper, ticks: ticks)
+    // Ticks are whole steps and the domain runs from the first to the last of them exactly. Rounding
+    // `lower` and `upper` separately could leave the top tick a hair above the domain (0.6000000000000001
+    // against 0.6), which Swift Charts treats as out of range and leaves without its label.
+    let first = Int((lower / step).rounded())
+    let last = max(Int((upper / step).rounded()), first + 1)
+    let ticks = (first...last).map { Double($0) * step }
+    return PriceAxis(domain: ticks[0]...ticks[ticks.count - 1], ticks: ticks)
   }
 
   static func niceStep(_ raw: Double) -> Double {
@@ -191,29 +148,6 @@ enum PriceChartStyle {
 
   static func spanInDays(of dates: ClosedRange<Date>) -> Int {
     max(1, Int((dates.upperBound.timeIntervalSince(dates.lowerBound) / 86_400).rounded()))
-  }
-
-  static func spanText(of dates: ClosedRange<Date>) -> String {
-    let days = spanInDays(of: dates)
-    switch days {
-    case ..<14:
-      return String(localized: "Past \(days) Days")
-    case ..<60:
-      let weeks = max(1, Int((Double(days) / 7.0).rounded()))
-      return weeks == 1 ? String(localized: "Past Week") : String(localized: "Past \(weeks) Weeks")
-    default:
-      let months = max(1, Int((Double(days) / 30.0).rounded()))
-      return months == 1 ? String(localized: "Past Month") : String(localized: "Past \(months) Months")
-    }
-  }
-
-  static func statWindow(forSpanDays days: Int) -> (label: String, days: Int?) {
-    switch days {
-    case 75...: ("3M", 90)
-    case 28...: ("1M", 30)
-    case 7...: ("1W", 7)
-    default: ("\(max(days, 1))D", nil)
-    }
   }
 
   static func axisDateStyle(forDays days: Int) -> Date.FormatStyle {

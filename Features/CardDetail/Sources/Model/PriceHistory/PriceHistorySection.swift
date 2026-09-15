@@ -32,18 +32,14 @@ public struct PriceHistorySection: Equatable, Sendable {
 
   public let series: [Series]
   public let currency: String
-  public let releases: [SetReleaseMarker]
   public let buylistQuote: BuylistQuote?
-  public let retailQuotes: [PriceProvider: RetailQuote]
   public let priceRange: ClosedRange<Double>
   public let dateRange: ClosedRange<Date>
 
   init(
     series: [Series] = [],
     currency: String = "",
-    releases: [SetReleaseMarker] = [],
     buylistQuote: BuylistQuote? = nil,
-    retailQuotes: [PriceProvider: RetailQuote] = [:],
     dateRange: ClosedRange<Date>? = nil
   ) {
     let low = series.map(\.priceRange.lowerBound).min() ?? 0
@@ -53,9 +49,7 @@ public struct PriceHistorySection: Equatable, Sendable {
 
     self.series = series
     self.currency = currency
-    self.releases = releases
     self.buylistQuote = buylistQuote
-    self.retailQuotes = retailQuotes
     self.priceRange = low...max(high, low)
     self.dateRange = dateRange ?? (first...max(last, first.addingTimeInterval(86_400)))
   }

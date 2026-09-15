@@ -13,8 +13,7 @@ public extension CardDetailFeature {
     case viewAppeared
     case viewRulingsTapped
     case retryPriceHistoryTapped
-    case purchaseLinksRequested
-    
+
     // Fetch Actions
     case fetchVariants(card: Card, page: Int)
     case fetchPriceHistory(card: Card)
@@ -23,6 +22,5 @@ public extension CardDetailFeature {
     case updateAdditionalInformation(AdditionalInformation)
     case updateVariants(CardDataSource, page: Int)
     case updatePriceHistory(PriceHistoryUpdate)
-    case updatePurchaseLinks(PurchaseLinksState)
   }
 }

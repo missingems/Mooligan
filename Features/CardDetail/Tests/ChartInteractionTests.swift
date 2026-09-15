@@ -3,7 +3,7 @@ import Foundation
 import Networking
 import Testing
 
-struct PriceReadoutTests {
+struct ChartInteractionTests {
   private let day: TimeInterval = 86_400
   private let start = Date(timeIntervalSince1970: 1_788_000_000)
 
@@ -18,24 +18,6 @@ struct PriceReadoutTests {
     return PriceHistorySection.Series(kind: kind, points: points)!
   }
 
-  @Test func latestReadout_shouldCompareTheLastTwoObservations() {
-    let readout = series(["1.00", "5.00", "4.00"]).latestReadout
-
-    #expect(readout?.point.amount == decimal("4.00"))
-    #expect(readout?.change?.start.amount == decimal("5.00"))
-    #expect(readout?.change?.absolute == decimal("-1.00"))
-    #expect(readout?.change?.isDecrease == true)
-    #expect(readout?.isScrubbing == false)
-  }
-
-  @Test func dayChange_atTheFirstObservation_shouldBeNil() {
-    #expect(series(["1.00", "2.00"]).dayChange(endingAt: 0) == nil)
-  }
-
-  @Test func dayChange_outsideTheSeries_shouldBeNil() {
-    #expect(series(["1.00", "2.00"]).dayChange(endingAt: 9) == nil)
-  }
-
   @Test func indexOfPoint_shouldSnapToTheNearestObservation() {
     let subject = series(["1.00", "2.00", "3.00", "4.00"])
 
@@ -45,30 +27,26 @@ struct PriceReadoutTests {
     #expect(subject.indexOfPoint(nearest: start.addingTimeInterval(100 * day)) == 3)
   }
 
-  @Test func whenScrubbing_theReadoutShouldFollowTheNeedle() {
+  @Test func whenScrubbing_thePointShouldFollowTheScrubbedDay() {
     let subject = series(["1.00", "2.00", "3.00", "4.00"])
     let interaction = ChartInteraction()
 
     interaction.scrubbedDate = start.addingTimeInterval(2 * day)
-    let readout = interaction.pointIndex(for: subject).flatMap { subject.readout(at: $0, isScrubbing: true) }
 
-    #expect(readout?.point.amount == decimal("3.00"))
-    #expect(readout?.change?.start.amount == decimal("2.00"))
-    #expect(readout?.change?.absolute == decimal("1.00"))
-    #expect(readout?.isScrubbing == true)
+    #expect(interaction.pointIndex(for: subject) == 2)
+    #expect(interaction.point(in: subject, at: start.addingTimeInterval(0.9 * day))?.amount == decimal("2.00"))
   }
 
-  @Test func whenTheScrubEnds_theReadoutShouldReturnToTheLatest() {
+  @Test func whenTheScrubEnds_thePointShouldReturnToTheLatest() {
     let subject = series(["1.00", "2.00", "3.00", "4.00"])
     let interaction = ChartInteraction()
 
     interaction.scrubbedDate = start
-    #expect(interaction.pointIndex(for: subject).map { subject.points[$0].amount } == decimal("1.00"))
+    #expect(interaction.pointIndex(for: subject) == 0)
 
-    interaction.scrubbedDate = nil
+    interaction.endScrub()
+    #expect(interaction.scrubbedDate == nil)
     #expect(interaction.pointIndex(for: subject) == subject.points.indices.last)
-    #expect(subject.latestReadout?.point.amount == decimal("4.00"))
-    #expect(subject.latestReadout?.isScrubbing == false)
   }
 
   @Test func whenScrubbingAcrossContiguousDays_theCachedLookupShouldStayCorrect() {
@@ -87,30 +65,5 @@ struct PriceReadoutTests {
 
     interaction.scrubbedDate = subject.points[27].date
     #expect(interaction.pointIndex(for: subject) == 27)
-  }
-
-  @Test func anchorSeries_shouldBeTheFirstFinishDrawn() {
-    let section = PriceHistorySection(
-      series: [series(["1.00", "2.00"]), series(["8.00", "9.00"], kind: .foil)],
-      currency: "USD"
-    )
-
-    #expect(ChartDerivedData(section: section).anchorSeries?.kind == .normal)
-  }
-
-  @Test func series_shouldBeOrderedRegularFoilEtched() {
-    let section = PriceHistorySection(
-      series: [
-        series(["4.00", "5.00"], kind: .etched),
-        series(["8.00", "9.00"], kind: .foil),
-        series(["1.00", "2.00"]),
-      ],
-      currency: "USD"
-    )
-
-    #expect(
-      ChartDerivedData(section: section)
-        .series.map(\.kind) == [.normal, .foil, .etched]
-    )
   }
 }

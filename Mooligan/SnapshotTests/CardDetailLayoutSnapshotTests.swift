@@ -70,7 +70,6 @@ struct CardDetailLayoutSnapshotTests {
       EmptyReducer<CardPagerFeature.State, CardPagerFeature.Action>()
     }
     return CardPagerView(store: store)
-      .environment(\.priceHistoryPlaceholderAnimates, false)
   }
 
   private func snapshot(_ fixture: String, testName: String = #function) async throws {

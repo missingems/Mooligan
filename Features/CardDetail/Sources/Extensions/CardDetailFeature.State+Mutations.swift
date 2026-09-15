@@ -22,22 +22,7 @@ extension CardDetailFeature.State {
 
   mutating func updatePriceHistory(_ display: PriceHistoryDisplay) {
     priceHistory = display
-    refreshPurchaseDropdown()
   }
-
-  mutating func updatePurchaseLinks(_ links: PurchaseLinksState) {
-    purchaseLinks = links
-    refreshPurchaseDropdown()
-  }
-
-  mutating func refreshPurchaseDropdown() {
-    purchaseDropdown = .make(
-      links: purchaseLinks,
-      quotes: priceHistory.retailQuotes,
-      scryfallPrices: content.card.prices
-    )
-  }
-  
   mutating func updateRelatedTokens(_ dataSource: CardDataSource) {
     relatedTokens = relatedTokens?.updating(page: 1, state: .data(dataSource))
   }

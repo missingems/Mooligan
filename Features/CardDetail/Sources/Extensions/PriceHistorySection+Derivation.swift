@@ -6,13 +6,12 @@ extension PriceHistorySection {
   /// The series the chart plots.
   public static let chartProvider: PriceProvider = .tcgplayer
 
-  /// The vendor the buylist and spread figures come from.
+  /// The vendor the buy back price and ratio come from.
   ///
   /// TCGplayer is the market the chart follows, but it publishes retail only —
   /// the feed carries a buylist for Card Kingdom alone. Both figures therefore
-  /// come from Card Kingdom, and the spread is computed against Card Kingdom's
-  /// own retail rather than TCGplayer's: a spread across two vendors is not a
-  /// spread, it is an arbitrage.
+  /// come from Card Kingdom, and the ratio is taken against Card Kingdom's own
+  /// retail rather than TCGplayer's, so it compares one vendor's two prices.
   public static let buylistProvider: PriceProvider = .cardkingdom
 
   public static let chartRequest = PriceSeriesRequest(
@@ -24,21 +23,7 @@ extension PriceHistorySection {
     chartRequest,
     PriceSeriesRequest(provider: buylistProvider, listType: .retail),
     PriceSeriesRequest(provider: buylistProvider, listType: .buylist),
-    PriceSeriesRequest(provider: .cardmarket, listType: .retail),
   ]
-
-  public static func retailQuotes(
-    from histories: [PriceSeriesRequest: PriceHistory]
-  ) -> [PriceProvider: RetailQuote] {
-    histories.reduce(into: [:]) { result, entry in
-      guard entry.key.listType == .retail else { return }
-      let prices = entry.value.series.compactMapValues { points in
-        points.last(where: { $0.amount > 0 })?.amount
-      }
-      guard prices.isEmpty == false else { return }
-      result[entry.key.provider] = RetailQuote(currency: entry.value.currency, prices: prices)
-    }
-  }
 
   public static func buylistQuote(
     from histories: [PriceSeriesRequest: PriceHistory]
@@ -54,8 +39,6 @@ extension PriceHistorySection {
     card: Card,
     history: PriceHistory?,
     buylistQuote: BuylistQuote? = nil,
-    retailQuotes: [PriceProvider: RetailQuote] = [:],
-    releases: [SetReleaseMarker],
     today: Date = PriceHistorySection.today
   ) -> PriceHistoryState {
     guard let history else { return .unavailable }
@@ -75,22 +58,10 @@ extension PriceHistorySection {
 
     guard series.isEmpty == false else { return .unavailable }
 
-    let bounds = PriceHistorySection(series: series, currency: history.currency, releases: releases)
-
-    var quotes = retailQuotes
-    let chartPrices = Dictionary(uniqueKeysWithValues: series.compactMap { series in
-      series.points.last.map { (series.kind, $0.amount) }
-    })
-    if chartPrices.isEmpty == false {
-      quotes[chartProvider] = RetailQuote(currency: history.currency, prices: chartPrices)
-    }
-
     let section = PriceHistorySection(
       series: series,
       currency: history.currency,
-      releases: releases.filter { bounds.dateRange.contains($0.date) },
-      buylistQuote: buylistQuote,
-      retailQuotes: quotes
+      buylistQuote: buylistQuote
     )
 
     return .data(section)

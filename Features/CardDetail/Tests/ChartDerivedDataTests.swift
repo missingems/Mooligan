@@ -24,11 +24,8 @@ struct ChartDerivedDataTests {
     return PriceHistorySection.Series(kind: kind, points: points)!
   }
 
-  private func section(
-    days count: Int,
-    releases: [SetReleaseMarker] = []
-  ) -> PriceHistorySection {
-    PriceHistorySection(series: [series(days: count)], currency: "USD", releases: releases)
+  private func section(days count: Int) -> PriceHistorySection {
+    PriceHistorySection(series: [series(days: count)], currency: "USD")
   }
 
   @Test func shouldTrimToTheFixedWindowEndingAtTheLastObservation() {
@@ -40,12 +37,9 @@ struct ChartDerivedDataTests {
     #expect(derived.dateRange.lowerBound == start.addingTimeInterval(-90 * day))
   }
 
-  @Test func thePlottedDatesShouldLeaveRoomBeforeTheFirstPoint() {
+  @Test func theWindowShouldSpanItsFixedNumberOfDays() {
     let derived = ChartDerivedData(section: section(days: 200))
-    let span = derived.dateRange.upperBound.timeIntervalSince(derived.dateRange.lowerBound)
 
-    #expect(derived.plotDateRange.upperBound == derived.dateRange.upperBound)
-    #expect(derived.plotDateRange.lowerBound == derived.dateRange.lowerBound.addingTimeInterval(-span * ChartDerivedData.leadingDatePadding))
     #expect(derived.spanInDays == ChartDerivedData.windowInDays)
   }
 
@@ -62,23 +56,6 @@ struct ChartDerivedDataTests {
     #expect(derived.priceRange.upperBound == 200.0)
   }
 
-  @Test func shouldDropMarkersOutsideTheWindow() {
-    let inside = SetReleaseMarker(
-      id: "in", code: "in", name: "Inside",
-      date: start.addingTimeInterval(-3 * day), iconURL: nil
-    )
-    let outside = SetReleaseMarker(
-      id: "out", code: "out", name: "Outside",
-      date: start.addingTimeInterval(-120 * day), iconURL: nil
-    )
-
-    let derived = ChartDerivedData(
-      section: section(days: 200, releases: [outside, inside])
-    )
-
-    #expect(derived.releases.map(\.id) == ["in"])
-  }
-
   @Test func shouldReportWhichFinishesTheCardHas() {
     let subject = PriceHistorySection(
       series: [series(days: 200), series(days: 200, kind: .foil)],
@@ -87,9 +64,7 @@ struct ChartDerivedDataTests {
     let derived = ChartDerivedData(section: subject)
 
     #expect(derived.series.map(\.kind) == [.normal, .foil])
-    #expect(derived.isAvailable(.normal))
-    #expect(derived.isAvailable(.foil))
-    #expect(derived.isAvailable(.etched) == false)
+    #expect(derived.series(for: .foil)?.kind == .foil)
     #expect(derived.series(for: .etched) == nil)
   }
 
@@ -101,72 +76,11 @@ struct ChartDerivedDataTests {
     #expect(derived.plotSeries[0].points.last?.value == 40.0)
   }
 
-  @Test func shouldReportLowHighSpreadAndBuylistPerFinish() {
-    let subject = PriceHistorySection(
-      series: [series(days: 200), series(days: 200, kind: .foil)],
-      currency: "USD",
-      buylistQuote: BuylistQuote(
-        provider: .cardkingdom,
-        retail: [.normal: decimal("100.00"), .foil: decimal("200.00")],
-        buylist: [.normal: decimal("50.00"), .foil: decimal("120.00")]
-      )
-    )
-    let derived = ChartDerivedData(section: subject)
-
-    #expect(derived.series.map(\.kind) == [.normal, .foil])
-
-    let foil = derived.series[1]
-    #expect(derived.range(for: foil)?.lowerBound == decimal("110.00"))
-    #expect(derived.range(for: foil)?.upperBound == decimal("200.00"))
-    #expect(derived.buylist(for: .foil) == decimal("120.00"))
-    #expect(derived.spread(for: .foil) == 0.4)
-    #expect(derived.spread(for: .normal) == 0.5)
-  }
-
-  @Test func whenOnlyOneFinishHasABuylist_theOtherColumnShouldBeEmpty() {
-    let subject = PriceHistorySection(
-      series: [series(days: 200), series(days: 200, kind: .foil)],
-      currency: "USD",
-      buylistQuote: BuylistQuote(
-        provider: .cardkingdom,
-        retail: [.normal: decimal("100.00")],
-        buylist: [.normal: decimal("50.00")]
-      )
-    )
-    let derived = ChartDerivedData(section: subject)
-
-    #expect(derived.buylist(for: .foil) == nil)
-    #expect(derived.spread(for: .foil) == nil)
-    #expect(derived.buylist(for: .normal) == decimal("50.00"))
-  }
-
-  @Test func whenThereIsNoBuylist_spreadShouldBeNil() {
-    let derived = ChartDerivedData(section: section(days: 40))
-
-    #expect(derived.spread(for: .normal) == nil)
-    #expect(derived.buylist(for: .normal) == nil)
-  }
-
   @Test func theEmptySectionShouldBeStableAndSpanTheWindow() {
     #expect(PriceHistoryState.loading.data.dateRange == PriceHistoryState.unavailable.data.dateRange)
 
     let span = PriceChartStyle.spanInDays(of: PriceHistoryState.loading.data.dateRange)
     #expect(span == ChartDerivedData.windowInDays)
-  }
-
-  @Test func lowestAndHighestShouldCoverOnlyTheWindowThePillNames() {
-    let derived = ChartDerivedData(section: section(days: 60))
-
-    #expect(PriceChartStyle.statWindow(forSpanDays: derived.spanInDays).label == "1M")
-    #expect(derived.range(for: .normal)?.lowerBound == decimal("30.00"))
-    #expect(derived.range(for: .normal)?.upperBound == decimal("60.00"))
-  }
-
-  @Test func whenTheFeedIsUnderAWeek_statsShouldCoverAllOfIt() {
-    let derived = ChartDerivedData(section: section(days: 4))
-
-    #expect(PriceChartStyle.statWindow(forSpanDays: derived.spanInDays).label == "3D")
-    #expect(derived.range(for: .normal)?.lowerBound == decimal("1.00"))
   }
 
   @Test func theDotShouldPassThroughEveryObservation() {
@@ -204,5 +118,23 @@ struct ChartDerivedDataTests {
 
     #expect(plot.value(at: .distantPast) == plot.points.first?.value)
     #expect(plot.value(at: .distantFuture) == plot.points.last?.value)
+  }
+
+  @Test func anchorSeries_shouldBeTheFirstFinishDrawn() {
+    let subject = PriceHistorySection(
+      series: [series(days: 10), series(days: 10, kind: .foil)],
+      currency: "USD"
+    )
+
+    #expect(ChartDerivedData(section: subject).anchorSeries?.kind == .normal)
+  }
+
+  @Test func series_shouldBeOrderedRegularFoilEtched() {
+    let subject = PriceHistorySection(
+      series: [series(days: 10, kind: .etched), series(days: 10, kind: .foil), series(days: 10)],
+      currency: "USD"
+    )
+
+    #expect(ChartDerivedData(section: subject).series.map(\.kind) == [.normal, .foil, .etched])
   }
 }

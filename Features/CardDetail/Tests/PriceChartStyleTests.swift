@@ -11,70 +11,7 @@ struct PriceChartStyleTests {
     Decimal(string: value, locale: Locale(identifier: "en_US_POSIX"))!
   }
 
-  private func change(from: String, to: String) -> PriceChange {
-    PriceChange(
-      start: PricePoint(date: Date(timeIntervalSince1970: 0), amount: decimal(from)),
-      end: PricePoint(date: Date(timeIntervalSince1970: 86_400), amount: decimal(to))
-    )
-  }
-
-  @Test func shouldPointUpAndDownOnRealMoves() {
-    #expect(PriceChartStyle.direction(for: change(from: "10.00", to: "11.00")) == .up)
-    #expect(PriceChartStyle.direction(for: change(from: "10.00", to: "9.00")) == .down)
-  }
-
-  @Test func whenAMoveRoundsAwayAtOneDecimal_shouldReadFlat() {
-    let tiny = change(from: "10000.00", to: "9996.00")
-
-    #expect(PriceChartStyle.changeText(for: tiny) == 0.0004.formatted(.percent.precision(.fractionLength(1))))
-    #expect(PriceChartStyle.direction(for: tiny) == .flat)
-    #expect(PriceChartStyle.symbol(for: .flat) == "arrow.up")
-    #expect(PriceChartStyle.tint(for: .flat) == DesignComponentsAsset.notLegal.swiftUIColor)
-    #expect(PriceChartStyle.pillBackground(for: .flat) == DesignComponentsAsset.notLegal.swiftUIColor.mix(with: .white, by: 0.2))
-  }
-
-  @Test func whenAMoveSurvivesAtOneDecimal_shouldPointDown() {
-    let small = change(from: "10000.00", to: "9990.00")
-
-    #expect(PriceChartStyle.direction(for: small) == .down)
-    #expect(PriceChartStyle.symbol(for: .down) == "arrow.down")
-  }
-
-  @Test func whenNothingMoved_shouldReadFlat() {
-    #expect(PriceChartStyle.direction(for: change(from: "10.00", to: "10.00")) == .flat)
-    #expect(PriceChartStyle.direction(for: nil) == .flat)
-    #expect(PriceChartStyle.changeText(for: nil) == PriceChartStyle.flatChangeText)
-  }
-
-  @Test func shouldTintMovesWithTheLegalityPalette() {
-    let legal = DesignComponentsAsset.legal.swiftUIColor
-    let banned = DesignComponentsAsset.banned.swiftUIColor
-
-    #expect(PriceChartStyle.tint(for: .up) == legal)
-    #expect(PriceChartStyle.tint(for: .down) == banned)
-    #expect(PriceChartStyle.pillBackground(for: .up) == legal.mix(with: .white, by: 0.2))
-    #expect(PriceChartStyle.pillForeground(for: .down) == banned.mix(with: .black, by: 0.8))
-  }
-
-  /// The pills are solid and look the same in light and dark mode, so their dark text has to be
-  /// readable on the chip itself.
-  @Test func changePillTextShouldBeReadableOnItsSolidChip() {
-    func luminance(_ color: Color) -> Double {
-      let resolved = color.resolve(in: EnvironmentValues())
-      return 0.2126 * Double(resolved.linearRed) + 0.7152 * Double(resolved.linearGreen) + 0.0722 * Double(resolved.linearBlue)
-    }
-
-    for direction in [PriceChartStyle.ChangeDirection.up, .down, .flat] {
-      let background = luminance(PriceChartStyle.pillBackground(for: direction))
-      let text = luminance(PriceChartStyle.pillForeground(for: direction))
-      let contrast = (max(background, text) + 0.05) / (min(background, text) + 0.05)
-
-      #expect(contrast >= 4.5, "\(direction) pill text has \(contrast):1")
-    }
-  }
-
-  /// Small white text sits on the legality chips, and the pills darken or lighten the same hues,
-  /// so each chip colour keeps at least 4.3:1 against white.
+  /// Small white text sits on the legality chips, so each chip colour keeps at least 4.3:1 against white.
   @Test func legalityChipsShouldKeepWhiteCaptionTextReadable() throws {
     let assets = [
       ("legal", DesignComponentsAsset.legal),
@@ -95,34 +32,6 @@ struct PriceChartStyleTests {
 
       #expect(contrast >= 4.3, "\(name) has \(contrast):1 against white")
     }
-  }
-
-  @Test func spanTextShouldRoundToTheNearestUnit() {
-    let end = Date(timeIntervalSince1970: 1_788_000_000)
-    func span(_ days: Double) -> String {
-      PriceChartStyle.spanText(of: end.addingTimeInterval(-days * 86_400)...end)
-    }
-
-    #expect(span(90) == String(localized: "Past 3 Months"))
-    #expect(span(21) == String(localized: "Past 3 Weeks"))
-    #expect(span(3) == String(localized: "Past 3 Days"))
-  }
-
-  @Test func shouldReportTheMagnitudeUnsigned() {
-    #expect(PriceChartStyle.changeText(for: change(from: "10.00", to: "9.00"))
-      == PriceChartStyle.changeText(for: change(from: "10.00", to: "11.00")))
-  }
-
-  @Test func statWindowShouldBucketTheSpan() {
-    #expect(PriceChartStyle.statWindow(forSpanDays: 90).label == "3M")
-    #expect(PriceChartStyle.statWindow(forSpanDays: 89).label == "3M")
-    #expect(PriceChartStyle.statWindow(forSpanDays: 75).label == "3M")
-    #expect(PriceChartStyle.statWindow(forSpanDays: 60).label == "1M")
-    #expect(PriceChartStyle.statWindow(forSpanDays: 28).label == "1M")
-    #expect(PriceChartStyle.statWindow(forSpanDays: 27).label == "1W")
-    #expect(PriceChartStyle.statWindow(forSpanDays: 7).label == "1W")
-    #expect(PriceChartStyle.statWindow(forSpanDays: 3).label == "3D")
-    #expect(PriceChartStyle.statWindow(forSpanDays: 3).days == nil)
   }
 
   @Test func priceAxisShouldStepInRoundNumbersWithAStepOfRoomBelowTheLow() {
@@ -160,6 +69,37 @@ struct PriceChartStyleTests {
       #expect(axis.tickLabels == axis.ticks.map { $0.formatted(twoDecimals) })
     }
     #expect(PriceChartStyle.priceAxis(for: 20.23...62.0).labeled(currencyCode: "USD").label(at: 1) == 20.0.formatted(twoDecimals))
+  }
+
+  /// Sub-dollar prices used to leave the top tick a hair above the domain (0.6000000000000001 against
+  /// 0.6), and Swift Charts drew that grid line without its price.
+  @Test func everyTickShouldSitInsideTheDomainWithTheEndsOnItsBounds() {
+    var ranges: [ClosedRange<Double>] = []
+    for index in 1...2_000 {
+      let low = Double(index) * 0.037
+      for factor in [1.05, 1.2, 1.5, 2.0, 3.0] {
+        ranges.append(low...(low * factor))
+      }
+    }
+
+    for range in ranges {
+      let axis = PriceChartStyle.priceAxis(for: range)
+
+      #expect(axis.ticks.first == axis.domain.lowerBound, "\(range): \(axis)")
+      #expect(axis.ticks.last == axis.domain.upperBound, "\(range): \(axis)")
+      #expect(axis.ticks.allSatisfy(axis.domain.contains), "\(range): \(axis)")
+    }
+  }
+
+  @Test func ratioRangeShouldReadLowToHighAsWholePercents() {
+    #expect(PriceChartStyle.ratioRangeText([0.64, 0.5]) == "\(PriceChartStyle.ratioText(0.5))–\(PriceChartStyle.ratioText(0.64))")
+    #expect(PriceChartStyle.ratioText(0.5) == 0.5.formatted(.percent.precision(.fractionLength(0))))
+  }
+
+  @Test func ratiosThatReadTheSameShouldShowOneFigure() {
+    #expect(PriceChartStyle.ratioRangeText([0.501, 0.499]) == PriceChartStyle.ratioText(0.5))
+    #expect(PriceChartStyle.ratioRangeText([0.7]) == PriceChartStyle.ratioText(0.7))
+    #expect(PriceChartStyle.ratioRangeText([]) == nil)
   }
 
   @Test func priceAxisShouldNeverGoNegativeOrCollapse() {

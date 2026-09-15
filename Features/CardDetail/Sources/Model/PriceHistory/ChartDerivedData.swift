@@ -25,67 +25,29 @@ struct ChartDerivedData: Equatable, Sendable {
 
   var series: [PriceHistorySection.Series] = []
   var plotSeries: [PlotSeries] = []
-  var releases: [SetReleaseMarker] = []
-  var buylistQuote: BuylistQuote?
   var priceRange: ClosedRange<Double> = 0.0...1.0
   var dateRange: ClosedRange<Date> = Date()...Date()
 
   var anchorSeries: PriceHistorySection.Series? { series.first }
 
+  /// The most points drawn across every finish together, shared evenly between them. The toolbar
+  /// prices still read every day from `series` while scrubbing; only the drawn lines are thinned.
+  static let maxPlottedPoints = 180
+
   var spanInDays: Int { PriceChartStyle.spanInDays(of: dateRange) }
-
-  /// Share of the data's span added before its first date on the chart, so a release icon on the
-  /// first day has room to sit centred over its rule instead of against the plot's edge.
-  static let leadingDatePadding = 0.05
-
-  /// The x-axis domain: the data's dates with room added before the first one.
-  var plotDateRange: ClosedRange<Date> {
-    let span = dateRange.upperBound.timeIntervalSince(dateRange.lowerBound)
-    return dateRange.lowerBound.addingTimeInterval(-span * Self.leadingDatePadding)...dateRange.upperBound
-  }
 
   func series(for kind: PriceSeriesKind) -> PriceHistorySection.Series? {
     series.first { $0.kind == kind }
   }
 
-  func range(for kind: PriceSeriesKind) -> ClosedRange<Decimal>? {
-    guard let series = series(for: kind) else { return nil }
-    guard let days = PriceChartStyle.statWindow(forSpanDays: spanInDays).days,
-          let last = series.points.last?.date
-    else {
-      return range(for: series)
-    }
-    let cutoff = last.addingTimeInterval(-Double(days) * 86_400)
-    let amounts = series.points.filter { $0.date >= cutoff }.map(\.amount)
-    guard let low = amounts.min(), let high = amounts.max() else { return nil }
-    return low...high
-  }
-
-  func range(for series: PriceHistorySection.Series) -> ClosedRange<Decimal>? {
-    let amounts = series.points.map(\.amount)
-    guard let low = amounts.min(), let high = amounts.max() else { return nil }
-    return low...high
-  }
-
-  func buylist(for kind: PriceSeriesKind) -> Decimal? {
-    buylistQuote?.buylist(for: kind)
-  }
-
-  func spread(for kind: PriceSeriesKind) -> Double? {
-    buylistQuote?.spread(for: kind)
-  }
-
   init(
     series: [PriceHistorySection.Series] = [],
-    releases: [SetReleaseMarker] = [],
-    buylistQuote: BuylistQuote? = nil,
     priceRange: ClosedRange<Double> = 0.0...1.0,
     dateRange: ClosedRange<Date> = Date()...Date()
   ) {
     self.series = series
-    self.plotSeries = series.map(Self.plot)
-    self.releases = releases
-    self.buylistQuote = buylistQuote
+    let perSeries = Self.maxPlottedPoints / max(series.count, 1)
+    self.plotSeries = series.map { Self.plot($0, limit: perSeries) }
     self.priceRange = priceRange
     self.dateRange = dateRange
   }
@@ -106,22 +68,18 @@ struct ChartDerivedData: Equatable, Sendable {
 
     self.init(
       series: series,
-      releases: section.releases.filter { dates.contains($0.date) },
-      buylistQuote: section.buylistQuote,
       priceRange: low...max(high, low),
       dateRange: dates
     )
   }
 
-  private static func plot(_ series: PriceHistorySection.Series) -> PlotSeries {
+  private static func plot(_ series: PriceHistorySection.Series, limit: Int) -> PlotSeries {
     PlotSeries(
       kind: series.kind,
-      points: series.points.map { PlotPoint(date: $0.date, value: $0.amount.doubleValue) }
+      points: series.points
+        .map { PlotPoint(date: $0.date, value: $0.amount.doubleValue) }
+        .downsampled(to: limit)
     )
-  }
-
-  func isAvailable(_ kind: PriceSeriesKind) -> Bool {
-    series.contains { $0.kind == kind }
   }
 
   private static func window(

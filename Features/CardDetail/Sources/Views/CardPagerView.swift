@@ -7,7 +7,6 @@ public struct CardPagerView: View {
   private var scrolledId: UUID?
   
   public var body: some View {
-    let _ = Self._printChanges() // Debugging changes
     ScrollView(.horizontal, showsIndicators: false) {
       CardPages(store: store)
     }

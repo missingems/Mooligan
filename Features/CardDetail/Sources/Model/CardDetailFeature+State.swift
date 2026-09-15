@@ -9,8 +9,6 @@ public extension CardDetailFeature {
     public let id: UUID
     public var content: Content
     var priceHistory: PriceHistoryDisplay
-    public var purchaseLinks: PurchaseLinksState = .idle
-    var purchaseDropdown: PurchaseDropdownState = .loading
     public var setIconURL: URL?
     var variants: Content.SubContent
     var relatedTokens: Content.SubContent?

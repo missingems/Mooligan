@@ -50,7 +50,6 @@ struct PriceHistorySectionTests {
     let state = PriceHistorySection.makeState(
       card: card(),
       history: nil,
-      releases: [],
       today: today
     )
 
@@ -62,7 +61,6 @@ struct PriceHistorySectionTests {
     let state = PriceHistorySection.makeState(
       card: card(),
       history: history([.normal: [point(daysBefore: 1, "1.00")]]),
-      releases: [],
       today: today
     )
 
@@ -75,7 +73,6 @@ struct PriceHistorySectionTests {
       history: history([
         .normal: [point(daysBefore: 2, "1.00"), point(daysBefore: 1, "1.20")],
       ]),
-      releases: [],
       today: today
     )
 
@@ -95,7 +92,6 @@ struct PriceHistorySectionTests {
       history: history([
         .normal: [point(daysBefore: 2, "1.00"), point(daysBefore: 1, "1.20")],
       ]),
-      releases: [],
       today: today
     )
 
@@ -117,7 +113,6 @@ struct PriceHistorySectionTests {
       history: history([
         .normal: [point(daysBefore: 40, "1.00"), point(daysBefore: 39, "1.20")],
       ]),
-      releases: [],
       today: today
     )
 
@@ -143,7 +138,6 @@ struct PriceHistorySectionTests {
         .foil: [point(daysBefore: 2, "5.00"), point(daysBefore: 1, "5.50")],
         .normal: [point(daysBefore: 2, "1.00"), point(daysBefore: 1, "1.20")],
       ]),
-      releases: [],
       today: today
     )
 
@@ -154,33 +148,6 @@ struct PriceHistorySectionTests {
     #expect(section.series.map(\.kind) == [.normal, .foil])
   }
 
-  /// Markers outside what the chart actually plots would sit on an axis position
-  /// that does not exist.
-  @Test func whenAReleaseFallsOutsideTheSeries_shouldBeDropped() {
-    let inside = SetReleaseMarker(
-      id: "in", code: "in", name: "Inside",
-      date: today.addingTimeInterval(-1.5 * 86_400), iconURL: nil
-    )
-    let outside = SetReleaseMarker(
-      id: "out", code: "out", name: "Outside",
-      date: today.addingTimeInterval(-200 * 86_400), iconURL: nil
-    )
-
-    let state = PriceHistorySection.makeState(
-      card: card(),
-      history: history([
-        .normal: [point(daysBefore: 2, "1.00"), point(daysBefore: 1, "1.20")],
-      ]),
-      releases: [inside, outside],
-      today: today
-    )
-
-    guard case let .data(section) = state else {
-      Issue.record("expected data")
-      return
-    }
-    #expect(section.releases.map(\.id) == ["in"])
-  }
 
   /// TCGplayer lists a card weeks before it is legal to sell, so MTGJSON's feed
   /// opens with preorder quotes. Those are speculation on an unopened product,
@@ -198,7 +165,6 @@ struct PriceHistorySectionTests {
           point(daysBefore: 1, "4.10"),
         ],
       ]),
-      releases: [],
       today: today
     )
 
@@ -221,7 +187,6 @@ struct PriceHistorySectionTests {
       history: history([
         .normal: [point(daysBefore: 40, "1.00"), point(daysBefore: 1, "1.20")],
       ]),
-      releases: [],
       today: today
     )
 
@@ -240,7 +205,6 @@ struct PriceHistorySectionTests {
       history: history([
         .normal: [point(daysBefore: 6, "9.00"), point(daysBefore: 5, "8.00")],
       ]),
-      releases: [],
       today: today
     )
 
@@ -258,7 +222,6 @@ struct PriceHistorySectionTests {
           point(daysBefore: 2, "4.00"),
         ],
       ]),
-      releases: [],
       today: today
     )
 
@@ -286,7 +249,6 @@ struct PriceHistorySectionTests {
           .normal: [point(daysBefore: 2, "0.60"), point(daysBefore: 1, "0.70")],
         ])
       ),
-      releases: [],
       today: today
     )
 
@@ -295,7 +257,7 @@ struct PriceHistorySectionTests {
       return
     }
     #expect(section.buylistQuote?.buylist(for: .normal) == decimal("0.70"))
-    #expect(section.buylistQuote?.spread(for: .normal) == 0.5)
+    #expect(section.buylistQuote?.ratio(for: .normal) == 0.5)
   }
 
   @Test func whenThereIsNoBuylist_shouldCarryNone() {
@@ -304,7 +266,6 @@ struct PriceHistorySectionTests {
       history: history([
         .normal: [point(daysBefore: 2, "1.00"), point(daysBefore: 1, "1.20")],
       ]),
-      releases: [],
       today: today
     )
 
@@ -326,7 +287,6 @@ struct PriceHistorySectionTests {
           point(daysBefore: 1, "210.00"),
         ],
       ]),
-      releases: [],
       today: today
     )
 
@@ -344,7 +304,6 @@ struct PriceHistorySectionTests {
       history: history([
         .normal: [point(daysBefore: 2, "0.00"), point(daysBefore: 1, "0.00")],
       ]),
-      releases: [],
       today: today
     )
 

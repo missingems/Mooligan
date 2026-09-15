@@ -29,15 +29,12 @@ public struct BuylistQuote: Equatable, Sendable {
 
   public func buylist(for kind: PriceSeriesKind) -> Decimal? { buylist[kind] }
 
-  public func spread(for kind: PriceSeriesKind) -> Double? {
+  /// What the vendor pays for a copy as a share of what it sells one for, both from its own lists.
+  public func ratio(for kind: PriceSeriesKind) -> Double? {
     guard let sell = retail[kind], let buy = buylist[kind] else { return nil }
-    let ask = (sell as NSDecimalNumber).doubleValue
-    let bid = (buy as NSDecimalNumber).doubleValue
+    let ask = sell.doubleValue
+    let bid = buy.doubleValue
     guard ask > 0, bid > 0, ask.isFinite, bid.isFinite, ask >= bid else { return nil }
-    return (ask - bid) / ask
-  }
-
-  public var finishes: [PriceSeriesKind] {
-    PriceSeriesKind.allCases.filter { buylist[$0] != nil }
+    return bid / ask
   }
 }

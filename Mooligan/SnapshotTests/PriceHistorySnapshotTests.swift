@@ -48,23 +48,6 @@ struct PriceHistorySnapshotTests {
     )
   }
 
-  private static let groups = PurchaseVendorGroup.make(
-    links: PurchaseLinksMapper.makeLinks(
-      from: MTGGraphQLPurchaseUrls(
-        tcgplayer: "https://mtgjson.com/links/tcg",
-        cardKingdom: "https://mtgjson.com/links/ck",
-        cardKingdomFoil: "https://mtgjson.com/links/ck-foil",
-        cardmarket: "https://mtgjson.com/links/mkm"
-      )
-    ),
-    quotes: [
-      .tcgplayer: RetailQuote(currency: "USD", prices: [.normal: 216.70, .foil: 272.04]),
-      .cardkingdom: RetailQuote(currency: "USD", prices: [.normal: 219.99, .foil: 279.99]),
-      .cardmarket: RetailQuote(currency: "EUR", prices: [.normal: 189.50, .foil: 240.00]),
-    ],
-    scryfallPrices: Card.Prices()
-  )
-
   private func snapshot<Content: View>(
     _ content: Content,
     height: CGFloat,
@@ -108,22 +91,20 @@ struct PriceHistorySnapshotTests {
     return card
   }
 
-  private func display(_ state: PriceHistoryState) -> PriceHistoryDisplay {
-    PriceHistoryDisplay.make(card: Self.card, state: state, labels: labels)
+  private func display(_ state: PriceHistoryState, card: Card = Self.card) -> PriceHistoryDisplay {
+    PriceHistoryDisplay.make(card: card, state: state, labels: labels)
   }
 
-  private func section(_ state: PriceHistoryState) -> some View {
+  private func section(_ state: PriceHistoryState, card: Card = Self.card) -> some View {
     VStack(spacing: 0.0) {
       PriceHistoryView(
-        display: display(state),
-        purchaseDropdown: .loading,
+        display: display(state, card: card),
         labels: labels,
-        onRetry: {},
-        onPurchaseLinksRequested: {}
+        onRetry: {}
       )
     }
-    .environment(\.priceHistoryPlaceholderAnimates, false)
   }
+
 
   @Test func loadedSection() async throws {
     for scheme in [ColorScheme.light, .dark] {
@@ -163,7 +144,7 @@ struct PriceHistorySnapshotTests {
     let chart = display.chart
     let axis = display.axis
     let dates = [0.0, 0.3, 1.0].map {
-      chart.plotDateRange.lowerBound.addingTimeInterval($0 * chart.plotDateRange.upperBound.timeIntervalSince(chart.plotDateRange.lowerBound))
+      chart.dateRange.lowerBound.addingTimeInterval($0 * chart.dateRange.upperBound.timeIntervalSince(chart.dateRange.lowerBound))
     }
     let prices = [axis.domain.lowerBound, (axis.domain.lowerBound + axis.domain.upperBound) / 2.0, axis.domain.upperBound]
     let probe = ChartProxyProbe()
@@ -181,11 +162,11 @@ struct PriceHistorySnapshotTests {
       }
       .chartLegend(.hidden)
       .chartYScale(domain: axis.domain)
-      .chartXScale(domain: chart.plotDateRange)
+      .chartXScale(domain: chart.dateRange)
       .chartYAxis {
         AxisMarks(position: .trailing, values: axis.ticks) { value in
           AxisValueLabel(anchor: .leading) {
-            Text(axis.label(at: value.index)).font(.caption2).monospaced()
+            Text(axis.label(at: value.index)).font(.caption2).fontDesign(.rounded)
           }
         }
       }
@@ -235,7 +216,7 @@ struct PriceHistorySnapshotTests {
     #expect(abs(interaction.plot.width - probe.plot.width) < tolerance, "measured \(interaction.plot) proxy \(probe.plot)")
     #expect(abs(interaction.plot.height - probe.plot.height) < tolerance, "measured \(interaction.plot) proxy \(probe.plot)")
 
-    let scale = PlotScale(plot: probe.plot, dates: chart.plotDateRange, prices: axis.domain)
+    let scale = PlotScale(plot: probe.plot, dates: chart.dateRange, prices: axis.domain)
     for (date, expected) in zip(dates, probe.xs) {
       let x = try #require(scale.x(for: date))
       #expect(abs(x - (try #require(expected))) < tolerance, "x for \(date): \(x) vs proxy \(String(describing: expected))")
@@ -248,52 +229,66 @@ struct PriceHistorySnapshotTests {
     #expect(abs(quarter.timeIntervalSince(try #require(probe.quarterDate))) < 3_600.0)
   }
 
-  @Test func scrubbingOverAReleaseShowsItsTitle() async throws {
-    let base = Self.section
-    let releases = [
-      SetReleaseMarker(id: "EARLY", code: "EAR", name: "Innistrad: Crimson Vow", date: base.dateRange.lowerBound, iconURL: nil),
-      SetReleaseMarker(id: "LATE", code: "LAT", name: "Murders at Karlov Manor", date: base.dateRange.upperBound.addingTimeInterval(-12 * 86_400), iconURL: nil),
-    ]
-    let section = PriceHistorySection(series: base.series, currency: base.currency, releases: releases, buylistQuote: base.buylistQuote)
-    let display = display(.data(section))
+  /// A sub-dollar card's axis, where rounding once left the top grid line without its price.
+  @Test func subDollarAxisShouldLabelEveryGridLine() async throws {
+    let axis = PriceChartStyle.priceAxis(for: 0.333...0.4995).labeled(currencyCode: "USD")
+    try await snapshot(
+      PriceHistoryChart(derivedData: ChartDerivedData(), axis: axis, interaction: ChartInteraction())
+        .frame(height: PriceHistoryView.chartHeight)
+        .padding(),
+      height: PriceHistoryView.chartHeight + 32.0,
+      named: "fixed"
+    )
+  }
 
-    for release in releases {
-      await SnapshotWindow.acquire()
-      defer { SnapshotWindow.release() }
+  /// A card printed in regular, foil and etched foil puts its four items two to a row.
+  @Test func fourItemsShouldSitTwoToARow() async throws {
+    var card = Self.card
+    card.finishes = [.nonfoil, .foil, .etched]
+    card.prices = Card.Prices(usd: "216.70", usdFoil: "272.04", usdEtched: "301.15")
+    try await snapshot(section(.data(Self.section), card: card), height: 540.0, named: "loaded")
+  }
 
-      let interaction = ChartInteraction()
-      let size = CGSize(width: Self.width - 32.0, height: PriceHistoryView.chartHeight)
-      let chart = PriceHistoryChart(derivedData: display.chart, axis: display.axis, interaction: interaction)
-        .frame(width: size.width, height: size.height)
-        .padding(16.0)
-        .environment(\.priceHistoryPlaceholderAnimates, false)
+  /// With no finishes and no prices, regular, foil and buy back still show, as greyed-out dashes.
+  @Test func withoutPricesTheItemsShouldBeGreyedOutDashes() async throws {
+    var card = Self.card
+    card.finishes = []
+    card.prices = Card.Prices()
+    try await snapshot(section(.unavailable, card: card), height: 540.0, named: "unavailable")
+  }
 
-      let controller = UIHostingController(rootView: chart.background(Color(.systemBackground)).environment(\.colorScheme, .light))
-      controller.safeAreaRegions = []
-      let scene = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
-      let window = UIWindow(windowScene: scene)
-      window.overrideUserInterfaceStyle = .light
-      window.frame = CGRect(x: 0.0, y: 0.0, width: Self.width, height: size.height + 32.0)
-      window.rootViewController = controller
-      window.makeKeyAndVisible()
-      controller.view.frame = window.bounds
-      try await Task.sleep(for: .seconds(1.0))
+  /// Tapping buy back morphs its capsule into the breakdown, which grows over what is below it.
+  @Test func buyBackBreakdown() async throws {
+    let display = display(.data(Self.section))
+    try await snapshot(
+      VStack(spacing: 13.0) {
+        HStack(alignment: .top, spacing: 8.0) {
+          Color.clear.frame(maxWidth: .infinity, maxHeight: 44.0)
+          Color.clear.frame(maxWidth: .infinity, maxHeight: 44.0)
+          PriceHistoryBuyBackItem(buyBack: display.buyBack, caption: labels.buyBack, interaction: ChartInteraction(), isExpanded: true)
+        }
+        .zIndex(1.0)
 
-      let scale = PlotScale(plot: interaction.plot, dates: display.chart.plotDateRange, prices: display.axis.domain)
-      let entry = try #require(ReleaseMarkerLayout(releases: display.chart.releases, scale: scale).entries.first { $0.release.id == release.id })
-      interaction.scrubbedDate = scale.date(atX: entry.iconCenter.x)
-      interaction.needleX = entry.iconCenter.x
-      try await Task.sleep(for: .seconds(1.0))
+        Color(.secondarySystemBackground).frame(height: 120.0)
+      }
+      .padding(),
+      height: 220.0,
+      named: "expanded"
+    )
+  }
 
-      assertSnapshot(
-        of: controller.view,
-        as: .image(drawHierarchyInKeyWindow: true, precision: 0.98, perceptualPrecision: 0.98),
-        named: release.id.lowercased()
-      )
-
-      window.isHidden = true
-      window.rootViewController = nil
-    }
+  @Test func scrubbingShouldDrawTheNeedleThroughTheScrubbedDay() async throws {
+    let display = display(.data(Self.section))
+    let interaction = ChartInteraction()
+    let range = display.chart.dateRange
+    interaction.scrubbedDate = range.lowerBound.addingTimeInterval(range.upperBound.timeIntervalSince(range.lowerBound) * 0.6)
+    try await snapshot(
+      PriceHistoryChart(derivedData: display.chart, axis: display.axis, interaction: interaction)
+        .frame(height: PriceHistoryView.chartHeight)
+        .padding(),
+      height: PriceHistoryView.chartHeight + 32.0,
+      named: "scrubbing"
+    )
   }
 
   @Test func emptyChartMessages() async throws {
@@ -307,21 +302,4 @@ struct PriceHistorySnapshotTests {
     }
   }
 
-  @Test func purchaseLinksDropdown() async throws {
-    let states: [(String, PurchaseDropdownState)] = [
-      ("loaded", .loaded(Self.groups)),
-      ("loading", .loading),
-      ("failed", .failed),
-      ("empty", .loaded([])),
-    ]
-    for (name, state) in states {
-      try await snapshot(
-        PriceHistoryPurchaseLinksView(state: state, labels: labels, onRetry: {}, onSelect: { _ in })
-          .padding(13.0)
-          .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing),
-        height: 420.0,
-        named: name
-      )
-    }
-  }
 }

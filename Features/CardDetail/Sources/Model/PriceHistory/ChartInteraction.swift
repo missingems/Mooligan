@@ -6,28 +6,18 @@ import Observation
 final class ChartInteraction {
   var scrubbedDate: Date?
 
-  var needleX: CGFloat?
-
-  var restingNeedleX: CGFloat?
-
   /// The chart's plot area in its own coordinate space; `.zero` until the chart has laid out.
   var plot: CGRect = .zero
 
-  var plotTopY: CGFloat? { plot.isEmpty ? nil : plot.minY }
-
-  var plotBottomY: CGFloat? { plot.isEmpty ? nil : plot.maxY }
-
-  var anchorX: CGFloat? { needleX ?? restingNeedleX }
-
   func endScrub() {
-    guard scrubbedDate != nil || needleX != nil else { return }
+    guard scrubbedDate != nil else { return }
     scrubbedDate = nil
-    needleX = nil
   }
 
   @ObservationIgnored
   private var lastFoundIndices: [String: Int] = [:]
 
+  /// The scrubbed day's point in `series`, or its latest point when nothing is scrubbed.
   func pointIndex(for series: PriceHistorySection.Series) -> Int? {
     guard let scrubbedDate else { return series.points.indices.last }
     return index(in: series, nearest: scrubbedDate)

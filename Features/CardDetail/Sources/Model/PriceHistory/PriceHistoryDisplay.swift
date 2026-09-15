@@ -10,58 +10,40 @@ struct PriceHistoryDisplay: Equatable, Sendable {
     case failed
   }
 
-  struct Change: Equatable, Sendable {
-    let text: String
-    let direction: PriceChartStyle.ChangeDirection
-    var isKnown = true
-
-    static let flat = Change(text: PriceChartStyle.flatChangeText, direction: .flat)
-    static let unknown = Change(text: PriceChartStyle.unavailableValue, direction: .flat, isKnown: false)
-  }
-
-  struct SummaryItem: Equatable, Sendable, Identifiable {
-    let kind: PriceSeriesKind
-    let label: String
-    let priceText: String
-    let change: Change
-
-    var id: PriceSeriesKind { kind }
-  }
-
-  struct StatsColumn: Equatable, Sendable, Identifiable {
-    let kind: PriceSeriesKind
-    let label: String
-    let isAvailable: Bool
-
-    var id: PriceSeriesKind { kind }
-  }
-
-  struct StatsRow: Equatable, Sendable, Identifiable {
-    let title: String
-    let values: [String]
-
-    var id: String { title }
-  }
-
-  struct ScrubFrames: Equatable, Sendable {
-    let prices: [String]
-    let changes: [Change]
-  }
-
   var status: Status
-  var currencyCode: String
-  var summary: [SummaryItem]
-  var statsTitles: [String]
-  var statsColumns: [StatsColumn]
-  var statsRows: [StatsRow]
+  var prices: [FinishPrice]
+  var buyBack: BuyBackSummary
+  /// The card's TCGplayer page, which the prices open. TCGplayer lists every finish on one page, and
+  /// its market price is the one the toolbar and chart show.
+  var tcgplayerURL: URL?
   var chart: ChartDerivedData
   var axis: PriceChartStyle.PriceAxis
-  var scrubFrames: [PriceSeriesKind: ScrubFrames]
-  var widestPriceText: String
-  var widestChange: Change
-  var retailQuotes: [PriceProvider: RetailQuote]
+  /// Every charted day's price, formatted ahead of time, so scrubbing only picks one.
+  var scrubPrices: [PriceSeriesKind: [String]]
 
   var hasChart: Bool { chart.plotSeries.isEmpty == false }
+
+  /// Every finish, then the buy back ratio.
+  var toolbarEntries: [PriceHistoryToolbarEntry] {
+    prices.map { .finish($0.kind) } + [.buyBack]
+  }
+
+  func price(for kind: PriceSeriesKind) -> FinishPrice? {
+    prices.first { $0.kind == kind }
+  }
+
+  /// The price shown for `kind` on the scrubbed day, or its latest price when nothing is scrubbed.
+  func priceText(for price: FinishPrice, interaction: ChartInteraction) -> String {
+    guard
+      let series = chart.series(for: price.kind),
+      let texts = scrubPrices[price.kind],
+      let index = interaction.pointIndex(for: series),
+      texts.indices.contains(index)
+    else {
+      return price.priceText
+    }
+    return texts[index]
+  }
 }
 
 extension PriceHistoryDisplay {
@@ -91,78 +73,23 @@ extension PriceHistoryDisplay {
     let currency = status == .loaded && section.currency.isEmpty == false ? section.currency : "USD"
     let kinds = finishes(of: card, charted: chart.series.map(\.kind))
     let format = PriceChartStyle.price(currency)
-    let isLoading = status == .loading
-    // A dash holds the place while prices load; once loading is over, anything still missing is N/A.
-    let missing = isLoading ? PriceChartStyle.missingValue : PriceChartStyle.unavailableValue
+    let missing = PriceChartStyle.missingValue
     let quotes = kinds.reduce(into: [PriceSeriesKind: Decimal]()) { quotes, kind in
       quotes[kind] = PriceHistorySection.scryfallQuote(card: card, kind: kind)
     }
 
-    let summary = kinds.map { kind -> SummaryItem in
-      let label = PriceChartStyle.label(for: kind)
-      if let readout = chart.series(for: kind)?.latestReadout {
-        return SummaryItem(
-          kind: kind,
-          label: label,
-          priceText: readout.point.amount.formatted(format),
-          change: change(readout.change) ?? .unknown
-        )
-      }
-      // The pill is there from the start, showing no change while loading, so prices landing only
-      // change its text instead of making it appear.
-      return SummaryItem(
-        kind: kind,
-        label: label,
-        priceText: quotes[kind]?.formatted(format) ?? missing,
-        change: isLoading ? .flat : .unknown
-      )
-    }
-
-    // Without a chart for a finish, its Scryfall price is the one figure there is, so once loading
-    // is over it stands in for that finish's low and high.
-    func rangeFallback(_ kind: PriceSeriesKind) -> String {
-      guard isLoading == false, let quote = quotes[kind] else { return missing }
-      return quote.formatted(format)
-    }
-
-    let columns = kinds.map { kind in
-      StatsColumn(
+    let prices = kinds.map { kind in
+      let price = chart.series(for: kind)?.points.last?.amount ?? quotes[kind]
+      return FinishPrice(
         kind: kind,
         label: PriceChartStyle.label(for: kind),
-        isAvailable: isLoading || chart.isAvailable(kind) || chart.buylist(for: kind) != nil || quotes[kind] != nil
+        priceText: price?.formatted(format) ?? missing,
+        isAvailable: price != nil
       )
     }
 
-    let rows: [StatsRow] = [
-      StatsRow(title: labels.low, values: kinds.map { kind in
-        chart.range(for: kind).map { $0.lowerBound.formatted(format) } ?? rangeFallback(kind)
-      }),
-      StatsRow(title: labels.high, values: kinds.map { kind in
-        chart.range(for: kind).map { $0.upperBound.formatted(format) } ?? rangeFallback(kind)
-      }),
-      StatsRow(title: labels.buylist, values: kinds.map { kind in
-        chart.buylist(for: kind).map { $0.formatted(format) } ?? missing
-      }),
-      StatsRow(title: labels.spread, values: kinds.map { kind in
-        chart.spread(for: kind).map { $0.formatted(.percent.precision(.fractionLength(0))) } ?? missing
-      }),
-    ]
-
-    var frames: [PriceSeriesKind: ScrubFrames] = [:]
-    var widestPrice = ""
-    var widestChange = Change.flat
-    for series in chart.series {
-      let prices = series.points.map { $0.amount.formatted(format) }
-      let changes = series.points.indices.map { index in
-        change(series.dayChange(endingAt: index)) ?? .flat
-      }
-      frames[series.kind] = ScrubFrames(prices: prices, changes: changes)
-      if let longest = prices.max(by: { $0.count < $1.count }), longest.count > widestPrice.count {
-        widestPrice = longest
-      }
-      if let longest = changes.max(by: { $0.text.count < $1.text.count }), longest.text.count > widestChange.text.count {
-        widestChange = longest
-      }
+    let scrubPrices = chart.series.reduce(into: [PriceSeriesKind: [String]]()) { frames, series in
+      frames[series.kind] = series.points.map { $0.amount.formatted(format) }
     }
 
     // Without history (loading, or none to be had) the chart still spans the last three months, and
@@ -174,42 +101,71 @@ extension PriceHistoryDisplay {
 
     return PriceHistoryDisplay(
       status: status,
-      currencyCode: currency,
-      summary: summary,
-      statsTitles: [labels.finishes, labels.low, labels.high, labels.buylist, labels.spread],
-      statsColumns: columns,
-      statsRows: rows,
+      prices: prices,
+      buyBack: buyBack(kinds: kinds, quote: section.buylistQuote, format: format, missing: missing),
+      tcgplayerURL: tcgplayerURL(of: card),
       chart: chart,
       axis: axis,
-      scrubFrames: frames,
-      widestPriceText: widestPrice,
-      widestChange: widestChange,
-      retailQuotes: status == .loaded ? section.retailQuotes : [:]
+      scrubPrices: scrubPrices
     )
   }
 
+  /// Regular and foil always show, so the toolbar keeps its shape: a card printed in etched foil but
+  /// not foil shows etched in foil's place, and a card with both shows all three.
   static func finishes(of card: Card, charted: [PriceSeriesKind]) -> [PriceSeriesKind] {
-    var kinds = Set(card.finishes.compactMap { finish -> PriceSeriesKind? in
+    let kinds = Set(card.finishes.compactMap { finish -> PriceSeriesKind? in
       switch finish {
       case .nonfoil: .normal
       case .foil, .glossy: .foil
       case .etched: .etched
       case .unknown: nil
       }
-    })
-    kinds.formUnion(charted)
+    }).union(charted)
 
-    if kinds.isEmpty {
-      kinds = Set(PriceSeriesKind.allCases.filter { PriceHistorySection.scryfallQuote(card: card, kind: $0) != nil })
+    var finishes: [PriceSeriesKind] = [.normal]
+    if kinds.contains(.foil) || kinds.contains(.etched) == false {
+      finishes.append(.foil)
     }
-    if kinds.isEmpty {
-      kinds = [.normal]
+    if kinds.contains(.etched) {
+      finishes.append(.etched)
     }
-    return PriceChartStyle.displayOrder.filter(kinds.contains)
+    return finishes
   }
 
-  private static func change(_ change: PriceChange?) -> Change? {
-    guard let change else { return nil }
-    return Change(text: PriceChartStyle.changeText(for: change), direction: PriceChartStyle.direction(for: change))
+  /// Scryfall's TCGplayer link for the card, when it is a secure web address.
+  static func tcgplayerURL(of card: Card) -> URL? {
+    guard
+      let raw = card.purchaseUris?["tcgplayer"],
+      let components = URLComponents(string: raw.trimmingCharacters(in: .whitespacesAndNewlines)),
+      components.scheme?.lowercased() == "https",
+      components.host?.isEmpty == false
+    else {
+      return nil
+    }
+    return components.url
+  }
+
+  private static func buyBack(
+    kinds: [PriceSeriesKind],
+    quote: BuylistQuote?,
+    format: Decimal.FormatStyle.Currency,
+    missing: String
+  ) -> BuyBackSummary {
+    let finishes = kinds.compactMap { kind -> FinishBuyBack? in
+      guard let price = quote?.buylist(for: kind) else { return nil }
+      return FinishBuyBack(
+        kind: kind,
+        label: PriceChartStyle.label(for: kind),
+        priceText: price.formatted(format),
+        ratioText: quote?.ratio(for: kind).map(PriceChartStyle.ratioText)
+      )
+    }
+    let ratios = kinds.compactMap { quote?.ratio(for: $0) }
+
+    return BuyBackSummary(
+      provider: quote?.provider ?? PriceHistorySection.buylistProvider,
+      ratioText: PriceChartStyle.ratioRangeText(ratios) ?? missing,
+      finishes: finishes
+    )
   }
 }

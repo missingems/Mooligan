@@ -7,9 +7,7 @@ import ScryfallKit
 @Reducer public struct CardDetailFeature: Sendable {
   @Dependency(\.cardDetailRequestClient) private var client
   @Dependency(\.priceHistoryClient) private var priceHistoryClient
-  @Dependency(\.purchaseLinksClient) private var purchaseLinksClient
   @Dependency(\.continuousClock) private var clock
-  @Dependency(\.gameSetRequestClient) private var setClient
   
   public init() {}
   
@@ -62,26 +60,6 @@ import ScryfallKit
     case .retryPriceHistoryTapped:
       return .send(.fetchPriceHistory(card: state.content.card))
 
-    case .purchaseLinksRequested:
-      switch state.purchaseLinks {
-      case .loading, .loaded:
-        return .none
-      case .idle, .failed:
-        break
-      }
-      state.updatePurchaseLinks(.loading)
-
-      return .run { [card = state.content.card] send in
-        do {
-          await send(.updatePurchaseLinks(.loaded(try await purchaseLinksClient.purchaseLinks(for: card))))
-        } catch let error as PriceHistoryClientError where error == .emptyResponse {
-          await send(.updatePurchaseLinks(.loaded([])))
-        } catch {
-          await send(.updatePurchaseLinks(.failed))
-        }
-      }
-      .cancellable(id: CancelID.purchaseLinks(state.content.card.id), cancelInFlight: true)
-
     case .descriptionCallToActionTapped:
       state.toggleCardImageDescription()
       return .none
@@ -97,11 +75,6 @@ import ScryfallKit
     case let .updatePriceHistory(update):
       state.updatePriceHistory(update.display)
       return .none
-
-    case let .updatePurchaseLinks(value):
-      state.updatePurchaseLinks(value)
-      return .none
-      
     case .viewRulingsTapped:
       return .none
     }
@@ -111,7 +84,6 @@ import ScryfallKit
 extension CardDetailFeature {
   enum CancelID: Hashable, Sendable {
     case priceHistory(UUID)
-    case purchaseLinks(UUID)
   }
 
   private func loadAdditionalInformation(
@@ -179,20 +151,13 @@ extension CardDetailFeature {
   private func loadPriceHistory(card: Card, labels: PriceHistoryLabels) -> Effect<Action> {
     let loader = PriceHistoryLoader(client: priceHistoryClient, clock: clock)
 
-    return .run(priority: .background) { [setClient] send in
-      async let outcome = loader.load(card: card, requests: PriceHistorySection.priceRequests)
-      async let releases = SetReleaseMarkerStore.shared.markers(in: .allPriceHistory) {
-        (try? await setClient.getSets(queryType: .all).1) ?? []
-      }
-
-      let result: PriceHistoryState = switch await outcome {
+    return .run(priority: .background) { send in
+      let result: PriceHistoryState = switch await loader.load(card: card, requests: PriceHistorySection.priceRequests) {
       case let .loaded(histories):
         PriceHistorySection.makeState(
           card: card,
           history: histories[PriceHistorySection.chartRequest],
-          buylistQuote: PriceHistorySection.buylistQuote(from: histories),
-          retailQuotes: PriceHistorySection.retailQuotes(from: histories),
-          releases: await releases
+          buylistQuote: PriceHistorySection.buylistQuote(from: histories)
         )
       case .noData:
         .unavailable

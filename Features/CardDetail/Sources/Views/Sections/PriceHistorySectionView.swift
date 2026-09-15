@@ -8,13 +8,10 @@ struct PriceHistorySectionView: View {
   let labels: PriceHistoryLabels
   
   var body: some View {
-    let _ = Self._printChanges()
     PriceHistoryView(
       display: store.priceHistory,
-      purchaseDropdown: store.purchaseDropdown,
       labels: labels,
-      onRetry: { store.send(.retryPriceHistoryTapped) },
-      onPurchaseLinksRequested: { store.send(.purchaseLinksRequested) }
+      onRetry: { store.send(.retryPriceHistoryTapped) }
     )
   }
 }

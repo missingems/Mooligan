@@ -57,7 +57,7 @@ public struct CardRemoteImageView: View {
   public var body: some View {
     LazyImage(
       request: imageRequest,
-      transaction: Transaction(animation: .smooth)
+      transaction: Transaction(animation: .snappy)
     ) { state in
       Color.primary.opacity(0.116).overlay {
         if let image = state.image {
@@ -86,11 +86,11 @@ public struct CardRemoteImageView: View {
     .overlay(
       RoundedRectangle(cornerRadius: cornerRadius)
         .stroke(
-          (colorScheme == .dark ? Color.white.opacity(0.169) : Color.black.opacity(0.225)).blendMode(
-            colorScheme == .dark ? .plusLighter : .plusDarker
-          ),
+          colorScheme == .dark ? Color.white.opacity(0.169) : Color.black.opacity(0.225),
           lineWidth: 1 / displayScale
         )
+        .compositingGroup()
+        .blendMode(colorScheme == .dark ? .plusLighter : .plusDarker)
     )
   }
 }

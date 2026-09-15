@@ -39,7 +39,6 @@ enum UITestSupport {
       $0.priceHistoryClient = ProcessInfo.processInfo.arguments.contains(priceHistoryFailureArgument)
         ? FlakyPriceHistoryClient(failuresPerCard: 3)
         : MockPriceHistoryClient()
-      $0.purchaseLinksClient = MockPurchaseLinksClient()
 
       $0.databasePreparer = InertDatabasePreparer()
       $0.bulkSyncScheduler = InertBulkSyncScheduler()

@@ -47,7 +47,10 @@ public struct CardDetailView: View {
         .frame(width: maxWidth)
         .zIndex(1)
         
+        // Read-only sections ignore touches, so the hit tests that run on every touch (including
+        // the one that starts a pager swipe) skip their text.
         CardDetailTableView(descriptions: content.getDescriptions(faceDirection: faceDirection))
+          .allowsHitTesting(false)
         
         InformationSectionView(
           store: store,
@@ -91,6 +94,7 @@ public struct CardDetailView: View {
           displayReleaseDate: content.card.releasedAt,
           legalities: content.card.legalities.all
         )
+        .allowsHitTesting(false)
         
         PriceHistorySectionView(store: store, labels: content.priceHistoryLabels)
         
@@ -128,18 +132,25 @@ public struct CardDetailView: View {
     })
     .accessibilityIdentifier("cardDetail.scroll")
     .task(priority: .background) {
+      // SwiftUI starts this task inside the update that first shows the page, and a send has no
+      // suspension point, so without the yield the send and its state changes land in that frame.
+      await Task.yield()
       store.send(.viewAppeared)
     }
     .background {
       ZStack {
-        backdrop(for: content.card.getImageURL(type: .normal))
-          .opacity((store.displayableCardImage?.faceDirection == .front) ? 1 : 0)
-        
-        backdrop(for: content.card.getImageURL(type: .normal, getSecondFace: true))
-          .opacity((store.displayableCardImage?.faceDirection == .back) ? 1 : 0)
-        
+        // Only the face on show gets a backdrop. Flipping swaps it with a crossfade, instead of
+        // keeping both faces' images loaded and blurred with one of them at zero opacity.
+        if let faceDirection {
+          let url = content.card.getImageURL(type: .normal, getSecondFace: faceDirection == .back)
+          backdrop(for: url)
+            .id(faceDirection.id)
+            .transition(.opacity)
+        }
+
         Color(asset: DesignComponentsAsset.backgroundPlaceholder)
       }
+      .allowsHitTesting(false)
       .ignoresSafeArea()
     }
   }

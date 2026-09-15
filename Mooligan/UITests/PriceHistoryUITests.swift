@@ -1,36 +1,36 @@
 import XCTest
 
-/// The price history section on card detail: the latest-price summary, the
-/// cart dropdown of purchase links, and recovering from a failed load.
+/// The market price section on card detail: the latest prices and their sheets, scrubbing
+/// versus paging over the chart, and recovering from a failed load.
 final class PriceHistoryUITests: UITestCase {
-  func testSummaryShowsTheLatestPrices() {
+  func testToolbarShowsTheLatestPricesAndBuyBack() {
     let page = openPriceHistory()
 
-    let summary = page.descendants(matching: .any)["priceHistory.summary"].firstMatch
-    assert(pollExists(summary), "the price summary should render")
-    assert(waitForPrices(in: summary), "the summary should show loaded prices, not placeholders")
+    assert(waitForPrices(in: firstPrice(in: page)), "the toolbar should show loaded prices, not placeholders")
+    assert(pollExists(page.descendants(matching: .any)["priceHistory.buyBack"].firstMatch), "the buy back ratio should render")
   }
 
-  func testBuyListsPurchaseLinksAndClosesOnScroll() {
+  func testTappingBuyBackExpandsItsBreakdownAndTappingAgainFoldsIt() {
     let page = openPriceHistory()
-    let cart = page.buttons["priceHistory.cart"].firstMatch
+    let buyBack = page.descendants(matching: .any)["priceHistory.buyBack"].firstMatch
 
-    cart.tap()
-
-    let ids = [
-      "priceHistory.purchaseLink.tcgplayer.normal",
-      "priceHistory.purchaseLink.tcgplayer.foil",
-      "priceHistory.purchaseLink.cardkingdom.normal",
-      "priceHistory.purchaseLink.cardkingdom.foil",
-    ]
-    for id in ids {
-      assert(pollExists(page.buttons[id].firstMatch), "\(id) should be listed")
+    var ratioLoaded = false
+    for _ in 0..<40 where ratioLoaded == false {
+      ratioLoaded = buyBack.label.contains("%")
+      if ratioLoaded == false { Thread.sleep(forTimeInterval: 0.5) }
     }
+    assert(ratioLoaded, "the buy back ratio should show a percentage, got \(buyBack.label)")
 
-    dragUp()
+    buyBack.tap()
 
-    expectToDisappear(page.buttons[ids[0]].firstMatch, named: "purchase links")
-    assert(pollExists(page.buttons["priceHistory.cart"].firstMatch), "Buy should come back once the dropdown closes")
+    let breakdown = page.descendants(matching: .any)["priceHistory.buyBack.breakdown"].firstMatch
+    assert(pollExists(breakdown), "tapping buy back should expand its breakdown")
+    assert(breakdown.label.contains("Regular"), "the breakdown should list the regular finish, got \(breakdown.label)")
+
+    breakdown.tap()
+
+    expectToDisappear(breakdown, named: "Buy back breakdown")
+    assert(pollExists(buyBack), "the buy back capsule should come back")
   }
 
   func testSwipingAcrossTheChartPagesInsteadOfScrubbing() {
@@ -62,20 +62,23 @@ final class PriceHistoryUITests: UITestCase {
   }
 
   private func chartPoint(in page: XCUIElement) -> (CGFloat) -> XCUICoordinate {
-    let cart = page.buttons["priceHistory.cart"].firstMatch
+    // Buy back is always in the toolbar's last row, whether it has one row or two.
+    let buyBack = page.descendants(matching: .any)["priceHistory.buyBack"].firstMatch
     let middle = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.6))
-    for _ in 0..<6 where cart.frame.minY > app.frame.height * 0.3 {
+    for _ in 0..<6 where buyBack.frame.maxY > app.frame.height * 0.4 {
       middle.press(forDuration: 0.05, thenDragTo: middle.withOffset(CGVector(dx: 0.0, dy: -160.0)), withVelocity: .slow, thenHoldForDuration: 0.4)
     }
-    let y = cart.frame.maxY + 150.0
+    // The buy back capsule has a caption of about 20 points under it, the chart starts 21 points below
+    // that and is 167 points tall; aim at its middle.
+    let y = buyBack.frame.maxY + 20.0 + 21.0 + 83.0
     let origin = app.coordinate(withNormalizedOffset: .zero)
     let width = app.frame.width
     return { fraction in origin.withOffset(CGVector(dx: width * fraction, dy: y)) }
   }
 
-  private func waitForPrices(in summary: XCUIElement) -> Bool {
+  private func waitForPrices(in price: XCUIElement) -> Bool {
     for _ in 0..<60 {
-      let label = summary.label
+      let label = price.label
       if label.contains("$"), label.contains("$0.00") == false { return true }
       Thread.sleep(forTimeInterval: 0.5)
     }
@@ -97,12 +100,12 @@ final class PriceHistoryRecoveryUITests: UITestCase {
     retry.tap()
 
     expectToDisappear(retry, named: "Retry button")
-    let summary = page.descendants(matching: .any)["priceHistory.summary"].firstMatch
-    assert(pollExists(summary), "the price summary should render")
+    let price = firstPrice(in: page)
+    assert(pollExists(price), "a finish price should render")
 
     var loaded = false
     for _ in 0..<60 where loaded == false {
-      let label = summary.label
+      let label = price.label
       loaded = label.contains("$") && label.contains("$0.00") == false && label.contains("—") == false && label.contains("N/A") == false
       if loaded == false { Thread.sleep(forTimeInterval: 0.5) }
     }
@@ -111,12 +114,27 @@ final class PriceHistoryRecoveryUITests: UITestCase {
 }
 
 extension UITestCase {
-  /// Opens the first card and scrolls until the price history cart is on screen.
+  /// Opens the first card and scrolls until the market price toolbar is on screen.
+  ///
+  /// This waits for the first price's frame to come on screen instead of using `scrollUpTo`.
   @discardableResult
-  func openPriceHistory() -> XCUIElement {
+  func openPriceHistory(file: StaticString = #filePath, line: UInt = #line) -> XCUIElement {
     openFirstCard()
     let page = waitFor("cardDetail.page.01")
-    scrollUpTo(page.buttons["priceHistory.cart"].firstMatch, named: "price history cart button")
+    let price = firstPrice(in: page)
+    assert(pollExists(price), "a finish price should render", file: file, line: line)
+    for _ in 0..<12 where price.frame.maxY > app.frame.height * 0.85 {
+      dragUp()
+    }
+    assert(price.frame.maxY <= app.frame.height * 0.85, "the finish prices should be on screen", file: file, line: line)
     return page
+  }
+
+  /// The first finish's price. Which finishes show depends on the card, and on what the feed charts
+  /// once it loads, so this matches any of them.
+  func firstPrice(in page: XCUIElement) -> XCUIElement {
+    page.descendants(matching: .any)
+      .matching(NSPredicate(format: "identifier BEGINSWITH %@", "priceHistory.price."))
+      .firstMatch
   }
 }

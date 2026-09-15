@@ -164,6 +164,7 @@ struct PackTearView: View {
         height: packSize.height * (isOpening ? 0.5 : 0.16)
       )
       .blur(radius: isOpening ? 26 : 12)
+      .compositingGroup()
       .blendMode(.plusLighter)
       .opacity(reduceMotion ? openness * 0.35 : openness * (isOpening ? 0.9 : 0.32))
       .offset(y: packSize.height * (PackGeometry.tearBaseline - 0.5))
