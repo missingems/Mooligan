@@ -72,6 +72,9 @@ struct PriceHistorySnapshotTests {
     named name: String,
     testName: String = #function
   ) async throws {
+    await SnapshotWindow.acquire()
+    defer { SnapshotWindow.release() }
+
     let controller = UIHostingController(
       rootView: content
         .frame(width: Self.width, height: height, alignment: .top)
@@ -160,7 +163,7 @@ struct PriceHistorySnapshotTests {
     let chart = display.chart
     let axis = display.axis
     let dates = [0.0, 0.3, 1.0].map {
-      chart.dateRange.lowerBound.addingTimeInterval($0 * chart.dateRange.upperBound.timeIntervalSince(chart.dateRange.lowerBound))
+      chart.plotDateRange.lowerBound.addingTimeInterval($0 * chart.plotDateRange.upperBound.timeIntervalSince(chart.plotDateRange.lowerBound))
     }
     let prices = [axis.domain.lowerBound, (axis.domain.lowerBound + axis.domain.upperBound) / 2.0, axis.domain.upperBound]
     let probe = ChartProxyProbe()
@@ -178,7 +181,7 @@ struct PriceHistorySnapshotTests {
       }
       .chartLegend(.hidden)
       .chartYScale(domain: axis.domain)
-      .chartXScale(domain: chart.dateRange)
+      .chartXScale(domain: chart.plotDateRange)
       .chartYAxis {
         AxisMarks(position: .trailing, values: axis.ticks) { value in
           AxisValueLabel(anchor: .leading) {
@@ -209,6 +212,9 @@ struct PriceHistorySnapshotTests {
       .frame(width: size.width, height: size.height)
     }
 
+    await SnapshotWindow.acquire()
+    defer { SnapshotWindow.release() }
+
     let controller = UIHostingController(rootView: content.background(Color(.systemBackground)))
     let scene = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
     let window = UIWindow(windowScene: scene)
@@ -229,7 +235,7 @@ struct PriceHistorySnapshotTests {
     #expect(abs(interaction.plot.width - probe.plot.width) < tolerance, "measured \(interaction.plot) proxy \(probe.plot)")
     #expect(abs(interaction.plot.height - probe.plot.height) < tolerance, "measured \(interaction.plot) proxy \(probe.plot)")
 
-    let scale = PlotScale(plot: probe.plot, dates: chart.dateRange, prices: axis.domain)
+    let scale = PlotScale(plot: probe.plot, dates: chart.plotDateRange, prices: axis.domain)
     for (date, expected) in zip(dates, probe.xs) {
       let x = try #require(scale.x(for: date))
       #expect(abs(x - (try #require(expected))) < tolerance, "x for \(date): \(x) vs proxy \(String(describing: expected))")
@@ -245,13 +251,16 @@ struct PriceHistorySnapshotTests {
   @Test func scrubbingOverAReleaseShowsItsTitle() async throws {
     let base = Self.section
     let releases = [
-      SetReleaseMarker(id: "EARLY", code: "EAR", name: "Innistrad: Crimson Vow", date: base.dateRange.lowerBound.addingTimeInterval(4 * 86_400), iconURL: nil),
+      SetReleaseMarker(id: "EARLY", code: "EAR", name: "Innistrad: Crimson Vow", date: base.dateRange.lowerBound, iconURL: nil),
       SetReleaseMarker(id: "LATE", code: "LAT", name: "Murders at Karlov Manor", date: base.dateRange.upperBound.addingTimeInterval(-12 * 86_400), iconURL: nil),
     ]
     let section = PriceHistorySection(series: base.series, currency: base.currency, releases: releases, buylistQuote: base.buylistQuote)
     let display = display(.data(section))
 
     for release in releases {
+      await SnapshotWindow.acquire()
+      defer { SnapshotWindow.release() }
+
       let interaction = ChartInteraction()
       let size = CGSize(width: Self.width - 32.0, height: PriceHistoryView.chartHeight)
       let chart = PriceHistoryChart(derivedData: display.chart, axis: display.axis, interaction: interaction)
@@ -270,7 +279,7 @@ struct PriceHistorySnapshotTests {
       controller.view.frame = window.bounds
       try await Task.sleep(for: .seconds(1.0))
 
-      let scale = PlotScale(plot: interaction.plot, dates: display.chart.dateRange, prices: display.axis.domain)
+      let scale = PlotScale(plot: interaction.plot, dates: display.chart.plotDateRange, prices: display.axis.domain)
       let entry = try #require(ReleaseMarkerLayout(releases: display.chart.releases, scale: scale).entries.first { $0.release.id == release.id })
       interaction.scrubbedDate = scale.date(atX: entry.iconCenter.x)
       interaction.needleX = entry.iconCenter.x

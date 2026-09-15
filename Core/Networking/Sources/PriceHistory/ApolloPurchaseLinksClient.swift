@@ -17,7 +17,7 @@ public final class ApolloPurchaseLinksClient: PurchaseLinksClient, @unchecked Se
     let response = try await MTGGraphQLApollo.fetch(
       MTGGraphQLAPI.CardPurchaseUrlsQuery(scryfallId: card.id.uuidString.lowercased()),
       apollo: apollo,
-      queue: DispatchQueue.global(qos: .userInitiated)
+      queue: DispatchQueue.global(qos: .background)
     )
 
     if let message = response.errors?.first?.message {

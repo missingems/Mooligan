@@ -30,7 +30,7 @@ struct PriceChartStyleTests {
     #expect(PriceChartStyle.direction(for: tiny) == .flat)
     #expect(PriceChartStyle.symbol(for: .flat) == "arrow.up")
     #expect(PriceChartStyle.tint(for: .flat) == DesignComponentsAsset.notLegal.swiftUIColor)
-    #expect(PriceChartStyle.pillForeground(for: .flat, in: .dark) == Color(.secondaryLabel))
+    #expect(PriceChartStyle.pillBackground(for: .flat) == DesignComponentsAsset.notLegal.swiftUIColor.mix(with: .white, by: 0.2))
   }
 
   @Test func whenAMoveSurvivesAtOneDecimal_shouldPointDown() {
@@ -52,11 +52,25 @@ struct PriceChartStyleTests {
 
     #expect(PriceChartStyle.tint(for: .up) == legal)
     #expect(PriceChartStyle.tint(for: .down) == banned)
-    #expect(PriceChartStyle.pillForeground(for: .up, in: .light) == legal.mix(with: .black, by: 0.15))
-    #expect(PriceChartStyle.pillForeground(for: .up, in: .dark) == legal.mix(with: .white, by: 0.2))
-    #expect(PriceChartStyle.pillForeground(for: .down, in: .dark) == banned.mix(with: .white, by: 0.2))
-    #expect(PriceChartStyle.pillBackground(for: .down, in: .light) == banned.opacity(0.16))
-    #expect(PriceChartStyle.pillBackground(for: .down, in: .dark) == banned.opacity(0.28))
+    #expect(PriceChartStyle.pillBackground(for: .up) == legal.mix(with: .white, by: 0.2))
+    #expect(PriceChartStyle.pillForeground(for: .down) == banned.mix(with: .black, by: 0.8))
+  }
+
+  /// The pills are solid and look the same in light and dark mode, so their dark text has to be
+  /// readable on the chip itself.
+  @Test func changePillTextShouldBeReadableOnItsSolidChip() {
+    func luminance(_ color: Color) -> Double {
+      let resolved = color.resolve(in: EnvironmentValues())
+      return 0.2126 * Double(resolved.linearRed) + 0.7152 * Double(resolved.linearGreen) + 0.0722 * Double(resolved.linearBlue)
+    }
+
+    for direction in [PriceChartStyle.ChangeDirection.up, .down, .flat] {
+      let background = luminance(PriceChartStyle.pillBackground(for: direction))
+      let text = luminance(PriceChartStyle.pillForeground(for: direction))
+      let contrast = (max(background, text) + 0.05) / (min(background, text) + 0.05)
+
+      #expect(contrast >= 4.5, "\(direction) pill text has \(contrast):1")
+    }
   }
 
   /// Small white text sits on the legality chips, and the pills darken or lighten the same hues,

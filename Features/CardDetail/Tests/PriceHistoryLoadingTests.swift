@@ -40,46 +40,17 @@ import Testing
     #expect(state.purchaseDropdown == .loading)
   }
 
-  @Test func whenTheCardSettles_shouldWaitOutTheDebounceBeforeLoading() async {
+  @Test func whenTheCardAppears_shouldLoadPriceHistoryWithItsSections() async {
     let clock = TestClock()
     let client = CountingMockClient()
     let store = makeStore(client: client, clock: clock)
     store.exhaustivity = .off
 
-    let task = await store.send(.priceHistoryAppeared)
-    await clock.advance(by: CardDetailFeature.priceHistoryDebounce - .milliseconds(1))
-    #expect(await client.calls == 0)
-
-    await clock.advance(by: .milliseconds(1))
+    await store.send(.viewAppeared)
     await store.receive(\.updatePriceHistory)
+
     #expect(await client.calls == 1)
     #expect(store.state.priceHistory.status == .loaded)
-    await task.finish()
-  }
-
-  @Test func whenTheCardIsLeftBeforeTheDebounce_shouldNeverRequestPrices() async {
-    let clock = TestClock()
-    let client = CountingMockClient()
-    let store = makeStore(client: client, clock: clock)
-
-    await store.send(.priceHistoryAppeared)
-    await clock.advance(by: .milliseconds(100))
-    await store.send(.priceHistoryDisappeared)
-    await clock.advance(by: .seconds(5))
-
-    #expect(await client.calls == 0)
-    #expect(store.state.priceHistory.status == .loading)
-  }
-
-  @Test func whenPricesAreAlreadyLoaded_appearingAgainShouldNotReload() async {
-    let clock = TestClock()
-    let client = CountingMockClient()
-    let store = makeStore(status: .data(PriceHistoryState.empty), client: client, clock: clock)
-
-    await store.send(.priceHistoryAppeared)
-    await clock.advance(by: .seconds(5))
-
-    #expect(await client.calls == 0)
   }
 
   @Test func whenTheFirstAttemptFails_shouldRetryAutomaticallyAndLoad() async {
@@ -207,66 +178,5 @@ import Testing
     }
     let tcgplayer = groups.first { $0.provider == .tcgplayer }
     #expect(tcgplayer?.offers.allSatisfy { $0.priceText != nil } == true)
-  }
-}
-
-private actor HangingOnceClient: PriceHistoryClient {
-  private var calls = 0
-
-  func history(for card: Card, provider: PriceProvider, listType: PriceListType) async throws -> PriceHistory {
-    calls += 1
-    if calls == 1 {
-      try await Task.sleep(for: .seconds(3_600))
-    }
-    return try await MockPriceHistoryClient().history(for: card, provider: provider, listType: listType)
-  }
-
-  func histories(for card: Card, requests: [PriceSeriesRequest]) async throws -> [PriceSeriesRequest: PriceHistory] {
-    calls += 1
-    if calls == 1 {
-      try await Task.sleep(for: .seconds(3_600))
-    }
-    return try await MockPriceHistoryClient().histories(for: card, requests: requests)
-  }
-}
-
-private actor CountingMockClient: PriceHistoryClient {
-  private(set) var calls = 0
-
-  func history(for card: Card, provider: PriceProvider, listType: PriceListType) async throws -> PriceHistory {
-    calls += 1
-    return try await MockPriceHistoryClient().history(for: card, provider: provider, listType: listType)
-  }
-
-  func histories(for card: Card, requests: [PriceSeriesRequest]) async throws -> [PriceSeriesRequest: PriceHistory] {
-    calls += 1
-    return try await MockPriceHistoryClient().histories(for: card, requests: requests)
-  }
-}
-
-private actor CountingEmptyClient: PriceHistoryClient {
-  private(set) var calls = 0
-
-  func history(for card: Card, provider: PriceProvider, listType: PriceListType) async throws -> PriceHistory {
-    calls += 1
-    throw PriceHistoryClientError.emptyResponse
-  }
-
-  func histories(for card: Card, requests: [PriceSeriesRequest]) async throws -> [PriceSeriesRequest: PriceHistory] {
-    calls += 1
-    throw PriceHistoryClientError.emptyResponse
-  }
-}
-
-private actor FailingOncePurchaseLinksClient: PurchaseLinksClient {
-  static let urls = MTGGraphQLPurchaseUrls(tcgplayer: "https://mtgjson.com/links/tcg")
-  private var calls = 0
-
-  func purchaseLinks(for card: Card) async throws -> [PurchaseLink] {
-    calls += 1
-    if calls == 1 {
-      throw URLError(.notConnectedToInternet)
-    }
-    return PurchaseLinksMapper.makeLinks(from: Self.urls)
   }
 }

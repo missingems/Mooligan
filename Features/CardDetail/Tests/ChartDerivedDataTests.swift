@@ -40,6 +40,15 @@ struct ChartDerivedDataTests {
     #expect(derived.dateRange.lowerBound == start.addingTimeInterval(-90 * day))
   }
 
+  @Test func thePlottedDatesShouldLeaveRoomBeforeTheFirstPoint() {
+    let derived = ChartDerivedData(section: section(days: 200))
+    let span = derived.dateRange.upperBound.timeIntervalSince(derived.dateRange.lowerBound)
+
+    #expect(derived.plotDateRange.upperBound == derived.dateRange.upperBound)
+    #expect(derived.plotDateRange.lowerBound == derived.dateRange.lowerBound.addingTimeInterval(-span * ChartDerivedData.leadingDatePadding))
+    #expect(derived.spanInDays == ChartDerivedData.windowInDays)
+  }
+
   @Test func whenTheFeedIsShorterThanTheWindow_shouldKeepEveryPoint() {
     let derived = ChartDerivedData(section: section(days: 40))
 

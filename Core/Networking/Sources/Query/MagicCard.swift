@@ -17,7 +17,7 @@ public extension Card {
     if case .unknown = layout, isTransformable == false {
       return cardFaces?.count ?? 0 > 1
     } else {
-      return layout == .split || layout == .adventure
+      return layout == .split || layout == .adventure || layout == .prepare
     }
   }
   

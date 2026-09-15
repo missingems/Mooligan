@@ -53,117 +53,17 @@ import Testing
     #expect(state.cards.isEmpty)
   }
 
-  @Test func whenViewAppeared_shouldLoadSelectedCard_thenHydrateRemainingCards() async {
+  @Test func whenViewAppeared_shouldHydrateRemainingCardsWithoutLoadingThem() async {
     let store = makeStore()
     store.exhaustivity = .off
 
     // When
     await store.send(.viewAppeared)
+    await store.receive(\.setRemainingCards)
 
-    // Should load the card the user tapped into, since no scroll settle will fire for it.
-    await store.receive(.currentCardSettled(id: firstCard.id))
-
-    await store.finish()
-    await store.skipReceivedActions()
-
-    // Then the rest of the set is hydrated, and only the settled card has loaded.
+    // Then the rest of the set is hydrated, and each card waits for its own page to load it.
     #expect(store.state.cards.count == 2)
-    #expect(store.state.cards[id: firstCard.id]?.hasAppeared == true)
-    #expect(store.state.cards[id: secondCard.id]?.hasAppeared == false)
-  }
-
-  @Test func whenSettlingOnACard_shouldFetchThatCardsAdditionalInformation() async {
-    let store = makeStore()
-    store.exhaustivity = .off
-
-    // When
-    await store.send(.currentCardSettled(id: firstCard.id))
-
-    // Then only that card loads.
-    await store.receive(
-      .cards(
-        .element(
-          id: firstCard.id,
-          action: .viewAppeared(initialAction: .fetchAdditionalInformation(card: firstCard))
-        )
-      )
-    )
-
-    await store.finish()
-  }
-
-  @Test func whenSettlingOnAnotherCard_shouldMovePriceHistoryLoadingToIt() async {
-    let store = makeStore()
-    store.exhaustivity = .off
-
-    // Given the full set is loaded and the first card is settled.
-    await store.send(.viewAppeared)
-    await store.receive(.currentCardSettled(id: firstCard.id))
-    await store.receive(.cards(.element(id: firstCard.id, action: .priceHistoryAppeared)))
-    await store.finish()
-    await store.skipReceivedActions()
-    #expect(store.state.cards.count == 2)
-
-    // When the user swipes to the second card.
-    await store.send(.currentCardSettled(id: secondCard.id))
-
-    // Then the first card's load is cancelled and the second card's starts.
-    await store.receive(.cards(.element(id: firstCard.id, action: .priceHistoryDisappeared)))
-    await store.receive(.cards(.element(id: secondCard.id, action: .priceHistoryAppeared)))
-    #expect(store.state.settledCardID == secondCard.id)
-
-    await store.finish()
-  }
-
-  @Test func whenSettlingOnTheSameCardAgain_shouldNotRestartItsPriceHistoryLoad() async {
-    let store = makeStore()
-    store.exhaustivity = .off
-
-    // Given the first card has settled and finished loading.
-    await store.send(.currentCardSettled(id: firstCard.id))
-    await store.finish()
-    await store.skipReceivedActions()
-    #expect(store.state.settledCardID == firstCard.id)
-
-    // When the pager comes to rest on the same card again, exhaustively, so any price history
-    // action sent to it would fail the test.
-    store.exhaustivity = .on
-    await store.send(.currentCardSettled(id: firstCard.id))
-    await store.receive(
-      .cards(.element(id: firstCard.id, action: .viewAppeared(initialAction: .fetchAdditionalInformation(card: firstCard))))
-    )
-  }
-
-  @Test func whenSettlingOnNoCard_shouldDoNothing() async {
-    let store = makeStore()
-
-    await store.send(.currentCardSettled(id: nil))
-  }
-
-  @Test func whenSettlingOnAnUnknownCard_shouldDoNothing() async {
-    let store = makeStore()
-
-    await store.send(.currentCardSettled(id: UUID()))
-  }
-
-  @Test func whenSettlingOnTheSameCardTwice_shouldOnlyFetchOnce() async {
-    let store = makeStore()
-    store.exhaustivity = .off
-
-    // Given
-    await store.send(.currentCardSettled(id: firstCard.id))
-    await store.finish()
-    await store.skipReceivedActions()
-
-    #expect(store.state.cards[id: firstCard.id]?.hasAppeared == true)
-
-    // When the user swipes away and back.
-    await store.send(.currentCardSettled(id: firstCard.id))
-    await store.receive(\.cards)
-    await store.finish()
-
-    // Then the card guards against fetching its sections again.
-    #expect(store.state.cards[id: firstCard.id]?.hasAppeared == true)
+    #expect(store.state.cards.allSatisfy { $0.hasAppeared == false })
   }
 
   @Test func whenSettingRemainingCards_shouldPreserveAlreadyLoadedCards() async {
@@ -171,14 +71,13 @@ import Testing
     store.exhaustivity = .off
 
     // Given the selected card has already loaded.
-    await store.send(.currentCardSettled(id: firstCard.id))
+    await store.send(.cards(.element(id: firstCard.id, action: .viewAppeared)))
     await store.finish()
     await store.skipReceivedActions()
 
     // When the full set arrives.
     await store.send(.viewAppeared)
-    await store.finish()
-    await store.skipReceivedActions()
+    await store.receive(\.setRemainingCards)
 
     // Then the loaded card keeps its state rather than being replaced by a fresh one.
     #expect(store.state.cards.count == 2)
@@ -192,14 +91,10 @@ import Testing
 
     // Given
     await store.send(.viewAppeared)
-    await store.finish()
-    await store.skipReceivedActions()
+    await store.receive(\.setRemainingCards)
 
-    // When
+    // When / Then no second hydration runs.
     await store.send(.viewAppeared)
-
-    // Then only the settle is sent, no second hydration.
-    await store.receive(\.currentCardSettled)
     await store.finish()
 
     #expect(store.state.cards.count == 2)

@@ -34,55 +34,41 @@ import Testing
     #expect(state.content.card == card)
   }
 
-  @Test func whenViewAppeared_shouldSendInitialAction() async {
+  @Test func whenViewAppeared_shouldDeliverSectionsAndPriceHistoryAsTwoActions() async {
     let store = makeStore()
     store.exhaustivity = .off
 
     // When
-    await store.send(.viewAppeared(initialAction: .fetchSetIcon(card: card)))
+    await store.send(.viewAppeared) { state in
+      state.hasAppeared = true
+    }
 
     // Should
-    await store.receive(.fetchSetIcon(card: card))
+    await store.receive(\.updateAdditionalInformation)
+    await store.receive(\.updatePriceHistory)
 
-    // Then
-    #expect(store.state.hasAppeared == false)
+    // Then the set icon and first variants page land together.
+    #expect(store.state.setIconURL == URL(string: "iconSVGURI"))
+    #expect(store.state.variants.state.value?.cardDetails.isEmpty == false)
 
     await store.finish()
   }
 
-  @Test func whenViewAppearedTwice_shouldOnlySendInitialActionOnce() async {
+  @Test func whenViewAppearedTwice_shouldOnlyLoadOnce() async {
     let store = makeStore()
     store.exhaustivity = .off
 
     // Given
-    await store.send(.fetchAdditionalInformation(card: card)) { state in
+    await store.send(.viewAppeared) { state in
       state.hasAppeared = true
     }
-
-    // When
-    await store.send(.viewAppeared(initialAction: .fetchSetIcon(card: card)))
-
-    // Then no initial action is forwarded, because the card already appeared.
     await store.finish()
-  }
+    await store.skipReceivedActions()
 
-  @Test func whenFetchingAdditionalInformation_shouldMarkAsAppeared_thenFanOutFetches() async {
-    let store = makeStore()
-    store.exhaustivity = .off
+    // When the page is rebuilt, for example after swiping away and back.
+    await store.send(.viewAppeared)
 
-    // When
-    await store.send(.fetchAdditionalInformation(card: card)) { state in
-      state.hasAppeared = true
-    }
-
-    // Should
-    await store.receive(.fetchSetIcon(card: card))
-    await store.receive(.fetchVariants(card: card, page: 1))
-    await store.receive(.fetchRelatedTokens(card: card))
-    await store.receive(.fetchRelatedComboPieces(card: card))
-    await store.receive(.fetchRelatedMeldPieces(card: card))
-    await store.receive(.fetchRelatedMeldResult(card: card))
-
+    // Then nothing loads again, because the card already appeared.
     await store.finish()
   }
 
@@ -104,36 +90,77 @@ import Testing
     #expect(store.state.setIconURL == URL(string: set.iconSvgUri))
 
     // When
-    await store.send(.fetchAdditionalInformation(card: card)) { state in
+    await store.send(.viewAppeared) { state in
       state.hasAppeared = true
     }
 
-    // Should skip the set icon fetch and go straight to the rest.
-    await store.receive(.fetchVariants(card: card, page: 1))
+    // Should skip the set icon fetch, keeping the icon from the query type.
+    await store.receive(\.updateAdditionalInformation)
+    #expect(store.state.setIconURL == URL(string: set.iconSvgUri))
 
     await store.finish()
   }
 
-  @Test func whenUpdatingSetIconURL_shouldStoreURL() async {
+  private func information(
+    setIconURL: URL? = nil,
+    variants: CardDataSource? = nil,
+    relatedTokens: CardDataSource? = nil,
+    relatedComboPieces: CardDataSource? = nil,
+    relatedMeldPieces: CardDataSource? = nil,
+    relatedMeldResult: CardDataSource? = nil
+  ) -> CardDetailFeature.AdditionalInformation {
+    CardDetailFeature.AdditionalInformation(
+      setIconURL: setIconURL,
+      variants: variants ?? emptyDataSource,
+      relatedTokens: relatedTokens ?? emptyDataSource,
+      relatedComboPieces: relatedComboPieces ?? emptyDataSource,
+      relatedMeldPieces: relatedMeldPieces ?? emptyDataSource,
+      relatedMeldResult: relatedMeldResult ?? emptyDataSource
+    )
+  }
+
+  @Test func whenAdditionalInformationArrives_shouldStoreEverySection() async {
     let store = makeStore()
     let url = URL(string: "https://mooligan.com/icon.svg")
+    let variants = CardDataSource(cards: [.mock(id: nil)], hasNextPage: true, total: 1)
+    let tokens = CardDataSource(cards: [.mock(id: nil)], hasNextPage: false, total: 1)
+    let comboPieces = CardDataSource(cards: [.mock(id: nil)], hasNextPage: false, total: 1)
+    let meldPieces = CardDataSource(cards: [.mock(id: nil)], hasNextPage: false, total: 1)
+    let meldResult = CardDataSource(cards: [.mock(id: nil)], hasNextPage: false, total: 1)
 
-    await store.send(.updateSetIconURL(url)) { state in
+    await store.send(.updateAdditionalInformation(information(
+      setIconURL: url,
+      variants: variants,
+      relatedTokens: tokens,
+      relatedComboPieces: comboPieces,
+      relatedMeldPieces: meldPieces,
+      relatedMeldResult: meldResult
+    ))) { state in
       state.setIconURL = url
+      state.variants = state.variants.updating(page: 1, state: .data(variants))
+      state.relatedTokens = state.relatedTokens?.updating(page: 1, state: .data(tokens))
+      state.relatedComboPieces = state.relatedComboPieces?.updating(page: 1, state: .data(comboPieces))
+      state.relatedMeldPieces = state.relatedMeldPieces?.updating(page: 1, state: .data(meldPieces))
+      state.relatedMeldResult = state.relatedMeldResult?.updating(page: 1, state: .data(meldResult))
     }
   }
 
-  @Test func whenUpdatingSetIconURLWithNil_shouldKeepExistingURL() async {
+  @Test func whenAdditionalInformationHasNoSetIcon_shouldKeepExistingURL() async {
     let store = makeStore()
     let url = URL(string: "https://mooligan.com/icon.svg")
 
     // Given
-    await store.send(.updateSetIconURL(url)) { state in
+    await store.send(.updateAdditionalInformation(information(setIconURL: url))) { state in
       state.setIconURL = url
+      state.variants = state.variants.updating(page: 1, state: .data(self.emptyDataSource))
+      state.relatedTokens = state.relatedTokens?.updating(page: 1, state: .data(self.emptyDataSource))
+      state.relatedComboPieces = state.relatedComboPieces?.updating(page: 1, state: .data(self.emptyDataSource))
+      state.relatedMeldPieces = state.relatedMeldPieces?.updating(page: 1, state: .data(self.emptyDataSource))
+      state.relatedMeldResult = state.relatedMeldResult?.updating(page: 1, state: .data(self.emptyDataSource))
     }
 
     // When / Then the nil is ignored rather than clearing the icon.
-    await store.send(.updateSetIconURL(nil))
+    await store.send(.updateAdditionalInformation(information()))
   }
 
   @Test func whenUpdatingVariants_shouldStoreDataSourceAndPage() async {
@@ -145,49 +172,12 @@ import Testing
     }
   }
 
-  @Test func whenUpdatingRelatedTokens_shouldStoreDataSource() async {
-    let store = makeStore()
-    let dataSource = CardDataSource(cards: [.mock(id: nil)], hasNextPage: false, total: 1)
-
-    await store.send(.updateRelatedTokens(dataSource)) { state in
-      state.relatedTokens = state.relatedTokens?.updating(page: 1, state: .data(dataSource))
-    }
-  }
-
-  @Test func whenUpdatingComboPieces_shouldStoreDataSource() async {
-    let store = makeStore()
-    let dataSource = CardDataSource(cards: [.mock(id: nil)], hasNextPage: false, total: 1)
-
-    await store.send(.updateComboPieces(dataSource)) { state in
-      state.relatedComboPieces = state.relatedComboPieces?.updating(page: 1, state: .data(dataSource))
-    }
-  }
-
-  @Test func whenUpdatingMeldPieces_shouldStoreDataSource() async {
-    let store = makeStore()
-    let dataSource = CardDataSource(cards: [.mock(id: nil)], hasNextPage: false, total: 1)
-
-    await store.send(.updateMeldPieces(dataSource)) { state in
-      state.relatedMeldPieces = state.relatedMeldPieces?.updating(page: 1, state: .data(dataSource))
-    }
-  }
-
-  @Test func whenUpdatingMeldResult_shouldStoreDataSource() async {
-    let store = makeStore()
-    let dataSource = CardDataSource(cards: [.mock(id: nil)], hasNextPage: false, total: 1)
-
-    await store.send(.updateMeldResult(dataSource)) { state in
-      state.relatedMeldResult = state.relatedMeldResult?.updating(page: 1, state: .data(dataSource))
-    }
-  }
-
   @Test func whenRelatedFetchReturnsNothing_shouldHideSection() async {
     let store = makeStore()
+    store.exhaustivity = .off
 
     // When a fetch finds nothing it still reports an empty data source.
-    await store.send(.updateRelatedTokens(emptyDataSource)) { state in
-      state.relatedTokens = state.relatedTokens?.updating(page: 1, state: .data(self.emptyDataSource))
-    }
+    await store.send(.updateAdditionalInformation(information()))
 
     // Then the section reads as absent so the view never builds it.
     #expect(store.state.relatedTokens?.state.value == nil)

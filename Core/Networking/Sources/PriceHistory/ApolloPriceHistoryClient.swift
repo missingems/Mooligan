@@ -60,6 +60,10 @@ public final class ApolloPriceHistoryClient: PriceHistoryClient, @unchecked Send
     let response = try await MTGGraphQLApollo.fetch(
       MTGGraphQLAPI.CardPriceHistoryQuery(scryfallId: scryfallID.lowercased()),
       apollo: apollo,
+      // `CachingPriceHistoryClient` already caches the mapped histories. Apollo's normalised cache
+      // cost more CPU than anything else in the load (a record per price row, merged into a store
+      // that is never read or evicted), and this policy also skips building those records.
+      cachePolicy: .fetchIgnoringCacheCompletely,
       queue: DispatchQueue.global(qos: .background)
     )
 
@@ -87,6 +91,7 @@ enum MTGGraphQLApollo {
   static func fetch<Query: GraphQLQuery>(
     _ query: Query,
     apollo: ApolloClient,
+    cachePolicy: Apollo.CachePolicy = .returnCacheDataElseFetch,
     queue: DispatchQueue
   ) async throws -> GraphQLResult<Query.Data> {
     let request = CancellableRequest<Query.Data>()
@@ -94,7 +99,7 @@ enum MTGGraphQLApollo {
     return try await withTaskCancellationHandler {
       try await withCheckedThrowingContinuation { continuation in
         request.begin(continuation) {
-          apollo.fetch(query: query, cachePolicy: .returnCacheDataElseFetch, queue: queue) { result in
+          apollo.fetch(query: query, cachePolicy: cachePolicy, queue: queue) { result in
             request.finish(with: result)
           }
         }
