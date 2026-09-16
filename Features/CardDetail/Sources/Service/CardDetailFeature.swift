@@ -8,6 +8,7 @@ import ScryfallKit
   @Dependency(\.cardDetailRequestClient) private var client
   @Dependency(\.priceHistoryClient) private var priceHistoryClient
   @Dependency(\.continuousClock) private var clock
+  @Dependency(\.gameSetRequestClient) private var setClient
   
   public init() {}
   
@@ -151,16 +152,23 @@ extension CardDetailFeature {
   private func loadPriceHistory(card: Card, labels: PriceHistoryLabels) -> Effect<Action> {
     let loader = PriceHistoryLoader(client: priceHistoryClient, clock: clock)
 
-    return .run(priority: .background) { send in
-      let result: PriceHistoryState = switch await loader.load(card: card, requests: PriceHistorySection.priceRequests) {
+    return .run(priority: .background) { [setClient] send in
+      async let outcome = loader.load(card: card, requests: PriceHistorySection.priceRequests)
+      async let releases = SetReleaseMarkerStore.shared.markers(in: .allPriceHistory) {
+        (try? await setClient.getSets(queryType: .all).1) ?? []
+      }
+
+      let result: PriceHistoryState = switch await outcome {
       case let .loaded(histories):
         PriceHistorySection.makeState(
           card: card,
           history: histories[PriceHistorySection.chartRequest],
-          buylistQuote: PriceHistorySection.buylistQuote(from: histories)
+          buylistQuote: PriceHistorySection.buylistQuote(from: histories),
+          releases: await releases
         )
       case .noData:
-        .unavailable
+        // The feed has nothing for this card; a Scryfall quote alone still draws a flat week.
+        PriceHistorySection.makeState(card: card, history: nil, releases: await releases)
       case .failed:
         .failed
       }

@@ -46,7 +46,7 @@ struct PriceHistorySectionTests {
     )
   }
 
-  @Test func whenThereIsNoHistory_shouldBeUnavailable() {
+  @Test func whenThereIsNoHistoryAndNoQuote_shouldBeUnavailable() {
     let state = PriceHistorySection.makeState(
       card: card(),
       history: nil,
@@ -56,8 +56,72 @@ struct PriceHistorySectionTests {
     #expect(state == .unavailable)
   }
 
-  /// A single observation cannot be a line, so it is the same as having none.
-  @Test func whenAFinishHasOnePoint_shouldBeUnavailable() {
+  /// MTGJSON has nothing, but Scryfall quotes the card: it still draws, as a flat week at that
+  /// price ending today, in the chart provider's currency.
+  @Test func whenThereIsNoHistoryButAQuote_shouldDrawAFlatWeek() {
+    let state = PriceHistorySection.makeState(
+      card: card(usd: "7.00"),
+      history: nil,
+      today: today
+    )
+
+    guard case let .data(section) = state else {
+      Issue.record("expected data, got \(state)")
+      return
+    }
+    let points = section.series[0].points
+    #expect(section.series.map(\.kind) == [.normal])
+    #expect(points.count == 8)
+    #expect(points.allSatisfy { $0.amount == decimal("7.00") })
+    #expect(points.first?.date == today.addingTimeInterval(-7 * 86_400))
+    #expect(section.dateRange == today.addingTimeInterval(-7 * 86_400)...today)
+    #expect(points.last?.date == today)
+    #expect(section.currency == "USD")
+    #expect(section.priceRange == 7.0...7.0)
+  }
+
+  /// One finish has history and the other only a quote: the quoted one gets its flat week beside it.
+  @Test func whenOneFinishHasOnlyAQuote_shouldDrawItsFlatWeekBesideTheOther() {
+    let state = PriceHistorySection.makeState(
+      card: card(usdFoil: "12.00"),
+      history: history([
+        .normal: [point(daysBefore: 2, "1.00"), point(daysBefore: 1, "1.20")],
+      ]),
+      today: today
+    )
+
+    guard case let .data(section) = state else {
+      Issue.record("expected data, got \(state)")
+      return
+    }
+    #expect(section.series.map(\.kind) == [.normal, .foil])
+    #expect(section.series[0].points.count == 2)
+    #expect(section.series[1].points.count == 8)
+    #expect(section.series[1].points.allSatisfy { $0.amount == decimal("12.00") })
+  }
+
+  /// Only releases within the days the series cover are kept for the chart.
+  @Test func releasesOutsideTheSeriesDates_shouldBeDropped() {
+    let inside = SetReleaseMarker(id: "in", code: "in", name: "Inside", date: today.addingTimeInterval(-86_400), iconURL: nil)
+    let outside = SetReleaseMarker(id: "out", code: "out", name: "Outside", date: today.addingTimeInterval(-40 * 86_400), iconURL: nil)
+    let state = PriceHistorySection.makeState(
+      card: card(),
+      history: history([
+        .normal: [point(daysBefore: 2, "1.00"), point(daysBefore: 1, "1.20")],
+      ]),
+      releases: [outside, inside],
+      today: today
+    )
+
+    guard case let .data(section) = state else {
+      Issue.record("expected data, got \(state)")
+      return
+    }
+    #expect(section.releases.map(\.id) == ["in"])
+  }
+
+  /// A single observation cannot be a line, so without a quote it is the same as having none.
+  @Test func whenAFinishHasOnePointAndNoQuote_shouldBeUnavailable() {
     let state = PriceHistorySection.makeState(
       card: card(),
       history: history([.normal: [point(daysBefore: 1, "1.00")]]),

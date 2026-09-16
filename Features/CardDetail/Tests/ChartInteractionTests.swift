@@ -66,4 +66,18 @@ struct ChartInteractionTests {
     interaction.scrubbedDate = subject.points[27].date
     #expect(interaction.pointIndex(for: subject) == 27)
   }
+
+  @Test func isScrubbing_shouldOnlyFlipWhenAScrubStartsOrEnds() {
+    let interaction = ChartInteraction()
+    #expect(interaction.isScrubbing == false)
+
+    interaction.scrubbedDate = start
+    #expect(interaction.isScrubbing)
+
+    interaction.scrubbedDate = start.addingTimeInterval(day)
+    #expect(interaction.isScrubbing)
+
+    interaction.endScrub()
+    #expect(interaction.isScrubbing == false)
+  }
 }

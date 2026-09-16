@@ -4,10 +4,26 @@ import Observation
 
 @Observable
 final class ChartInteraction {
-  var scrubbedDate: Date?
+  var scrubbedDate: Date? {
+    didSet {
+      let scrubbing = scrubbedDate != nil
+      if scrubbing != isScrubbing { isScrubbing = scrubbing }
+    }
+  }
+
+  /// Flips only when a scrub starts or ends. Views that dim or pop something up while scrubbing
+  /// read this rather than `scrubbedDate`, so they are not re-evaluated on every move of the finger.
+  private(set) var isScrubbing = false
 
   /// The chart's plot area in its own coordinate space; `.zero` until the chart has laid out.
   var plot: CGRect = .zero
+
+  /// The chart's frame in the price section's coordinate space; `.zero` until it has laid out.
+  var chartFrame: CGRect = .zero
+
+  /// Each finish capsule's frame in the toolbar, in the price section's coordinate space, so the
+  /// scrub choreography can draw its copy exactly over it.
+  var toolbarFrames: [PriceSeriesKind: CGRect] = [:]
 
   func endScrub() {
     guard scrubbedDate != nil else { return }

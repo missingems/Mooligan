@@ -1,8 +1,6 @@
 import Networking
 import SwiftUI
 
-/// Each finish's price, opening the card's TCGplayer page, and the buy back ratio, which expands into
-/// its breakdown. Three items share one row; four go two to a row.
 struct PriceHistoryToolbar: View {
   let display: PriceHistoryDisplay
   let labels: PriceHistoryLabels
@@ -20,6 +18,8 @@ struct PriceHistoryToolbar: View {
         }
       }
     }
+    .opacity(interaction.isScrubbing ? 0.35 : 1.0)
+    .animation(.snappy, value: interaction.isScrubbing)
   }
 
   @ViewBuilder private func item(_ entry: PriceHistoryToolbarEntry) -> some View {
@@ -27,17 +27,21 @@ struct PriceHistoryToolbar: View {
     case let .finish(kind):
       if let price = display.price(for: kind) {
         PriceHistoryToolbarItem(
-          value: display.priceText(for: price, interaction: interaction),
+          value: price.priceText,
           caption: price.label,
           kind: kind,
           isAvailable: price.isAvailable,
           onTap: { if let url = display.tcgplayerURL { openURL(url) } }
         )
         .accessibilityIdentifier("priceHistory.price.\(kind.rawValue)")
+        // The scrub choreography draws a copy of this capsule exactly over it.
+        .onGeometryChange(for: CGRect.self) { $0.frame(in: .named("priceHistory.section")) } action: { frame in
+          if interaction.toolbarFrames[kind] != frame { interaction.toolbarFrames[kind] = frame }
+        }
       }
 
     case .buyBack:
-      PriceHistoryBuyBackItem(buyBack: display.buyBack, caption: labels.buyBack, interaction: interaction)
+      PriceHistoryBuyBackItem(buyBack: display.buyBack, labels: labels)
     }
   }
 }

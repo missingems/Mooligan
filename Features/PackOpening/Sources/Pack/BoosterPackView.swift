@@ -117,7 +117,7 @@ struct BoosterPackArtwork: View {
   }
 
   private func setIconWatermark(size: CGSize) -> some View {
-    IconLazyImage(product.iconURL, tintColor: theme.inkColor.opacity(0.16))
+    IconLazyImage(product.iconURL, tintColor: theme.inkColor.opacity(0.16), rasterSize: 320)
       .frame(width: size.width * 0.78, height: size.width * 0.78)
       .compositingGroup()
       .blendMode(.overlay)

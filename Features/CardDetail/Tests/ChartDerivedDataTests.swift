@@ -56,6 +56,22 @@ struct ChartDerivedDataTests {
     #expect(derived.priceRange.upperBound == 200.0)
   }
 
+  /// Releases are kept only within the days the chart draws, and a chart with different releases
+  /// is a different chart, so landing them crossfades rather than animating the marks.
+  @Test func releasesShouldBeKeptWithinTheChartDatesAndTellChartsApart() {
+    let inside = SetReleaseMarker(id: "in", code: "in", name: "Inside", date: start.addingTimeInterval(-10 * day), iconURL: nil)
+    let outside = SetReleaseMarker(id: "out", code: "out", name: "Outside", date: start.addingTimeInterval(-100 * day), iconURL: nil)
+    let plain = ChartDerivedData(section: section(days: 40))
+    let marked = ChartDerivedData(
+      section: PriceHistorySection(series: [series(days: 40)], currency: "USD", releases: [outside, inside])
+    )
+
+    #expect(plain.releases.isEmpty)
+    #expect(marked.releases.map(\.id) == ["in"])
+    #expect(ChartIdentity(plain) != ChartIdentity(marked))
+    #expect(ChartIdentity(marked) == ChartIdentity(marked))
+  }
+
   @Test func shouldReportWhichFinishesTheCardHas() {
     let subject = PriceHistorySection(
       series: [series(days: 200), series(days: 200, kind: .foil)],

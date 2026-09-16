@@ -10,7 +10,7 @@ final class PriceHistoryUITests: UITestCase {
     assert(pollExists(page.descendants(matching: .any)["priceHistory.buyBack"].firstMatch), "the buy back ratio should render")
   }
 
-  func testTappingBuyBackExpandsItsBreakdownAndTappingAgainFoldsIt() {
+  func testTappingBuyBackOpensItsBreakdownSheetAndCloseDismissesIt() {
     let page = openPriceHistory()
     let buyBack = page.descendants(matching: .any)["priceHistory.buyBack"].firstMatch
 
@@ -23,14 +23,19 @@ final class PriceHistoryUITests: UITestCase {
 
     buyBack.tap()
 
-    let breakdown = page.descendants(matching: .any)["priceHistory.buyBack.breakdown"].firstMatch
-    assert(pollExists(breakdown), "tapping buy back should expand its breakdown")
+    // The sheet is presented over the page, not inside it.
+    let breakdown = app.descendants(matching: .any)["priceHistory.buyBack.breakdown"].firstMatch
+    assert(pollExists(breakdown), "tapping buy back should open its breakdown sheet")
     assert(breakdown.label.contains("Regular"), "the breakdown should list the regular finish, got \(breakdown.label)")
+    let source = app.descendants(matching: .any)["priceHistory.buyBack.source"].firstMatch
+    assert(pollExists(source), "the sheet should name the vendor")
+    assert(source.label.contains("Card Kingdom"), "the vendor should be Card Kingdom, got \(source.label)")
+    assert(pollExists(app.buttons["priceHistory.buyBack.sell"].firstMatch), "the sheet should link to the vendor's buylist")
 
-    breakdown.tap()
+    app.buttons["priceHistory.buyBack.close"].firstMatch.tap()
 
-    expectToDisappear(breakdown, named: "Buy back breakdown")
-    assert(pollExists(buyBack), "the buy back capsule should come back")
+    expectToDisappear(breakdown, named: "Buy back sheet")
+    assert(pollExists(buyBack), "the buy back capsule should still be there")
   }
 
   func testSwipingAcrossTheChartPagesInsteadOfScrubbing() {
@@ -65,12 +70,12 @@ final class PriceHistoryUITests: UITestCase {
     // Buy back is always in the toolbar's last row, whether it has one row or two.
     let buyBack = page.descendants(matching: .any)["priceHistory.buyBack"].firstMatch
     let middle = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.6))
-    for _ in 0..<6 where buyBack.frame.maxY > app.frame.height * 0.4 {
+    for _ in 0..<6 where buyBack.frame.minY > app.frame.height * 0.6 {
       middle.press(forDuration: 0.05, thenDragTo: middle.withOffset(CGVector(dx: 0.0, dy: -160.0)), withVelocity: .slow, thenHoldForDuration: 0.4)
     }
-    // The buy back capsule has a caption of about 20 points under it, the chart starts 21 points below
-    // that and is 167 points tall; aim at its middle.
-    let y = buyBack.frame.maxY + 20.0 + 21.0 + 83.0
+    let chart = page.descendants(matching: .any)["priceHistory.chart"].firstMatch
+    assert(pollExists(chart), "the chart should be on screen")
+    let y = chart.frame.midY
     let origin = app.coordinate(withNormalizedOffset: .zero)
     let width = app.frame.width
     return { fraction in origin.withOffset(CGVector(dx: width * fraction, dy: y)) }

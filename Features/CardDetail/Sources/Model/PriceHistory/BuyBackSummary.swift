@@ -6,6 +6,8 @@ struct BuyBackSummary: Equatable, Sendable {
   let provider: PriceProvider
   let ratioText: String
   let finishes: [FinishBuyBack]
+  /// Where to sell the card to the vendor, when it publishes its buylist on the web.
+  let sellURL: URL?
 
   var isAvailable: Bool { finishes.isEmpty == false }
 }

@@ -33,6 +33,8 @@ public struct PriceHistorySection: Equatable, Sendable {
   public let series: [Series]
   public let currency: String
   public let buylistQuote: BuylistQuote?
+  /// Set releases within the section's dates, for the chart to mark.
+  public let releases: [SetReleaseMarker]
   public let priceRange: ClosedRange<Double>
   public let dateRange: ClosedRange<Date>
 
@@ -40,6 +42,7 @@ public struct PriceHistorySection: Equatable, Sendable {
     series: [Series] = [],
     currency: String = "",
     buylistQuote: BuylistQuote? = nil,
+    releases: [SetReleaseMarker] = [],
     dateRange: ClosedRange<Date>? = nil
   ) {
     let low = series.map(\.priceRange.lowerBound).min() ?? 0
@@ -50,6 +53,7 @@ public struct PriceHistorySection: Equatable, Sendable {
     self.series = series
     self.currency = currency
     self.buylistQuote = buylistQuote
+    self.releases = releases
     self.priceRange = low...max(high, low)
     self.dateRange = dateRange ?? (first...max(last, first.addingTimeInterval(86_400)))
   }

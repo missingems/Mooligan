@@ -6,6 +6,9 @@ import SwiftUI
 enum PriceChartStyle {
   static let swatchSize: CGFloat = 5.0
 
+  /// The grey a price, swatch or caption goes when its finish has no price to show.
+  static var disabled: HierarchicalShapeStyle { .tertiary }
+
   static func color(for kind: PriceSeriesKind) -> Color {
     switch kind {
     case .normal: DesignComponentsAsset.accentColor.swiftUIColor
@@ -69,8 +72,6 @@ enum PriceChartStyle {
   static func gridColor(_ colorScheme: ColorScheme) -> some ShapeStyle {
     gridTint(colorScheme).blendMode(vibrantBlendMode(colorScheme))
   }
-
-  static let needleWidth: CGFloat = 1.0
 
   /// Round dots a point across, three points apart.
   static let gridStroke = StrokeStyle(lineWidth: 1.0, lineCap: .round, dash: [0.0, 3.0])
@@ -148,6 +149,22 @@ enum PriceChartStyle {
 
   static func spanInDays(of dates: ClosedRange<Date>) -> Int {
     max(1, Int((dates.upperBound.timeIntervalSince(dates.lowerBound) / 86_400).rounded()))
+  }
+
+  /// The span the chart covers, as the section's subtitle: "Past 5 Days", "Past Week",
+  /// "Past 3 Weeks", "Past 3 Months".
+  static func spanText(of dates: ClosedRange<Date>) -> String {
+    let days = spanInDays(of: dates)
+    switch days {
+    case ..<7:
+      return String(localized: "Past \(days) Days")
+    case ..<60:
+      let weeks = max(1, Int((Double(days) / 7.0).rounded()))
+      return weeks == 1 ? String(localized: "Past Week") : String(localized: "Past \(weeks) Weeks")
+    default:
+      let months = max(1, Int((Double(days) / 30.0).rounded()))
+      return months == 1 ? String(localized: "Past Month") : String(localized: "Past \(months) Months")
+    }
   }
 
   static func axisDateStyle(forDays days: Int) -> Date.FormatStyle {

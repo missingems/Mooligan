@@ -10,14 +10,18 @@ struct PriceHistoryToolbarCaption: View {
   var body: some View {
     HStack(spacing: 2.0) {
       if let kind {
-        FinishSwatch(kind: kind)
+        FinishSwatch(kind: kind, isAvailable: isAvailable)
       }
 
       Text(text)
         .font(.caption)
-        .foregroundStyle(kind.map(PriceChartStyle.color(for:)) ?? .secondary)
+        .foregroundStyle(tint)
     }
     .lineLimit(1)
-    .opacity(isAvailable ? 1.0 : 0.5)
+  }
+  
+  private var tint: AnyShapeStyle {
+    guard isAvailable else { return AnyShapeStyle(PriceChartStyle.disabled) }
+    return kind.map { AnyShapeStyle(PriceChartStyle.color(for: $0)) } ?? AnyShapeStyle(.secondary)
   }
 }

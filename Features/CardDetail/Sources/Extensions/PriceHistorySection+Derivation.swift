@@ -39,32 +39,43 @@ extension PriceHistorySection {
     card: Card,
     history: PriceHistory?,
     buylistQuote: BuylistQuote? = nil,
+    releases: [SetReleaseMarker] = [],
     today: Date = PriceHistorySection.today
   ) -> PriceHistoryState {
-    guard let history else { return .unavailable }
-
     let releaseDate = UTCDay.date(from: card.releasedAt)
 
-    let series = PriceSeriesKind.allCases.compactMap { kind in
-      Series(
-        kind: kind,
-        points: withLiveLatest(
-          onOrAfterRelease(pricedPoints(history.series[kind] ?? []), releaseDate: releaseDate),
-          scryfallQuote: scryfallQuote(card: card, kind: kind),
-          today: today
-        )
+    let series = PriceSeriesKind.allCases.compactMap { kind -> Series? in
+      let quote = scryfallQuote(card: card, kind: kind)
+      let points = withLiveLatest(
+        onOrAfterRelease(pricedPoints(history?.series[kind] ?? []), releaseDate: releaseDate),
+        scryfallQuote: quote,
+        today: today
       )
+      if let series = Series(kind: kind, points: points) { return series }
+
+      // MTGJSON has nothing to draw for this finish, but Scryfall quotes it. A flat week at that
+      // price, ending today, still tells the reader what the card costs.
+      guard let quote else { return nil }
+      return Series(kind: kind, points: flatWeek(at: quote, endingOn: today))
     }
 
     guard series.isEmpty == false else { return .unavailable }
 
+    let currency = history?.currency ?? chartProvider.currencyCode
+    let bounds = PriceHistorySection(series: series, currency: currency)
     let section = PriceHistorySection(
       series: series,
-      currency: history.currency,
-      buylistQuote: buylistQuote
+      currency: currency,
+      buylistQuote: buylistQuote,
+      releases: releases.filter { bounds.dateRange.contains($0.date) }
     )
 
     return .data(section)
+  }
+
+  /// A week at one price: a point a day from seven days ago to `today`.
+  static func flatWeek(at amount: Decimal, endingOn today: Date) -> [PricePoint] {
+    (0...7).map { PricePoint(date: today.addingTimeInterval(-Double(7 - $0) * 86_400), amount: amount) }
   }
 
   static func pricedPoints(_ points: [PricePoint]) -> [PricePoint] {

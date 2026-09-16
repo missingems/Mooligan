@@ -113,6 +113,18 @@ struct PriceHistoryDisplayTests {
     #expect(display.buyBack.finishes.map(\.ratioText) == [PriceChartStyle.ratioText(0.5), nil])
   }
 
+  /// The scrub choreography and readout only take the finishes that have a price.
+  @Test func pricedFinishesShouldLeaveOutTheDashes() {
+    let display = PriceHistoryDisplay.make(
+      card: card(finishes: [.nonfoil, .foil], prices: Card.Prices(usd: "1.00")),
+      state: loaded([series(.normal, ["1.00", "2.00"])]),
+      labels: labels
+    )
+
+    #expect(display.prices.map(\.isAvailable) == [true, false])
+    #expect(display.pricedFinishes.map(\.kind) == [.normal])
+  }
+
   @Test(arguments: [PriceHistoryState.unavailable, .failed])
   func withoutPriceHistory_shouldFallBackToScryfallAndDashTheRest(state: PriceHistoryState) {
     let display = PriceHistoryDisplay.make(
@@ -241,5 +253,18 @@ struct PriceHistoryDisplayTests {
     #expect(display.axis.tickLabels.count == display.axis.ticks.count)
     #expect(display.axis.label(at: 0) == display.axis.ticks[0].formatted(PriceChartStyle.axisPrice("USD")))
     #expect(display.axis.label(at: 99) == "")
+  }
+
+  @Test func theBuyBackShouldLinkToTheVendorsBuylistSearchForTheCardsFrontFace() throws {
+    var subject = card(finishes: [.nonfoil])
+    subject.name = "Fable of the Mirror-Breaker // Reflection of Kiki-Jiki"
+
+    let display = PriceHistoryDisplay.loading(card: subject, labels: labels)
+    let url = try #require(display.buyBack.sellURL)
+    let query = try #require(URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems)
+
+    #expect(display.buyBack.provider == .cardkingdom)
+    #expect(url.host() == "www.cardkingdom.com")
+    #expect(query.first { $0.name == "filter[name]" }?.value == "Fable of the Mirror-Breaker")
   }
 }

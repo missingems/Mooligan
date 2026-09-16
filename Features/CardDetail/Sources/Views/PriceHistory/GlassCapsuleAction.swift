@@ -13,7 +13,6 @@ struct GlassCapsuleAction: View {
       .lineLimit(1)
       .padding(.horizontal, 13.0)
       .padding(.vertical, 5.0)
-      .contentShape(.capsule)
       .glassEffect(.regular.interactive(), in: .capsule)
       .onTapGesture(perform: action)
       .accessibilityElement(children: .ignore)

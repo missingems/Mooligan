@@ -1,17 +1,11 @@
 import SwiftUI
 
-/// The buy back price and ratio for each finish, from the vendor that buys them.
+/// The buy back price for each finish, and that price as a share of the vendor's own retail price.
 struct PriceHistoryBuyBackBreakdown: View {
   let buyBack: BuyBackSummary
 
-  static let width: CGFloat = 250.0
-
   var body: some View {
-    VStack(alignment: .leading, spacing: 8.0) {
-      Text(buyBack.provider.displayName)
-        .font(.caption)
-        .foregroundStyle(.secondary)
-
+    VStack(alignment: .leading, spacing: 13.0) {
       ForEach(buyBack.finishes) { finish in
         HStack(spacing: 5.0) {
           FinishSwatch(kind: finish.kind)
@@ -23,19 +17,16 @@ struct PriceHistoryBuyBackBreakdown: View {
           Text(finish.priceText)
             .monospacedDigit()
 
-          if let ratioText = finish.ratioText {
-            Text(ratioText)
-              .monospacedDigit()
-              .foregroundStyle(.secondary)
-          }
+          Text(finish.ratioText ?? PriceChartStyle.missingValue)
+            .monospacedDigit()
+            .foregroundStyle(.secondary)
+            .frame(minWidth: 44.0, alignment: .trailing)
         }
-        .font(.subheadline)
+        .font(.body)
         .fontDesign(.rounded)
         .lineLimit(1)
       }
     }
-    .padding(13.0)
-    .frame(width: Self.width, alignment: .leading)
     .accessibilityElement(children: .combine)
     .accessibilityIdentifier("priceHistory.buyBack.breakdown")
   }

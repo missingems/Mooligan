@@ -77,7 +77,10 @@ struct CardDetailLayoutSnapshotTests {
     defer { SnapshotWindow.release() }
 
     let card = try Self.card(fixture)
+    // Dark is forced on the controller, not only the window: on the CI runner the window override
+    // alone rendered every page in light mode against these dark references.
     let controller = UIHostingController(rootView: page(for: card))
+    controller.overrideUserInterfaceStyle = .dark
     let scene = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
     let window = UIWindow(windowScene: scene)
     window.frame = CGRect(x: 0.0, y: 0.0, width: Self.width, height: Self.height)

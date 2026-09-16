@@ -28,6 +28,9 @@ struct PriceHistoryDisplay: Equatable, Sendable {
     prices.map { .finish($0.kind) } + [.buyBack]
   }
 
+  /// The finishes with a price to scrub: only these take part in the scrub choreography and readout.
+  var pricedFinishes: [FinishPrice] { prices.filter(\.isAvailable) }
+
   func price(for kind: PriceSeriesKind) -> FinishPrice? {
     prices.first { $0.kind == kind }
   }
@@ -102,7 +105,7 @@ extension PriceHistoryDisplay {
     return PriceHistoryDisplay(
       status: status,
       prices: prices,
-      buyBack: buyBack(kinds: kinds, quote: section.buylistQuote, format: format, missing: missing),
+      buyBack: buyBack(card: card, kinds: kinds, quote: section.buylistQuote, format: format, missing: missing),
       tcgplayerURL: tcgplayerURL(of: card),
       chart: chart,
       axis: axis,
@@ -146,11 +149,13 @@ extension PriceHistoryDisplay {
   }
 
   private static func buyBack(
+    card: Card,
     kinds: [PriceSeriesKind],
     quote: BuylistQuote?,
     format: Decimal.FormatStyle.Currency,
     missing: String
   ) -> BuyBackSummary {
+    let provider = quote?.provider ?? PriceHistorySection.buylistProvider
     let finishes = kinds.compactMap { kind -> FinishBuyBack? in
       guard let price = quote?.buylist(for: kind) else { return nil }
       return FinishBuyBack(
@@ -163,9 +168,15 @@ extension PriceHistoryDisplay {
     let ratios = kinds.compactMap { quote?.ratio(for: $0) }
 
     return BuyBackSummary(
-      provider: quote?.provider ?? PriceHistorySection.buylistProvider,
+      provider: provider,
       ratioText: PriceChartStyle.ratioRangeText(ratios) ?? missing,
-      finishes: finishes
+      finishes: finishes,
+      sellURL: provider.buylistURL(forCardNamed: buylistSearchName(of: card))
     )
+  }
+
+  /// A double-faced card is listed under its front face, not Scryfall's "Front // Back".
+  static func buylistSearchName(of card: Card) -> String {
+    card.name.components(separatedBy: " // ").first ?? card.name
   }
 }

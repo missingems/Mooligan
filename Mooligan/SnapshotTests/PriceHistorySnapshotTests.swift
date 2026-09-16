@@ -33,6 +33,9 @@ struct PriceHistorySnapshotTests {
     return PriceHistorySection.Series(kind: kind, points: points)
   }
 
+  /// Two finishes over two months, a buylist, and two set releases: one mid-plot and one on the
+  /// last charted day, whose icon hangs half past the plot's edge. Without an icon URL the icon is
+  /// the static placeholder, so the render is deterministic.
   private static var section: PriceHistorySection {
     PriceHistorySection(
       series: [
@@ -44,7 +47,11 @@ struct PriceHistorySnapshotTests {
         provider: .cardkingdom,
         retail: [.normal: 219.99, .foil: 279.99],
         buylist: [.normal: 150.0, .foil: 180.0]
-      )
+      ),
+      releases: [
+        SetReleaseMarker(id: "mid", code: "mid", name: "Mid Set", date: end.addingTimeInterval(-40 * 86_400), iconURL: nil),
+        SetReleaseMarker(id: "new", code: "new", name: "New Set", date: end, iconURL: nil),
+      ]
     )
   }
 
@@ -52,6 +59,7 @@ struct PriceHistorySnapshotTests {
     _ content: Content,
     height: CGFloat,
     scheme: ColorScheme = .light,
+    settle: Duration = .seconds(1.5),
     named name: String,
     testName: String = #function
   ) async throws {
@@ -71,7 +79,7 @@ struct PriceHistorySnapshotTests {
     window.rootViewController = controller
     window.makeKeyAndVisible()
     controller.view.frame = window.bounds
-    try await Task.sleep(for: .seconds(1.5))
+    try await Task.sleep(for: settle)
 
     assertSnapshot(
       of: controller.view,
@@ -85,7 +93,7 @@ struct PriceHistorySnapshotTests {
   }
 
   private static var card: Card {
-    var card = Card.mock()
+    var card = Card.mock(name: "Test Card")
     card.finishes = [.nonfoil, .foil]
     card.prices = Card.Prices(usd: "216.70", usdFoil: "272.04")
     return card
@@ -136,7 +144,7 @@ struct PriceHistorySnapshotTests {
     }
 
     #expect(heights.allSatisfy { abs($0 - heights[0]) < 0.5 }, "heights: \(heights)")
-    #expect(heights[0] > PriceHistoryView.chartHeight)
+    #expect(heights[0] > 233.0)
   }
 
   @Test func chartChromeShouldLandWhereSwiftChartsPlacesValues() async throws {
@@ -149,7 +157,7 @@ struct PriceHistorySnapshotTests {
     let prices = [axis.domain.lowerBound, (axis.domain.lowerBound + axis.domain.upperBound) / 2.0, axis.domain.upperBound]
     let probe = ChartProxyProbe()
     let interaction = ChartInteraction()
-    let size = CGSize(width: 380.0, height: PriceHistoryView.chartHeight)
+    let size = CGSize(width: 380.0, height: 233.0)
 
     let content = VStack(spacing: 0.0) {
       PriceHistoryChart(derivedData: chart, axis: axis, interaction: interaction)
@@ -234,9 +242,9 @@ struct PriceHistorySnapshotTests {
     let axis = PriceChartStyle.priceAxis(for: 0.333...0.4995).labeled(currencyCode: "USD")
     try await snapshot(
       PriceHistoryChart(derivedData: ChartDerivedData(), axis: axis, interaction: ChartInteraction())
-        .frame(height: PriceHistoryView.chartHeight)
+        .frame(height: 233.0)
         .padding(),
-      height: PriceHistoryView.chartHeight + 32.0,
+      height: 233.0 + 32.0,
       named: "fixed"
     )
   }
@@ -257,38 +265,70 @@ struct PriceHistorySnapshotTests {
     try await snapshot(section(.unavailable, card: card), height: 540.0, named: "unavailable")
   }
 
-  /// Tapping buy back morphs its capsule into the breakdown, which grows over what is below it.
-  @Test func buyBackBreakdown() async throws {
+  /// Tapping buy back opens a sheet with the vendor, its price for each finish and a link to sell.
+  @Test func buyBackSheet() async throws {
     let display = display(.data(Self.section))
     try await snapshot(
-      VStack(spacing: 13.0) {
-        HStack(alignment: .top, spacing: 8.0) {
-          Color.clear.frame(maxWidth: .infinity, maxHeight: 44.0)
-          Color.clear.frame(maxWidth: .infinity, maxHeight: 44.0)
-          PriceHistoryBuyBackItem(buyBack: display.buyBack, caption: labels.buyBack, interaction: ChartInteraction(), isExpanded: true)
-        }
-        .zIndex(1.0)
-
-        Color(.secondarySystemBackground).frame(height: 120.0)
-      }
-      .padding(),
-      height: 220.0,
-      named: "expanded"
+      PriceHistoryBuyBackSheet(buyBack: display.buyBack, labels: labels),
+      height: 360.0,
+      named: "sheet"
     )
   }
 
-  @Test func scrubbingShouldDrawTheNeedleThroughTheScrubbedDay() async throws {
+  /// Each stage of the scrub choreography: the copies over the toolbar's capsules, slid into one,
+  /// balled up at the needle's foot, and absorbed with the readout open at the tip. The last is
+  /// taken twice, mid-plot and at the plot's end, where the screen's edge stops the readout.
+  @Test func scrubbingShouldCarryThePricesUpTheNeedle() async throws {
     let display = display(.data(Self.section))
-    let interaction = ChartInteraction()
     let range = display.chart.dateRange
-    interaction.scrubbedDate = range.lowerBound.addingTimeInterval(range.upperBound.timeIntervalSince(range.lowerBound) * 0.6)
-    try await snapshot(
-      PriceHistoryChart(derivedData: display.chart, axis: display.axis, interaction: interaction)
-        .frame(height: PriceHistoryView.chartHeight)
-        .padding(),
-      height: PriceHistoryView.chartHeight + 32.0,
-      named: "scrubbing"
+    let stages: [(String, ScrubReadoutPhase, Double)] = [
+      ("start", .start, 0.6),
+      ("gathered", .gathered, 0.6),
+      ("balled", .balled, 0.6),
+      ("expanded", .expanded, 0.6),
+      ("edge", .expanded, 0.98),
+    ]
+    for (name, phase, fraction) in stages {
+      let interaction = ChartInteraction()
+      interaction.scrubbedDate = range.lowerBound.addingTimeInterval(range.upperBound.timeIntervalSince(range.lowerBound) * fraction)
+      try await snapshot(
+        VStack(spacing: 0.0) {
+          PriceHistoryView(display: display, labels: labels, onRetry: {}, interaction: interaction, scrubPhase: phase)
+        },
+        height: 540.0,
+        named: name
+      )
+    }
+  }
+
+  /// Scrubbing a card whose regular finish has no price: only the foil capsule gets a copy and only
+  /// foil is read out; the regular dash is left alone.
+  @Test func scrubbingShouldOnlyCarryTheFinishesWithAPrice() async throws {
+    var card = Self.card
+    card.prices = Card.Prices(usd: nil, usdFoil: "272.04")
+    let foilOnly = PriceHistorySection(
+      series: [Self.series(.foil, base: 265.0, swing: 9.0)].compactMap { $0 },
+      currency: "USD"
     )
+    let display = display(.data(foilOnly), card: card)
+    let range = display.chart.dateRange
+    for (name, phase) in [("start", ScrubReadoutPhase.start), ("expanded", .expanded)] {
+      let interaction = ChartInteraction()
+      interaction.scrubbedDate = range.lowerBound.addingTimeInterval(range.upperBound.timeIntervalSince(range.lowerBound) * 0.6)
+      try await snapshot(
+        VStack(spacing: 0.0) {
+          PriceHistoryView(display: display, labels: labels, onRetry: {}, interaction: interaction, scrubPhase: phase)
+        },
+        height: 540.0,
+        named: name
+      )
+    }
+  }
+
+  /// Without any history from the feed, the card's Scryfall prices still draw: a flat week each.
+  @Test func withoutHistoryTheScryfallPricesShouldDrawAFlatWeek() async throws {
+    let state = PriceHistorySection.makeState(card: Self.card, history: nil, today: Self.end)
+    try await snapshot(section(state), height: 540.0, named: "flat")
   }
 
   @Test func emptyChartMessages() async throws {

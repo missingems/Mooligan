@@ -25,6 +25,7 @@ import Testing
     } withDependencies: {
       $0.priceHistoryClient = client
       $0.continuousClock = clock
+      $0.gameSetRequestClient = MockGameSetRequestClient()
     }
   }
 
@@ -90,17 +91,21 @@ import Testing
     #expect(store.state.priceHistory.status == .loaded)
   }
 
-  @Test func whenTheFeedDoesNotKnowTheCard_shouldShowNoDataWithoutRetrying() async {
+  /// An empty feed is not an error: there is nothing to retry, and the card's Scryfall prices
+  /// still draw as a flat week.
+  @Test func whenTheFeedDoesNotKnowTheCard_shouldFallBackToScryfallWithoutRetrying() async {
     let clock = TestClock()
     let client = CountingEmptyClient()
     let store = makeStore(client: client, clock: clock)
+    let fallback = PriceHistorySection.makeState(card: card, history: nil)
 
     await store.send(.fetchPriceHistory(card: card))
     await store.receive(\.updatePriceHistory) { state in
-      state.priceHistory = PriceHistoryDisplay.make(card: card, state: .unavailable, labels: labels)
+      state.priceHistory = PriceHistoryDisplay.make(card: card, state: fallback, labels: labels)
     }
 
     #expect(await client.calls == 1)
+    #expect(store.state.priceHistory.status == .loaded)
   }
 
   @Test func whenRetryIsTapped_shouldReloadFromTheLoadingDisplay() async {

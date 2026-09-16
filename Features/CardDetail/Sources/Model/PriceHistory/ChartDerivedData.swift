@@ -27,6 +27,8 @@ struct ChartDerivedData: Equatable, Sendable {
   var plotSeries: [PlotSeries] = []
   var priceRange: ClosedRange<Double> = 0.0...1.0
   var dateRange: ClosedRange<Date> = Date()...Date()
+  /// Set releases within `dateRange`, each marked on the chart by a rule and the set's icon.
+  var releases: [SetReleaseMarker] = []
 
   var anchorSeries: PriceHistorySection.Series? { series.first }
 
@@ -43,13 +45,15 @@ struct ChartDerivedData: Equatable, Sendable {
   init(
     series: [PriceHistorySection.Series] = [],
     priceRange: ClosedRange<Double> = 0.0...1.0,
-    dateRange: ClosedRange<Date> = Date()...Date()
+    dateRange: ClosedRange<Date> = Date()...Date(),
+    releases: [SetReleaseMarker] = []
   ) {
     self.series = series
     let perSeries = Self.maxPlottedPoints / max(series.count, 1)
     self.plotSeries = series.map { Self.plot($0, limit: perSeries) }
     self.priceRange = priceRange
     self.dateRange = dateRange
+    self.releases = releases
   }
 
   static let windowInDays = 90
@@ -69,7 +73,8 @@ struct ChartDerivedData: Equatable, Sendable {
     self.init(
       series: series,
       priceRange: low...max(high, low),
-      dateRange: dates
+      dateRange: dates,
+      releases: section.releases.filter { dates.contains($0.date) }
     )
   }
 

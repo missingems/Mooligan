@@ -109,6 +109,22 @@ struct PriceChartStyleTests {
     #expect(PriceChartStyle.priceAxis(for: 0.0...0.0) == PriceChartStyle.fallbackPriceAxis)
   }
 
+  /// The section's subtitle names the chart's span in days under a week, weeks under two months,
+  /// and months from there.
+  @Test func spanTextShouldReadInDaysWeeksOrMonths() {
+    let start = Date(timeIntervalSince1970: 1_780_000_000)
+    func span(_ days: Int) -> String {
+      PriceChartStyle.spanText(of: start...start.addingTimeInterval(Double(days) * 86_400))
+    }
+
+    #expect(span(5) == "Past 5 Days")
+    #expect(span(7) == "Past Week")
+    #expect(span(21) == "Past 3 Weeks")
+    #expect(span(59) == "Past 8 Weeks")
+    #expect(span(60) == "Past 2 Months")
+    #expect(span(90) == "Past 3 Months")
+  }
+
   @Test func niceStepShouldRoundUpToOneTwoTwoAndAHalfOrFive() {
     #expect(PriceChartStyle.niceStep(14.0) == 20.0)
     #expect(PriceChartStyle.niceStep(2.2) == 2.5)
