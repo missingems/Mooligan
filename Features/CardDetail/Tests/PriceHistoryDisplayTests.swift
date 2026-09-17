@@ -113,7 +113,7 @@ struct PriceHistoryDisplayTests {
     #expect(display.buyBack.finishes.map(\.ratioText) == [PriceChartStyle.ratioText(0.5), nil])
   }
 
-  /// The scrub choreography and readout only take the finishes that have a price.
+  /// The scrub readout only takes the finishes that have a price.
   @Test func pricedFinishesShouldLeaveOutTheDashes() {
     let display = PriceHistoryDisplay.make(
       card: card(finishes: [.nonfoil, .foil], prices: Card.Prices(usd: "1.00")),

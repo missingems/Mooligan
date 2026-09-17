@@ -28,7 +28,7 @@ struct PriceHistoryDisplay: Equatable, Sendable {
     prices.map { .finish($0.kind) } + [.buyBack]
   }
 
-  /// The finishes with a price to scrub: only these take part in the scrub choreography and readout.
+  /// The finishes with a price to scrub: only these appear in the scrub readout.
   var pricedFinishes: [FinishPrice] { prices.filter(\.isAvailable) }
 
   func price(for kind: PriceSeriesKind) -> FinishPrice? {

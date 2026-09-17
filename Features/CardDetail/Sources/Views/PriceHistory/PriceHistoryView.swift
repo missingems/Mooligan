@@ -8,25 +8,22 @@ struct PriceHistoryView: View {
   private let onRetry: () -> Void
 
   @State private var interaction: ChartInteraction
-  private let scrubPhase: ScrubReadoutPhase?
 
   init(
     display: PriceHistoryDisplay,
     labels: PriceHistoryLabels,
     onRetry: @escaping () -> Void,
-    interaction: ChartInteraction = ChartInteraction(),
-    scrubPhase: ScrubReadoutPhase? = nil
+    interaction: ChartInteraction = ChartInteraction()
   ) {
     self.display = display
     self.labels = labels
     self.onRetry = onRetry
-    self.scrubPhase = scrubPhase
     _interaction = State(initialValue: interaction)
   }
 
   var body: some View {
     VibrantDivider()
-      .safeAreaPadding(.leading, systemHorizontalMargin)
+      .padding(.leading, systemHorizontalMargin)
 
     VStack(alignment: .leading, spacing: 8.0) {
       VStack(alignment: .leading, spacing: 5.0) {
@@ -38,30 +35,22 @@ struct PriceHistoryView: View {
 
       chart
         .frame(height: 233.0)
-        .onGeometryChange(for: CGRect.self) { $0.frame(in: .named("priceHistory.section")) } action: { frame in
-          if interaction.chartFrame != frame { interaction.chartFrame = frame }
+        .onGeometryChange(for: CGSize.self) { $0.size } action: { size in
+          if interaction.chartSize != size { interaction.chartSize = size }
         }
-        // The scrub readout lives in the chart's coordinate space and reaches over the toolbar
-        // below and the title above, so the chart draws over both.
+        // The scrub readout lives in the chart's coordinate space and reaches over the title
+        // above, so the chart draws over it.
         .overlay(alignment: .topLeading) {
-          PriceHistoryScrubReadout(
-            display: display,
-            interaction: interaction,
-            margin: systemHorizontalMargin,
-            fixedPhase: scrubPhase
-          )
+          PriceHistoryScrubReadout(display: display, interaction: interaction, margin: systemHorizontalMargin)
         }
         .zIndex(1.0)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("priceHistory.chart")
         .padding(.top, 5.0)
 
-      PriceHistoryToolbar(display: display, labels: labels, interaction: interaction)
+      PriceHistoryToolbar(display: display, labels: labels)
         .padding(.top, 13.0)
     }
-    // Shared by the chart and the toolbar capsules, which report their frames in it so the scrub
-    // choreography can draw over the toolbar from inside the chart.
-    .coordinateSpace(.named("priceHistory.section"))
     .padding(.horizontal, systemHorizontalMargin)
     .padding(EdgeInsets(top: 13.0, leading: 0.0, bottom: 21.0, trailing: 0.0))
   }
