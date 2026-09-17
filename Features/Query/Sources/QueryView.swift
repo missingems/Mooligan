@@ -51,7 +51,7 @@ struct QueryView: View {
         }
       }
     )
-    .scrollEdgeEffectStyle(.soft, for: .top)
+    .scrollEdgeEffectStyle(.soft, for: .all)
     .contentMargins(
       .all,
       EdgeInsets(top: 0, leading: systemHorizontalMargin, bottom: 13.0, trailing: systemHorizontalMargin),

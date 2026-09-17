@@ -28,6 +28,7 @@ public struct CardPagerView: View {
       .scrollTargetLayout()
     }
     .scrollTargetBehavior(.paging)
+    .scrollEdgeEffectStyle(.soft, for: .all)
     .accessibilityIdentifier("cardDetail.pager")
     .scrollPosition(id: $store.selectedId)
     .edgeScrims()

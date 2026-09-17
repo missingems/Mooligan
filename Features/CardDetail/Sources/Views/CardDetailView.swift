@@ -133,6 +133,7 @@ public struct CardDetailView: View {
         maxWidth = newValue
       }
     })
+    .scrollEdgeEffectStyle(.soft, for: .all)
     .accessibilityIdentifier("cardDetail.scroll")
     .task(priority: .background) {
       // The page loads the moment the pager shows it. SwiftUI starts this task inside the update
