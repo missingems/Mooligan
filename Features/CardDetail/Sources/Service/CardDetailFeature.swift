@@ -38,16 +38,37 @@ import ScryfallKit
       state.hasAppeared = true
       let card = state.content.card
 
-      // Every action is checked by each card's store in the pager, so the sections come back
-      // together in one action and price history in another, instead of one action per fetch.
-      return .merge(
-        loadAdditionalInformation(
+      // Only what has not landed yet: a page that left while loading comes back here with its
+      // in-flight loads cancelled, and reloads just those. Every action is checked by each card's
+      // store in the pager, so the sections come back together in one action and price history
+      // in another, instead of one action per fetch.
+      var effects: [Effect<Action>] = []
+      if state.variants.state.isInitial {
+        effects.append(loadAdditionalInformation(
           card: card,
           needsSetIcon: state.setIconURL == nil,
           existingVariants: state.variants.state.value
-        ),
-        fetchPriceHistory(card: card, state: &state)
-      )
+        ))
+      }
+      if state.priceHistory.status == .loading {
+        effects.append(fetchPriceHistory(card: card, state: &state))
+      }
+      return .merge(effects)
+
+    case .viewDisappeared:
+      // The page has left the screen. Loads still in flight are cancelled so a page flicked past
+      // never computes or lands anything, and `hasAppeared` is reset so a return loads them again.
+      let card = state.content.card
+      var cancellations: [Effect<Action>] = []
+      if state.variants.state.isInitial {
+        cancellations.append(.cancel(id: CancelID.additionalInformation(card.id)))
+      }
+      if state.priceHistory.status == .loading {
+        cancellations.append(.cancel(id: CancelID.priceHistory(card.id)))
+      }
+      guard cancellations.isEmpty == false else { return .none }
+      state.hasAppeared = false
+      return .merge(cancellations)
 
     case let .fetchVariants(card, page):
       return .run { [existingVariants = state.variants.state.value] send in
@@ -85,6 +106,7 @@ import ScryfallKit
 extension CardDetailFeature {
   enum CancelID: Hashable, Sendable {
     case priceHistory(UUID)
+    case additionalInformation(UUID)
   }
 
   private func loadAdditionalInformation(
@@ -109,7 +131,7 @@ extension CardDetailFeature {
         relatedMeldResult: await meldResult
       )))
     }
-    .cancellable(id: "fetchAdditional: \(card.id.uuidString)", cancelInFlight: true)
+    .cancellable(id: CancelID.additionalInformation(card.id), cancelInFlight: true)
   }
 
   private func setIconURL(of card: Card) async -> URL? {
@@ -152,13 +174,20 @@ extension CardDetailFeature {
   private func loadPriceHistory(card: Card, labels: PriceHistoryLabels) -> Effect<Action> {
     let loader = PriceHistoryLoader(client: priceHistoryClient, clock: clock)
 
-    return .run(priority: .background) { [setClient] send in
+    // Utility, not background: the reader is looking at the placeholder this fills, and the
+    // system schedules background work last when the main thread is busy drawing a swipe.
+    return .run(priority: .utility) { [setClient] send in
       async let outcome = loader.load(card: card, requests: PriceHistorySection.priceRequests)
       async let releases = SetReleaseMarkerStore.shared.markers(in: .allPriceHistory) {
         (try? await setClient.getSets(queryType: .all).1) ?? []
       }
 
-      let result: PriceHistoryState = switch await outcome {
+      let loaded = await outcome
+      // The page may have left while the feed answered. Cancelled, the effect stops here: the
+      // series, plot points, axis and every formatted price below are only made for a page that
+      // is still on screen to show them.
+      guard Task.isCancelled == false else { return }
+      let result: PriceHistoryState = switch loaded {
       case let .loaded(histories):
         PriceHistorySection.makeState(
           card: card,
@@ -174,6 +203,7 @@ extension CardDetailFeature {
       }
 
       let display = PriceHistoryDisplay.make(card: card, state: result, labels: labels)
+      guard Task.isCancelled == false else { return }
       await send(.updatePriceHistory(PriceHistoryUpdate(display: display)))
     }
     .cancellable(id: CancelID.priceHistory(card.id), cancelInFlight: true)

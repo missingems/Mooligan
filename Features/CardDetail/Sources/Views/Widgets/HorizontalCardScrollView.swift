@@ -28,7 +28,7 @@ struct HorizontalCardScrollView: View, Equatable {
   let send: (Action) -> Void
   
   var body: some View {
-    VibrantDivider().safeAreaPadding(.leading, systemHorizontalMargin)
+    VibrantDivider().padding(.leading, systemHorizontalMargin)
     
     VStack(alignment: .leading, spacing: 5.0) {
       HStack {

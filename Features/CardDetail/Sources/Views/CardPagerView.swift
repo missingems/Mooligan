@@ -9,21 +9,21 @@ public struct CardPagerView: View {
   public var body: some View {
     ScrollView(.horizontal, showsIndicators: false) {
       LazyHStack(spacing: 0) {
-        // The collection scoped straight into `ForEach`, as TCA recommends, each element a child
-        // store identified by its object identity. Eagerly turned into an `Array`: a lazy stack reads
-        // the collection during layout off the main actor, and TCA traps on a store collection
-        // touched there. Each page is sized to the pager, not to its content — an unbounded width
-        // proposal let a page's card grow to fill whatever the widest section wanted.
-        ForEach(Array(store.scope(state: \.cards, action: \.cards))) { card in
-          ZStack {
-            CardDetailView(store: card)
-              .accessibilityIdentifier("cardDetail.page.\(card.content.card.collectorNumber)")
+        // One child store per page the stack has built, not one per card. Scoping the whole
+        // collection made a store for every card up front, and TCA notifies every child store on
+        // every action, each one re-reading and copying the pager's state: a device trace put that
+        // at 4–7 ms of main thread per landed price or variants action with 175 cards. The ids are
+        // read here, on the main actor, as a plain array: a lazy stack reads its data during layout
+        // off the main actor, where a store collection traps.
+        ForEach(Array(store.cards.ids), id: \.self) { id in
+          if let page = store.scope(state: \.cards[id: id], action: \.cards[id: id]) {
+            CardDetailView(store: page)
+              .accessibilityIdentifier("cardDetail.page.\(page.content.card.collectorNumber)")
+              .containerRelativeFrame(.horizontal)
+              .geometryGroup()
+              // Tagged with the card's id so `scrollPosition(id:)` below lands on the tapped card.
+              .id(id)
           }
-          .containerRelativeFrame(.horizontal)
-          .geometryGroup()
-          // Scoped stores are identified by object identity, which `scrollPosition(id:)` below
-          // cannot be asked for, so each page is tagged with its card's id to land on the tapped card.
-          .id(card.content.card.id)
         }
       }
       .scrollTargetLayout()
@@ -31,7 +31,6 @@ public struct CardPagerView: View {
     .scrollTargetBehavior(.paging)
     .accessibilityIdentifier("cardDetail.pager")
     .scrollPosition(id: .constant(scrolledId))
-    .scrollEdgeEffectHidden()
     .edgeScrims()
     .sheet(
       item: $store.scope(state: \.showRulings, action: \.showRulings)
@@ -39,9 +38,6 @@ public struct CardPagerView: View {
       NavigationStack {
         RulingView(store: rulingStore).toolbarTitleDisplayMode(.inline)
       }
-    }
-    .task {
-      store.send(.viewAppeared)
     }
   }
   

@@ -19,6 +19,10 @@ public struct CardDetailView: View {
     let faceDirection = store.displayableCardImage?.faceDirection
     
     ScrollView(.vertical) {
+      // Sections keep to the margin with `padding`. A `safeAreaPadding` measures its content three
+      // times over for every size it is asked, and with one on each section that was most of the
+      // cost of the pager building a page. Only the rows that scroll sideways keep the safe-area
+      // inset, so their cards run under the margin.
       VStack(spacing: 0) {
         let cardImageWidth = content.card.isLandscape
         ? 2.5 / 3.0 * maxWidth
@@ -81,7 +85,7 @@ public struct CardDetailView: View {
             )
           }
           .buttonStyle(.sinkableButtonStyle)
-          .safeAreaPadding(.horizontal, systemHorizontalMargin)
+          .padding(.horizontal, systemHorizontalMargin)
         }
         
         if content.card.isTransformable || content.card.isFlippable {
@@ -131,10 +135,17 @@ public struct CardDetailView: View {
     })
     .accessibilityIdentifier("cardDetail.scroll")
     .task(priority: .background) {
-      // SwiftUI starts this task inside the update that first shows the page, and a send has no
-      // suspension point, so without the yield the send and its state changes land in that frame.
+      // The page loads the moment the pager shows it. SwiftUI starts this task inside the update
+      // that first shows the page, and a send has no suspension point, so without the yield the
+      // send and its state changes land in that frame.
       await Task.yield()
+      guard Task.isCancelled == false else { return }
       store.send(.viewAppeared)
+    }
+    .onDisappear {
+      // A page flicked past leaves before its loads land. The feature cancels what is still in
+      // flight, so nothing is computed or landed for a page nobody is looking at.
+      store.send(.viewDisappeared)
     }
     .background {
       ZStack {

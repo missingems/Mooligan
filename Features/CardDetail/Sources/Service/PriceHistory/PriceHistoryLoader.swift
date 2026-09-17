@@ -22,7 +22,9 @@ struct PriceHistoryLoader: Sendable {
       switch await attemptLoad(card: card, requests: requests) {
       case let .loaded(histories): return .loaded(histories)
       case .noData: return .noData
-      case .failed: continue
+      case .failed:
+        guard Task.isCancelled == false else { return .failed }
+        continue
       }
     }
     return .failed
@@ -35,6 +37,9 @@ struct PriceHistoryLoader: Sendable {
           return .loaded(try await client.histories(for: card, requests: requests))
         } catch let error as PriceHistoryClientError where error == .emptyResponse || error == .notConfigured {
           return .noData
+        } catch is CancellationError {
+          // The page left. Nothing to retry, and the caller checks its own cancellation.
+          return nil
         } catch {
           return Task.isCancelled ? nil : .failed
         }

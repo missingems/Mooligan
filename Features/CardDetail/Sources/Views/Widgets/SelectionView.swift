@@ -15,8 +15,8 @@ struct SelectionView: View, Equatable {
   }
   
   var body: some View {
-    VibrantDivider().safeAreaPadding(.leading, systemHorizontalMargin)
-    
+    VibrantDivider().padding(.leading, systemHorizontalMargin)
+
     VStack(alignment: .leading, spacing: 8.0) {
       Text("Related").font(.headline)
       
@@ -36,7 +36,7 @@ struct SelectionView: View, Equatable {
       .background(Color(.systemFill))
       .clipShape(RoundedRectangle(cornerRadius: 21))
     }
-    .safeAreaPadding(.horizontal, systemHorizontalMargin)
+    .padding(.horizontal, systemHorizontalMargin)
     .padding(.vertical, 13.0)
   }
 }
@@ -94,12 +94,13 @@ extension SelectionView {
             .imageScale(.small)
             .tint(DesignComponentsAsset.accentColor.swiftUIColor.secondary)
         }
+        // Inside the label, so the button still takes the row's full width for a tap.
+        .padding(.horizontal, systemHorizontalMargin)
       }
-      .safeAreaPadding(.horizontal, systemHorizontalMargin)
       .padding(.vertical, 13.0)
-      
+
       if shouldShowSeparator {
-        VibrantDivider().safeAreaPadding(.leading, systemHorizontalMargin)
+        VibrantDivider().padding(.leading, systemHorizontalMargin)
       }
     }
   }

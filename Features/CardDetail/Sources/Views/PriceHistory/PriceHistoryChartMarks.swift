@@ -25,7 +25,6 @@ struct PriceHistoryChartMarks: View {
 
   var body: some View {
     let domain = axis.domain
-    let ruleTop = releaseRuleTop(in: domain)
 
     Chart {
       ForEach(derivedData.plotSeries) { series in
@@ -61,13 +60,16 @@ struct PriceHistoryChartMarks: View {
 
       // After the lines, so each release's rule draws over them. The set's icon sits at the top of
       // the plot, centred on its rule even when that puts half of it past the plot's edge, and the
-      // rule starts 3 points under it.
+      // rule starts 3 points under it: the rule's top is offset 30 points (the 24-point icon and
+      // 3 either side) below the plot's top in points, so the marks never read the measured plot
+      // and the chart is not built a second time once the plot is measured.
       ForEach(derivedData.releases) { release in
         RuleMark(
           x: .value("Release", release.date),
-          yStart: .value("Rule top", ruleTop),
+          yStart: .value("Rule top", domain.upperBound),
           yEnd: .value("Rule bottom", domain.lowerBound)
         )
+        .offset(yStart: 30.0)
         .foregroundStyle(Color.primary.opacity(0.16))
         .lineStyle(StrokeStyle(lineWidth: 1.0 / max(displayScale, 1.0)))
         .annotation(
@@ -122,14 +124,5 @@ struct PriceHistoryChartMarks: View {
         interaction.plot = rect
       }
     }
-  }
-
-  /// Where a release's rule starts, as a price: the top of the plot less the 24-point icon and the
-  /// 3 points either side of it. Until the plot is measured the rule runs the plot's full height.
-  private func releaseRuleTop(in domain: ClosedRange<Double>) -> Double {
-    let height = interaction.plot.height
-    guard height > 0.0 else { return domain.upperBound }
-    let span = domain.upperBound - domain.lowerBound
-    return max(domain.upperBound - Double(30.0 / height) * span, domain.lowerBound)
   }
 }

@@ -9,25 +9,20 @@ extension CardPagerFeature {
     public var cards: IdentifiedArrayOf<CardDetailFeature.State>
     public var selectedId: UUID?
     @Presents public var showRulings: RulingFeature.State?
-    var rawCardDetails: [CardInfo]
-    var queryType: QueryType
-    
+
+    /// Every card's state is built here, so the pager opens with its whole collection. Built off
+    /// the main thread by the caller (the root prepares it in an effect before pushing). Opening
+    /// with only the selected card and filling the rest in afterwards replaced the collection under
+    /// the page on show, which gave that page a new identity and built it, chart and all, twice.
     public init(cardDetails: [CardInfo], initialSelectedCard: Card, queryType: QueryType) {
-      self.rawCardDetails = cardDetails
-      self.queryType = queryType
       self.selectedId = initialSelectedCard.id
-      
-      if let initialInfo = cardDetails.first(where: { $0.card.id == initialSelectedCard.id }) {
-        self.cards = [
-          CardDetailFeature.State(
-            card: initialInfo.card,
-            displayableCardImage: initialInfo.displayableCardImage,
-            queryType: queryType
-          )
-        ]
-      } else {
-        self.cards = []
-      }
+      self.cards = IdentifiedArray(uniqueElements: cardDetails.map { info in
+        CardDetailFeature.State(
+          card: info.card,
+          displayableCardImage: info.displayableCardImage,
+          queryType: queryType
+        )
+      })
     }
   }
 }

@@ -6,7 +6,7 @@ import SwiftUI
 struct PriceHistoryChartOverlay: View {
   let derivedData: ChartDerivedData
   let interaction: ChartInteraction
-  let scale: PlotScale
+  let priceDomain: ClosedRange<Double>
 
   var body: some View {
     ChartTouchReader { positions in updateInteraction(positions) }
@@ -16,7 +16,12 @@ struct PriceHistoryChartOverlay: View {
       }
   }
 
-  private var plot: CGRect { scale.plot }
+  /// Made on touch, not in `body`, so the plot being measured does not re-evaluate the overlay.
+  private var scale: PlotScale {
+    PlotScale(plot: interaction.plot, dates: derivedData.dateRange, prices: priceDomain)
+  }
+
+  private var plot: CGRect { interaction.plot }
 
   private var scrubbedDay: Date? {
     guard let scrubbedDate = interaction.scrubbedDate else { return nil }
@@ -30,6 +35,7 @@ struct PriceHistoryChartOverlay: View {
       return
     }
 
+    let plot = plot
     guard let date = scale.date(atX: min(max(x, plot.minX), plot.maxX)) else { return }
     interaction.scrubbedDate = date
   }

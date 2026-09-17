@@ -12,7 +12,7 @@ struct LegalityView: View, Equatable {
   let numberOfColumns = 2
   
   var body: some View {
-    VibrantDivider().safeAreaPadding(.leading, systemHorizontalMargin)
+    VibrantDivider().padding(.leading, systemHorizontalMargin)
     
     VStack(alignment: .leading, spacing: 5.0) {
       Text(title).font(.headline)
@@ -103,7 +103,7 @@ struct LegalityView: View, Equatable {
       }
       .padding(.top, 3.0)
     }
-    .safeAreaPadding(.horizontal, systemHorizontalMargin)
+    .padding(.horizontal, systemHorizontalMargin)
     .padding(EdgeInsets(top: 13.0, leading: 0, bottom: 18, trailing: 0))
   }
   

@@ -26,7 +26,7 @@ struct CardDetailTableView: View, Equatable {
     VStack(spacing: 0) {
       ForEach(sections.indices, id: \.self) { index in
         VibrantDivider()
-          .safeAreaPadding(.leading, systemHorizontalMargin)
+          .padding(.leading, systemHorizontalMargin)
         
         let section = sections[index]
         let isLast = index == sections.count - 1
@@ -45,7 +45,7 @@ struct CardDetailTableView: View, Equatable {
             manaCost: manaCost1
           )
           .padding(edgeInsets)
-          .safeAreaPadding(.horizontal, systemHorizontalMargin)
+          .padding(.horizontal, systemHorizontalMargin)
           
         case let .titles(name1, manaCost1, name2, manaCost2):
           HStack(alignment: .top, spacing: 16.0) {
@@ -65,7 +65,7 @@ struct CardDetailTableView: View, Equatable {
               .frame(maxWidth: .infinity, alignment: .leading)
             }
           }
-          .safeAreaPadding(.horizontal, systemHorizontalMargin)
+          .padding(.horizontal, systemHorizontalMargin)
           .overlay {
             if name2 != nil {
               VibrantVerticalDivider()
@@ -75,7 +75,7 @@ struct CardDetailTableView: View, Equatable {
         case let .typeline(value):
           TypelineView(value)
             .padding(edgeInsets)
-            .safeAreaPadding(.horizontal, systemHorizontalMargin)
+            .padding(.horizontal, systemHorizontalMargin)
           
         case let .typelines(text1, text2):
           HStack(alignment: .top, spacing: 16.0) {
@@ -89,7 +89,7 @@ struct CardDetailTableView: View, Equatable {
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
           }
-          .safeAreaPadding(.horizontal, systemHorizontalMargin)
+          .padding(.horizontal, systemHorizontalMargin)
           // Draw the divider here instead of inside the HStack
           .overlay {
             if text2 != nil {
@@ -104,7 +104,7 @@ struct CardDetailTableView: View, Equatable {
               FlavorView(flavor)
             }
             .padding(edgeInsets)
-            .safeAreaPadding(.horizontal, systemHorizontalMargin)
+            .padding(.horizontal, systemHorizontalMargin)
           }
           
         case let .descriptions(text1, flavor1, text2, flavor2):
@@ -129,7 +129,7 @@ struct CardDetailTableView: View, Equatable {
               .frame(maxWidth: .infinity, alignment: .topLeading)
             }
           }
-          .safeAreaPadding(.horizontal, systemHorizontalMargin)
+          .padding(.horizontal, systemHorizontalMargin)
           .overlay {
             if text2.isEmpty == false || flavor2?.isEmptyOrNil() == false {
               VibrantVerticalDivider()

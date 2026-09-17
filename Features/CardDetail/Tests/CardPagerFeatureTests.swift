@@ -31,73 +31,43 @@ import Testing
     }
   }
 
-  @Test func whenInitialised_shouldOnlyHoldTheSelectedCard() {
+  @Test func whenInitialised_shouldHoldEveryCardInOrderAndSelectTheTappedOne() {
     let state = CardPagerFeature.State(
       cardDetails: cardDetails,
-      initialSelectedCard: firstCard,
+      initialSelectedCard: secondCard,
       queryType: queryType
     )
 
-    #expect(state.selectedId == firstCard.id)
-    #expect(state.cards.count == 1)
-    #expect(state.cards[id: firstCard.id] != nil)
+    // Every page exists from the start, so the pager never replaces its collection under the
+    // page on show; each card waits for its own page to appear before it loads.
+    #expect(state.selectedId == secondCard.id)
+    #expect(state.cards.ids.elements == [firstCard.id, secondCard.id])
+    #expect(state.cards.allSatisfy { $0.hasAppeared == false })
   }
 
-  @Test func whenInitialSelectedCardIsNotInTheList_shouldHoldNoCards() {
+  @Test func whenInitialSelectedCardIsNotInTheList_shouldStillHoldTheListedCards() {
     let state = CardPagerFeature.State(
       cardDetails: [CardInfo(card: secondCard)],
       initialSelectedCard: firstCard,
       queryType: queryType
     )
 
-    #expect(state.cards.isEmpty)
+    #expect(state.selectedId == firstCard.id)
+    #expect(state.cards.ids.elements == [secondCard.id])
   }
 
-  @Test func whenViewAppeared_shouldHydrateRemainingCardsWithoutLoadingThem() async {
+  @Test func whenOnePageAppears_onlyThatCardShouldLoad() async {
     let store = makeStore()
     store.exhaustivity = .off
 
-    // When
-    await store.send(.viewAppeared)
-    await store.receive(\.setRemainingCards)
-
-    // Then the rest of the set is hydrated, and each card waits for its own page to load it.
-    #expect(store.state.cards.count == 2)
-    #expect(store.state.cards.allSatisfy { $0.hasAppeared == false })
-  }
-
-  @Test func whenSettingRemainingCards_shouldPreserveAlreadyLoadedCards() async {
-    let store = makeStore()
-    store.exhaustivity = .off
-
-    // Given the selected card has already loaded.
+    // When the first page appears.
     await store.send(.cards(.element(id: firstCard.id, action: .viewAppeared)))
     await store.finish()
     await store.skipReceivedActions()
 
-    // When the full set arrives.
-    await store.send(.viewAppeared)
-    await store.receive(\.setRemainingCards)
-
-    // Then the loaded card keeps its state rather than being replaced by a fresh one.
-    #expect(store.state.cards.count == 2)
+    // Then only that card has started loading; the page beside it is untouched.
     #expect(store.state.cards[id: firstCard.id]?.hasAppeared == true)
     #expect(store.state.cards[id: secondCard.id]?.hasAppeared == false)
-  }
-
-  @Test func whenAllCardsAreLoaded_shouldNotHydrateAgain() async {
-    let store = makeStore()
-    store.exhaustivity = .off
-
-    // Given
-    await store.send(.viewAppeared)
-    await store.receive(\.setRemainingCards)
-
-    // When / Then no second hydration runs.
-    await store.send(.viewAppeared)
-    await store.finish()
-
-    #expect(store.state.cards.count == 2)
   }
 
   @Test func whenViewRulingsTapped_shouldPresentRulings() async {

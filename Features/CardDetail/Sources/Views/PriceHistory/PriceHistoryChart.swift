@@ -7,21 +7,14 @@ struct PriceHistoryChart: View {
   let interaction: ChartInteraction
 
   var body: some View {
-    let scale = PlotScale(plot: interaction.plot, dates: derivedData.dateRange, prices: axis.domain)
-    let identity = ChartIdentity(derivedData)
-
+    // Nothing here reads `interaction.plot`: the overlay makes its scale from it on touch, so
+    // measuring the plot re-evaluates neither the chart nor its marks.
     ZStack {
-      // Landing prices replace the chart rather than animating it into place. Animated, Swift
-      // Charts interpolated every line, area and axis tick on each frame for the whole animation;
-      // a crossfade draws each chart once and only blends the two.
       PriceHistoryChartMarks(derivedData: derivedData, axis: axis, interaction: interaction)
-        .id(identity)
-        .transition(.opacity)
     }
-    .animation(.easeInOut(duration: 0.35), value: identity)
     .allowsHitTesting(false)
     .overlay {
-      PriceHistoryChartOverlay(derivedData: derivedData, interaction: interaction, scale: scale)
+      PriceHistoryChartOverlay(derivedData: derivedData, interaction: interaction, priceDomain: axis.domain)
     }
     .coordinateSpace(.named(PlotScale.space))
   }
