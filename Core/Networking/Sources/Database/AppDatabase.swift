@@ -11,12 +11,17 @@ public func appDatabase() throws -> any DatabaseWriter {
   var configuration = Configuration()
 
 #if DEBUG
+  // Only statements that took longer than 5 ms, and only their SQL: tracing every statement with
+  // its arguments expanded filled the console with page reads and slowed the very scrolls being
+  // measured.
   configuration.prepareDatabase { connection in
     connection.trace(options: .profile) { event in
+      guard case let .profile(statement, duration) = event, duration > 0.005 else { return }
+      let milliseconds = Int((duration * 1_000).rounded())
       if context == .preview {
-        print("\(event.expandedDescription)")
+        print("SQL \(milliseconds)ms: \(statement.sql)")
       } else {
-        databaseLogger.debug("\(event.expandedDescription)")
+        databaseLogger.debug("\(milliseconds)ms: \(statement.sql, privacy: .public)")
       }
     }
   }
