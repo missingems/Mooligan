@@ -53,76 +53,69 @@ struct SetsView: View {
     rows: [ScryfallClient.SetsSection.ID: [SetRow.ViewModel]],
     highlightedText: String
   ) -> some View {
-    List(sections) { value in
-      Section {
-        ForEach(
-          Array(zip(value.sets, value.sets.indices)),
-          id: \.0.id
-        ) { innerValue in
-          let set = innerValue.0
-          let index = innerValue.1
-          let isFirstOfSection = index == 0
-          let isLastOfSection = index == value.sets.count - 1
-          
-          var hasSeparator: Bool {
-            if isFirstOfSection, isLastOfSection { return false }
-            if isFirstOfSection, set.parentSetCode == nil { return false }
-            if set.parentSetCode == nil { return false }
-            else { return true }
-          }
-          
-          var insets: EdgeInsets {
-            if isFirstOfSection, isLastOfSection { return EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0) }
-            if isFirstOfSection, set.parentSetCode == nil { return EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0) }
-            if set.parentSetCode == nil { return EdgeInsets(top: 8, leading: 0, bottom: 0, trailing: 0) }
-            else { return EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0) }
-          }
-          
-          if let row = rows[value.id]?[safe: index] {
-            ZStack(alignment: .top) {
-              // The row reads nothing off the store, so a tap, which writes the selected set,
-              // does not run every visible row again.
-              SetRow(viewModel: row, highlightedText: highlightedText) {
-                store.send(.didSelectSet(set))
+    ScrollView(.vertical) {
+      LazyVStack(alignment: .leading, spacing: 0, pinnedViews: [.sectionHeaders]) {
+        ForEach(sections) { value in
+          Section {
+            ForEach(
+              Array(zip(value.sets, value.sets.indices)),
+              id: \.0.id
+            ) { innerValue in
+              let set = innerValue.0
+              let index = innerValue.1
+              let isFirstOfSection = index == 0
+              let isLastOfSection = index == value.sets.count - 1
+              
+              var hasSeparator: Bool {
+                if isFirstOfSection, isLastOfSection { return false }
+                if isFirstOfSection, set.parentSetCode == nil { return false }
+                if set.parentSetCode == nil { return false }
+                else { return true }
               }
-              .equatable()
+              
+              var topInset: CGFloat {
+                if isFirstOfSection { return 0 }
+                return set.parentSetCode == nil ? 8 : 0
+              }
+              
+              if let row = rows[value.id]?[safe: index] {
+                ZStack(alignment: .top) {
+                  SetRow(viewModel: row, highlightedText: highlightedText) {
+                    store.send(.didSelectSet(set))
+                  }
+                  .equatable()
 
-              if hasSeparator {
-                VibrantDivider().padding(.leading, 60.0)
+                  if hasSeparator {
+                    VibrantDivider().padding(.leading, 60.0)
+                  }
+                }
+                .padding(.top, topInset)
+                .padding(.horizontal, systemHorizontalMargin)
               }
             }
-            .listRowSeparator(.hidden)
-            .listRowBackground(Color.clear)
-            .listRowVerticalInsets(top: insets.top, bottom: insets.bottom)
+          } header: {
+            HStack(spacing: 5.0) {
+              if value.isUpcomingSet {
+                Image(systemName: "hourglass")
+              }
+              Text(value.displayDate)
+            }
+            .font(.headline)
+            .foregroundStyle(.secondary)
+            .padding(.horizontal, 13.0)
+            .padding(.vertical, 5.0)
+            .glassEffect()
+            .padding(EdgeInsets(top: 10.0, leading: systemHorizontalMargin, bottom: 13.0, trailing: systemHorizontalMargin))
+          } footer: {
+            Color.clear.frame(height: 13.0)
           }
         }
-      } header: {
-        HStack(spacing: 5.0) {
-          if value.isUpcomingSet {
-            Image(systemName: "hourglass")
-          }
-          Text(value.displayDate)
-        }
-        .padding(.horizontal, 13.0)
-        .padding(.vertical, 5.0)
-        .glassEffect()
-        .padding(.bottom, 3.0)
-        
-        Text(value.displayDate)
-          .padding(.horizontal, 13.0)
-          .padding(.vertical, 5.0)
-          .glassEffect()
-          .padding(.bottom, 3.0)
       }
     }
     .accessibilityIdentifier("browse.setList")
-    .scrollEdgeEffectStyle(.soft, for: .top)
-    .toolbarMinimizationBehavior(.onScrollDown, for: .navigationBar)
-    .listStyle(.plain)
-    .listSectionSeparator(.hidden)
+    .scrollEdgeEffectStyle(.soft, for: .all)
     .background(DesignComponentsAsset.backgroundColor.swiftUIColor.ignoresSafeArea())
     .contentMargins(.top, 0, for: .scrollContent)
-    .listSectionSpacing(13.0)
     .refreshable {
       await store.send(.refresh).finish()
     }

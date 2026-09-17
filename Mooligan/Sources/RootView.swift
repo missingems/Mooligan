@@ -114,6 +114,7 @@ struct RootView: View {
       .navigationTitle(Feature.MenuItem.sets.title)
       .toolbarTitleDisplayMode(.inlineLarge)
       .searchable(text: $sets.query)
+      .searchPresentationToolbarBehavior(.avoidHidingContent)
   }
   
   private func setDetail(_ queryStore: StoreOf<QueryFeature>) -> some View {
