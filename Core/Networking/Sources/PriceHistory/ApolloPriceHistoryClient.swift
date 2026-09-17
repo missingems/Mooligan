@@ -8,33 +8,9 @@ public final class ApolloPriceHistoryClient: PriceHistoryClient, @unchecked Send
   private let apollo: ApolloClient?
   
   public init(endpoint: MTGGraphQLEndpoint? = .fromBundle()) {
-    guard let endpoint else {
-      self.apollo = nil
-      return
-    }
-    
-    // 1. Dedicated background operation queue for Apollo network tasks and JSON parsing
-    let backgroundQueue: OperationQueue = {
-      let queue = OperationQueue()
-      queue.maxConcurrentOperationCount = 2
-      queue.qualityOfService = .background
-      queue.name = "com.mooligan.apollo-background-queue"
-      return queue
-    }()
-    
-    // 2. Bind the session client to the background queue
-    let sessionClient = URLSessionClient(sessionConfiguration: .default, callbackQueue: backgroundQueue)
-    let store = ApolloStore(cache: InMemoryNormalizedCache())
-    let provider = DefaultInterceptorProvider(client: sessionClient, store: store)
-    
-    let transport = RequestChainNetworkTransport(
-      interceptorProvider: provider,
-      endpointURL: endpoint.url
-    )
-    
-    self.apollo = ApolloClient(networkTransport: transport, store: store)
+    self.apollo = endpoint.map(MTGGraphQLApollo.makeClient)
   }
-  
+
   public func history(
     for card: Card,
     provider: PriceProvider,
@@ -54,44 +30,161 @@ public final class ApolloPriceHistoryClient: PriceHistoryClient, @unchecked Send
     }.value
   }
   
+  public func histories(
+    for card: Card,
+    requests: [PriceSeriesRequest]
+  ) async throws -> [PriceSeriesRequest: PriceHistory] {
+    guard let apollo else { throw PriceHistoryClientError.notConfigured }
+
+    let rows = try await Self.fetchRows(apollo: apollo, scryfallID: card.id.uuidString)
+    let cardID = card.id.uuidString
+
+    return await Task.detached(priority: .background) {
+      var result: [PriceSeriesRequest: PriceHistory] = [:]
+      for request in requests {
+        result[request] = PriceHistoryMapper.makeHistory(
+          cardID: cardID,
+          rows: rows,
+          provider: request.provider,
+          listType: request.listType
+        )
+      }
+      return result
+    }.value
+  }
+
   static func fetchRows(
     apollo: ApolloClient,
     scryfallID: String
   ) async throws -> [MTGGraphQLPriceRow] {
-    try await withCheckedThrowingContinuation { continuation in
-      apollo.fetch(
-        query: MTGGraphQLAPI.CardPriceHistoryQuery(scryfallId: scryfallID.lowercased()),
-        cachePolicy: .returnCacheDataElseFetch,
-        queue: DispatchQueue.global(qos: .background)
-      ) { result in
-        switch result {
-        case let .success(response):
-          if let message = response.errors?.first?.message {
-            continuation.resume(throwing: PriceHistoryClientError.server(message))
-            return
+    let response = try await MTGGraphQLApollo.fetch(
+      MTGGraphQLAPI.CardPriceHistoryQuery(scryfallId: scryfallID.lowercased()),
+      apollo: apollo,
+      // `CachingPriceHistoryClient` already caches the mapped histories. Apollo's normalised cache
+      // cost more CPU than anything else in the load (a record per price row, merged into a store
+      // that is never read or evicted), and this policy also skips building those records.
+      cachePolicy: .fetchIgnoringCacheCompletely,
+      queue: DispatchQueue.global(qos: .background)
+    )
+
+    if let message = response.errors?.first?.message {
+      throw PriceHistoryClientError.server(message)
+    }
+    guard let card = response.data?.cards.first else {
+      throw PriceHistoryClientError.emptyResponse
+    }
+    return card.prices.map { price in
+      MTGGraphQLPriceRow(
+        provider: price.provider,
+        date: price.date,
+        cardType: price.cardType,
+        listType: price.listType,
+        currency: price.currency,
+        format: price.format,
+        price: price.price
+      )
+    }
+  }
+}
+
+enum MTGGraphQLApollo {
+  static func fetch<Query: GraphQLQuery>(
+    _ query: Query,
+    apollo: ApolloClient,
+    cachePolicy: Apollo.CachePolicy = .returnCacheDataElseFetch,
+    queue: DispatchQueue
+  ) async throws -> GraphQLResult<Query.Data> {
+    let request = CancellableRequest<Query.Data>()
+    let cancellation: any RequestCancellation = request
+    return try await withTaskCancellationHandler {
+      try await withCheckedThrowingContinuation { continuation in
+        request.begin(continuation) {
+          apollo.fetch(query: query, cachePolicy: cachePolicy, queue: queue) { result in
+            request.finish(with: result)
           }
-          guard let card = response.data?.cards.first else {
-            continuation.resume(throwing: PriceHistoryClientError.emptyResponse)
-            return
-          }
-          continuation.resume(
-            returning: card.prices.map { price in
-              MTGGraphQLPriceRow(
-                provider: price.provider,
-                date: price.date,
-                cardType: price.cardType,
-                listType: price.listType,
-                currency: price.currency,
-                format: price.format,
-                price: price.price
-              )
-            }
-          )
-        case let .failure(error):
-          continuation.resume(throwing: error)
         }
       }
+    } onCancel: {
+      cancellation.cancel()
     }
+  }
+
+  static func makeClient(endpoint: MTGGraphQLEndpoint) -> ApolloClient {
+    let backgroundQueue: OperationQueue = {
+      let queue = OperationQueue()
+      queue.maxConcurrentOperationCount = 2
+      queue.qualityOfService = .background
+      queue.name = "com.mooligan.apollo-background-queue"
+      return queue
+    }()
+
+    let sessionClient = URLSessionClient(sessionConfiguration: .default, callbackQueue: backgroundQueue)
+    let store = ApolloStore(cache: InMemoryNormalizedCache())
+    let provider = DefaultInterceptorProvider(client: sessionClient, store: store)
+
+    let transport = RequestChainNetworkTransport(
+      interceptorProvider: provider,
+      endpointURL: endpoint.url
+    )
+
+    return ApolloClient(networkTransport: transport, store: store)
+  }
+}
+protocol RequestCancellation: Sendable {
+  func cancel()
+}
+
+final class CancellableRequest<Data: RootSelectionSet>: RequestCancellation, @unchecked Sendable {
+  private let lock = NSLock()
+  private var continuation: CheckedContinuation<GraphQLResult<Data>, any Error>?
+  private var inFlight: (any Cancellable)?
+  private var isCancelled = false
+
+  func begin(
+    _ continuation: CheckedContinuation<GraphQLResult<Data>, any Error>,
+    start: () -> any Cancellable
+  ) {
+    lock.lock()
+    guard isCancelled == false else {
+      lock.unlock()
+      continuation.resume(throwing: CancellationError())
+      return
+    }
+    self.continuation = continuation
+    lock.unlock()
+
+    let request = start()
+
+    lock.lock()
+    let cancelledWhileStarting = isCancelled
+    if cancelledWhileStarting == false { inFlight = request }
+    lock.unlock()
+
+    if cancelledWhileStarting { request.cancel() }
+  }
+
+  func finish(with result: Result<GraphQLResult<Data>, any Error>) {
+    lock.lock()
+    let continuation = self.continuation
+    self.continuation = nil
+    inFlight = nil
+    lock.unlock()
+
+    nonisolated(unsafe) let delivered = result
+    continuation?.resume(with: delivered)
+  }
+
+  func cancel() {
+    lock.lock()
+    isCancelled = true
+    let continuation = self.continuation
+    let request = inFlight
+    self.continuation = nil
+    inFlight = nil
+    lock.unlock()
+
+    request?.cancel()
+    continuation?.resume(throwing: CancellationError())
   }
 }
 #endif

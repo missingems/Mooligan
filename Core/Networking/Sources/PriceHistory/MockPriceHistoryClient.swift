@@ -38,12 +38,55 @@ public struct MockPriceHistoryClient: PriceHistoryClient {
       }
     }
 
+    // Vendors buy below what they sell for, so the buylist sits under retail —
+    // otherwise every mocked card shows a negative spread.
+    let listScale = listType == .buylist ? 0.62 : 1.0
+
     return PriceHistory(
       cardID: card.id.uuidString,
       provider: provider,
       listType: listType,
-      series: [.normal: makeSeries(scale: 1), .foil: makeSeries(scale: 2.4)]
+      series: [
+        .normal: makeSeries(scale: listScale),
+        .foil: makeSeries(scale: 2.4 * listScale),
+      ]
     )
+  }
+}
+
+public actor FlakyPriceHistoryClient: PriceHistoryClient {
+  private let upstream: MockPriceHistoryClient
+  private let failuresPerCard: Int
+  private var attempts: [UUID: Int] = [:]
+
+  public init(failuresPerCard: Int, upstream: MockPriceHistoryClient = MockPriceHistoryClient()) {
+    self.failuresPerCard = failuresPerCard
+    self.upstream = upstream
+  }
+
+  public func history(
+    for card: Card,
+    provider: PriceProvider,
+    listType: PriceListType
+  ) async throws -> PriceHistory {
+    try recordAttempt(for: card)
+    return try await upstream.history(for: card, provider: provider, listType: listType)
+  }
+
+  public func histories(
+    for card: Card,
+    requests: [PriceSeriesRequest]
+  ) async throws -> [PriceSeriesRequest: PriceHistory] {
+    try recordAttempt(for: card)
+    return try await upstream.histories(for: card, requests: requests)
+  }
+
+  private func recordAttempt(for card: Card) throws {
+    let count = attempts[card.id, default: 0]
+    attempts[card.id] = count + 1
+    if count < failuresPerCard {
+      throw URLError(.timedOut)
+    }
   }
 }
 #endif

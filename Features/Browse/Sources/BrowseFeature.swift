@@ -72,6 +72,7 @@ import ScryfallKit
       case let .updateSetSections(folder, flattened):
         state.sets = flattened
         state.mode = .data(IdentifiedArrayOf(uniqueElements: folder))
+        state.rows = SetRow.ViewModel.rows(in: folder)
         return .none
       }
     }
@@ -85,6 +86,8 @@ public extension BrowseFeature {
     var sets: [MTGSet] = []
     var mode: Mode = .loading
     var selectedSet: MTGSet?
+    /// A row model per set of each section, keyed by section, built once when the sections land.
+    var rows: [ScryfallClient.SetsSection.ID: [SetRow.ViewModel]] = [:]
     var query = ""
     var queryPlaceholder = String(localized: "Enter set name...")
     

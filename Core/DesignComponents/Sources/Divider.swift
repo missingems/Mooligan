@@ -9,6 +9,7 @@ public struct VibrantDivider: View {
       .overlay(
         Rectangle()
           .fill(colorScheme == .dark ? Color.white.opacity(0.169) : Color.black.opacity(0.225))
+          .compositingGroup()
           .blendMode(colorScheme == .dark ? .plusLighter : .plusDarker)
       )
   }
@@ -25,6 +26,7 @@ public struct VibrantVerticalDivider: View {
   public var body: some View {
     Rectangle()
       .fill(colorScheme == .dark ? Color.white.opacity(0.169) : Color.black.opacity(0.225))
+      .compositingGroup()
       .blendMode(colorScheme == .dark ? .plusLighter : .plusDarker)
       .frame(width: width ?? (1 / displayScale))
   }

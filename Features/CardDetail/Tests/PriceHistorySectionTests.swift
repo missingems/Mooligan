@@ -46,23 +46,85 @@ struct PriceHistorySectionTests {
     )
   }
 
-  @Test func whenThereIsNoHistory_shouldBeUnavailable() {
+  @Test func whenThereIsNoHistoryAndNoQuote_shouldBeUnavailable() {
     let state = PriceHistorySection.makeState(
       card: card(),
       history: nil,
-      releases: [],
       today: today
     )
 
     #expect(state == .unavailable)
   }
 
-  /// A single observation cannot be a line, so it is the same as having none.
-  @Test func whenAFinishHasOnePoint_shouldBeUnavailable() {
+  /// MTGJSON has nothing, but Scryfall quotes the card: it still draws, as a flat week at that
+  /// price ending today, in the chart provider's currency.
+  @Test func whenThereIsNoHistoryButAQuote_shouldDrawAFlatWeek() {
+    let state = PriceHistorySection.makeState(
+      card: card(usd: "7.00"),
+      history: nil,
+      today: today
+    )
+
+    guard case let .data(section) = state else {
+      Issue.record("expected data, got \(state)")
+      return
+    }
+    let points = section.series[0].points
+    #expect(section.series.map(\.kind) == [.normal])
+    #expect(points.count == 8)
+    #expect(points.allSatisfy { $0.amount == decimal("7.00") })
+    #expect(points.first?.date == today.addingTimeInterval(-7 * 86_400))
+    #expect(section.dateRange == today.addingTimeInterval(-7 * 86_400)...today)
+    #expect(points.last?.date == today)
+    #expect(section.currency == "USD")
+    #expect(section.priceRange == 7.0...7.0)
+  }
+
+  /// One finish has history and the other only a quote: the quoted one gets its flat week beside it.
+  @Test func whenOneFinishHasOnlyAQuote_shouldDrawItsFlatWeekBesideTheOther() {
+    let state = PriceHistorySection.makeState(
+      card: card(usdFoil: "12.00"),
+      history: history([
+        .normal: [point(daysBefore: 2, "1.00"), point(daysBefore: 1, "1.20")],
+      ]),
+      today: today
+    )
+
+    guard case let .data(section) = state else {
+      Issue.record("expected data, got \(state)")
+      return
+    }
+    #expect(section.series.map(\.kind) == [.normal, .foil])
+    #expect(section.series[0].points.count == 2)
+    #expect(section.series[1].points.count == 8)
+    #expect(section.series[1].points.allSatisfy { $0.amount == decimal("12.00") })
+  }
+
+  /// Only releases within the days the series cover are kept for the chart.
+  @Test func releasesOutsideTheSeriesDates_shouldBeDropped() {
+    let inside = SetReleaseMarker(id: "in", code: "in", name: "Inside", date: today.addingTimeInterval(-86_400), iconURL: nil)
+    let outside = SetReleaseMarker(id: "out", code: "out", name: "Outside", date: today.addingTimeInterval(-40 * 86_400), iconURL: nil)
+    let state = PriceHistorySection.makeState(
+      card: card(),
+      history: history([
+        .normal: [point(daysBefore: 2, "1.00"), point(daysBefore: 1, "1.20")],
+      ]),
+      releases: [outside, inside],
+      today: today
+    )
+
+    guard case let .data(section) = state else {
+      Issue.record("expected data, got \(state)")
+      return
+    }
+    #expect(section.releases.map(\.id) == ["in"])
+  }
+
+  /// A single observation cannot be a line, so without a quote it is the same as having none.
+  @Test func whenAFinishHasOnePointAndNoQuote_shouldBeUnavailable() {
     let state = PriceHistorySection.makeState(
       card: card(),
       history: history([.normal: [point(daysBefore: 1, "1.00")]]),
-      releases: [],
       today: today
     )
 
@@ -75,7 +137,6 @@ struct PriceHistorySectionTests {
       history: history([
         .normal: [point(daysBefore: 2, "1.00"), point(daysBefore: 1, "1.20")],
       ]),
-      releases: [],
       today: today
     )
 
@@ -95,7 +156,6 @@ struct PriceHistorySectionTests {
       history: history([
         .normal: [point(daysBefore: 2, "1.00"), point(daysBefore: 1, "1.20")],
       ]),
-      releases: [],
       today: today
     )
 
@@ -117,7 +177,6 @@ struct PriceHistorySectionTests {
       history: history([
         .normal: [point(daysBefore: 40, "1.00"), point(daysBefore: 39, "1.20")],
       ]),
-      releases: [],
       today: today
     )
 
@@ -143,7 +202,6 @@ struct PriceHistorySectionTests {
         .foil: [point(daysBefore: 2, "5.00"), point(daysBefore: 1, "5.50")],
         .normal: [point(daysBefore: 2, "1.00"), point(daysBefore: 1, "1.20")],
       ]),
-      releases: [],
       today: today
     )
 
@@ -154,33 +212,6 @@ struct PriceHistorySectionTests {
     #expect(section.series.map(\.kind) == [.normal, .foil])
   }
 
-  /// Markers outside what the chart actually plots would sit on an axis position
-  /// that does not exist.
-  @Test func whenAReleaseFallsOutsideTheSeries_shouldBeDropped() {
-    let inside = SetReleaseMarker(
-      id: "in", code: "in", name: "Inside",
-      date: today.addingTimeInterval(-1.5 * 86_400), iconURL: nil
-    )
-    let outside = SetReleaseMarker(
-      id: "out", code: "out", name: "Outside",
-      date: today.addingTimeInterval(-200 * 86_400), iconURL: nil
-    )
-
-    let state = PriceHistorySection.makeState(
-      card: card(),
-      history: history([
-        .normal: [point(daysBefore: 2, "1.00"), point(daysBefore: 1, "1.20")],
-      ]),
-      releases: [inside, outside],
-      today: today
-    )
-
-    guard case let .data(section) = state else {
-      Issue.record("expected data")
-      return
-    }
-    #expect(section.releases.map(\.id) == ["in"])
-  }
 
   /// TCGplayer lists a card weeks before it is legal to sell, so MTGJSON's feed
   /// opens with preorder quotes. Those are speculation on an unopened product,
@@ -198,7 +229,6 @@ struct PriceHistorySectionTests {
           point(daysBefore: 1, "4.10"),
         ],
       ]),
-      releases: [],
       today: today
     )
 
@@ -221,7 +251,6 @@ struct PriceHistorySectionTests {
       history: history([
         .normal: [point(daysBefore: 40, "1.00"), point(daysBefore: 1, "1.20")],
       ]),
-      releases: [],
       today: today
     )
 
@@ -240,7 +269,6 @@ struct PriceHistorySectionTests {
       history: history([
         .normal: [point(daysBefore: 6, "9.00"), point(daysBefore: 5, "8.00")],
       ]),
-      releases: [],
       today: today
     )
 
@@ -258,7 +286,6 @@ struct PriceHistorySectionTests {
           point(daysBefore: 2, "4.00"),
         ],
       ]),
-      releases: [],
       today: today
     )
 
@@ -269,5 +296,81 @@ struct PriceHistorySectionTests {
     let points = section.series[0].points
     #expect(points.map(\.amount) == [decimal("4.00"), decimal("5.00")])
     #expect(points.last?.date == today)
+  }
+
+  @Test func whenBuylistIsProvided_shouldCarryTheLatestPerFinish() {
+    let state = PriceHistorySection.makeState(
+      card: card(),
+      history: history([
+        .normal: [point(daysBefore: 2, "1.00"), point(daysBefore: 1, "1.20")],
+      ]),
+      buylistQuote: BuylistQuote(
+        provider: .cardkingdom,
+        retail: history([
+          .normal: [point(daysBefore: 2, "1.10"), point(daysBefore: 1, "1.40")],
+        ]),
+        buylist: history([
+          .normal: [point(daysBefore: 2, "0.60"), point(daysBefore: 1, "0.70")],
+        ])
+      ),
+      today: today
+    )
+
+    guard case let .data(section) = state else {
+      Issue.record("expected data")
+      return
+    }
+    #expect(section.buylistQuote?.buylist(for: .normal) == decimal("0.70"))
+    #expect(section.buylistQuote?.ratio(for: .normal) == 0.5)
+  }
+
+  @Test func whenThereIsNoBuylist_shouldCarryNone() {
+    let state = PriceHistorySection.makeState(
+      card: card(),
+      history: history([
+        .normal: [point(daysBefore: 2, "1.00"), point(daysBefore: 1, "1.20")],
+      ]),
+      today: today
+    )
+
+    guard case let .data(section) = state else {
+      Issue.record("expected data")
+      return
+    }
+    #expect(section.buylistQuote == nil)
+  }
+
+  @Test func zeroPricedDaysShouldBeDroppedSoTheChartDoesNotPlungeToZero() {
+    let state = PriceHistorySection.makeState(
+      card: card(),
+      history: history([
+        .normal: [
+          point(daysBefore: 4, "200.00"),
+          point(daysBefore: 3, "0.00"),
+          point(daysBefore: 2, "205.00"),
+          point(daysBefore: 1, "210.00"),
+        ],
+      ]),
+      today: today
+    )
+
+    guard case let .data(section) = state else {
+      Issue.record("expected data")
+      return
+    }
+    #expect(section.series.first?.points.map(\.amount) == [decimal("200.00"), decimal("205.00"), decimal("210.00")])
+    #expect(section.priceRange.lowerBound == 200.0)
+  }
+
+  @Test func whenEveryDayIsZeroPriced_shouldBeUnavailable() {
+    let state = PriceHistorySection.makeState(
+      card: card(),
+      history: history([
+        .normal: [point(daysBefore: 2, "0.00"), point(daysBefore: 1, "0.00")],
+      ]),
+      today: today
+    )
+
+    #expect(state == .unavailable)
   }
 }

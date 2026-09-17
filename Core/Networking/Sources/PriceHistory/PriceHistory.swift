@@ -35,7 +35,7 @@ public enum PriceSeriesKind: String, Sendable, CaseIterable, Identifiable {
 
 /// Which price provider to chart. MTGJSON aggregates several; mixing them in one
 /// line is meaningless, so the client picks one and the UI can offer a switch.
-public enum PriceProvider: String, Sendable, CaseIterable, Identifiable {
+public enum PriceProvider: String, Sendable, CaseIterable, Identifiable, Hashable {
   case tcgplayer
   case cardkingdom
   case cardmarket
@@ -64,8 +64,19 @@ public enum PriceProvider: String, Sendable, CaseIterable, Identifiable {
   }
 }
 
+/// One provider's series for one list type.
+public struct PriceSeriesRequest: Hashable, Sendable {
+  public let provider: PriceProvider
+  public let listType: PriceListType
+
+  public init(provider: PriceProvider, listType: PriceListType) {
+    self.provider = provider
+    self.listType = listType
+  }
+}
+
 /// Retail (what you pay) vs buylist (what a vendor pays you).
-public enum PriceListType: String, Sendable {
+public enum PriceListType: String, Sendable, Hashable, CaseIterable {
   case retail
   case buylist
 }

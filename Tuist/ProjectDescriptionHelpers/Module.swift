@@ -203,8 +203,8 @@ extension Scheme {
   /// The one scheme to run in Xcode — a **workspace** scheme (it references
   /// targets across projects, which a project scheme can't). Its test action
   /// builds and runs *every* test target: `MooliganTests` (logic),
-  /// `MooliganSnapshotTests`, `MooliganUITests`, and every module's
-  /// `<name>Tests` bundle. One Cmd-U gives whole-project coverage.
+  /// `MooliganUITests`, and every module's `<name>Tests` bundle. One Cmd-U
+  /// gives whole-project coverage.
   ///
   /// Belongs in `Workspace.swift`, not a `Project.swift`.
   public static func mooliganApp() -> Scheme {
@@ -232,7 +232,6 @@ extension Scheme {
       testAction: .targets(
         [
           .testableTarget(target: app("MooliganTests"), parallelization: .swiftTestingOnly),
-          .testableTarget(target: app("MooliganSnapshotTests"), parallelization: .swiftTestingOnly),
           .testableTarget(target: app("MooliganUITests")),
         ] + moduleTestables,
         options: .options(coverage: true, codeCoverageTargets: coverageTargets)

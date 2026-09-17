@@ -17,11 +17,14 @@ class UITestCase: XCTestCase {
   /// query can be slow.
   let timeout: TimeInterval = 30
 
+  /// Extra launch arguments a subclass needs on top of `-uiTestMode`.
+  var additionalLaunchArguments: [String] { [] }
+
   override func setUp() async throws {
     try await super.setUp()
     continueAfterFailure = false
     app = XCUIApplication()
-    app.launchArguments = ["-uiTestMode"]
+    app.launchArguments = ["-uiTestMode"] + additionalLaunchArguments
     app.launch()
   }
 

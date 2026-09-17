@@ -69,11 +69,10 @@ jobs:
           xcrun simctl list devices booted
 
       # The `Mooligan` scheme aggregates every test target: the per-module *Tests
-      # bundles, MooliganTests (logic) and MooliganSnapshotTests (renders views
-      # and diffs them against Mooligan/SnapshotTests/__Snapshots__).
-      # `--skip-ui-tests` drops MooliganUITests — it runs in the separate
-      # `ui-test` job, which is slower and flakier so it gets its own retries.
-      - name: Test (unit + snapshot)
+      # bundles and MooliganTests (logic). `--skip-ui-tests` drops
+      # MooliganUITests — it runs in the separate `ui-test` job, which is slower
+      # and flakier so it gets its own retries.
+      - name: Test (unit)
         run: tuist test Mooligan --device "$SIMULATOR_NAME" --skip-ui-tests
 
       - name: Generate project

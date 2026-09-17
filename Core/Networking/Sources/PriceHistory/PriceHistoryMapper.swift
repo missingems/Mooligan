@@ -53,12 +53,12 @@ public enum PriceHistoryMapper {
 
     for row in rows {
       guard
-        row.provider?.lowercased() == provider.rawValue,
-        row.listType?.lowercased() == listType.rawValue,
+        matches(row.provider, provider.rawValue),
+        matches(row.listType, listType.rawValue),
         let rawCardType = row.cardType,
         let kind = PriceSeriesKind(mtgGraphQLCardType: rawCardType),
         let rawDate = row.date,
-        let date = dayFormatter.date(from: rawDate),
+        let date = day(from: rawDate),
         let price = row.price,
         price > 0
       else {
@@ -89,6 +89,74 @@ public enum PriceHistoryMapper {
       currency: currency,
       series: series
     )
+  }
+
+  /// The feed sends lowercase values, so the common case is a plain comparison; lowercasing
+  /// allocates a string per row, which adds up over a card's several hundred rows.
+  private static func matches(_ value: String?, _ expected: String) -> Bool {
+    guard let value else { return false }
+    return value == expected || value.lowercased() == expected
+  }
+
+  /// A `YYYY-MM-DD` day at UTC midnight.
+  ///
+  /// Parsed by hand because this runs for every row of every card, and `DateFormatter` goes
+  /// through ICU (and a shared lock) each time. Anything not in that exact shape is left to
+  /// `dayFormatter`, so unusual input is handled exactly as before.
+  static func day(from text: String) -> Date? {
+    fastDay(from: text) ?? dayFormatter.date(from: text)
+  }
+
+  static func fastDay(from text: String) -> Date? {
+    var year = 0
+    var month = 0
+    var day = 0
+    var index = 0
+    for byte in text.utf8 {
+      switch index {
+      case 4, 7:
+        guard byte == UInt8(ascii: "-") else { return nil }
+      case 0...9:
+        guard byte >= UInt8(ascii: "0"), byte <= UInt8(ascii: "9") else { return nil }
+        let digit = Int(byte - UInt8(ascii: "0"))
+        if index < 4 {
+          year = year * 10 + digit
+        } else if index < 7 {
+          month = month * 10 + digit
+        } else {
+          day = day * 10 + digit
+        }
+      default:
+        return nil
+      }
+      index += 1
+    }
+
+    guard index == 10, year >= 1, (1...12).contains(month), day >= 1, day <= daysIn(month: month, year: year) else {
+      return nil
+    }
+
+    // Days since 1970-01-01 in the proleptic Gregorian calendar (Howard Hinnant's days_from_civil).
+    let shiftedYear = month <= 2 ? year - 1 : year
+    let era = shiftedYear / 400
+    let yearOfEra = shiftedYear - era * 400
+    let monthFromMarch = (month + 9) % 12
+    let dayOfYear = (153 * monthFromMarch + 2) / 5 + day - 1
+    let dayOfEra = yearOfEra * 365 + yearOfEra / 4 - yearOfEra / 100 + dayOfYear
+    let daysSinceEpoch = era * 146_097 + dayOfEra - 719_468
+    return Date(timeIntervalSince1970: TimeInterval(daysSinceEpoch) * 86_400)
+  }
+
+  private static func daysIn(month: Int, year: Int) -> Int {
+    switch month {
+    case 2:
+      let isLeap = (year % 4 == 0 && year % 100 != 0) || year % 400 == 0
+      return isLeap ? 29 : 28
+    case 4, 6, 9, 11:
+      return 30
+    default:
+      return 31
+    }
   }
 
   /// MTGJSON dates are plain `YYYY-MM-DD` with no zone; parse them as UTC so the

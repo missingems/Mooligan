@@ -6,42 +6,12 @@ import ScryfallKit
 
 struct SetsView: View {
   @Bindable private var store: StoreOf<BrowseFeature>
-  
-  static func viewModel(
-    sets: [MTGSet],
-    selectedSet: MTGSet?,
-    highlightedText: String?,
-    index: Int
-  ) -> SetRow.ViewModel {
-    let set = sets[index]
-    let nextIndex = index + 1
-    let isLast: Bool
-    
-    if let nextSet = sets[safe: nextIndex] {
-      if nextSet.parentSetCode == nil {
-        isLast = true
-      } else {
-        isLast = false
-      }
-    } else {
-      isLast = true
-    }
-    
-    return SetRow.ViewModel(
-      set: set,
-      selectedSet: selectedSet,
-      highlightedText: highlightedText,
-      isFirst: set.parentSetCode == nil || sets[safe: index - 1] == nil,
-      isLast: isLast,
-      index: index
-    )
-  }
-  
+
   var body: some View {
     Group {
       switch store.mode {
       case let .data(sections):
-        setList(sections: sections, isScrollable: true)
+        setList(sections: sections, rows: store.rows, highlightedText: store.query, isScrollable: true)
         
       case .loading:
         ProgressView()
@@ -80,6 +50,8 @@ struct SetsView: View {
   @ContentBuilder
   private func setList(
     sections: IdentifiedArrayOf<ScryfallClient.SetsSection>,
+    rows: [ScryfallClient.SetsSection.ID: [SetRow.ViewModel]],
+    highlightedText: String,
     isScrollable: Bool
   ) -> some View {
     List(sections) { value in
@@ -107,25 +79,23 @@ struct SetsView: View {
             else { return EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0) }
           }
           
-          ZStack(alignment: .top) {
-            SetRow(
-              viewModel: Self.viewModel(
-                sets: value.sets,
-                selectedSet: store.selectedSet,
-                highlightedText: store.query,
-                index: index
-              )
-            ) {
-              store.send(.didSelectSet(set))
+          if let row = rows[value.id]?[safe: index] {
+            ZStack(alignment: .top) {
+              // The row reads nothing off the store, so a tap, which writes the selected set,
+              // does not run every visible row again.
+              SetRow(viewModel: row, highlightedText: highlightedText) {
+                store.send(.didSelectSet(set))
+              }
+              .equatable()
+
+              if hasSeparator {
+                VibrantDivider().padding(.leading, 60.0)
+              }
             }
-            
-            if hasSeparator {
-              VibrantDivider().padding(.leading, 60.0)
-            }
+            .listRowSeparator(.hidden)
+            .listRowBackground(Color.clear)
+            .listRowVerticalInsets(top: insets.top, bottom: insets.bottom)
           }
-          .listRowSeparator(.hidden)
-          .listRowBackground(Color.clear)
-          .listRowVerticalInsets(top: insets.top, bottom: insets.bottom)
         }
       } header: {
         HStack(spacing: 5.0) {

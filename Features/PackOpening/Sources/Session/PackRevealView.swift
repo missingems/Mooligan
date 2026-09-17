@@ -701,11 +701,6 @@ private struct PackGridCell: View {
       layoutConfiguration: layout,
       callToActionHorizontalOffset: -3.0,
       priceVisibility: .hidden,
-      // A card pulled as a foil looks foil, but the sheen is drawn once and
-      // left: a whole collector booster of animated foils is fifteen shaders
-      // redrawing thirty times a second behind the scroll.
-      isFoilOnly: pulled.isFoil,
-      isFoilAnimated: false,
       send: { _ in face = displayable?.toggled() }
     )
     .modifier(CardMorph(id: pulled.id, namespace: cardMorph, isActive: isMorphing))

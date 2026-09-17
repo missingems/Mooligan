@@ -10,9 +10,34 @@ public protocol PriceHistoryClient: Sendable {
     provider: PriceProvider,
     listType: PriceListType
   ) async throws -> PriceHistory
+
+  /// Several provider/list-type pairs at once.
+  ///
+  /// One payload carries every vendor and both list types, so a client that
+  /// talks to the feed can answer this with a single round trip. The default
+  /// below cannot, and asks once per pair — correct, but a request each.
+  func histories(
+    for card: Card,
+    requests: [PriceSeriesRequest]
+  ) async throws -> [PriceSeriesRequest: PriceHistory]
 }
 
 public extension PriceHistoryClient {
+  func histories(
+    for card: Card,
+    requests: [PriceSeriesRequest]
+  ) async throws -> [PriceSeriesRequest: PriceHistory] {
+    var result: [PriceSeriesRequest: PriceHistory] = [:]
+    for request in requests {
+      result[request] = try await history(
+        for: card,
+        provider: request.provider,
+        listType: request.listType
+      )
+    }
+    return result
+  }
+
   /// The card detail view's default: TCGplayer retail over the last 90 days.
   func history(for card: Card) async throws -> PriceHistory {
     try await history(

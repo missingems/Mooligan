@@ -7,14 +7,13 @@
  * as a server-side secret and is the only thing that ever talks to MTGJSON.
  *
  * It is deliberately not a general GraphQL relay. The client's query text is
- * ignored entirely; the Worker rebuilds the one allow-listed operation from the
- * incoming variables. That means a leaked proxy URL buys an attacker nothing
- * beyond the price data the app already displays.
+ * ignored entirely; the Worker rebuilds one of its allow-listed operations from
+ * the incoming variables. That means a leaked proxy URL buys an attacker nothing
+ * beyond the price data and purchase links the app already displays.
  */
 
 const UPSTREAM = "https://graphql.mtgjson.com/";
 
-const ALLOWED_OPERATION = "CardPriceHistory";
 
 // The single operation this proxy will forward, defined server-side.
 // Mirrors Core/Networking/GraphQL/CardPriceHistory.graphql — keep the two in
@@ -46,6 +45,32 @@ query CardPriceHistory($scryfallId: String!) {
     }
   }
 }`;
+
+// Mirrors Core/Networking/GraphQL/CardPurchaseUrls.graphql — keep the two in step.
+const CARD_PURCHASE_URLS = `
+query CardPurchaseUrls($scryfallId: String!) {
+  cards(
+    filter: { identifiers: { scryfallId_eq: $scryfallId } }
+    page: { take: 1, skip: 0 }
+  ) {
+    __typename
+    uuid
+    purchaseUrls {
+      __typename
+      cardKingdom
+      cardKingdomFoil
+      cardmarket
+      tcgplayer
+    }
+  }
+}`;
+
+// Every operation the proxy will forward, keyed by the operationName Apollo
+// sends. `cacheScope` separates their entries in the edge cache.
+const OPERATIONS = {
+  CardPriceHistory: { query: CARD_PRICE_HISTORY, cacheScope: "price-history" },
+  CardPurchaseUrls: { query: CARD_PURCHASE_URLS, cacheScope: "purchase-urls" },
+};
 
 const UUID_RE = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
 
@@ -88,7 +113,10 @@ export default {
 
     // Apollo sends operationName alongside the query; that is all we trust.
     const operationName = payload.operationName;
-    if (operationName !== ALLOWED_OPERATION) {
+    const operation = Object.prototype.hasOwnProperty.call(OPERATIONS, operationName)
+      ? OPERATIONS[operationName]
+      : undefined;
+    if (!operation) {
       return graphQLError(`Operation '${operationName}' is not allowed.`, 403);
     }
 
@@ -104,7 +132,7 @@ export default {
     const bypassCache =
       url.searchParams.has("nocache") || url.searchParams.has("refresh");
     const cacheKey = new Request(
-      `https://mtggraphql-proxy.internal/v${CACHE_VERSION}/price-history/${scryfallId.toLowerCase()}`,
+      `https://mtggraphql-proxy.internal/v${CACHE_VERSION}/${operation.cacheScope}/${scryfallId.toLowerCase()}`,
       { method: "GET" }
     );
     const cache = caches.default;
@@ -124,8 +152,8 @@ export default {
         authorization: `Bearer ${env.MTGGRAPHQL_TOKEN}`,
       },
       body: JSON.stringify({
-        query: CARD_PRICE_HISTORY,
-        operationName: ALLOWED_OPERATION,
+        query: operation.query,
+        operationName,
         variables: { scryfallId },
       }),
     });

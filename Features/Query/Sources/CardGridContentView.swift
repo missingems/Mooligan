@@ -17,11 +17,13 @@ struct CardGridContentView: View {
           usdFoil: cardInfo.displayPriceUSDFoil,
           usd: cardInfo.displayPriceUSD
         ),
-        isFoilOnly: cardInfo.card.availableFoilness == true,
         send: { _ in
           store.send(.cardFaceToggled(id: cardInfo.id))
         }
       )
+      // A page landing or a search keystroke writes the store, which re-runs this whole grid; the
+      // comparison keeps cards whose inputs did not change from rebuilding their image.
+      .equatable()
       .accessibilityElement(children: .combine)
       .accessibilityIdentifier("setDetail.card.\(cardInfo.card.collectorNumber)")
       .onTapGesture {

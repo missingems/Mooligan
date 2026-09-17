@@ -79,13 +79,19 @@ guessed wrong:
   does filter server-side but keys off the MTGJSON `uuid`, which would cost a
   second round trip from a Scryfall id.
 
-`Tools/mtggraphql-proxy/src/worker.js` rebuilds this same operation server-side
-rather than forwarding the client's query text, so its copy must **explicitly
-request `__typename`** on `cards` and `prices`. Apollo iOS adds `__typename` to
+`CardPurchaseUrls.graphql` fetches the card's `purchaseUrls` (TCGplayer, Card
+Kingdom regular and foil, Cardmarket) for the cart dropdown in the price history
+section. It is a separate operation so a proxy that does not know it yet only
+breaks the links, never the chart, and it is only sent when the dropdown opens.
+
+`Tools/mtggraphql-proxy/src/worker.js` rebuilds these same operations server-side
+rather than forwarding the client's query text, so its copies must **explicitly
+request `__typename`** on every object (`cards`, `prices`, `purchaseUrls`). Apollo iOS adds `__typename` to
 this document automatically and its generated response types require it, but the
 proxy's hand-written copy does not get that for free — omitting it makes every
 `apollo.fetch` fail to decode with the response silently swallowed by the
-chart's `try?`. Keep the two operations in step when changing either.
+chart's `try?`. Keep each client operation and its proxy copy in step, and
+redeploy the Worker (`npx wrangler deploy`) whenever an operation is added.
 
 ## Rate limits
 

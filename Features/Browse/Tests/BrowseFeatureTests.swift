@@ -14,6 +14,10 @@ import Testing
     MockGameSetRequestClient.mockSets
   }
 
+  private var rows: [ScryfallClient.SetsSection.ID: [SetRow.ViewModel]] {
+    SetRow.ViewModel.rows(in: sections)
+  }
+
   private func makeStore() -> TestStoreOf<BrowseFeature> {
     TestStore(initialState: BrowseFeature.State()) {
       BrowseFeature()
@@ -45,6 +49,7 @@ import Testing
     await store.receive(.updateSetSections(sections: sections, flattened: sets)) { state in
       state.sets = self.sets
       state.mode = .data(IdentifiedArrayOf(uniqueElements: self.sections))
+      state.rows = self.rows
     }
   }
 
@@ -54,6 +59,7 @@ import Testing
     await store.send(.updateSetSections(sections: sections, flattened: sets)) { state in
       state.sets = self.sets
       state.mode = .data(IdentifiedArrayOf(uniqueElements: self.sections))
+      state.rows = self.rows
     }
 
     await store.send(.viewAppeared)
@@ -91,6 +97,7 @@ import Testing
     await store.receive(.updateSetSections(sections: sections, flattened: sets)) { state in
       state.sets = self.sets
       state.mode = .data(IdentifiedArrayOf(uniqueElements: self.sections))
+      state.rows = self.rows
     }
   }
 
@@ -141,6 +148,7 @@ import Testing
     await store.receive(.updateSetSections(sections: sections, flattened: sets)) { state in
       state.sets = self.sets
       state.mode = .data(IdentifiedArrayOf(uniqueElements: self.sections))
+      state.rows = self.rows
     }
   }
 
@@ -152,6 +160,7 @@ import Testing
     await store.receive(.updateSetSections(sections: sections, flattened: sets)) { state in
       state.sets = self.sets
       state.mode = .data(IdentifiedArrayOf(uniqueElements: self.sections))
+      state.rows = self.rows
     }
   }
 
@@ -163,6 +172,7 @@ import Testing
     await store.send(.updateSetSections(sections: sections, flattened: sets)) { state in
       state.sets = self.sets
       state.mode = .data(IdentifiedArrayOf(uniqueElements: self.sections))
+      state.rows = self.rows
     }
 
     #expect(store.state.mode.isLoading == false)

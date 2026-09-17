@@ -191,4 +191,38 @@ struct PriceHistoryMapperTests {
     #expect(history.listType == .retail)
     #expect(history.currency == "USD")
   }
+
+  @Test("Parses every day exactly as the date formatter does")
+  func fastDayParsingMatchesTheFormatter() throws {
+    let formatter = PriceHistoryMapper.dayFormatter
+    var day = try #require(formatter.date(from: "1990-01-01"))
+    let end = try #require(formatter.date(from: "2040-12-31"))
+    var checked = 0
+    while day <= end {
+      let text = formatter.string(from: day)
+      #expect(PriceHistoryMapper.fastDay(from: text) == day, "\(text)")
+      day = day.addingTimeInterval(86_400)
+      checked += 1
+    }
+    #expect(checked > 18_000)
+    #expect(PriceHistoryMapper.fastDay(from: "2024-02-29") == formatter.date(from: "2024-02-29"))
+  }
+
+  @Test("Leaves anything but a plain valid day to the formatter", arguments: [
+    "2025-02-29", "2023-13-01", "2023-00-10", "2023-04-31", "2023-4-01", "2023/04/01",
+    "20230401", "2023-04-01T00:00:00Z", "", "abcd-ef-gh", "0000-01-01",
+  ])
+  func malformedDaysFallBackToTheFormatter(_ text: String) {
+    #expect(PriceHistoryMapper.fastDay(from: text) == nil)
+    #expect(PriceHistoryMapper.day(from: text) == PriceHistoryMapper.dayFormatter.date(from: text))
+  }
+
+  @Test("Matches providers and list types regardless of case")
+  func matchesMixedCaseValues() {
+    let history = map([
+      row(provider: "TCGPlayer", date: "2026-06-01", listType: "Retail", price: 10),
+      row(provider: "tcgplayer", date: "2026-06-02", price: 11),
+    ])
+    #expect(history.series[.normal]?.map(\.amount) == [10, 11])
+  }
 }
