@@ -34,8 +34,7 @@ public struct CardDetailView: View {
           layoutConfiguration: configuration,
           callToActionHorizontalOffset: 21.0,
           priceVisibility: .hidden,
-          shadowConfiguration: .default,
-          isFoilOnly: content.card.availableFoilness == true
+          shadowConfiguration: .default
         ) { action in
           store.send(.descriptionCallToActionTapped, animation: .bouncy)
         }

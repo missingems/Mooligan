@@ -2,8 +2,19 @@ import ScryfallKit
 import SwiftUI
 import Networking
 
-public struct CardView: View {
-  public enum ShadowConfiguration: Equatable {
+public struct CardView: View, Equatable {
+  /// Compared on what it draws. `send` is a closure, which is never equal, and only reports a tap
+  /// to a store that outlives the comparison. Without this every store write re-ran every visible
+  /// card in a grid, image and all.
+  nonisolated public static func == (lhs: CardView, rhs: CardView) -> Bool {
+    lhs.displayableCard == rhs.displayableCard
+      && lhs.layoutConfiguration == rhs.layoutConfiguration
+      && lhs.callToActionHorizontalOffset == rhs.callToActionHorizontalOffset
+      && lhs.accessoryInfo == rhs.accessoryInfo
+      && lhs.shadowConfiguration == rhs.shadowConfiguration
+  }
+
+  public enum ShadowConfiguration: Equatable, Sendable {
     case `default`
     
     case custom(
@@ -47,14 +58,14 @@ public struct CardView: View {
     case toggledFaceDirection
   }
   
-  public enum AccessoryInfo: Equatable {
+  public enum AccessoryInfo: Equatable, Sendable {
     case hidden
     case display(usdFoil: String?, usd: String?)
     case displaySet(String, usdFoil: String?, usd: String?)
   }
   
-  public struct LayoutConfiguration: Equatable {
-    public enum Rotation: Equatable {
+  public struct LayoutConfiguration: Equatable, Sendable {
+    public enum Rotation: Equatable, Sendable {
       case landscape
       case portrait
       
@@ -87,8 +98,6 @@ public struct CardView: View {
   private let displayableCard: DisplayableCardImage
   private let accessoryInfo: AccessoryInfo
   private let send: ((Action) -> Void)?
-  private let isFoilOnly: Bool
-  private let isFoilAnimated: Bool
   
   @State private var isImageLoaded: Bool = false
   @Environment(\.displayScale) private var displayScale
@@ -96,11 +105,7 @@ public struct CardView: View {
   
   public var body: some View {
     VStack(spacing: 5.0) {
-      if isFoilOnly {
-        mainCardContent.holographicFoil(intensity: 0.34, isAnimated: isFoilAnimated)
-      } else {
-        mainCardContent
-      }
+      mainCardContent
     }
     .geometryGroup()
   }
@@ -119,7 +124,11 @@ public struct CardView: View {
       .rotation3DEffect(.degrees(direction == .front ? 0 : 180), axis: (x: 0, y: 1, z: 0))
       .animation(.bouncy, value: direction)
       .overlay(alignment: .trailing) {
-        callToActionButton(iconName: callToActionIconName)
+        // In the hierarchy only once there is an image to act on. Hidden with an opacity, the glass
+        // capsule was still laid out on every scroll frame of every row it sat in.
+        if isImageLoaded {
+          callToActionButton(iconName: callToActionIconName)
+        }
       }
       
     case let .flippable(direction, displayingImageURL, callToActionIconName, id):
@@ -134,7 +143,11 @@ public struct CardView: View {
       .rotationEffect(.degrees(direction == .front ? 0 : 180))
       .animation(.bouncy, value: direction)
       .overlay(alignment: .trailing) {
-        callToActionButton(iconName: callToActionIconName)
+        // In the hierarchy only once there is an image to act on. Hidden with an opacity, the glass
+        // capsule was still laid out on every scroll frame of every row it sat in.
+        if isImageLoaded {
+          callToActionButton(iconName: callToActionIconName)
+        }
       }
       
     case let .single(displayingImageURL, id):
@@ -159,7 +172,6 @@ public struct CardView: View {
       .frame(width: 44.0, height: 44.0)
       .glassEffect(.regular.interactive())
       .offset(x: callToActionHorizontalOffset, y: -13)
-      .opacity(isImageLoaded ? 1 : 0)
   }
   
   @ContentBuilder private var accessoryView: some View {
@@ -192,14 +204,10 @@ public struct CardView: View {
     callToActionHorizontalOffset: CGFloat = 5.0,
     priceVisibility: AccessoryInfo,
     shadowConfiguration: ShadowConfiguration? = nil,
-    isFoilOnly: Bool = false,
-    isFoilAnimated: Bool = true,
     send: ((Action) -> Void)? = nil
   ) {
     guard let displayableCard else { return nil }
     self.displayableCard = displayableCard
-    self.isFoilOnly = isFoilOnly
-    self.isFoilAnimated = isFoilAnimated
     self.accessoryInfo = priceVisibility
     self.layoutConfiguration = layoutConfiguration
     self.callToActionHorizontalOffset = callToActionHorizontalOffset
