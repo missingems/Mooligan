@@ -6,28 +6,24 @@
     {
       "layers" : [
         {
-          "glass-specializations" : [
-            {
-              "value" : false
-            },
-            {
-              "appearance" : "dark",
-              "value" : true
-            }
-          ],
-          "hidden-specializations" : [
-            {
-              "idiom" : "square",
-              "value" : false
-            }
-          ],
+          "glass" : false,
           "image-name" : "iOS & iPadOS.png",
           "name" : "iOS & iPadOS",
           "position-specializations" : [
             {
               "idiom" : "square",
               "value" : {
-                "scale" : 0.67,
+                "scale" : 2,
+                "translation-in-points" : [
+                  0,
+                  0
+                ]
+              }
+            },
+            {
+              "idiom" : "watchOS",
+              "value" : {
+                "scale" : 2,
                 "translation-in-points" : [
                   0,
                   0
