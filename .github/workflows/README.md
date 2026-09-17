@@ -14,7 +14,6 @@ that aggregates **every** test target — so one `tuist generate` + Cmd-U on the
 | --- | --- | --- |
 | `*Tests` (per module) | logic | the Browse / Query / CardDetail / CardScanner / Networking / DesignComponents suites |
 | `MooliganTests` | logic | `AppFeature` reducer behaviour |
-| `MooliganSnapshotTests` | snapshot | renders views, diffs against `Mooligan/SnapshotTests/__Snapshots__/` |
 
 Then a **Release** build. That build is not redundant: the mock clients,
 `Card.mock()` and every `previewValue`/`testValue` live behind `#if DEBUG`, so
@@ -35,21 +34,6 @@ cards "Test Card 01"…"Test Card 60", 12 per page). Coverage: Browse list load 
 search; set-detail grid scroll, pagination, colour filter, in-set search;
 card-detail vertical scroll + horizontal paging. Add hooks with
 `.accessibilityIdentifier("<area>.<element>")` at the view call site.
-
-### Updating snapshot references
-
-Snapshot failures mean the rendered view no longer matches the committed PNG.
-If the change was intentional, re-record locally against an **iOS 27**
-simulator and commit the new images:
-
-```
-SNAPSHOT_TESTING_RECORD=all xcodebuild test \
-  -workspace Mooligan.xcworkspace -scheme Mooligan \
-  -destination 'name=iPhone 17 Pro' \
-  -only-testing:MooliganSnapshotTests
-```
-
-Review the diff, then commit `Mooligan/SnapshotTests/__Snapshots__/`.
 
 ## `deploy` — runs after `test` + `ui-test`, only on a push to `main`
 

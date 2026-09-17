@@ -6,7 +6,7 @@ let workspace = Workspace(
   projects: ["."],
   schemes: [
     // Select this in Xcode: one Cmd-U builds and runs every test target in the
-    // workspace — app logic + snapshot + UI, and every feature/core module's
+    // workspace — app logic + UI, and every feature/core module's
     // suite. See `Scheme.mooliganApp()`.
     .mooliganApp(),
   ],

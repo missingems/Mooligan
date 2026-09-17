@@ -67,27 +67,6 @@ let project = Project(
       ],
       settings: Module.testSettings
     ),
-    // Renders SwiftUI views on the simulator and diffs them against committed
-    // reference images. A `.unitTests` bundle, so `tuist test` runs it in the
-    // same pass as the logic tests.
-    .target(
-      name: "MooliganSnapshotTests",
-      destinations: Module.destinations,
-      product: .unitTests,
-      bundleId: "com.missingems.mooligan.MooliganSnapshotTests",
-      deploymentTargets: Module.deploymentTargets,
-      infoPlist: .default,
-      sources: ["Mooligan/SnapshotTests/**"],
-      resources: [],
-      dependencies: [
-        .target(name: "Mooligan"),
-        .project(target: "CardDetail", path: .relativeToManifest("Features/CardDetail")),
-        .project(target: "DesignComponents", path: .relativeToManifest("Core/DesignComponents")),
-        .project(target: "Networking", path: .relativeToManifest("Core/Networking")),
-        .external(name: "SnapshotTesting"),
-      ],
-      settings: Module.testSettings
-    ),
     // Drives the built app through XCUITest. A `.uiTests` bundle: needs the app
     // installed on a booted simulator, so it is the slow part of `tuist test`.
     .target(

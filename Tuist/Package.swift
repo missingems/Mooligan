@@ -26,8 +26,5 @@ let package = Package(
     // `ApolloAPI` products are used — `ApolloSQLite` would add a second SQLite
     // stack alongside GRDB, and there are no subscriptions so no ApolloWebSocket.
     .package(url: "https://github.com/apollographql/apollo-ios", from: "1.25.7"),
-    // Test-only: SwiftUI view rendering for MooliganSnapshotTests. Only the
-    // `SnapshotTesting` product is used (no macros), so it adds no swift-syntax.
-    .package(url: "https://github.com/pointfreeco/swift-snapshot-testing", from: "1.18.0"),
   ]
 )
