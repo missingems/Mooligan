@@ -8,10 +8,9 @@ import NukeUI
 
 struct QueryView: View {
   @Bindable private var store: StoreOf<QueryFeature>
-  @Namespace private var searchMorph
   @Namespace private var statusMorph
   @State private var cardLayoutConfig: CardView.LayoutConfiguration?
-  @State private var topBarAvailableWidth: CGFloat? = nil
+  @State private var availableWidth: CGFloat? = nil
   
   init(store: StoreOf<QueryFeature>) {
     self.store = store
@@ -39,26 +38,19 @@ struct QueryView: View {
       for: CGFloat.self,
       of: { proxy in proxy.size.width },
       action: { width in
-        topBarAvailableWidth = width - (systemHorizontalMargin * 2)
+        availableWidth = width - (systemHorizontalMargin * 2)
         
         let columns = CGFloat(max(1, store.numberOfColumns))
         let totalSpacing = 8.0 * (columns - 1)
         
-        let availableWidth = width - (systemHorizontalMargin * 2) - totalSpacing
-        let columnWidth = (availableWidth / columns).rounded(.down)
+        let gridWidth = width - (systemHorizontalMargin * 2) - totalSpacing
+        let columnWidth = (gridWidth / columns).rounded(.down)
         
         if columnWidth > 0, cardLayoutConfig?.size.width != columnWidth {
           cardLayoutConfig = CardView.LayoutConfiguration(rotation: .portrait, maxWidth: columnWidth)
         }
       }
     )
-    .safeAreaBar(edge: .top) {
-      QueryTopBarView(
-        store: store,
-        searchMorph: searchMorph,
-        availableWidth: topBarAvailableWidth
-      )
-    }
     .scrollEdgeEffectStyle(.soft, for: .top)
     .contentMargins(
       .all,
@@ -89,8 +81,26 @@ struct QueryView: View {
       QueryStatusOverlayView(
         store: store,
         statusMorph: statusMorph,
-        topBarAvailableWidth: topBarAvailableWidth
+        availableWidth: availableWidth
       )
+    }
+    .overlay {
+      if store.isFilterExpanded {
+        ZStack(alignment: .bottomTrailing) {
+          Color.clear
+            .contentShape(.rect)
+            .onTapGesture {
+              withAnimation(.smooth) {
+                store.isFilterExpanded = false
+              }
+            }
+          
+          QueryFilterPanel(store: store)
+            .padding(.trailing, systemHorizontalMargin)
+            .padding(.bottom, 8.0)
+            .transition(.scale(scale: 0.1, anchor: .bottomTrailing).combined(with: .opacity))
+        }
+      }
     }
     .animation(.smooth, value: store.mode.shouldHideTopBar)
     .animation(.smooth, value: store.mode.hasError)

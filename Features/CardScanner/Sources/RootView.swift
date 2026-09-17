@@ -9,6 +9,7 @@ import Networking
 
 public struct RootView: View {
   @Bindable var store: StoreOf<CardScannerFeature>
+  @Environment(\.dismiss) private var dismiss
   
   private var hasScannedCard: Bool { store.dataSource != nil }
   
@@ -256,9 +257,7 @@ public struct RootView: View {
   @ToolbarContentBuilder
   private var navigationToolbar: some ToolbarContent {
     ToolbarItem(placement: .topBarLeading) {
-      Button(action: { print("Bug button tapped") }) {
-        Image(systemName: "ladybug.fill")
-      }
+      Button(role: .close) { dismiss() }
     }
     
     ToolbarItem(id: "info", placement: .principal) {

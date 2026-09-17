@@ -77,12 +77,12 @@ public struct QueryFeature: Sendable {
     let availableCardType: [SearchQuery.CardType]
     let availableSortModes: [SortMode]
     let availableSortOrders: [SortDirection]
-    var query: SearchQuery
+    public var query: SearchQuery
     var scrollPosition: ScrollPosition
     var numberOfColumns: Double = 2
-    let searchPrompt: String
+    public let searchPrompt: String
     public let id: UUID
-    var isSearchExpanded: Bool
+    public var isFilterExpanded: Bool
     
     public init(
       mode: Mode,
@@ -112,7 +112,7 @@ public struct QueryFeature: Sendable {
       isShowingInfo = false
       scrollPosition = ScrollPosition(edge: .top)
       availableColorTypeOptions = Card.Color.allCases
-      isSearchExpanded = false
+      isFilterExpanded = false
     }
     
     func shouldLoadMore(at index: Int) -> Bool {

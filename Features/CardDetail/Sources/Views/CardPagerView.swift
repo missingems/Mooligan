@@ -4,7 +4,6 @@ import SwiftUI
 
 public struct CardPagerView: View {
   @Bindable var store: StoreOf<CardPagerFeature>
-  private var scrolledId: UUID?
   
   public var body: some View {
     ScrollView(.horizontal, showsIndicators: false) {
@@ -30,7 +29,7 @@ public struct CardPagerView: View {
     }
     .scrollTargetBehavior(.paging)
     .accessibilityIdentifier("cardDetail.pager")
-    .scrollPosition(id: .constant(scrolledId))
+    .scrollPosition(id: $store.selectedId)
     .edgeScrims()
     .sheet(
       item: $store.scope(state: \.showRulings, action: \.showRulings)
@@ -43,6 +42,5 @@ public struct CardPagerView: View {
   
   public init(store: StoreOf<CardPagerFeature>) {
     self.store = store
-    scrolledId = store.selectedId
   }
 }

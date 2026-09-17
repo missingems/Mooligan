@@ -9,7 +9,7 @@ struct QueryStatusOverlayView: View {
   
   let store: StoreOf<QueryFeature>
   let statusMorph: Namespace.ID
-  let topBarAvailableWidth: CGFloat?
+  let availableWidth: CGFloat?
 
   /// Size of the error screen's artwork, which the CRT shader needs in pixels.
   /// Seeded phone-sized rather than `.zero` so the first frame draws something
@@ -136,7 +136,7 @@ struct QueryStatusOverlayView: View {
         }
         .matchedGeometryEffect(id: "loadingIndicator", in: statusMorph)
         .transition(.opacity)
-        .frame(width: topBarAvailableWidth)
+        .frame(width: availableWidth)
       }
     }
   }

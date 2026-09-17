@@ -17,7 +17,7 @@ public struct Feature {
     case showSetDetail(QueryFeature)
   }
   
-  public enum TabInfo: Equatable, CaseIterable, Identifiable {
+  public enum MenuItem: Equatable, CaseIterable, Identifiable {
     case sets
     case scan
     case collection
@@ -43,28 +43,25 @@ public struct Feature {
   
   @ObservableState
   public struct State: Equatable {
-    public var selectedTab: TabInfo = .sets
     public var sets: Browse.BrowseFeature.State
-    public var scan: CardScannerFeature.State
     public var bulkSync: BulkSyncFeature.State
     public var selectedSet: MTGSet?
     public var path: StackState<Path.State>
+    public var isCollectionPresented = false
+    
+    @Presents public var scan: CardScannerFeature.State?
     
     /// The pack currently being opened, presented over whatever set it came
     /// from.
     @Presents public var packSession: PackSessionFeature.State?
     
     public init(
-      selectedTab: TabInfo = .sets,
       sets: Browse.BrowseFeature.State = .init(),
-      scan: CardScannerFeature.State = .init(),
       bulkSync: BulkSyncFeature.State = .init(),
       selectedSet: MTGSet? = nil,
       path: StackState<Path.State> = .init()
     ) {
-      self.selectedTab = selectedTab
       self.sets = sets
-      self.scan = scan
       self.bulkSync = bulkSync
       self.selectedSet = selectedSet
       self.path = path
@@ -74,8 +71,9 @@ public struct Feature {
   public enum Action: BindableAction {
     case binding(BindingAction<State>)
     case setup
+    case menuItemSelected(MenuItem)
     case sets(BrowseFeature.Action)
-    case scan(CardScannerFeature.Action)
+    case scan(PresentationAction<CardScannerFeature.Action>)
     case packSession(PresentationAction<PackSessionFeature.Action>)
     case bulkSync(BulkSyncFeature.Action)
     case path(StackActionOf<Path>)
@@ -91,16 +89,15 @@ public struct Feature {
       Browse.BrowseFeature()
     }
     
-    Scope(state: \.scan, action: \.scan) {
-      CardScannerFeature()
-    }
-    
     Scope(state: \.bulkSync, action: \.bulkSync) {
       BulkSyncFeature()
     }
     
     Reduce(coreReduce)
       .forEach(\.path, action: \.path)
+      .ifLet(\.$scan, action: \.scan) {
+        CardScannerFeature()
+      }
       .ifLet(\.$packSession, action: \.packSession) {
         PackSessionFeature()
       }
@@ -119,6 +116,19 @@ public struct Feature {
       // `BGTaskScheduler` refuses a handler registered any later.
       databasePreparer.prepare()
       return .send(.bulkSync(.registerBackgroundTask))
+      
+    case let .menuItemSelected(item):
+      switch item {
+      case .sets:
+        state.path.removeAll()
+        
+      case .scan:
+        state.scan = CardScannerFeature.State()
+        
+      case .collection:
+        state.isCollectionPresented = true
+      }
+      return .none
       
     case let .sets(action):
       if case let .didSelectSet(value) = action {

@@ -31,7 +31,7 @@ final class SetDetailUITests: UITestCase {
     assert(card(1).waitForExistence(timeout: timeout), "first card never appeared")
     scrollUpTo(card(20), named: "card 20 (page 2)", maxSwipes: 20)
 
-    element("setDetail.filter.color").firstMatch.tap()
+    app.buttons["setDetail.filter.toggle"].firstMatch.tap()
     let option = app.buttons["setDetail.filterOption.White"]
     assert(option.waitForExistence(timeout: timeout), "colour option missing")
     option.tap()
@@ -48,8 +48,7 @@ final class SetDetailUITests: UITestCase {
     waitFor("setDetail.cardGrid")
     assert(card(1).waitForExistence(timeout: timeout), "first card never appeared")
 
-    app.buttons["setDetail.searchField.toggle"].firstMatch.tap()
-    let field = app.textFields["setDetail.searchField"]
+    let field = app.searchFields.firstMatch
     assert(field.waitForExistence(timeout: timeout), "in-set search field missing")
 
     // "07" is a substring of "Test Card 07" only.

@@ -11,7 +11,7 @@ struct SetsView: View {
     Group {
       switch store.mode {
       case let .data(sections):
-        setList(sections: sections, rows: store.rows, highlightedText: store.query, isScrollable: true)
+        setList(sections: sections, rows: store.rows, highlightedText: store.query)
         
       case .loading:
         ProgressView()
@@ -51,8 +51,7 @@ struct SetsView: View {
   private func setList(
     sections: IdentifiedArrayOf<ScryfallClient.SetsSection>,
     rows: [ScryfallClient.SetsSection.ID: [SetRow.ViewModel]],
-    highlightedText: String,
-    isScrollable: Bool
+    highlightedText: String
   ) -> some View {
     List(sections) { value in
       Section {
@@ -121,9 +120,6 @@ struct SetsView: View {
     .toolbarMinimizationBehavior(.onScrollDown, for: .navigationBar)
     .listStyle(.plain)
     .listSectionSeparator(.hidden)
-    .conditionalModifier(isScrollable, transform: { view in
-      view.searchable(text: $store.query)
-    })
     .background(DesignComponentsAsset.backgroundColor.swiftUIColor.ignoresSafeArea())
     .contentMargins(.top, 0, for: .scrollContent)
     .listSectionSpacing(13.0)

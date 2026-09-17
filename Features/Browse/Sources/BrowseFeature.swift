@@ -88,7 +88,7 @@ public extension BrowseFeature {
     var selectedSet: MTGSet?
     /// A row model per set of each section, keyed by section, built once when the sections land.
     var rows: [ScryfallClient.SetsSection.ID: [SetRow.ViewModel]] = [:]
-    var query = ""
+    public var query = ""
     var queryPlaceholder = String(localized: "Enter set name...")
     
     public init(selectedSet: MTGSet? = nil) {

@@ -127,7 +127,7 @@ class UITestCase: XCTestCase {
 
   // MARK: - Navigation helpers
 
-  /// From the Browse tab, opens the first mock set ("Final Fantasy", code FIN).
+  /// From Browse, opens the first mock set ("Final Fantasy", code FIN).
   func openFirstSet() {
     waitFor("browse.setList")
     waitFor("browse.setRow.FIN").tap()
