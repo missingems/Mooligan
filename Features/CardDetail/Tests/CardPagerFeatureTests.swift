@@ -42,7 +42,7 @@ import Testing
     // page on show; each card waits for its own page to appear before it loads.
     #expect(state.selectedId == secondCard.id)
     #expect(state.cards.ids.elements == [firstCard.id, secondCard.id])
-    #expect(state.cards.allSatisfy { $0.hasAppeared == false })
+    #expect(state.cards.allSatisfy { $0.variants.state.isInitial })
   }
 
   @Test func whenInitialSelectedCardIsNotInTheList_shouldStillHoldTheListedCards() {
@@ -66,8 +66,8 @@ import Testing
     await store.skipReceivedActions()
 
     // Then only that card has started loading; the page beside it is untouched.
-    #expect(store.state.cards[id: firstCard.id]?.hasAppeared == true)
-    #expect(store.state.cards[id: secondCard.id]?.hasAppeared == false)
+    #expect(store.state.cards[id: firstCard.id]?.variants.state.isInitial == false)
+    #expect(store.state.cards[id: secondCard.id]?.variants.state.isInitial == true)
   }
 
   @Test func whenViewRulingsTapped_shouldPresentRulings() async {

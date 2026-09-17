@@ -34,8 +34,6 @@ import ScryfallKit
       }
       
     case .viewAppeared:
-      guard !state.hasAppeared else { return .none }
-      state.hasAppeared = true
       let card = state.content.card
 
       // Only what has not landed yet: a page that left while loading comes back here with its
@@ -54,21 +52,6 @@ import ScryfallKit
         effects.append(fetchPriceHistory(card: card, state: &state))
       }
       return .merge(effects)
-
-    case .viewDisappeared:
-      // The page has left the screen. Loads still in flight are cancelled so a page flicked past
-      // never computes or lands anything, and `hasAppeared` is reset so a return loads them again.
-      let card = state.content.card
-      var cancellations: [Effect<Action>] = []
-      if state.variants.state.isInitial {
-        cancellations.append(.cancel(id: CancelID.additionalInformation(card.id)))
-      }
-      if state.priceHistory.status == .loading {
-        cancellations.append(.cancel(id: CancelID.priceHistory(card.id)))
-      }
-      guard cancellations.isEmpty == false else { return .none }
-      state.hasAppeared = false
-      return .merge(cancellations)
 
     case let .fetchVariants(card, page):
       return .run { [existingVariants = state.variants.state.value] send in

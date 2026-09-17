@@ -140,12 +140,7 @@ public struct CardDetailView: View {
       // send and its state changes land in that frame.
       await Task.yield()
       guard Task.isCancelled == false else { return }
-      store.send(.viewAppeared)
-    }
-    .onDisappear {
-      // A page flicked past leaves before its loads land. The feature cancels what is still in
-      // flight, so nothing is computed or landed for a page nobody is looking at.
-      store.send(.viewDisappeared)
+      await store.send(.viewAppeared).finish()
     }
     .background {
       ZStack {

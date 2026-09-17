@@ -26,10 +26,10 @@ import Testing
     CardDataSource(cards: [], hasNextPage: false, total: 0)
   }
 
-  @Test func whenInitialised_shouldNotHaveAppeared() {
+  @Test func whenInitialised_shouldHoldTheCard() {
     let state = CardDetailFeature.State(card: card, queryType: queryType)
 
-    #expect(state.hasAppeared == false)
+    #expect(state.variants.state.isInitial)
     #expect(state.id == card.id)
     #expect(state.content.card == card)
   }
@@ -39,9 +39,7 @@ import Testing
     store.exhaustivity = .off
 
     // When
-    await store.send(.viewAppeared) { state in
-      state.hasAppeared = true
-    }
+    await store.send(.viewAppeared)
 
     // Should
     await store.receive(\.updateAdditionalInformation)
@@ -59,16 +57,14 @@ import Testing
     store.exhaustivity = .off
 
     // Given
-    await store.send(.viewAppeared) { state in
-      state.hasAppeared = true
-    }
+    await store.send(.viewAppeared)
     await store.finish()
     await store.skipReceivedActions()
 
     // When the page is rebuilt, for example after swiping away and back.
     await store.send(.viewAppeared)
 
-    // Then nothing loads again, because the card already appeared.
+    // Then nothing loads again, because everything has already landed.
     await store.finish()
   }
 
@@ -90,9 +86,7 @@ import Testing
     #expect(store.state.setIconURL == URL(string: set.iconSvgUri))
 
     // When
-    await store.send(.viewAppeared) { state in
-      state.hasAppeared = true
-    }
+    await store.send(.viewAppeared)
 
     // Should skip the set icon fetch, keeping the icon from the query type.
     await store.receive(\.updateAdditionalInformation)
