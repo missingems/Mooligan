@@ -121,7 +121,8 @@ jobs:
     name: UI tests
     needs: test
     runs-on: xcode-27
-    timeout-minutes: 45
+    # A cold build on a new Xcode alone takes ~18 minutes before the first test.
+    timeout-minutes: 60
 
     steps:
       - uses: actions/checkout@v4
@@ -168,14 +169,16 @@ jobs:
 
       # The app launches with -uiTestMode (see Mooligan/Sources/UITestSupport.swift),
       # so these run fully offline against mock data. Retry flakes in place rather
-      # than failing the job on the first miss.
+      # than failing the job on the first miss. No diagnostics on failure: gathering
+      # them stalls xcodebuild for up to 10 silent minutes, which ran a retried
+      # flake into the job timeout.
       - name: UI tests
         run: |
           tuist test Mooligan \
             --device "$SIMULATOR_NAME" \
             --test-targets MooliganUITests \
             --no-selective-testing \
-            -- -retry-tests-on-failure -test-iterations 3
+            -- -retry-tests-on-failure -test-iterations 3 -collect-test-diagnostics never
 
       - name: Upload test results
         if: failure()
