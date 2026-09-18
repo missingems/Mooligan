@@ -2,7 +2,7 @@ import ScryfallKit
 import SwiftUI
 import Networking
 
-public struct CardView: View, Equatable {
+public struct CardView<Surface: ViewModifier & Equatable>: View, Equatable {
   /// Compared on what it draws. `send` is a closure, which is never equal, and only reports a tap
   /// to a store that outlives the comparison. Without this every store write re-ran every visible
   /// card in a grid, image and all.
@@ -12,6 +12,11 @@ public struct CardView: View, Equatable {
       && lhs.callToActionHorizontalOffset == rhs.callToActionHorizontalOffset
       && lhs.accessoryInfo == rhs.accessoryInfo
       && lhs.shadowConfiguration == rhs.shadowConfiguration
+      && lhs.downsampleWidth == rhs.downsampleWidth
+      // SwiftUI takes this comparison as the whole truth about the view, so a surface left out here
+      // is a surface that never updates: its fade would be stuck at whatever value the card was
+      // built with.
+      && lhs.surface == rhs.surface
   }
 
   public enum ShadowConfiguration: Equatable, Sendable {
@@ -64,40 +69,14 @@ public struct CardView: View, Equatable {
     case displaySet(String, usdFoil: String?, usd: String?)
   }
   
-  public struct LayoutConfiguration: Equatable, Sendable {
-    public enum Rotation: Equatable, Sendable {
-      case landscape
-      case portrait
-      
-      public var ratio: CGFloat {
-        switch self {
-        case .landscape:
-          return MagicCardImageRatio.heightToWidth.rawValue
-          
-        case .portrait:
-          return MagicCardImageRatio.widthToHeight.rawValue
-        }
-      }
-    }
-    
-    public let rotation: Rotation
-    public let size: CGSize
-    public let cornerRadius: CGFloat
-    
-    public init(rotation: Rotation, maxWidth: CGFloat) {
-      self.rotation = rotation
-      let imageHeight = (maxWidth / rotation.ratio).rounded()
-      size = CGSize(width: maxWidth, height: imageHeight)
-      cornerRadius = 5 / 100 * (rotation == .landscape ? size.height : size.width)
-    }
-  }
-  
   private let shadowConfiguration: ShadowConfiguration?
-  private let layoutConfiguration: LayoutConfiguration
+  private let layoutConfiguration: CardLayoutConfiguration
+  private let surface: Surface
   private let callToActionHorizontalOffset: CGFloat
   private let displayableCard: DisplayableCardImage
   private let accessoryInfo: AccessoryInfo
   private let send: ((Action) -> Void)?
+  private let downsampleWidth: CGFloat?
   
   @State private var isImageLoaded: Bool = false
   @Environment(\.displayScale) private var displayScale
@@ -119,8 +98,10 @@ public struct CardView: View, Equatable {
         isTransformed: direction == .front ? false : true,
         size: layoutConfiguration.size,
         id: id,
+        downsampleWidth: downsampleWidth,
         isImageLoaded: $isImageLoaded
       )
+      .modifier(surface)
       .rotation3DEffect(.degrees(direction == .front ? 0 : 180), axis: (x: 0, y: 1, z: 0))
       .animation(.bouncy, value: direction)
       .overlay(alignment: .trailing) {
@@ -138,8 +119,10 @@ public struct CardView: View, Equatable {
         isTransformed: false,
         size: layoutConfiguration.size,
         id: id,
+        downsampleWidth: downsampleWidth,
         isImageLoaded: $isImageLoaded
       )
+      .modifier(surface)
       .rotationEffect(.degrees(direction == .front ? 0 : 180))
       .animation(.bouncy, value: direction)
       .overlay(alignment: .trailing) {
@@ -157,8 +140,10 @@ public struct CardView: View, Equatable {
         isTransformed: false,
         size: layoutConfiguration.size,
         id: id,
+        downsampleWidth: downsampleWidth,
         isImageLoaded: $isImageLoaded
       )
+      .modifier(surface)
     }
   }
   
@@ -200,18 +185,45 @@ public struct CardView: View, Equatable {
   
   public init?(
     displayableCard: DisplayableCardImage?,
-    layoutConfiguration: LayoutConfiguration,
+    layoutConfiguration: CardLayoutConfiguration,
+    surface: Surface,
     callToActionHorizontalOffset: CGFloat = 5.0,
     priceVisibility: AccessoryInfo,
     shadowConfiguration: ShadowConfiguration? = nil,
+    downsampleWidth: CGFloat? = nil,
     send: ((Action) -> Void)? = nil
   ) {
     guard let displayableCard else { return nil }
     self.displayableCard = displayableCard
+    self.surface = surface
     self.accessoryInfo = priceVisibility
     self.layoutConfiguration = layoutConfiguration
     self.callToActionHorizontalOffset = callToActionHorizontalOffset
     self.shadowConfiguration = shadowConfiguration
+    self.downsampleWidth = downsampleWidth
     self.send = send
+  }
+}
+
+public extension CardView where Surface == EmptyCardSurface {
+  init?(
+    displayableCard: DisplayableCardImage?,
+    layoutConfiguration: CardLayoutConfiguration,
+    callToActionHorizontalOffset: CGFloat = 5.0,
+    priceVisibility: AccessoryInfo,
+    shadowConfiguration: ShadowConfiguration? = nil,
+    downsampleWidth: CGFloat? = nil,
+    send: ((Action) -> Void)? = nil
+  ) {
+    self.init(
+      displayableCard: displayableCard,
+      layoutConfiguration: layoutConfiguration,
+      surface: EmptyCardSurface(),
+      callToActionHorizontalOffset: callToActionHorizontalOffset,
+      priceVisibility: priceVisibility,
+      shadowConfiguration: shadowConfiguration,
+      downsampleWidth: downsampleWidth,
+      send: send
+    )
   }
 }

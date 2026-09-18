@@ -8,10 +8,9 @@ import NukeUI
 
 struct QueryView: View {
   @Bindable private var store: StoreOf<QueryFeature>
-  @Namespace private var searchMorph
   @Namespace private var statusMorph
-  @State private var cardLayoutConfig: CardView.LayoutConfiguration?
-  @State private var topBarAvailableWidth: CGFloat? = nil
+  @State private var cardLayoutConfig: CardLayoutConfiguration?
+  @State private var availableWidth: CGFloat? = nil
   
   init(store: StoreOf<QueryFeature>) {
     self.store = store
@@ -35,38 +34,36 @@ struct QueryView: View {
         }
       }
     }
+    // On the scroll view alone. Outside the safe area bar it named the filter chips too, over their
+    // own identifiers.
+    .accessibilityIdentifier("setDetail.cardGrid")
     .onGeometryChange(
       for: CGFloat.self,
       of: { proxy in proxy.size.width },
       action: { width in
-        topBarAvailableWidth = width - (systemHorizontalMargin * 2)
+        availableWidth = width - (systemHorizontalMargin * 2)
         
         let columns = CGFloat(max(1, store.numberOfColumns))
         let totalSpacing = 8.0 * (columns - 1)
         
-        let availableWidth = width - (systemHorizontalMargin * 2) - totalSpacing
-        let columnWidth = (availableWidth / columns).rounded(.down)
+        let gridWidth = width - (systemHorizontalMargin * 2) - totalSpacing
+        let columnWidth = (gridWidth / columns).rounded(.down)
         
         if columnWidth > 0, cardLayoutConfig?.size.width != columnWidth {
-          cardLayoutConfig = CardView.LayoutConfiguration(rotation: .portrait, maxWidth: columnWidth)
+          cardLayoutConfig = CardLayoutConfiguration(rotation: .portrait, maxWidth: columnWidth)
         }
       }
     )
     .safeAreaBar(edge: .top) {
-      QueryTopBarView(
-        store: store,
-        searchMorph: searchMorph,
-        availableWidth: topBarAvailableWidth
-      )
+      QueryTopBarView(store: store)
     }
-    .scrollEdgeEffectStyle(.soft, for: .top)
+    .scrollEdgeEffectStyle(.soft, for: .all)
     .contentMargins(
       .all,
       EdgeInsets(top: 0, leading: systemHorizontalMargin, bottom: 13.0, trailing: systemHorizontalMargin),
       for: .scrollContent
     )
     .scrollDisabled(store.mode.isScrollable == false)
-    .accessibilityIdentifier("setDetail.cardGrid")
     .refreshable {
       await store.send(.refresh).finish()
     }
@@ -89,7 +86,7 @@ struct QueryView: View {
       QueryStatusOverlayView(
         store: store,
         statusMorph: statusMorph,
-        topBarAvailableWidth: topBarAvailableWidth
+        availableWidth: availableWidth
       )
     }
     .animation(.smooth, value: store.mode.shouldHideTopBar)

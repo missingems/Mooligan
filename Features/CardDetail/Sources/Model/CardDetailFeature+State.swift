@@ -16,7 +16,6 @@ public extension CardDetailFeature {
     var relatedMeldPieces: Content.SubContent?
     var relatedMeldResult: Content.SubContent?
     public var displayableCardImage: DisplayableCardImage?
-    public var hasAppeared: Bool = false
     
     public init(card: Card, displayableCardImage: DisplayableCardImage? = nil, queryType: QueryType) {
       self.id = card.id

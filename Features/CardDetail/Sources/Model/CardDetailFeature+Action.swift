@@ -11,7 +11,6 @@ public extension CardDetailFeature {
     case didSelectVariant(card: Card, queryType: QueryType)
     case didShowVariant(index: Int)
     case viewAppeared
-    case viewDisappeared
     case viewRulingsTapped
     case retryPriceHistoryTapped
 

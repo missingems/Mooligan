@@ -9,16 +9,16 @@ import ScryfallKit
   
   public var body: some ReducerOf<Self> {
     BindingReducer()
-    
-    Reduce { state, action in
-      switch action {
-      case .binding(\.query):
-        return .run { [query = state.query, sets = state.sets] send in
+      .onChange(of: \.query) { _, state in
+        .run { [query = state.query, sets = state.sets] send in
           try await clock.sleep(for: .milliseconds(300))
           await send(.searchSets(.name(query, sets)))
         }
         .cancellable(id: "queryDebounce", cancelInFlight: true)
-        
+      }
+    
+    Reduce { state, action in
+      switch action {
       case .binding:
         return .none
         
@@ -88,7 +88,7 @@ public extension BrowseFeature {
     var selectedSet: MTGSet?
     /// A row model per set of each section, keyed by section, built once when the sections land.
     var rows: [ScryfallClient.SetsSection.ID: [SetRow.ViewModel]] = [:]
-    var query = ""
+    public var query = ""
     var queryPlaceholder = String(localized: "Enter set name...")
     
     public init(selectedSet: MTGSet? = nil) {

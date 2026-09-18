@@ -9,6 +9,7 @@ import Networking
 
 public struct RootView: View {
   @Bindable var store: StoreOf<CardScannerFeature>
+  @Environment(\.dismiss) private var dismiss
   
   private var hasScannedCard: Bool { store.dataSource != nil }
   
@@ -87,7 +88,7 @@ public struct RootView: View {
         let containerWidth = viewSize.width * 0.75
         let isLandscape = cardInfo.card.isLandscape
         
-        let configuration = CardView.LayoutConfiguration(
+        let configuration = CardLayoutConfiguration(
           rotation: isLandscape ? .landscape : .portrait,
           maxWidth: containerWidth.rounded()
         )
@@ -142,7 +143,7 @@ public struct RootView: View {
     let showImage   = !(isFirst && !store.isMorphAnimationComplete)
     let showDetails = store.isMorphed
     
-    let configuration = CardView.LayoutConfiguration(
+    let configuration = CardLayoutConfiguration(
       rotation: .portrait,
       maxWidth: containerWidth.rounded()
     )
@@ -256,9 +257,7 @@ public struct RootView: View {
   @ToolbarContentBuilder
   private var navigationToolbar: some ToolbarContent {
     ToolbarItem(placement: .topBarLeading) {
-      Button(action: { print("Bug button tapped") }) {
-        Image(systemName: "ladybug.fill")
-      }
+      Button(role: .close) { dismiss() }
     }
     
     ToolbarItem(id: "info", placement: .principal) {

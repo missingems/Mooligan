@@ -22,6 +22,7 @@ public struct CardRemoteImageView: View {
     size: CGSize? = nil,
     id: String,
     priority: ImageRequest.Priority = .normal,
+    downsampleWidth: CGFloat? = nil,
     isImageLoaded: Binding<Bool>
   ) {
     self.url = url
@@ -31,7 +32,18 @@ public struct CardRemoteImageView: View {
     
     self._isImageLoaded = isImageLoaded
     
+    self.imageRequest = ImageRequest(
+      url: url,
+      processors: Self.processors(isLandscape: isLandscape, isTransformed: isTransformed, downsampleWidth: downsampleWidth),
+      priority: priority
+    )
+  }
+  
+  static func processors(isLandscape: Bool, isTransformed: Bool, downsampleWidth: CGFloat?) -> [ImageProcessing] {
     var transformers: [ImageProcessing] = []
+    if let downsampleWidth {
+      transformers.append(ImageProcessors.Resize(width: downsampleWidth))
+    }
     if isLandscape {
       transformers.append(RotationImageProcessor(degrees: 90))
     }
@@ -39,12 +51,7 @@ public struct CardRemoteImageView: View {
     if isTransformed {
       transformers.append(FlipImageProcessor())
     }
-    
-    self.imageRequest = ImageRequest(
-      url: url,
-      processors: transformers,
-      priority: priority
-    )
+    return transformers
   }
   
   private var cornerRadius: CGFloat {

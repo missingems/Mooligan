@@ -4,8 +4,10 @@ import SwiftUI
 
 public struct CardPagerView: View {
   @Bindable var store: StoreOf<CardPagerFeature>
-  private var scrolledId: UUID?
+  private let scrub: CarouselScrub?
   
+  @Environment(\.colorScheme) private var colorScheme
+
   public var body: some View {
     ScrollView(.horizontal, showsIndicators: false) {
       LazyHStack(spacing: 0) {
@@ -17,7 +19,7 @@ public struct CardPagerView: View {
         // off the main actor, where a store collection traps.
         ForEach(Array(store.cards.ids), id: \.self) { id in
           if let page = store.scope(state: \.cards[id: id], action: \.cards[id: id]) {
-            CardDetailView(store: page)
+            CardDetailView(store: page, scrub: scrub)
               .accessibilityIdentifier("cardDetail.page.\(page.content.card.collectorNumber)")
               .containerRelativeFrame(.horizontal)
               .geometryGroup()
@@ -29,9 +31,41 @@ public struct CardPagerView: View {
       .scrollTargetLayout()
     }
     .scrollTargetBehavior(.paging)
+    .background {
+      LandingBackdrop(scrub: scrub)
+    }
+    .scrollEdgeEffectStyle(.soft, for: .bottom)
+    .scrollEdgeEffectHidden(true, for: .top)
     .accessibilityIdentifier("cardDetail.pager")
-    .scrollPosition(id: .constant(scrolledId))
+    .scrollPosition(id: $store.selectedId)
+    .onChange(of: store.selectedId, initial: true) { _, newValue in
+      scrub?.selectedId = newValue
+    }
+    .sensoryFeedback(.selection, trigger: store.selectedId)
     .edgeScrims()
+    .onGeometryChange(for: CGRect.self) { proxy in
+      proxy.frame(in: .global)
+    } action: { newValue in
+      scrub?.pageFrame = newValue
+    }
+    .onScrollPhaseChange { _, newPhase in
+      guard newPhase == .interacting, let scrub, scrub.isHovering || scrub.isLanding else { return }
+      var instant = Transaction()
+      instant.disablesAnimations = true
+      withTransaction(instant) {
+        scrub.isHovering = false
+        scrub.endLanding()
+      }
+    }
+    // Read here rather than in the bar: inside the toolbar the environment reports a dark scheme
+    // whichever way the phone is set, and the glass's ring came out the same in both.
+    .onChange(of: colorScheme, initial: true) { _, newValue in
+      scrub?.isLightAppearance = newValue == .light
+    }
+    .onDisappear {
+      scrub?.isHovering = false
+      scrub?.endLanding()
+    }
     .sheet(
       item: $store.scope(state: \.showRulings, action: \.showRulings)
     ) { rulingStore in
@@ -41,8 +75,8 @@ public struct CardPagerView: View {
     }
   }
   
-  public init(store: StoreOf<CardPagerFeature>) {
+  public init(store: StoreOf<CardPagerFeature>, scrub: CarouselScrub? = nil) {
     self.store = store
-    scrolledId = store.selectedId
+    self.scrub = scrub
   }
 }

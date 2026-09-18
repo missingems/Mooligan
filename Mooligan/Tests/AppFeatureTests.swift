@@ -61,10 +61,10 @@ import Testing
     #expect(preparer.prepareCount == 1)
   }
 
-  @Test func whenInitialised_shouldStartOnTheSetsTabWithAnEmptyPath() {
+  @Test func whenInitialised_shouldStartOnSetsWithAnEmptyPath() {
     let state = Feature.State()
 
-    #expect(state.selectedTab == .sets)
+    #expect(state.scan == nil)
     #expect(state.path.isEmpty)
     #expect(state.selectedSet == nil)
     #expect(state.bulkSync.phase == .idle)

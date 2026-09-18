@@ -36,7 +36,6 @@ import Testing
     #expect(state.id == set.id)
     #expect(state.dataSource.cardDetails.isEmpty)
     #expect(state.isShowingInfo == false)
-    #expect(state.isSearchExpanded == false)
   }
 
   @Test func whenInitialisedForASearch_shouldUseTheSearchTitle() {

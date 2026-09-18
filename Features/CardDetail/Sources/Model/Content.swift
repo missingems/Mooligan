@@ -127,10 +127,6 @@ public struct Content: Equatable, Sendable {
     card.getCardFace(for: faceDirection)?.loyalty ?? card.loyalty
   }
 
-  func getArtistName(faceDirection: MagicCardFaceDirection?) -> String? {
-    card.getCardFace(for: faceDirection)?.artist ?? card.artist
-  }
-
   func getDescriptions(faceDirection: MagicCardFaceDirection? = nil) -> [Description] {
     func makeDescription(faceDirection: MagicCardFaceDirection?, card: Card) -> Description {
       Description(

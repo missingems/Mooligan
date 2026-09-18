@@ -51,7 +51,7 @@ struct HorizontalCardScrollView: View, Equatable {
           ForEach(cards.cardDetails) { cardInfo in
             CardView(
               displayableCard: cardInfo.displayableCardImage,
-              layoutConfiguration: CardView.LayoutConfiguration(
+              layoutConfiguration: CardLayoutConfiguration(
                 rotation: .portrait,
                 maxWidth: Self.cardWidth
               ),
