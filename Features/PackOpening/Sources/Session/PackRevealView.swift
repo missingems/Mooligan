@@ -626,7 +626,7 @@ private struct PackGrid<Actions: View>: View {
   /// Resolved from the measured width, exactly as the set grid does it, so each
   /// cell is laid out at a size that is already known rather than working one
   /// out from the image that turns up in it.
-  @State private var layout: CardView.LayoutConfiguration?
+  @State private var layout: CardLayoutConfiguration?
 
   private static var columnCount: CGFloat { 2 }
   private static var spacing: CGFloat { 8 }
@@ -673,7 +673,7 @@ private struct PackGrid<Actions: View>: View {
         ((width - systemHorizontalMargin * 2 - gutters) / Self.columnCount).rounded(.down)
 
       guard columnWidth > 0, layout?.size.width != columnWidth else { return }
-      layout = CardView.LayoutConfiguration(rotation: .portrait, maxWidth: columnWidth)
+      layout = CardLayoutConfiguration(rotation: .portrait, maxWidth: columnWidth)
     }
   }
 }
@@ -682,7 +682,7 @@ private struct PackGrid<Actions: View>: View {
 /// One card in the finished pack.
 private struct PackGridCell: View {
   let pulled: PulledCard
-  let layout: CardView.LayoutConfiguration
+  let layout: CardLayoutConfiguration
   let cardMorph: Namespace.ID
   let isMorphing: Bool
   let onSelect: (PulledCard) -> Void

@@ -22,6 +22,7 @@ public struct CardRemoteImageView: View {
     size: CGSize? = nil,
     id: String,
     priority: ImageRequest.Priority = .normal,
+    downsampleWidth: CGFloat? = nil,
     isImageLoaded: Binding<Bool>
   ) {
     self.url = url
@@ -32,6 +33,9 @@ public struct CardRemoteImageView: View {
     self._isImageLoaded = isImageLoaded
     
     var transformers: [ImageProcessing] = []
+    if let downsampleWidth {
+      transformers.append(ImageProcessors.Resize(width: downsampleWidth))
+    }
     if isLandscape {
       transformers.append(RotationImageProcessor(degrees: 90))
     }

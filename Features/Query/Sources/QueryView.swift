@@ -9,7 +9,7 @@ import NukeUI
 struct QueryView: View {
   @Bindable private var store: StoreOf<QueryFeature>
   @Namespace private var statusMorph
-  @State private var cardLayoutConfig: CardView.LayoutConfiguration?
+  @State private var cardLayoutConfig: CardLayoutConfiguration?
   @State private var availableWidth: CGFloat? = nil
   
   init(store: StoreOf<QueryFeature>) {
@@ -47,7 +47,7 @@ struct QueryView: View {
         let columnWidth = (gridWidth / columns).rounded(.down)
         
         if columnWidth > 0, cardLayoutConfig?.size.width != columnWidth {
-          cardLayoutConfig = CardView.LayoutConfiguration(rotation: .portrait, maxWidth: columnWidth)
+          cardLayoutConfig = CardLayoutConfiguration(rotation: .portrait, maxWidth: columnWidth)
         }
       }
     )

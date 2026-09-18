@@ -88,7 +88,7 @@ public struct RootView: View {
         let containerWidth = viewSize.width * 0.75
         let isLandscape = cardInfo.card.isLandscape
         
-        let configuration = CardView.LayoutConfiguration(
+        let configuration = CardLayoutConfiguration(
           rotation: isLandscape ? .landscape : .portrait,
           maxWidth: containerWidth.rounded()
         )
@@ -143,7 +143,7 @@ public struct RootView: View {
     let showImage   = !(isFirst && !store.isMorphAnimationComplete)
     let showDetails = store.isMorphed
     
-    let configuration = CardView.LayoutConfiguration(
+    let configuration = CardLayoutConfiguration(
       rotation: .portrait,
       maxWidth: containerWidth.rounded()
     )

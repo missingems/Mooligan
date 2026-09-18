@@ -28,7 +28,7 @@ public struct CardDetailView: View {
         ? 2.5 / 3.0 * maxWidth
         : 2.0 / 3.0 * maxWidth
         
-        let configuration = CardView.LayoutConfiguration(
+        let configuration = CardLayoutConfiguration(
           rotation: content.card.isLandscape ? .landscape : .portrait,
           maxWidth: cardImageWidth.rounded()
         )

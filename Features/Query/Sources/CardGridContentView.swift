@@ -5,7 +5,7 @@ import Networking
 
 struct CardGridContentView: View {
   @Bindable var store: StoreOf<QueryFeature>
-  var layoutConfiguration: CardView.LayoutConfiguration
+  var layoutConfiguration: CardLayoutConfiguration
   
   var body: some View {
     ForEach(Array(store.dataSource.cardDetails.enumerated()), id: \.element.card.id) { index, cardInfo in
