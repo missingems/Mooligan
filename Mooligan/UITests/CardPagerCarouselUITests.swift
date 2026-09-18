@@ -9,6 +9,10 @@ final class CardPagerCarouselUITests: UITestCase {
 
     assert(pollExists(strip), "the thumbnail strip should be in the bottom bar")
     assert(strip.frame.minY > app.frame.height * 0.8, "the strip should sit at the bottom of the screen")
+    // The blurred ends are decoration. Left in the tree they picked up the strip's identifier and
+    // came first, so a lookup by identifier pressed the leading blur instead of the lens.
+    let named = app.descendants(matching: .any).matching(identifier: "cardDetail.carousel")
+    assert(named.count == 1, "only the strip should carry its identifier (found \(named.count))")
     assert(pollExists(element("cardDetail.carousel.01").firstMatch), "the open card should have a thumbnail")
     assert(pollExists(element("cardDetail.carousel.02").firstMatch), "the next card's thumbnail should be beside it")
   }
@@ -108,8 +112,7 @@ final class CardPagerCarouselUITests: UITestCase {
     assert(waitUntilUnderTheLens(3), "the strip should open with the card opened under the lens")
   }
 
-  /// The strip's scroll view, whose middle is the lens. Typed, because the blurred ends pick up the
-  /// strip's identifier too and come first in the tree.
+  /// The strip's scroll view, whose middle is the lens.
   private var strip: XCUIElement {
     app.scrollViews["cardDetail.carousel"].firstMatch
   }

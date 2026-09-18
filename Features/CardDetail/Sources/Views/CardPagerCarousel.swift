@@ -106,6 +106,9 @@ public struct CardPagerCarousel: View {
       }
       .frame(width: scrollWidth, height: 48.0)
       .frame(width: width, height: 48.0)
+      // Named before the overlays, so only the strip carries the identifier: set at the end of the
+      // chain, it also named the blurred ends, which came first in the tree.
+      .accessibilityIdentifier("cardDetail.carousel")
       // The ends soften as the cards curl away. The package only blurs top-to-bottom, so each end is
       // a vertical blur turned on its side: laid out tall, rotated a quarter turn, then framed to
       // the width of the curl.
@@ -116,6 +119,7 @@ public struct CardPagerCarousel: View {
           .rotationEffect(.degrees(-90))
           .frame(width: 34, height: 53)
           .allowsHitTesting(false)
+          .accessibilityHidden(true)
       }
       .overlay(alignment: .trailing) {
         VariableBlurView(maxBlurRadius: 1.5, direction: .blurredTopClearBottom, startOffset: 0)
@@ -123,6 +127,7 @@ public struct CardPagerCarousel: View {
           .rotationEffect(.degrees(90))
           .frame(width: 34, height: 53)
           .allowsHitTesting(false)
+          .accessibilityHidden(true)
       }
       .clipShape(.capsule)
       .glassEffect(.regular.interactive(), in: .capsule)
@@ -156,7 +161,6 @@ public struct CardPagerCarousel: View {
           centeredId = store.selectedId
         }
       }
-      .accessibilityIdentifier("cardDetail.carousel")
     }
   }
   
