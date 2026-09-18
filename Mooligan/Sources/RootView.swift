@@ -3,6 +3,8 @@ import CardScanner
 import CardDetail
 import ComposableArchitecture
 import DesignComponents
+import Networking
+import NukeUI
 import PackOpening
 import Query
 import SwiftUI
@@ -63,7 +65,7 @@ struct RootView: View {
             DefaultToolbarItem(kind: .search, placement: .bottomBar)
             ToolbarSpacer(.fixed, placement: .bottomBar)
             ToolbarItem(placement: .bottomBar) {
-              filterButton(value)
+              packButton(value)
             }
           }
       }
@@ -121,7 +123,15 @@ struct RootView: View {
     @Bindable var query = queryStore
     
     return Query.RootView(store: query)
-      .searchable(text: $query.query.name, prompt: Text(query.searchPrompt))
+      // The field still sits in the bottom bar, through the toolbar's `DefaultToolbarItem`. Asking
+      // for an always-shown drawer only switches off hiding the search as the grid scrolls, and
+      // that is what stops UIKit hoisting the grid's refresh control into the navigation bar, where
+      // it ignored the filter bar's inset and spun over the chips.
+      .searchable(
+        text: $query.query.name,
+        placement: .navigationBarDrawer(displayMode: .always),
+        prompt: Text(query.searchPrompt)
+      )
   }
   
   private var addButton: some View {
@@ -132,17 +142,36 @@ struct RootView: View {
     .accessibilityIdentifier("cardDetail.add")
   }
   
-  private func filterButton(_ queryStore: StoreOf<QueryFeature>) -> some View {
-    @Bindable var query = queryStore
-    
-    return Button {
-      withAnimation(.smooth) {
-        query.isFilterExpanded.toggle()
+  /// The set's own sealed product, opened from the bar rather than from the set's details.
+  private func packButton(_ queryStore: StoreOf<QueryFeature>) -> some View {
+    let set = queryStore.boosterSet
+    let kinds = set?.stockedPackKinds ?? []
+
+    return Menu {
+      if let set {
+        ForEach(kinds) { kind in
+          Button("Open \(kind.title)") {
+            queryStore.send(.didSelectOpenPack(set, kind))
+          }
+          .accessibilityIdentifier("setDetail.openPack.\(kind.rawValue)")
+        }
       }
     } label: {
-      Image(systemName: query.isFilterExpanded ? "xmark" : "line.3.horizontal.decrease")
-        .contentTransition(.symbolEffect(.replace))
+      if let set, let kind = kinds.first,
+         let url = PackArtwork.thumbnailURL(for: PackProduct(set: set, kind: kind), width: 120) {
+        LazyImage(url: url) { state in
+          if let image = state.image {
+            image.resizable().scaledToFit()
+          } else {
+            Image(systemName: "shippingbox.fill")
+          }
+        }
+        .frame(width: 20, height: 34)
+      } else {
+        Image(systemName: "shippingbox.fill")
+      }
     }
-    .accessibilityIdentifier("setDetail.filter.toggle")
+    .disabled(set == nil)
+    .accessibilityIdentifier("setDetail.openPack")
   }
 }

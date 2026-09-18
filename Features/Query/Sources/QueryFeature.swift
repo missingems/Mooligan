@@ -82,7 +82,6 @@ public struct QueryFeature: Sendable {
     var numberOfColumns: Double = 2
     public let searchPrompt: String
     public let id: UUID
-    public var isFilterExpanded: Bool
     
     public init(
       mode: Mode,
@@ -112,9 +111,14 @@ public struct QueryFeature: Sendable {
       isShowingInfo = false
       scrollPosition = ScrollPosition(edge: .top)
       availableColorTypeOptions = Card.Color.allCases
-      isFilterExpanded = false
     }
     
+    /// The set on show, when this screen is a set's and that set was sold in packs.
+    public var boosterSet: MTGSet? {
+      guard case let .querySet(set, _) = queryType, set.sellsBoosters else { return nil }
+      return set
+    }
+
     func shouldLoadMore(at index: Int) -> Bool {
       (index == (dataSource.cardDetails.count) - 1) && dataSource.hasNextPage == true
     }

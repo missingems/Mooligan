@@ -51,6 +51,9 @@ struct QueryView: View {
         }
       }
     )
+    .safeAreaBar(edge: .top) {
+      QueryTopBarView(store: store)
+    }
     .scrollEdgeEffectStyle(.soft, for: .all)
     .contentMargins(
       .all,
@@ -83,24 +86,6 @@ struct QueryView: View {
         statusMorph: statusMorph,
         availableWidth: availableWidth
       )
-    }
-    .overlay {
-      if store.isFilterExpanded {
-        ZStack(alignment: .bottomTrailing) {
-          Color.clear
-            .contentShape(.rect)
-            .onTapGesture {
-              withAnimation(.smooth) {
-                store.isFilterExpanded = false
-              }
-            }
-          
-          QueryFilterPanel(store: store)
-            .padding(.trailing, systemHorizontalMargin)
-            .padding(.bottom, 8.0)
-            .transition(.scale(scale: 0.1, anchor: .bottomTrailing).combined(with: .opacity))
-        }
-      }
     }
     .animation(.smooth, value: store.mode.shouldHideTopBar)
     .animation(.smooth, value: store.mode.hasError)

@@ -31,7 +31,7 @@ final class SetDetailUITests: UITestCase {
     assert(card(1).waitForExistence(timeout: timeout), "first card never appeared")
     scrollUpTo(card(20), named: "card 20 (page 2)", maxSwipes: 20)
 
-    app.buttons["setDetail.filter.toggle"].firstMatch.tap()
+    element("setDetail.filter.color").firstMatch.tap()
     let option = app.buttons["setDetail.filterOption.White"]
     assert(option.waitForExistence(timeout: timeout), "colour option missing")
     option.tap()
