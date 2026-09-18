@@ -28,15 +28,25 @@ public struct CardSurface: ViewModifier, Animatable, Equatable {
   }
 
   public func body(content: Content) -> some View {
-    let isTracking = isActive && scenePhase == .active && reduceMotion == false
-    let tilt = isTracking ? DeviceTilt.shared.offset : .zero
-    let light = CGPoint(x: tilt.x + pose.x / 40, y: tilt.y + pose.y / 40)
+    let isTracking = DeviceTilt.isTracking(isActive: isActive, scenePhase: scenePhase, reduceMotion: reduceMotion)
+    let light = Self.light(tilt: isTracking ? DeviceTilt.shared.offset : .zero, pose: pose)
 
     surface(content, light: light)
       .task(id: isTracking) {
         guard isTracking else { return }
         await DeviceTilt.shared.track()
       }
+  }
+
+  /// Where the light falls: the phone's lean, plus the card's pose brought down from degrees to the
+  /// lean's scale.
+  nonisolated static func light(tilt: CGPoint, pose: CGPoint) -> CGPoint {
+    CGPoint(x: tilt.x + pose.x / 40, y: tilt.y + pose.y / 40)
+  }
+
+  /// How far along the foil's one sweep the light is.
+  nonisolated static func foilSweep(light: CGPoint) -> CGFloat {
+    (light.x * 1.6 + light.y * 1.0) / 0.09
   }
 
   @ViewBuilder private func surface(_ content: Content, light: CGPoint) -> some View {
@@ -48,7 +58,7 @@ public struct CardSurface: ViewModifier, Animatable, Equatable {
           // separately set them moving at different rates and the foil read as busy.
           ShaderLibrary.designComponents.holographicFoil(
             .float2(geometry.size),
-            .float((light.x * 1.6 + light.y * 1.0) / 0.09),
+            .float(Self.foilSweep(light: light)),
             .float(0.2 * intensity)
           )
         )
