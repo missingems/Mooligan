@@ -30,6 +30,8 @@ struct CardTypeItemsView: View {
             .padding(.leading, 3)
         }
       }
+      // One element, so the chip's identifier is not copied onto every icon in it.
+      .accessibilityElement(children: .combine)
     } content: {
       let options = store.availableCardType
       
@@ -58,5 +60,6 @@ struct CardTypeItemsView: View {
         }
       }
     }
+    .accessibilityIdentifier("setDetail.filter.type")
   }
 }

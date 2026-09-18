@@ -129,8 +129,14 @@ class UITestCase: XCTestCase {
 
   /// From Browse, opens the first mock set ("Final Fantasy", code FIN).
   func openFirstSet() {
+    openSet("FIN")
+  }
+
+  /// From Browse, opens the mock set with this code. FIN and TDM head the list, so neither needs a
+  /// scroll to reach.
+  func openSet(_ code: String) {
     waitFor("browse.setList")
-    waitFor("browse.setRow.FIN").tap()
+    waitFor("browse.setRow.\(code)").tap()
     waitFor("setDetail.cardGrid")
   }
 

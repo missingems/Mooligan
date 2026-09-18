@@ -28,6 +28,8 @@ struct SortOptionsView: View {
           .lineLimit(1)
           .fixedSize(horizontal: true, vertical: false)
       }
+      // One element, so the chip's identifier is not copied onto the arrow and the title separately.
+      .accessibilityElement(children: .combine)
     } content: {
       ForEach(store.availableSortModes, id: \.rawValue) { value in
         FilterOptionRow(
@@ -48,5 +50,6 @@ struct SortOptionsView: View {
         )
       }
     }
+    .accessibilityIdentifier("setDetail.filter.sort")
   }
 }

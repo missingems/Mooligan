@@ -34,6 +34,9 @@ struct QueryView: View {
         }
       }
     }
+    // On the scroll view alone. Outside the safe area bar it named the filter chips too, over their
+    // own identifiers.
+    .accessibilityIdentifier("setDetail.cardGrid")
     .onGeometryChange(
       for: CGFloat.self,
       of: { proxy in proxy.size.width },
@@ -61,7 +64,6 @@ struct QueryView: View {
       for: .scrollContent
     )
     .scrollDisabled(store.mode.isScrollable == false)
-    .accessibilityIdentifier("setDetail.cardGrid")
     .refreshable {
       await store.send(.refresh).finish()
     }
