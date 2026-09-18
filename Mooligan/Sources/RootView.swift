@@ -12,6 +12,7 @@ import SwiftUI
 struct RootView: View {
   @Bindable var store: StoreOf<Feature>
   @State private var width: CGFloat = 402.0
+  @State private var carouselScrub = CarouselScrub()
   
   var body: some View {
     NavigationStack(path: $store.scope(state: \.path, action: \.path)) {
@@ -33,12 +34,12 @@ struct RootView: View {
     } destination: { destinationStore in
       switch destinationStore.case {
       case let .showCardPager(value):
-        CardDetail.CardPagerView(store: value)
+        CardDetail.CardPagerView(store: value, scrub: carouselScrub)
           .toolbar {
             menuItem
             ToolbarSpacer(.fixed, placement: .bottomBar)
             ToolbarItem(placement: .bottomBar) {
-              CardDetail.CardPagerCarousel(store: value, width: max(0, width - 180.0))
+              CardDetail.CardPagerCarousel(store: value, scrub: carouselScrub, width: max(0, width - 180.0))
             }
             .sharedBackgroundVisibility(.hidden)
             ToolbarSpacer(.fixed, placement: .bottomBar)
@@ -69,6 +70,10 @@ struct RootView: View {
             }
           }
       }
+    }
+    .overlay {
+      CardDetail.CardPagerScrubPreview(scrub: carouselScrub)
+        .ignoresSafeArea()
     }
     .onGeometryChange(for: CGFloat.self, of: { $0.size.width }) { width = $0 }
     .tint(DesignComponentsAsset.accentColor.swiftUIColor)

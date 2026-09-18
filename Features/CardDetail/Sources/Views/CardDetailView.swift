@@ -7,16 +7,26 @@ import SwiftUI
 
 public struct CardDetailView: View {
   @Bindable var store: StoreOf<CardDetailFeature>
+  private let scrub: CarouselScrub?
   @State private var maxWidth: CGFloat = .initialScreenWidth
+  @State private var scrollPosition = ScrollPosition(edge: .top)
+  @State private var showsSections: Bool
+  @State private var isAtTop = true
+  @State private var surfaceIntensity: Double = 1
   @Environment(\.displayScale) private var displayScale
   
-  public init(store: StoreOf<CardDetailFeature>) {
+  public init(store: StoreOf<CardDetailFeature>, scrub: CarouselScrub? = nil) {
     self.store = store
+    self.scrub = scrub
+    _showsSections = State(initialValue: scrub?.isSettledUntracked != false)
   }
   
   public var body: some View {
     let content = store.content
     let faceDirection = store.displayableCardImage?.faceDirection
+    // Read from the landing itself rather than seeded at `init`, because the pager builds the
+    // neighbouring pages before a scrub ever starts, and those were born with the effect already on.
+    let isSurfaceHidden = scrub?.isLanding == true && scrub?.cardId == store.id
     
     ScrollView(.vertical) {
       // Sections keep to the margin with `padding`. A `safeAreaPadding` measures its content three
@@ -36,12 +46,28 @@ public struct CardDetailView: View {
         CardView(
           displayableCard: store.displayableCardImage,
           layoutConfiguration: configuration,
+          surface: CardSurface(isFoil: content.card.availableFoilness == true, intensity: surfaceIntensity),
           callToActionHorizontalOffset: 21.0,
           priceVisibility: .hidden,
           shadowConfiguration: .default
         ) { action in
           store.send(.descriptionCallToActionTapped, animation: .bouncy)
         }
+        .modifier(CardTilt())
+        .shadow(color: .black.opacity(0.36), radius: 16, y: 14)
+        .onGeometryChange(for: CGRect.self) { proxy in
+          proxy.frame(in: .global)
+        } action: { newValue in
+          if scrub?.selectedId == store.id || scrub?.cardId == store.id {
+            scrub?.cardFrame = newValue
+            // Only while the page sits at its top: a scrolled page's card is somewhere above the
+            // screen, and a card flying to that is the card flying off the top.
+            if isAtTop {
+              scrub?.restingCardFrame = newValue
+            }
+          }
+        }
+        .modifier(LandingCardHide(scrub: scrub, cardId: store.id))
         .padding(
           EdgeInsets(top: 13, leading: 55, bottom: 34, trailing: 55)
         )
@@ -50,6 +76,7 @@ public struct CardDetailView: View {
         .frame(width: maxWidth)
         .zIndex(1)
         
+        Group {
         // Read-only sections ignore touches, so the hit tests that run on every touch (including
         // the one that starts a pager swipe) skip their text.
         CardDetailTableView(descriptions: content.getDescriptions(faceDirection: faceDirection))
@@ -92,6 +119,8 @@ public struct CardDetailView: View {
           Spacer(minLength: 13.0)
         }
         
+        if showsSections {
+        Group {
         LegalityView(
           title: content.legalityLabel,
           displayReleaseDate: content.card.releasedAt,
@@ -122,6 +151,11 @@ public struct CardDetailView: View {
             },
           ]
         )
+        }
+        .transition(.opacity)
+        }
+        }
+        .modifier(LandingCardHide(scrub: scrub, cardId: store.id, untilPageShown: true))
       }
     }
     // Measures the page, not its content: the card is sized from `maxWidth`, so measuring the
@@ -133,14 +167,55 @@ public struct CardDetailView: View {
         maxWidth = newValue
       }
     })
-    .scrollEdgeEffectStyle(.soft, for: .all)
+    .scrollEdgeEffectStyle(.soft, for: .bottom)
+    .onScrollGeometryChange(for: Bool.self) { geometry in
+      geometry.contentOffset.y + geometry.contentInsets.top < 1
+    } action: { _, newValue in
+      isAtTop = newValue
+    }
+    .scrollDisabled(scrub?.isLanding == true && scrub?.cardId == store.id)
+    .scrollPosition($scrollPosition)
+    .onAppear {
+      scrollPosition.scrollTo(edge: .top)
+    }
+    .onScrollVisibilityChange(threshold: 0.01) { isVisible in
+      if isVisible == false {
+        scrollPosition.scrollTo(edge: .top)
+      }
+    }
     .accessibilityIdentifier("cardDetail.scroll")
+    // The reveal waits a beat and then runs in its own transaction. Landing hands the card over and
+    // unhides the image in one frame, and an animation asked for in that same frame is flattened by
+    // the hide's own instant animation.
+    .task(id: isSurfaceHidden) {
+      if isSurfaceHidden {
+        var instant = Transaction()
+        instant.disablesAnimations = true
+        withTransaction(instant) {
+          surfaceIntensity = 0
+        }
+        return
+      }
+      guard surfaceIntensity < 1 else { return }
+      try? await Task.sleep(for: .milliseconds(220))
+      guard Task.isCancelled == false else { return }
+      withAnimation(.easeOut(duration: 0.9)) {
+        surfaceIntensity = 1
+      }
+    }
     .task(priority: .background) {
       // The page loads the moment the pager shows it. SwiftUI starts this task inside the update
       // that first shows the page, and a send has no suspension point, so without the yield the
       // send and its state changes land in that frame.
       await Task.yield()
       guard Task.isCancelled == false else { return }
+      await scrub?.waitUntilSettled()
+      guard Task.isCancelled == false else { return }
+      if showsSections == false {
+        withAnimation(.easeOut(duration: 0.25)) {
+          showsSections = true
+        }
+      }
       await store.send(.viewAppeared).finish()
     }
     .background {
@@ -150,6 +225,7 @@ public struct CardDetailView: View {
         if let faceDirection {
           let url = content.card.getImageURL(type: .normal, getSecondFace: faceDirection == .back)
           backdrop(for: url)
+            .modifier(LandingCardHide(scrub: scrub, cardId: store.id, untilPageShown: true))
             .id(faceDirection.id)
             .transition(.opacity)
         }

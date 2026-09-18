@@ -14,4 +14,17 @@ extension DisplayableCardImage {
       displayingImageURL
     }
   }
+
+  var frontFaceURL: URL {
+    switch self {
+    case let .transformable(_, frontImageURL, _, _, _):
+      frontImageURL
+
+    case let .flippable(_, displayingImageURL, _, _):
+      displayingImageURL
+
+    case let .single(displayingImageURL, _):
+      displayingImageURL
+    }
+  }
 }
