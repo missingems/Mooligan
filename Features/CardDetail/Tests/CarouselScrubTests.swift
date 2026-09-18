@@ -45,12 +45,32 @@ import Testing
   }
 
   @Test(.timeLimit(.minutes(1)))
-  func whenAlreadySettled_waitUntilSettledShouldReturnAtOnce() async {
+  func whenAlreadySettled_waitUntilSettledShouldReturnWithoutWaitingForAChange() async {
     let scrub = CarouselScrub()
 
-    await scrub.waitUntilSettled()
+    // Nothing on the scrub changes from here on, so a wait that looked for a change would still be
+    // waiting when the deadline passes.
+    let returnedBeforeTheDeadline = await withTaskGroup(of: Bool.self) { group in
+      group.addTask {
+        await scrub.waitUntilSettled()
+        return true
+      }
+      group.addTask {
+        try? await Task.sleep(for: .seconds(5))
+        return false
+      }
+      let first = await group.next() ?? false
+      group.cancelAll()
+      return first
+    }
 
-    #expect(scrub.isSettledUntracked)
+    #expect(returnedBeforeTheDeadline)
+  }
+
+  /// Gives a waiter on the main actor time to see the change just made, so a wait that wrongly ended
+  /// on it would have ended by the time this returns.
+  private func letTheWaiterSeeTheChange() async throws {
+    try await Task.sleep(for: .milliseconds(50))
   }
 
   @Test(.timeLimit(.minutes(1)))
@@ -66,10 +86,41 @@ import Testing
 
     // The hover ends as the card starts to fly, but the landing is still under way.
     scrub.isHovering = false
-    try await Task.sleep(for: .milliseconds(50))
+    try await letTheWaiterSeeTheChange()
     #expect(didSettle.value == false)
 
+    // A new scrub starts and lets go again while the same landing is still under way.
+    scrub.isHovering = true
+    try await letTheWaiterSeeTheChange()
+    scrub.isHovering = false
+    try await letTheWaiterSeeTheChange()
+    #expect(didSettle.value == false)
+
+    // When the landing ends.
     scrub.endLanding()
+    await waiter.value
+
+    #expect(didSettle.value)
+  }
+
+  @Test(.timeLimit(.minutes(1)))
+  func whenTheLandingEndsWhileStillHovering_waitUntilSettledShouldResumeOnlyOnceTheHoverEnds() async throws {
+    let scrub = CarouselScrub()
+    scrub.isHovering = true
+    scrub.isLanding = true
+    let didSettle = LockIsolated(false)
+    let waiter = Task {
+      await scrub.waitUntilSettled()
+      didSettle.setValue(true)
+    }
+
+    // The last landing ends under a finger that is still scrubbing.
+    scrub.endLanding()
+    try await letTheWaiterSeeTheChange()
+    #expect(didSettle.value == false)
+
+    // When the finger lets go.
+    scrub.isHovering = false
     await waiter.value
 
     #expect(didSettle.value)

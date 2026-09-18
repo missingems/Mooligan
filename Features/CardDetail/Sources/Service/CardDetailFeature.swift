@@ -25,9 +25,10 @@ import ScryfallKit
       
     case let .didShowVariant(index):
       guard
-        state.variants.state.value?.hasNextPage == true,
-        index == (state.variants.state.value?.cardDetails.count ?? 0) - 1
-          else { return .none }
+        let variants = state.variants.state.value,
+        variants.hasNextPage,
+        index == variants.cardDetails.count - 1
+      else { return .none }
       
       return .run { [card = state.content.card, page = state.variants.page] send in
         await send(.fetchVariants(card: card, page: page + 1))

@@ -1,3 +1,4 @@
+import ComposableArchitecture
 import DesignComponents
 import Foundation
 import Networking
@@ -53,8 +54,9 @@ extension CardDetailFeature.State {
         callToActionIconName: callToActionIconName, id: id
       )
       
-    default:
-      fatalError("descriptionCallToActionTapped isn't available to single face card.")
+    case .single, nil:
+      // Only a card with two faces shows the call to action, so there is nothing to turn over.
+      reportIssue("descriptionCallToActionTapped isn't available to single face card.")
     }
   }
 }

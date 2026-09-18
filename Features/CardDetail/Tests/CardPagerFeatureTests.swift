@@ -31,6 +31,17 @@ import Testing
     }
   }
 
+  private func imageUris(_ face: String) -> Card.ImageUris {
+    Card.ImageUris(
+      small: nil,
+      normal: "https://cards.scryfall.io/normal/\(face).jpg",
+      large: nil,
+      png: nil,
+      artCrop: nil,
+      borderCrop: nil
+    )
+  }
+
   @Test func whenInitialised_shouldHoldEveryCardInOrderAndSelectTheTappedOne() {
     let state = CardPagerFeature.State(
       cardDetails: cardDetails,
@@ -43,6 +54,29 @@ import Testing
     #expect(state.selectedId == secondCard.id)
     #expect(state.cards.ids.elements == [firstCard.id, secondCard.id])
     #expect(state.cards.allSatisfy { $0.variants.state.isInitial })
+  }
+
+  @Test func whenACardWasTurnedOverBeforeOpening_shouldOpenItsPageOnThatFace() {
+    // The Query grid turns a card over in its `CardInfo`; the pager hands that face to the page.
+    var transforming = secondCard
+    transforming.layout = .transform
+    transforming.imageUris = nil
+    transforming.cardFaces = [
+      Card.Face(imageUris: imageUris("front"), manaCost: "", name: "Front"),
+      Card.Face(imageUris: imageUris("back"), manaCost: "", name: "Back"),
+    ]
+    var turnedOver = CardInfo(card: transforming)
+    turnedOver.displayableCardImage = turnedOver.displayableCardImage?.toggled()
+
+    let state = CardPagerFeature.State(
+      cardDetails: [CardInfo(card: firstCard), turnedOver],
+      initialSelectedCard: transforming,
+      queryType: queryType
+    )
+
+    #expect(turnedOver.displayableCardImage?.faceDirection == .back)
+    #expect(state.cards[id: transforming.id]?.displayableCardImage == turnedOver.displayableCardImage)
+    #expect(state.cards[id: firstCard.id]?.displayableCardImage == DisplayableCardImage(firstCard))
   }
 
   @Test func whenInitialSelectedCardIsNotInTheList_shouldStillHoldTheListedCards() {
@@ -72,11 +106,99 @@ import Testing
 
   @Test func whenViewRulingsTapped_shouldPresentRulings() async {
     let store = makeStore()
-    store.exhaustivity = .off
 
     // When
     await store.send(.cards(.element(id: firstCard.id, action: .viewRulingsTapped))) { state in
       state.showRulings = RulingFeature.State(card: self.firstCard, title: "Rulings")
+    }
+
+    await store.finish()
+  }
+
+  @Test func whenViewRulingsTappedOnAPageBesideTheSelectedOne_shouldPresentThatPagesCard() async {
+    // The card comes from the page that asked, not from the selection, which can lag a swipe.
+    let store = makeStore()
+
+    await store.send(.cards(.element(id: secondCard.id, action: .viewRulingsTapped))) { state in
+      state.showRulings = RulingFeature.State(card: self.secondCard, title: "Rulings")
+    }
+
+    await store.finish()
+  }
+
+  @Test func whenViewRulingsTappedForACardThePagerDoesNotHold_shouldPresentNothing() async {
+    let store = makeStore()
+    let missing = UUID(uuidString: "00000000-0000-0000-0000-000000000003")!
+    let before = store.state
+
+    // The page's own reducer reports the stray action; the pager must not present anything for it.
+    await withKnownIssue {
+      await store.send(.cards(.element(id: missing, action: .viewRulingsTapped)))
+    } matching: { issue in
+      issue.comments.contains { $0.rawValue.contains("received an action for a missing element") }
+    }
+
+    #expect(store.state.showRulings == nil)
+    #expect(store.state == before)
+  }
+
+  @Test func whenThePagerScrollsToAnotherCard_shouldSelectItWithoutAnyEffect() async {
+    let store = makeStore()
+
+    // The pager's scroll position and the carousel write the selection through a binding.
+    await store.send(.binding(.set(\.selectedId, secondCard.id))) { state in
+      state.selectedId = self.secondCard.id
+    }
+  }
+
+  @Test func whenTheRulingsSheetIsDismissed_shouldClearIt() async {
+    let store = makeStore()
+    await store.send(.cards(.element(id: firstCard.id, action: .viewRulingsTapped))) { state in
+      state.showRulings = RulingFeature.State(card: self.firstCard, title: "Rulings")
+    }
+
+    // When the sheet is swiped away.
+    await store.send(.showRulings(.dismiss)) { state in
+      state.showRulings = nil
+    }
+
+    await store.finish()
+  }
+
+  @Test func whenDoneIsTappedOnTheRulings_shouldCloseTheSheet() async {
+    let store = makeStore()
+    await store.send(.cards(.element(id: firstCard.id, action: .viewRulingsTapped))) { state in
+      state.showRulings = RulingFeature.State(card: self.firstCard, title: "Rulings")
+    }
+
+    // When the sheet's Done button is tapped. Checked by where the sheet ends up rather than by the
+    // actions on the way, so the test holds whichever feature ends up closing it.
+    store.exhaustivity = .off
+    await store.send(.showRulings(.presented(.dismissTapped)))
+    await store.finish()
+    await store.skipReceivedActions(strict: false)
+
+    // Then the sheet is gone.
+    withKnownIssue("Nothing handles dismissTapped, so Done leaves the sheet up; only a swipe closes it") {
+      #expect(store.state.showRulings == nil)
+    }
+  }
+
+  @Test func whenThePresentedRulingsLoad_shouldUpdateOnlyThoseRulings() async {
+    let store = makeStore()
+    await store.send(.cards(.element(id: firstCard.id, action: .viewRulingsTapped))) { state in
+      state.showRulings = RulingFeature.State(card: self.firstCard, title: "Rulings")
+    }
+    let rulings = [
+      MagicCardRuling(
+        displayDate: "12-10-1992",
+        description: [[.text("normal", isItalic: false, isKeyword: false)]]
+      )
+    ]
+
+    // The child's action runs through the pager, which leaves the sheet up and the pages alone.
+    await store.send(.showRulings(.presented(.updateRulings(rulings)))) { state in
+      state.showRulings?.mode = .loaded(rulings)
     }
 
     await store.finish()

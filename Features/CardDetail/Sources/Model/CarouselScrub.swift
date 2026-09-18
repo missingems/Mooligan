@@ -39,7 +39,7 @@ public final class CarouselScrub {
   func waitUntilSettled() async {
     guard isSettledUntracked == false else { return }
     for await isSettled in Observations({ self.isHovering == false && self.isLanding == false }) where isSettled {
-      return
+      break
     }
   }
 
