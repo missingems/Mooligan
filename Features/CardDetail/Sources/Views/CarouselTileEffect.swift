@@ -40,26 +40,18 @@ struct CarouselTileEffect: ViewModifier, Animatable {
     zone: CGFloat,
     radius: CGFloat
   ) -> some VisualEffect {
-    let frame = geometry.frame(in: .scrollView(axis: .horizontal))
-    let minX = frame.minX + max(0, (scrollWidth - 48.0) / 2)
-    // Everything either side of the middle leans away from it, which widens only the two gaps
-    // around the card under the glass. A visual offset, so the strip still snaps on its even
-    // spacing.
-    let lean = min(max((minX + frame.width / 2 - scrollWidth / 2) / 48.0, -1), 1) * parting
-    // The lean belongs to where the card sits, so the bend has to read it as the card's own
-    // origin. Left out of that origin, the edge shader samples a card the lean's width away from
-    // itself and the end cards come out sliced.
-    let leanedMinX = minX + lean
-    let center = leanedMinX + frame.width / 2
-    let depth = max(0, zone - center, center - (scrollWidth - zone))
-    let bend = min(depth / radius, .pi / 2)
-    let curl = (center < scrollWidth / 2 ? 1 : -1) * (depth - radius * sin(bend))
-    let lensCenter = scrollWidth / 2 - (leanedMinX + curl)
+    let tile = CarouselTileGeometry(
+      frame: geometry.frame(in: .scrollView(axis: .horizontal)),
+      parting: parting,
+      scrollWidth: scrollWidth,
+      zone: zone,
+      radius: radius
+    )
 
     return content
       .layerEffect(
         ShaderLibrary.designComponents.carouselMagnify(
-          .float2(CGPoint(x: lensCenter, y: geometry.size.height / 2)),
+          .float2(CGPoint(x: tile.lensCenter, y: geometry.size.height / 2)),
           .float2(CGSize(width: 64.0, height: 48.0)),
           .float(11),
           .float(1.5),
@@ -69,19 +61,19 @@ struct CarouselTileEffect: ViewModifier, Animatable {
         // card's centre by up to half a slot, and with only 16pt to spare the part past that came
         // out as bare bar.
         maxSampleOffset: CGSize(width: 48, height: 8),
-        isEnabled: abs(lensCenter - frame.width / 2) < 96
+        isEnabled: tile.isNearLens
       )
       .layerEffect(
         ShaderLibrary.designComponents.carouselEdge(
-          .float(leanedMinX + curl),
-          .float(leanedMinX),
+          .float(tile.leanedMinX + tile.curl),
+          .float(tile.leanedMinX),
           .float(scrollWidth),
           .float(geometry.size.height),
           .float(zone)
         ),
         maxSampleOffset: CGSize(width: zone, height: 26),
-        isEnabled: leanedMinX < zone || leanedMinX + frame.width > scrollWidth - zone
+        isEnabled: tile.isInEndZone
       )
-      .offset(x: lean + curl)
+      .offset(x: tile.lean + tile.curl)
   }
 }

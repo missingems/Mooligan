@@ -11,33 +11,23 @@ public struct CardPagerScrubPreview: View {
   public var body: some View {
     if let image = scrub.image, scrub.pageFrame.width > 0 {
       let page = scrub.pageFrame
-      let carousel = scrub.carouselFrame
+      let layout = ScrubPreviewLayout(page: page, carousel: scrub.carouselFrame, isLandscape: scrub.isLandscape)
       let isVisible = scrub.isHovering || scrub.isLanding
-      let configuration = CardLayoutConfiguration(
-        rotation: scrub.isLandscape ? .landscape : .portrait,
-        maxWidth: ((scrub.isLandscape ? 2.5 : 2.0) / 3.0 * page.width).rounded()
-      )
+      let configuration = layout.configuration
       let size = configuration.size
-      let hoverScale = (scrub.isLandscape ? 244.0 : 183.0) / size.width
-      let thumbnailScale = 34.0 / size.height
-      let hoverCenter = CGPoint(x: carousel.midX, y: carousel.minY - 14 - size.height * hoverScale / 2)
-      let thumbnailCenter = CGPoint(x: carousel.midX, y: carousel.midY)
-      let landedCenter = scrub.isFlying && scrub.restingCardFrame.width > 0
-        ? CGPoint(x: scrub.restingCardFrame.midX, y: scrub.restingCardFrame.midY)
-        : CGPoint(x: page.midX, y: page.minY + 13 + size.height / 2)
-      let follow = scrub.isHovering
-        ? CGSize(
-          width: min(max((scrub.location.x - carousel.midX) * 0.25, -24), 24),
-          height: min(max((scrub.location.y - carousel.midY) * 0.25, -8), 8)
-        )
-        : .zero
-      let lean = scrub.isHovering ? min(max(scrub.velocity / 90, -16), 16) : 0
+      // The resting frame and the finger are read only while they matter, so moving them does not
+      // redraw the preview the rest of the time.
+      let landedCenter = scrub.isFlying
+        ? layout.landedCenter(restingCardFrame: scrub.restingCardFrame)
+        : layout.pageCardCenter
+      let follow = scrub.isHovering ? layout.follow(scrub.location) : .zero
+      let lean = scrub.isHovering ? ScrubPreviewLayout.lean(forVelocity: scrub.velocity) : 0
 
       ZStack {
         if let outgoing = scrub.outgoing, scrub.outgoingFrame.width > 0 {
-          let outgoingConfiguration = CardLayoutConfiguration(
-            rotation: scrub.outgoingIsLandscape ? .landscape : .portrait,
-            maxWidth: ((scrub.outgoingIsLandscape ? 2.5 : 2.0) / 3.0 * page.width).rounded()
+          let outgoingConfiguration = CardLayoutConfiguration.detailPage(
+            isLandscape: scrub.outgoingIsLandscape,
+            pageWidth: page.width
           )
 
           CardView(
@@ -88,15 +78,15 @@ public struct CardPagerScrubPreview: View {
         }
         .shadow(
           color: .black.opacity(scrub.isHovering ? 0.5 : (scrub.isFlying ? 0.36 : 0)),
-          radius: scrub.isHovering ? 28 / hoverScale : 16,
-          y: scrub.isHovering ? 22 / hoverScale : 14
+          radius: scrub.isHovering ? 28 / layout.hoverScale : 16,
+          y: scrub.isHovering ? 22 / layout.hoverScale : 14
         )
-        .scaleEffect(scrub.isFlying ? 1 : (scrub.isHovering ? hoverScale : thumbnailScale))
+        .scaleEffect(scrub.isFlying ? 1 : (scrub.isHovering ? layout.hoverScale : layout.thumbnailScale))
         .opacity(isVisible ? 1 : 0)
         .animation(scrub.isHovering ? .interactiveSpring(response: 0.3, dampingFraction: 0.8) : .easeOut(duration: 0.2)) { content in
           content.offset(follow)
         }
-        .position(scrub.isFlying ? landedCenter : (scrub.isHovering ? hoverCenter : thumbnailCenter))
+        .position(scrub.isFlying ? landedCenter : (scrub.isHovering ? layout.hoverCenter : layout.thumbnailCenter))
 
       }
       .allowsHitTesting(false)

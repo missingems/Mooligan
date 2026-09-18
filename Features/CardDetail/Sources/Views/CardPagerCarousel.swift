@@ -67,26 +67,36 @@ public struct CardPagerCarousel: View {
         scrub.isHovering ? .selection : nil
       }
       .onScrollPhaseChange { _, newPhase in
-        if newPhase == .interacting {
+        let response = CarouselScrollResponse(
+          phase: newPhase,
+          isHovering: scrub.isHovering,
+          isLanding: scrub.isLanding,
+          velocity: scrub.velocity,
+          releaseVelocity: scrub.releaseVelocity,
+          isCentredOnSelection: centeredId == store.selectedId
+        )
+        switch response {
+        case .beginScrub:
           settle?.cancel()
           beginScrub()
-        } else if newPhase == .decelerating, scrub.isHovering,
-                  max(abs(scrub.velocity), abs(scrub.releaseVelocity)) < 120 {
-          // Let go of a still strip and the card goes at once, rather than waiting out the snap.
-          // Anything with a throw in it skips this and lands from `.idle` below, once it has run out.
-          // The speed is the finger's, from the tracker: the phase change's own velocity arrived
-          // empty on a fast release, read as zero, and landed the card the finger had just left.
+
+        case .land:
           land(centeredId ?? scrub.cardId)
-        } else if newPhase == .idle, scrub.isHovering {
+
+        case .landOnceSettled:
           settle = Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(32))
             guard Task.isCancelled == false, scrub.isHovering else { return }
             land(centeredId ?? scrub.cardId)
           }
-        } else if newPhase == .idle, scrub.isLanding == false, centeredId != store.selectedId {
+
+        case .recentre:
           withAnimation(.smooth) {
             centeredId = store.selectedId
           }
+
+        case nil:
+          break
         }
       }
       .onChange(of: centeredId) { _, newValue in
@@ -151,11 +161,8 @@ public struct CardPagerCarousel: View {
   }
   
   private func show(_ id: UUID?) {
-    guard let id, let card = store.cards[id: id], id != scrub.cardId || card.displayableCardImage != scrub.image else { return }
-    scrub.image = card.displayableCardImage
-    scrub.isLandscape = card.content.card.isLandscape
-    scrub.isFoil = card.content.card.availableFoilness == true
-    scrub.cardId = id
+    guard let id, let card = store.cards[id: id] else { return }
+    scrub.show(card)
   }
   
   private func beginScrub() {
@@ -167,39 +174,24 @@ public struct CardPagerCarousel: View {
   }
   
   private func land(_ id: UUID?) {
-    guard let id, id != store.selectedId, let card = store.cards[id: id] else {
+    guard let card = store.state.landingTarget(id) else {
       withAnimation(.smooth(duration: 0.2)) {
         scrub.isHovering = false
       }
       return
     }
     
-    let backdrop = ImageRequest(
-      url: card.content.card.getImageURL(
-        type: .normal,
-        getSecondFace: card.displayableCardImage?.faceDirection == .back
-      ),
-      processors: [ArtCropImageProcessor()]
-    )
+    let id = card.id
+    let backdrop = ImageRequest(url: card.backdropURL, processors: [ArtCropImageProcessor()])
     
     var instant = Transaction()
     instant.disablesAnimations = true
     
     let outgoing = store.selectedId.flatMap { store.cards[id: $0] }
-    show(id)
+    scrub.show(card)
     
     withTransaction(instant) {
-      scrub.outgoing = outgoing?.displayableCardImage
-      scrub.outgoingIsLandscape = outgoing?.content.card.isLandscape == true
-      scrub.outgoingIsFoil = outgoing?.content.card.availableFoilness == true
-      scrub.outgoingFrame = scrub.cardFrame
-      scrub.landingBackdrop = outgoing.map {
-        $0.content.card.getImageURL(type: .normal, getSecondFace: $0.displayableCardImage?.faceDirection == .back)
-      } ?? nil
-      scrub.isOutgoingHidden = false
-      scrub.pageReadyId = nil
-      scrub.isPageHidden = true
-      scrub.isLanding = true
+      scrub.beginLanding(from: outgoing)
       store.selectedId = id
     }
     
@@ -210,10 +202,7 @@ public struct CardPagerCarousel: View {
       }
       
       await withTaskCancellationHandler {
-        for _ in 0..<14 {
-          if scrub.pageReadyId == id { break }
-          try? await Task.sleep(for: .milliseconds(8))
-        }
+        await scrub.waitForPage(id)
         guard Task.isCancelled == false else { return }
         withAnimation(.snappy(duration: 0.3)) {
           scrub.isHovering = false

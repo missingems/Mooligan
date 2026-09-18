@@ -6,9 +6,7 @@ struct LandingCardHide: ViewModifier {
   var untilPageShown = false
 
   func body(content: Self.Content) -> some View {
-    let isHidden = scrub?.isLanding == true
-      && scrub?.cardId == cardId
-      && (untilPageShown == false || scrub?.isPageHidden == true)
+    let isHidden = scrub?.hidesLanding(of: cardId, untilPageShown: untilPageShown) == true
 
     content
       .opacity(isHidden ? 0 : 1)

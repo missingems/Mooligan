@@ -20,19 +20,19 @@ struct CarouselThumbTracker: UIGestureRecognizerRepresentable {
   func handleUIGestureRecognizerAction(_ recognizer: UIPanGestureRecognizer, context: Context) {
     switch recognizer.state {
     case .began:
-      scrub.releaseVelocity = 0
-      scrub.location = context.converter.location(in: .global)
-      scrub.velocity = context.converter.velocity(in: .global)?.x ?? 0
+      scrub.fingerDown(
+        at: context.converter.location(in: .global),
+        velocity: context.converter.velocity(in: .global)?.x
+      )
 
     case .changed:
-      scrub.location = context.converter.location(in: .global)
-      scrub.velocity = context.converter.velocity(in: .global)?.x ?? 0
+      scrub.fingerMoved(
+        to: context.converter.location(in: .global),
+        velocity: context.converter.velocity(in: .global)?.x
+      )
 
     default:
-      // Kept for the strip to read when it starts to coast: this and the scroll view's own phase
-      // change come from the same lift, in either order.
-      scrub.releaseVelocity = context.converter.velocity(in: .global)?.x ?? scrub.velocity
-      scrub.velocity = 0
+      scrub.fingerLifted(velocity: context.converter.velocity(in: .global)?.x)
     }
   }
 

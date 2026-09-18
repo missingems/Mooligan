@@ -26,7 +26,7 @@ public struct CardDetailView: View {
     let faceDirection = store.displayableCardImage?.faceDirection
     // Read from the landing itself rather than seeded at `init`, because the pager builds the
     // neighbouring pages before a scrub ever starts, and those were born with the effect already on.
-    let isSurfaceHidden = scrub?.isLanding == true && scrub?.cardId == store.id
+    let isSurfaceHidden = scrub?.hidesLanding(of: store.id) == true
     
     ScrollView(.vertical) {
       // Sections keep to the margin with `padding`. A `safeAreaPadding` measures its content three
@@ -34,13 +34,9 @@ public struct CardDetailView: View {
       // cost of the pager building a page. Only the rows that scroll sideways keep the safe-area
       // inset, so their cards run under the margin.
       VStack(spacing: 0) {
-        let cardImageWidth = content.card.isLandscape
-        ? 2.5 / 3.0 * maxWidth
-        : 2.0 / 3.0 * maxWidth
-        
-        let configuration = CardLayoutConfiguration(
-          rotation: content.card.isLandscape ? .landscape : .portrait,
-          maxWidth: cardImageWidth.rounded()
+        let configuration = CardLayoutConfiguration.detailPage(
+          isLandscape: content.card.isLandscape,
+          pageWidth: maxWidth
         )
         
         CardView(
