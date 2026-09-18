@@ -16,7 +16,7 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
-  SIMULATOR_NAME: iPhone 17 Pro
+  SIMULATOR_NAME: iPhone 18 Pro
 
 jobs:
   test:
@@ -61,11 +61,28 @@ jobs:
 
       # Booting up front keeps the first test bundle from racing a cold simulator.
       # A failed boot is not fatal — the test run will boot it itself.
+      # The preview image renames its simulators as Xcode betas land (iPhone 17 Pro
+      # became iPhone 18 Pro), so SIMULATOR_NAME is a preference, not a
+      # requirement: without it, take the image's iOS 27 iPhone Pro, then any iOS 27
+      # iPhone, and hand the chosen name to the test step.
       - name: Boot simulator
         run: |
-          udid=$(xcrun simctl list devices available --json \
-            | python3 -c "import json,sys;d=json.load(sys.stdin)['devices'];print(next((v['udid'] for k,vs in d.items() if 'iOS-27' in k for v in vs if v['name']=='${SIMULATOR_NAME}'),''))")
-          if [ -n "$udid" ]; then xcrun simctl boot "$udid" || true; fi
+          read -r udid name < <(xcrun simctl list devices available --json | python3 -c '
+          import json, os, sys
+          iphones = [v for k, vs in json.load(sys.stdin)["devices"].items() if "iOS-27" in k
+                     for v in vs if v["name"].startswith("iPhone")]
+          pick = (next((v for v in iphones if v["name"] == os.environ["SIMULATOR_NAME"]), None)
+                  or next((v for v in iphones if v["name"].endswith(" Pro")), None)
+                  or next(iter(iphones), None))
+          if pick is None:
+              sys.exit("No iOS 27 iPhone simulator on this runner")
+          print(pick["udid"], pick["name"])
+          ')
+          if [ "$name" != "$SIMULATOR_NAME" ]; then
+            echo "::notice::$SIMULATOR_NAME is not on this runner; testing on $name"
+            echo "SIMULATOR_NAME=$name" >> "$GITHUB_ENV"
+          fi
+          xcrun simctl boot "$udid" || true
           xcrun simctl list devices booted
 
       # The `Mooligan` scheme aggregates every test target: the per-module *Tests
@@ -125,11 +142,28 @@ jobs:
       - name: Resolve dependencies
         run: tuist install
 
+      # The preview image renames its simulators as Xcode betas land (iPhone 17 Pro
+      # became iPhone 18 Pro), so SIMULATOR_NAME is a preference, not a
+      # requirement: without it, take the image's iOS 27 iPhone Pro, then any iOS 27
+      # iPhone, and hand the chosen name to the test step.
       - name: Boot simulator
         run: |
-          udid=$(xcrun simctl list devices available --json \
-            | python3 -c "import json,sys;d=json.load(sys.stdin)['devices'];print(next((v['udid'] for k,vs in d.items() if 'iOS-27' in k for v in vs if v['name']=='${SIMULATOR_NAME}'),''))")
-          if [ -n "$udid" ]; then xcrun simctl boot "$udid" || true; fi
+          read -r udid name < <(xcrun simctl list devices available --json | python3 -c '
+          import json, os, sys
+          iphones = [v for k, vs in json.load(sys.stdin)["devices"].items() if "iOS-27" in k
+                     for v in vs if v["name"].startswith("iPhone")]
+          pick = (next((v for v in iphones if v["name"] == os.environ["SIMULATOR_NAME"]), None)
+                  or next((v for v in iphones if v["name"].endswith(" Pro")), None)
+                  or next(iter(iphones), None))
+          if pick is None:
+              sys.exit("No iOS 27 iPhone simulator on this runner")
+          print(pick["udid"], pick["name"])
+          ')
+          if [ "$name" != "$SIMULATOR_NAME" ]; then
+            echo "::notice::$SIMULATOR_NAME is not on this runner; testing on $name"
+            echo "SIMULATOR_NAME=$name" >> "$GITHUB_ENV"
+          fi
+          xcrun simctl boot "$udid" || true
           xcrun simctl list devices booted
 
       # The app launches with -uiTestMode (see Mooligan/Sources/UITestSupport.swift),
