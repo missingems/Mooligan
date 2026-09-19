@@ -70,10 +70,12 @@ public actor MTGJSONCardPullOddsSource: CardPullOddsSource {
     }
     inFlight[key] = task
 
-    // The task is unstructured on purpose: a page swiped away mid-download cancels its own wait,
-    // not the download, which carries on and is ready when the reader comes back.
+    // The task is unstructured on purpose: a page swiped away mid-download does not cancel the
+    // download, which carries on and is ready when the reader comes back. The page's own wait sees
+    // it through too, and the card drops the answer on arrival since its effect was cancelled.
     let value = await task.value
-    inFlight[key] = nil
+    // Only this download's entry: after a failure, a newer download may have taken its place.
+    if inFlight[key] == task { inFlight[key] = nil }
     if let value { sets[key] = value }
     return value
   }
@@ -103,7 +105,10 @@ public actor MTGJSONCardPullOddsSource: CardPullOddsSource {
     let (data, response) = try await session.data(from: url)
     switch (response as? HTTPURLResponse)?.statusCode {
     case 200:
-      return try JSONDecoder().decode(MTGJSONSetFile.self, from: data).data.pullOdds(setCode: setCode)
+      // A file that arrived whole but will not decode will not decode tomorrow either. Stored as
+      // empty, as a missing set is, rather than downloaded again for every card of the set.
+      guard let file = try? JSONDecoder().decode(MTGJSONSetFile.self, from: data) else { return .empty }
+      return file.data.pullOdds(setCode: setCode)
     case 404:
       // A set MTGJSON does not carry has no odds to give, and asking again tomorrow will not change
       // that. Stored as empty so it is not downloaded again for every card.

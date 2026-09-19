@@ -55,6 +55,26 @@ struct InformationWidgetInsightTests {
     #expect(groups[2].facts.map(\.value) == ["~140 packs"])
   }
 
+  @Test func aPromoOnlyPrinting_shouldShowItsOwnOddsWithoutAnEstimate() throws {
+    // Only in the prerelease pack, which is no part of the Play and Collector Booster mix.
+    let odds = try #require(CardPullOdds(
+      products: [
+        ProductPullOdds(
+          id: "blb/prerelease", name: "Prerelease Promo Pack", setName: "Bloomburrow",
+          chance: 1.0 / 70, foilChance: 1.0 / 70, nonFoilChance: 0
+        ),
+      ],
+      setProducts: ["blb/play": "Play Booster", "blb/collector": "Collector Booster", "blb/prerelease": "Prerelease Promo Pack"]
+    ))
+
+    let widget = InformationWidget.pullOdds(odds, rarity: .rare, tilt: 5)
+    let groups = widget.insightFactGroups(card: card, faceDirection: nil)
+
+    #expect(groups.map(\.header) == ["Prerelease Promo Pack"])
+    #expect(groups[0].facts.map(\.value) == ["~70 packs"])
+    #expect(widget.insightPrompt(card: card).contains("Estimated across") == false)
+  }
+
   @Test func pullOddsFromAParentSet_shouldNameThatSet() throws {
     var commanderCard = card
     commanderCard.setName = "Bloomburrow Commander"

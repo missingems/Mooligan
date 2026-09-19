@@ -88,6 +88,7 @@ struct PullOddsTests {
     #expect(abs(odds.mix[0].share - 8.0 / 9) < 1e-12)
     #expect(abs(odds.mix[1].share - 1.0 / 9) < 1e-12)
     #expect(odds.estimatePacks == 164)
+    #expect(odds.isEstimated)
   }
 
   @Test func theMix_shouldSplitEachKindsShareAndLeaveOutPromos() {
@@ -116,6 +117,7 @@ struct PullOddsTests {
     ))
 
     #expect(odds.estimatePacks == 80)
+    #expect(odds.isEstimated == false)
   }
 
   // MARK: - Which product leads
@@ -181,6 +183,17 @@ struct PullOddsTests {
 
     #expect(odds == nil)
     let stored = try await storedRecord("missing", in: database)
+    #expect(stored?.odds == .empty)
+  }
+
+  @Test func aSetFileThatWillNotDecode_shouldHaveNoOddsAndNotBeAskedForAgain() async throws {
+    let (source, database) = try makeSource()
+    StubURLProtocol.stub(url("GARBLED"), body: "{ not a set file")
+
+    let odds = await source.odds(for: card(PullOddsFixtures.mahaID, set: "garbled"), parentSetCode: nil)
+
+    #expect(odds == nil)
+    let stored = try await storedRecord("garbled", in: database)
     #expect(stored?.odds == .empty)
   }
 

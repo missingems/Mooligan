@@ -37,13 +37,23 @@ public struct CardPullOdds: Equatable, Hashable, Sendable {
   /// The chance that any one pack of the set holds this printing, whichever product the pack is: each
   /// product's own chance, weighted by its share of the packs opened.
   ///
-  /// A printing that only turns up in something outside the mix, a bundle's promo, say, has no
-  /// share to weigh; it is quoted at the best of its own products instead.
+  /// A printing that only turns up in something outside the mix, a prerelease or a bundle's promo,
+  /// has no share to weigh; it is quoted at the best of its own products instead, and
+  /// `isEstimated` is false so it is not presented as a figure for the set's packs.
   public var estimate: Double {
-    let weighed = mix.reduce(0) { total, pack in
+    isEstimated ? weighed : products.map(\.chance).max() ?? 0
+  }
+
+  /// Whether `estimate` is worked out across the set's packs, rather than taken from a product
+  /// outside them.
+  public var isEstimated: Bool {
+    weighed > 0
+  }
+
+  private var weighed: Double {
+    mix.reduce(0) { total, pack in
       total + pack.share * (products.first { $0.id == pack.id }?.chance ?? 0)
     }
-    return weighed > 0 ? weighed : products.map(\.chance).max() ?? 0
   }
 
   /// The estimate as the "n" of "1 in n packs".

@@ -18,9 +18,6 @@ struct InformationView: View, Equatable {
     lhs.title == rhs.title && lhs.widgets == rhs.widgets
   }
 
-  @Environment(\.displayScale) private var displayScale
-  private var strokeScale: CGFloat { max(displayScale, 1) }
-  
   var body: some View {
     VibrantDivider().padding(.leading, systemHorizontalMargin)
     

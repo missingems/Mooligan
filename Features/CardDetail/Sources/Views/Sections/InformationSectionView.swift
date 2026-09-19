@@ -38,6 +38,9 @@ struct InformationSectionView: View {
   }
 
   private func present(_ widget: InformationWidget, row: [InformationWidget]) {
+    // The face on show now, read from the store rather than this view: the row skips redrawing
+    // when a turn leaves it looking the same, and its tap handler keeps the face it was made with.
+    let faceDirection = store.displayableCardImage?.faceDirection
     // Presented without the cover's slide up: the explanation fades itself in once it is built.
     var instant = Transaction()
     instant.disablesAnimations = true

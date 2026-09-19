@@ -47,7 +47,9 @@ extension InformationWidget {
       ])]
 
     case let .pullOdds(odds, _, _):
-      [estimateGroup(odds)] + odds.products.map { productGroup($0, card: card) }
+      // A printing only a prerelease or a bundle's promo holds has no estimate across the set's
+      // packs, none of which can hold it: its own products' odds are the whole story.
+      (odds.isEstimated ? [estimateGroup(odds)] : []) + odds.products.map { productGroup($0, card: card) }
 
     case let .collectorNumber(number):
       [InsightFactGroup(facts: [
@@ -208,7 +210,7 @@ extension InformationWidget {
   private func oddsDetail(_ odds: CardPullOdds) -> String {
     // Called products by the definition, the model took them for sets and bundles.
     var lines = ["Each line below is a kind of booster pack sold for this one set. Odds of opening this exact printing:"]
-    if let estimate = odds.estimatePacks {
+    if odds.isEstimated, let estimate = odds.estimatePacks {
       lines.append("- Estimated across every kind of \(odds.headline.setName) pack, weighted by a guess at how many of each are opened: one pack in \(estimate.formatted()).")
     }
     for product in odds.products {

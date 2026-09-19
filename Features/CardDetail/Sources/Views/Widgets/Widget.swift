@@ -10,6 +10,9 @@ struct Widget: View {
   /// turned in 3D and glass cannot be (it falls back to a flat grey).
   var isBadge = false
 
+  /// The sticker's lettering, which grows with the reader's text size as the other tiles' text does.
+  @ScaledMetric(relativeTo: .body) private var stickerSize = 18.0
+
   var body: some View {
     switch kind {
     case let .powerToughness(power, toughness):
@@ -154,9 +157,9 @@ extension Widget {
         // As wide as the odds need, like any tile, but held to the other tiles' height: the sticker
         // stands a little proud of its glass, the way one slapped on would, without making the row
         // any taller.
-        OddsSticker(packs: odds.estimatePacks ?? 1, rarity: rarity, size: 18, tilt: tilt)
+        OddsSticker(packs: odds.estimatePacks ?? 1, rarity: rarity, size: stickerSize, tilt: tilt)
           .equatable()
-          .frame(height: 34)
+          .frame(height: stickerSize / 18 * 34)
       }
 
       caption(String(localized: "Pull\nRate"))

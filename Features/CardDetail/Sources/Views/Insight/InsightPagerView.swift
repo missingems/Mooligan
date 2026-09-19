@@ -17,9 +17,15 @@ struct InsightPagerView: View {
   @State private var position: Double
   /// The pages' scroll, which starts on the tapped tile's page.
   @State private var scroll: ScrollPosition
+  /// The row's tiles and the one tapped, which never change, read once rather than from the store
+  /// on every word an explanation writes.
+  private let widgets: [InformationWidget]
+  private let opened: InformationWidget
 
   init(store: StoreOf<InsightPagerFeature>) {
     self.store = store
+    widgets = store.pages.ids.elements
+    opened = store.opened
     _position = State(initialValue: Double(store.pages.index(id: store.opened) ?? 0))
     _scroll = State(initialValue: ScrollPosition(id: store.opened))
   }
@@ -28,9 +34,9 @@ struct InsightPagerView: View {
     NavigationStack {
       VStack(spacing: 0) {
         BadgeCarousel(
-          widgets: store.pages.ids.elements,
+          widgets: widgets,
           position: $position,
-          opened: store.opened
+          opened: opened
         ) { widget in
           withAnimation(.smooth(duration: 0.4)) {
             scroll.scrollTo(id: widget)
@@ -42,7 +48,7 @@ struct InsightPagerView: View {
           HStack(spacing: 0) {
             // By the pages' own ids, and tagged with them, as the card pager does, so the scroll can
             // be sent to a page by its tile. Without the tag no page answered to one.
-            ForEach(store.pages.ids.elements, id: \.self) { id in
+            ForEach(widgets, id: \.self) { id in
               if let page = store.scope(state: \.pages[id: id], action: \.pages[id: id]) {
                 InsightPage(store: page)
                   .containerRelativeFrame(.horizontal)
