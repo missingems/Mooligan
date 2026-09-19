@@ -4,6 +4,7 @@ import ProjectDescriptionHelpers
 let project = Project.feature(
   name: "CardScanner",
   dependencies: [
+    .project(target: "CardDetail", path: "../CardDetail"),
     .project(target: "Networking", path: "../../Core/Networking"),
     .project(target: "DesignComponents", path: "../../Core/DesignComponents"),
     .project(target: "Featurist", path: "../../Core/Featurist"),
@@ -20,6 +21,7 @@ let project = Project.feature(
     "NSCameraUsageDescription": "Used to scan card titles and set codes.",
   ],
   testDependencies: [
+    .project(target: "CardDetail", path: "../CardDetail"),
     .project(target: "Networking", path: "../../Core/Networking"),
     .project(target: "DesignComponents", path: "../../Core/DesignComponents"),
     .external(name: "ComposableArchitecture"),
