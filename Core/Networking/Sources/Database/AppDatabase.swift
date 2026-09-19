@@ -167,5 +167,17 @@ public func migrator() -> DatabaseMigrator {
     .execute(connection)
   }
 
+  migrator.registerMigration("v4.scryfallSortKeys") { connection in
+    // Left empty on the rows already stored: `CardStore.backfillSortKeys()` works them out from
+    // the card each row holds, which SQL cannot read.
+    try #sql(#"ALTER TABLE "cards" ADD COLUMN "sortName" TEXT"#).execute(connection)
+    try #sql(#"ALTER TABLE "cards" ADD COLUMN "isFullArt" INTEGER NOT NULL DEFAULT 0"#).execute(connection)
+    try #sql(#"ALTER TABLE "cards" ADD COLUMN "sortPrice" REAL"#).execute(connection)
+    try #sql(
+      #"CREATE INDEX "cards_pendingSortKeys" ON "cards"("setCode") WHERE "sortName" IS NULL"#
+    )
+    .execute(connection)
+  }
+
   return migrator
 }

@@ -102,6 +102,13 @@ public actor BulkDataSyncManager: BulkDataSyncManaging {
   }
 
   private func run(force: Bool) async throws -> BulkSyncOutcome {
+    // Cards stored before the catalog kept Scryfall's sort keys get them first, so their sets can
+    // be browsed locally again without waiting for the weekly download.
+    let backfilled = try await store.backfillSortKeys()
+    if backfilled > 0 {
+      bulkSyncLogger.info("worked out sort keys for \(backfilled) stored cards")
+    }
+
     let state = try await store.syncState(id: bulkType)
 
     if force == false,

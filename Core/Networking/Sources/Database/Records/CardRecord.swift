@@ -25,6 +25,12 @@ public struct CardRecord: Equatable, Sendable {
   public var typeLine: String?
   public var colorIdentity: String
   public var usd: Double?
+  /// The name as Scryfall compares it, with nothing but its letters and digits. Nil on rows stored
+  /// before the column existed, until `CardStore.backfillSortKeys()` has written it.
+  public var sortName: String?
+  public var isFullArt: Bool
+  /// The cheapest way Scryfall quotes the printing: non-foil, else foil, else etched.
+  public var sortPrice: Double?
   public var isDigital: Bool
   public var isPaper: Bool
   @Column(as: Card.CompressedJSONRepresentation.self)
@@ -47,6 +53,9 @@ public struct CardRecord: Equatable, Sendable {
     typeLine: String?,
     colorIdentity: String,
     usd: Double?,
+    sortName: String?,
+    isFullArt: Bool,
+    sortPrice: Double?,
     isDigital: Bool,
     isPaper: Bool,
     card: Card,
@@ -67,6 +76,9 @@ public struct CardRecord: Equatable, Sendable {
     self.typeLine = typeLine
     self.colorIdentity = colorIdentity
     self.usd = usd
+    self.sortName = sortName
+    self.isFullArt = isFullArt
+    self.sortPrice = sortPrice
     self.isDigital = isDigital
     self.isPaper = isPaper
     self.card = card
@@ -87,11 +99,14 @@ public extension CardRecord {
       collectorNumberSort: CollectorNumber.sortKey(card.collectorNumber),
       releasedAt: card.releasedAt,
       rarityRank: Self.rarityRank(for: card.rarity),
-      colorRank: Self.colorRank(for: card.colorIdentity),
+      colorRank: Self.colorRank(for: card),
       cmc: card.cmc,
       typeLine: card.typeLine,
       colorIdentity: Self.colorIdentityKey(card.colorIdentity),
       usd: card.prices.usd.flatMap(Double.init),
+      sortName: Self.sortName(card.name),
+      isFullArt: card.fullArt,
+      sortPrice: (card.prices.usd ?? card.prices.usdFoil ?? card.prices.usdEtched).flatMap(Double.init),
       isDigital: card.digital,
       isPaper: card.games.contains(.paper),
       card: card,
@@ -108,16 +123,6 @@ public extension CardRecord {
     case .uncommon: 3
     case .rare: 4
     case .mythic: 5
-    }
-  }
-
-  static func colorRank(for colorIdentity: [Card.Color]) -> Int {
-    let colors = colorIdentity.filter { $0 != .C }
-
-    return switch colors.count {
-    case 0: 0
-    case 1: 1 + (Card.Color.allCases.firstIndex(of: colors[0]) ?? 0)
-    default: 7
     }
   }
 
