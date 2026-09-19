@@ -87,6 +87,9 @@ struct RootView: View {
     ) { sessionStore in
       PackSessionView(store: sessionStore)
     }
+    .sheet(item: $store.scope(state: \.settings, action: \.settings)) { settingsStore in
+      SettingsView(store: settingsStore)
+    }
     .sheet(isPresented: $store.isCollectionPresented) {
       ContentUnavailableView(
         Feature.MenuItem.collection.title,
