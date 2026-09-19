@@ -1,4 +1,5 @@
 @testable import CardScanner
+import CardDetail
 import ComposableArchitecture
 import DesignComponents
 import Foundation
@@ -259,6 +260,45 @@ import Testing
 
     // Then
     #expect(client.queries.value.map(\.oracleID) == ["back-oracle-id"])
+  }
+
+  @Test func whenTheScannedCardIsTurnedOver_shouldShowAndNameTheOtherFace() async {
+    let card = doubleFacedCard()
+    let store = makeStore(client: CardQueryRequestClientSpy(card: card))
+
+    // Given the back was scanned.
+    await store.send(.singleCardFound(card, face: .back))
+    await store.finish()
+
+    // When
+    await store.send(.cardFaceToggled(card.id))
+
+    // Then
+    #expect(store.state.dataSource?.cardDetails.first?.displayableCardImage?.faceDirection == .front)
+    #expect(store.state.status.displayTitle == "Front")
+  }
+
+  @Test func whenAScannedCardIsTapped_shouldOpenThePagerOnItAmongItsPrintings() async {
+    let scanned = doubleFacedCard()
+    let printing = doubleFacedCard()
+    let store = makeStore(client: CardQueryRequestClientSpy(card: scanned, printings: [printing, scanned]))
+
+    // Given the scan settled with its printings, and the printing turned over.
+    await store.send(.singleCardFound(scanned, face: .front))
+    await store.finish()
+    await store.skipReceivedActions()
+    await store.send(.updateMorphAnimation(isCompleted: true))
+    await store.send(.mergePendingVariants)
+    await store.send(.cardFaceToggled(printing.id))
+
+    // When
+    await store.send(.cardTapped(printing.id))
+    await store.receive(\.cardPagerPrepared)
+
+    // Then the pager opens on the tapped printing, on the face it was turned to.
+    #expect(store.state.cardPager?.selectedId == printing.id)
+    #expect(store.state.cardPager?.cards.ids.elements == [scanned.id, printing.id])
+    #expect(store.state.cardPager?.cards[id: printing.id]?.displayableCardImage?.faceDirection == .back)
   }
 
   @Test func whenMergingWithoutAScannedCard_shouldDoNothing() async {
