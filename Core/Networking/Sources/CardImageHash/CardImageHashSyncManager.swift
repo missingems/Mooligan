@@ -44,9 +44,8 @@ private struct DatabaseItem: @unchecked Sendable {
 }
 
 public final actor CardImageHashSyncManager: CardImageHashSyncManagable {
-  
-  var observations: [String: VNFeaturePrintObservation] = [:]
-  
+  public typealias DataLoader = @Sendable (URL) async throws -> (Data, URLResponse)
+
   // Contiguous array for extremely fast parallel iteration and caching
   private var searchDatabase: [DatabaseItem] = []
   
@@ -60,10 +59,8 @@ public final actor CardImageHashSyncManager: CardImageHashSyncManagable {
   
   private let baseURL: String
   private let defaults: UserDefaults
-  
-  private var documentsDirectory: URL {
-    FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-  }
+  private let loadData: DataLoader
+  private let documentsDirectory: URL
   
   private var localDatabaseURL: URL {
     documentsDirectory.appendingPathComponent("MTG_Hashes_Compressed.lzfse")
@@ -87,10 +84,14 @@ public final actor CardImageHashSyncManager: CardImageHashSyncManagable {
   
   public init(
     baseURL: String = "https://missingems.github.io/MTGImageHash",
-    defaults: UserDefaults = .standard
+    defaults: UserDefaults = .standard,
+    documentsDirectory: URL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0],
+    loadData: @escaping DataLoader = { try await URLSession.shared.data(from: $0) }
   ) {
     self.baseURL = baseURL
     self.defaults = defaults
+    self.documentsDirectory = documentsDirectory
+    self.loadData = loadData
   }
   
   public func sync() async {
@@ -191,208 +192,187 @@ public final actor CardImageHashSyncManager: CardImageHashSyncManagable {
   }
   
   // MARK: - Hydration & Sync
-  
-  private func hydrateSearchDatabase(from dictionary: [String: VNFeaturePrintObservation]) {
-    self.searchDatabase = dictionary.compactMap { id, obs in
-      let count = obs.elementCount
+
+  /// Decodes a `[faceId: archived VNFeaturePrintObservation]` dictionary straight
+  /// into the flat search array, without keeping the observations around.
+  private nonisolated static func searchItems(from dictionary: [String: Data]) -> [DatabaseItem] {
+    dictionary.compactMap { id, vectorData in
+      guard let observation = try? NSKeyedUnarchiver.unarchivedObject(
+        ofClass: VNFeaturePrintObservation.self,
+        from: vectorData
+      ) else { return nil }
+      let count = observation.elementCount
       let vector = [Float](unsafeUninitializedCapacity: count) { buffer, initializedCount in
-        _ = obs.data.copyBytes(to: buffer)
+        _ = observation.data.copyBytes(to: buffer)
         initializedCount = count
       }
       return DatabaseItem(id: id, vector: vector)
     }
   }
-  
+
+  private nonisolated static func decodeDatabase(_ data: Data) throws -> [String: Data] {
+    let decompressed = (try? (data as NSData).decompressed(using: .lzfse) as Data) ?? data
+    guard let dictionary = try PropertyListSerialization.propertyList(
+      from: decompressed,
+      options: [],
+      format: nil
+    ) as? [String: Data] else {
+      throw SyncError.decodeFailed
+    }
+    return dictionary
+  }
+
   private func loadLocalCache() async {
     let dbURL = localDatabaseURL
     let fileManager = FileManager.default
-    
+
     if !fileManager.fileExists(atPath: dbURL.path) {
       self.syncStatus = "First launch: Unpacking embedded database..."
-      
+
       let frameworkBundle = Bundle(for: BundleFinder.self)
-      var targetDBPath: URL? = nil
-      // No manifest ships in the bundle today, so the copy below is inert.
-      let targetManifestPath: URL? = nil
-      
-      if let rootURL = frameworkBundle.url(forResource: "MTG_Hashes_Compressed", withExtension: "lzfse") {
-        targetDBPath = rootURL
-      } else if let resourceBundleURL = frameworkBundle.urls(forResourcesWithExtension: "bundle", subdirectory: nil)?.first,
-                let resourceBundle = Bundle(url: resourceBundleURL) {
-        targetDBPath = resourceBundle.url(forResource: "MTG_Hashes_Compressed", withExtension: "lzfse")
+      let resourceBundle = frameworkBundle.urls(forResourcesWithExtension: "bundle", subdirectory: nil)?
+        .first
+        .flatMap(Bundle.init(url:))
+      func bundled(_ name: String, _ ext: String) -> URL? {
+        frameworkBundle.url(forResource: name, withExtension: ext)
+          ?? resourceBundle?.url(forResource: name, withExtension: ext)
       }
-      
-      guard let bundleDBPath = targetDBPath else {
+
+      guard let bundleDBPath = bundled("MTG_Hashes_Compressed", "lzfse") else {
         self.syncStatus = "Error: Missing MTG_Hashes_Compressed.lzfse in module resources."
         return
       }
-      
+
       do {
         try fileManager.copyItem(at: bundleDBPath, to: dbURL)
-        if let bundleManifestPath = targetManifestPath {
-          if !fileManager.fileExists(atPath: localManifestURL.path) {
-            try fileManager.copyItem(at: bundleManifestPath, to: localManifestURL)
-          }
+        // Ship MTG_Hashes_Manifest.json (the server's manifest.json for the same
+        // master) alongside the bundled database, and fresh installs only fetch
+        // patches. Without it the first sync downloads the full master.
+        if let bundleManifestPath = bundled("MTG_Hashes_Manifest", "json"),
+           !fileManager.fileExists(atPath: localManifestURL.path) {
+          try fileManager.copyItem(at: bundleManifestPath, to: localManifestURL)
         }
       } catch {
         self.syncStatus = "Failed to unpack database: \(error.localizedDescription)"
         return
       }
     }
-    
+
     self.syncStatus = "Loading local database..."
-    
+
     do {
-      let hydratedDict = try await Task.detached {
-        let fileData = try Data(contentsOf: dbURL)
-        let decompressedData = (try? (fileData as NSData).decompressed(using: .lzfse) as Data) ?? fileData
-        
-        guard let flatDict = try PropertyListSerialization.propertyList(from: decompressedData, options: [], format: nil) as? [String: Data] else {
-          throw SyncError.decodeFailed
-        }
-        
-        var activeObservations: [String: VNFeaturePrintObservation] = [:]
-        activeObservations.reserveCapacity(flatDict.count)
-        
-        for (id, vectorData) in flatDict {
-          if let obs = try? NSKeyedUnarchiver.unarchivedObject(ofClass: VNFeaturePrintObservation.self, from: vectorData) {
-            activeObservations[id] = obs
-          }
-        }
-        return activeObservations
+      let items = try await Task.detached {
+        try Self.searchItems(from: Self.decodeDatabase(Data(contentsOf: dbURL)))
       }.value
-      
-      self.observations = hydratedDict
-      self.hydrateSearchDatabase(from: hydratedDict) // Build the fast search array
-      
+
+      self.searchDatabase = items
       self.isReady = true
-      self.syncStatus = "Loaded \(hydratedDict.count) cards locally."
-      
+      self.syncStatus = "Loaded \(items.count) cards locally."
     } catch {
       self.syncStatus = "Failed to load local cache. Corrupted file."
     }
   }
-  
+
   private func syncFromGitHub() async {
-    guard let manifestURL = URL(string: "\(baseURL)/manifest.json") else { return }
-    
+    guard let baseURL = URL(string: baseURL) else { return }
+
     self.isDownloading = true
     defer { self.isDownloading = false }
-    
+
     do {
-      let (remoteManifestData, _) = try await URLSession.shared.data(from: manifestURL)
-      
-      struct CardHashDatabaseManifest: Decodable {
-        let masterVersion: String
-        let latestPatch: Int
-        let masterChunks: Int
-      }
-      
+      let remoteManifestData = try await download(baseURL.appendingPathComponent("manifest.json"), or: .manifestFetchFailed)
       let remoteManifest = try JSONDecoder().decode(CardHashDatabaseManifest.self, from: remoteManifestData)
-      
-      var localPatchLevel = 0
+
+      // -1 means "download the full master": no local manifest (so we can't tell
+      // which master the local database belongs to), or a different master.
+      var localPatchLevel = -1
       if let localManifestData = try? Data(contentsOf: localManifestURL),
-         let localManifest = try? JSONDecoder().decode(CardHashDatabaseManifest.self, from: localManifestData) {
+         let localManifest = try? JSONDecoder().decode(CardHashDatabaseManifest.self, from: localManifestData),
+         localManifest.masterVersion == remoteManifest.masterVersion {
         localPatchLevel = localManifest.latestPatch
-        
-        if localManifest.masterVersion != remoteManifest.masterVersion {
-          localPatchLevel = -1
-        }
       }
-      
+
       guard remoteManifest.latestPatch > localPatchLevel else {
         self.syncStatus = "Database is up to date."
         return
       }
-      
-      let patchGap = remoteManifest.latestPatch - localPatchLevel
-      
-      let updatedDictionary = try await Task.detached {
-        var newMasterDict: [String: Data] = [:]
-        
-        if patchGap > 20 || localPatchLevel == -1 {
-          newMasterDict = try await self.downloadChunkedMaster(remoteManifest: remoteManifest, baseURL: self.baseURL)
-        } else {
-          newMasterDict = try await self.downloadAndMergePatches(localVersion: localPatchLevel, remoteVersion: remoteManifest.latestPatch, baseURL: self.baseURL, localDatabaseURL: self.localDatabaseURL)
-        }
-        
-        let updatedBinary = try PropertyListSerialization.data(fromPropertyList: newMasterDict, format: .binary, options: 0)
-        let updatedCompressed = try (updatedBinary as NSData).compressed(using: .lzfse) as Data
-        try await updatedCompressed.write(to: self.localDatabaseURL)
-        
-        try await remoteManifestData.write(to: self.localManifestURL)
-        
-        return newMasterDict
-      }.value
-      
-      self.syncStatus = "Hydrating updated vectors..."
-      
-      let hydratedDict = await Task.detached {
-        var activeObservations: [String: VNFeaturePrintObservation] = [:]
-        activeObservations.reserveCapacity(updatedDictionary.count)
-        for (id, vectorData) in updatedDictionary {
-          if let obs = try? NSKeyedUnarchiver.unarchivedObject(ofClass: VNFeaturePrintObservation.self, from: vectorData) {
-            activeObservations[id] = obs
-          }
-        }
-        return activeObservations
-      }.value
-      
-      self.observations = hydratedDict
-      self.hydrateSearchDatabase(from: hydratedDict) // Rebuild the fast search array
-      self.syncStatus = "Up to date (\(hydratedDict.count) cards)."
-      
-    } catch {
-      if !self.isReady {
-        self.syncStatus = "Failed to sync: Check internet connection."
-      }
-    }
-  }
-  
-  // MARK: - Download Helpers
-  
-  private nonisolated func downloadChunkedMaster(remoteManifest: Any, baseURL: String) async throws -> [String: Data] {
-    var masterDictionary: [String: Data] = [:]
-    masterDictionary.reserveCapacity(90000)
-    
-    // Adjust maximum chunk attempts based on your actual manifest design
-    for i in 0..<10 {
-      let chunkURL = URL(string: "\(baseURL)/MTG_Hashes_Master_\(i).lzfse")!
-      
-      if let (compressedData, response) = try? await URLSession.shared.data(from: chunkURL),
-         let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 {
-        
-        let decompressedData = try (compressedData as NSData).decompressed(using: .lzfse) as Data
-        if let chunkDict = try PropertyListSerialization.propertyList(from: decompressedData, options: [], format: nil) as? [String: Data] {
-          masterDictionary.merge(chunkDict) { (current, _) in current }
-        }
+
+      let updatedDictionary: [String: Data]
+      if localPatchLevel == -1 || remoteManifest.latestPatch - localPatchLevel > 20 {
+        self.syncStatus = "Downloading database..."
+        updatedDictionary = try await downloadMaster(remoteManifest, baseURL: baseURL)
       } else {
-        break
+        self.syncStatus = "Downloading \(remoteManifest.latestPatch - localPatchLevel) update(s)..."
+        updatedDictionary = try await downloadAndMergePatches(
+          from: localPatchLevel + 1,
+          through: remoteManifest.latestPatch,
+          baseURL: baseURL
+        )
       }
+
+      self.syncStatus = "Hydrating updated vectors..."
+      let databaseURL = localDatabaseURL, manifestURL = localManifestURL
+      let items = try await Task.detached {
+        let binary = try PropertyListSerialization.data(fromPropertyList: updatedDictionary, format: .binary, options: 0)
+        let compressed = try (binary as NSData).compressed(using: .lzfse) as Data
+        // Database before manifest: a crash in between leaves an old manifest, which
+        // only means re-applying patches next time.
+        try compressed.write(to: databaseURL, options: .atomic)
+        try remoteManifestData.write(to: manifestURL, options: .atomic)
+        return Self.searchItems(from: updatedDictionary)
+      }.value
+
+      self.searchDatabase = items
+      self.isReady = true
+      self.syncStatus = "Up to date (\(items.count) cards)."
+    } catch {
+      // The local database is untouched on any failure; the next sync retries.
+      self.syncStatus = "Failed to sync: \(error.localizedDescription)"
     }
+  }
+
+  // MARK: - Download Helpers
+
+  private func download(_ url: URL, or failure: SyncError) async throws -> Data {
+    let (data, response) = try await loadData(url)
+    guard (response as? HTTPURLResponse)?.statusCode == 200 else { throw failure }
+    return data
+  }
+
+  /// Every chunk the manifest lists must arrive; a partial master is never saved.
+  private func downloadMaster(_ manifest: CardHashDatabaseManifest, baseURL: URL) async throws -> [String: Data] {
+    guard manifest.masterChunks > 0 else { throw SyncError.databaseFetchFailed }
+    var masterDictionary: [String: Data] = [:]
+    for index in 0..<manifest.masterChunks {
+      let chunk = try await download(
+        baseURL.appendingPathComponent("MTG_Hashes_Master_\(index).lzfse"),
+        or: .databaseFetchFailed
+      )
+      let chunkDictionary = try await Task.detached { try Self.decodeDatabase(chunk) }.value
+      masterDictionary.merge(chunkDictionary) { _, new in new }
+    }
+    guard !masterDictionary.isEmpty else { throw SyncError.decodeFailed }
     return masterDictionary
   }
-  
-  private nonisolated func downloadAndMergePatches(localVersion: Int, remoteVersion: Int, baseURL: String, localDatabaseURL: URL) async throws -> [String: Data] {
-    let localCompressed = try Data(contentsOf: localDatabaseURL)
-    let localDecompressed = (try? (localCompressed as NSData).decompressed(using: .lzfse) as Data) ?? localCompressed
-    guard var masterDictionary = try PropertyListSerialization.propertyList(from: localDecompressed, options: [], format: nil) as? [String: Data] else {
-      throw SyncError.decodeFailed
+
+  /// Applies patches in order. Any missing patch aborts the sync, so the saved
+  /// patch level never claims updates the database doesn't contain.
+  private func downloadAndMergePatches(from first: Int, through last: Int, baseURL: URL) async throws -> [String: Data] {
+    var patches: [Data] = []
+    for patchNumber in first...last {
+      patches.append(try await download(
+        baseURL.appendingPathComponent("patch_\(patchNumber).lzfse"),
+        or: .databaseFetchFailed
+      ))
     }
-    
-    for patchNumber in (localVersion + 1)...remoteVersion {
-      let patchURL = URL(string: "\(baseURL)/patch_\(patchNumber).lzfse")!
-      
-      if let (patchCompressed, response) = try? await URLSession.shared.data(from: patchURL),
-         let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 {
-        
-        let patchDecompressed = try (patchCompressed as NSData).decompressed(using: .lzfse) as Data
-        if let patchDict = try PropertyListSerialization.propertyList(from: patchDecompressed, options: [], format: nil) as? [String: Data] {
-          masterDictionary.merge(patchDict) { (_, new) in new }
-        }
+    let databaseURL = localDatabaseURL
+    return try await Task.detached {
+      var masterDictionary = try Self.decodeDatabase(Data(contentsOf: databaseURL))
+      for patch in patches {
+        masterDictionary.merge(try Self.decodeDatabase(patch)) { _, new in new }
       }
-    }
-    return masterDictionary
+      return masterDictionary
+    }.value
   }
 }
 
