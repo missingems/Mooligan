@@ -1,4 +1,5 @@
 import SwiftUI
+import DesignComponents
 
 /// The badges of every tile in a row above the insight pages, all one size and side by side: the
 /// one on show in the middle, its neighbours fainter and peeking in at the edges, the row sliding
