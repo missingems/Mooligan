@@ -68,7 +68,7 @@ final class OCRViewController: UIViewController {
 #if targetEnvironment(simulator)
   private var simulatorImageView: UIImageView!
   private var simulatorTimer: Timer?
-  private var simulatorVisionObservation: VNRectangleObservation?
+  private var simulatorCorners: VNRectangleObserver.Corners?
   private let ciContext = CIContext(options: [.cacheIntermediates: false])
 #endif
   
@@ -209,16 +209,10 @@ extension OCRViewController {
     runSimulatorVision(on: mockImage)
   }
   
+  /// The same detection the camera runs, on the stand-in frame.
   private func runSimulatorVision(on image: UIImage) {
     guard let cgImage = image.cgImage else { return }
-    let request = VNDetectRectanglesRequest { [weak self] req, _ in
-      self?.simulatorVisionObservation = req.results?.first as? VNRectangleObservation
-    }
-    request.minimumSize = 0.2
-    request.maximumObservations = 1
-    request.minimumConfidence = 0.5
-    
-    try? VNImageRequestHandler(cgImage: cgImage, options: [:]).perform([request])
+    simulatorCorners = VNRectangleObserver(image: cgImage).process()
   }
   
   private func startSimulatorLoop() {
@@ -233,9 +227,9 @@ extension OCRViewController {
   
   private func simulateScanTick() {
     guard !self.isTrackingPaused else { return }
-    guard let image = simulatorImageView.image else { return }
+    guard let image = simulatorImageView.image, let cgImage = image.cgImage else { return }
     
-    guard let observation = simulatorVisionObservation else {
+    guard let observation = simulatorCorners else {
       self.didUpdateTrackingCorners?(nil)
       self.scheduleFadeOut()
       return
@@ -292,18 +286,11 @@ extension OCRViewController {
       self.fadeIn()
     }
     
-    guard let ciImage = CIImage(image: image) else { return }
-    let imgSize = ciImage.extent.size
-    
-    let filter = CIFilter(name: "CIPerspectiveCorrection")
-    filter?.setValue(ciImage, forKey: kCIInputImageKey)
-    filter?.setValue(CIVector(cgPoint: CGPoint(x: observation.topLeft.x * imgSize.width, y: observation.topLeft.y * imgSize.height)), forKey: "inputTopLeft")
-    filter?.setValue(CIVector(cgPoint: CGPoint(x: observation.topRight.x * imgSize.width, y: observation.topRight.y * imgSize.height)), forKey: "inputTopRight")
-    filter?.setValue(CIVector(cgPoint: CGPoint(x: observation.bottomLeft.x * imgSize.width, y: observation.bottomLeft.y * imgSize.height)), forKey: "inputBottomLeft")
-    filter?.setValue(CIVector(cgPoint: CGPoint(x: observation.bottomRight.x * imgSize.width, y: observation.bottomRight.y * imgSize.height)), forKey: "inputBottomRight")
-    
-    guard let output = filter?.outputImage,
-          let croppedCGImage = ciContext.createCGImage(output, from: output.extent) else {
+    guard let croppedCGImage = VNRectangleObserver.flattenedCard(
+      in: CIImage(cgImage: cgImage),
+      corners: observation,
+      context: ciContext
+    ) else {
       return
     }
     

@@ -32,22 +32,11 @@ final class OCRCaptureDelegate: NSObject, @unchecked Sendable {
     observation: VNRectangleObserver.Corners
   ) -> CGImage? {
     guard let pixelBuffer else { return nil }
-    
-    let ciImage = CIImage(cvPixelBuffer: pixelBuffer).oriented(.right)
-    
-    let filter = CIFilter(name: "CIPerspectiveCorrection")
-    filter?.setValue(ciImage, forKey: kCIInputImageKey)
-    filter?.setValue(CIVector(cgPoint: observation.topLeft.scaled(ciImage.extent.size)), forKey: "inputTopLeft")
-    filter?.setValue(CIVector(cgPoint: observation.topRight.scaled(ciImage.extent.size)), forKey: "inputTopRight")
-    filter?.setValue(CIVector(cgPoint: observation.bottomLeft.scaled(ciImage.extent.size)), forKey: "inputBottomLeft")
-    filter?.setValue(CIVector(cgPoint: observation.bottomRight.scaled(ciImage.extent.size)), forKey: "inputBottomRight")
-    
-    guard let output = filter?.outputImage,
-          let cgImage = ciContext.createCGImage(output, from: output.extent) else {
-      return nil
-    }
-    
-    return cgImage
+    return VNRectangleObserver.flattenedCard(
+      in: CIImage(cvPixelBuffer: pixelBuffer).oriented(.right),
+      corners: observation,
+      context: ciContext
+    )
   }
 }
 
@@ -80,11 +69,5 @@ extension OCRCaptureDelegate: AVCaptureVideoDataOutputSampleBufferDelegate {
         corners: corners
       )
     }
-  }
-}
-
-fileprivate extension CGPoint {
-  func scaled(_ size: CGSize) -> CGPoint {
-    CGPoint(x: x * size.width, y: y * size.height)
   }
 }
