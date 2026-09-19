@@ -1,4 +1,4 @@
-@testable import CardDetail
+@testable import DesignComponents
 import SwiftUI
 import Testing
 

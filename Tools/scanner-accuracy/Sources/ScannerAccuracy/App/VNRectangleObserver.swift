@@ -1,0 +1,1 @@
+../../../../../Core/DesignComponents/Sources/Card Scanner/VNRectangleObserver.swift

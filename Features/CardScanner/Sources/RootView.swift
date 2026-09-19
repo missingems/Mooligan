@@ -1,4 +1,5 @@
 import SwiftUI
+import CardDetail
 import DesignComponents
 import Nuke
 import ScryfallKit
@@ -10,6 +11,7 @@ import Networking
 public struct RootView: View {
   @Bindable var store: StoreOf<CardScannerFeature>
   @Environment(\.dismiss) private var dismiss
+  @State private var carouselScrub = CarouselScrub()
   
   private var hasScannedCard: Bool { store.dataSource != nil }
   
@@ -52,11 +54,31 @@ public struct RootView: View {
         }
       }
       .scrollEdgeEffectStyle(.soft, for: .top)
+      // The camera screen only: the card pager pushed from it follows the system, as it does
+      // everywhere else.
+      .colorScheme(.dark)
+      .navigationDestination(item: $store.scope(state: \.cardPager, action: \.cardPager)) { pagerStore in
+        CardPagerView(store: pagerStore, scrub: carouselScrub)
+          .toolbar {
+            ToolbarSpacer(.flexible, placement: .bottomBar)
+            ToolbarItem(placement: .bottomBar) {
+              // As wide as the app's pager gives it, between its menu and add buttons.
+              CardPagerCarousel(store: pagerStore, scrub: carouselScrub, width: max(0, (store.viewSize?.width ?? 402) - 180))
+            }
+            .sharedBackgroundVisibility(.hidden)
+            ToolbarSpacer(.flexible, placement: .bottomBar)
+          }
+      }
+    }
+    .overlay {
+      CardPagerScrubPreview(scrub: carouselScrub)
+        .ignoresSafeArea()
     }
     .onGeometryChange(for: EdgeInsets.self, of: { $0.safeAreaInsets }) { insets in
       store.send(.updateSafeAreas(top: insets.top, bottom: insets.bottom))
     }
-    .colorScheme(.dark)
+    // The app tints its screens from above the cover this is presented in, so it never gets here.
+    .tint(DesignComponentsAsset.accentColor.swiftUIColor)
   }
   
   // MARK: - Camera
@@ -149,14 +171,28 @@ public struct RootView: View {
     )
     
     VStack(spacing: 13) {
-      CardView(
-        displayableCard: cardInfo.displayableCardImage,
-        layoutConfiguration: configuration,
-        priceVisibility: .hidden,
-        shadowConfiguration: nil
-      )
+      // The card detail's surface and the scrub preview's float, easing in once the card has
+      // landed from the morph.
+      HoverTilt(amount: showImage ? 1 : 0, isActive: showImage) { pose in
+        CardView(
+          displayableCard: cardInfo.displayableCardImage,
+          layoutConfiguration: configuration,
+          surface: CardSurface(isFoil: cardInfo.card.availableFoilness == true, isActive: showImage, pose: pose),
+          priceVisibility: .hidden,
+          shadowConfiguration: nil
+        ) { _ in
+          store.send(.cardFaceToggled(cardInfo.id), animation: .bouncy)
+        }
+      }
+      .animation(.smooth(duration: 0.35), value: showImage)
       .frame(width: configuration.size.width, height: configuration.size.height)
       .opacity(showImage ? 1.0 : 0.0)
+      .contentShape(Rectangle())
+      .onTapGesture {
+        store.send(.cardTapped(cardInfo.id))
+      }
+      .allowsHitTesting(showImage)
+      .accessibilityIdentifier("scanner.card")
       
       VStack(alignment: .center, spacing: 5.0) {
         Text(cardInfo.formattedSetName)
