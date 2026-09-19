@@ -8,12 +8,17 @@ struct CardImageHashSyncManagerTests {
   /// Serves canned files by name and records which ones were requested.
   private actor StubServer {
     var files: [String: Data]
+    let manifestDelay: Duration
     private(set) var requested: [String] = []
 
-    init(files: [String: Data]) { self.files = files }
+    init(files: [String: Data], manifestDelay: Duration = .zero) {
+      self.files = files
+      self.manifestDelay = manifestDelay
+    }
 
-    func load(_ url: URL) throws -> (Data, URLResponse) {
+    func load(_ url: URL) async throws -> (Data, URLResponse) {
       requested.append(url.lastPathComponent)
+      if url.lastPathComponent == "manifest.json" { try await Task.sleep(for: manifestDelay) }
       let data = files[url.lastPathComponent]
       let response = HTTPURLResponse(url: url, statusCode: data == nil ? 404 : 200, httpVersion: nil, headerFields: nil)!
       return (data ?? Data(), response)
@@ -62,17 +67,18 @@ struct CardImageHashSyncManagerTests {
     localDatabase: [String: Float],
     localManifest: Data? = nil,
     serverFiles: [String: Data],
+    manifestDelay: Duration = .zero,
     directory: URL? = nil
   ) throws -> Harness {
     let directory = directory ?? FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
     try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
     try Self.encode(localDatabase).write(to: directory.appendingPathComponent("MTG_Hashes_Compressed.lzfse"))
     try localManifest?.write(to: directory.appendingPathComponent("manifest.json"))
-    return makeHarness(directory: directory, serverFiles: serverFiles)
+    return makeHarness(directory: directory, serverFiles: serverFiles, manifestDelay: manifestDelay)
   }
 
-  private func makeHarness(directory: URL, serverFiles: [String: Data]) -> Harness {
-    let server = StubServer(files: serverFiles)
+  private func makeHarness(directory: URL, serverFiles: [String: Data], manifestDelay: Duration = .zero) -> Harness {
+    let server = StubServer(files: serverFiles, manifestDelay: manifestDelay)
     let manager = CardImageHashSyncManager(
       baseURL: baseURL.absoluteString,
       documentsDirectory: directory,
@@ -197,41 +203,65 @@ struct CardImageHashSyncManagerTests {
     #expect(try nextLaunch.localDatabase() == ["a": 4])
   }
 
-  @Test func bestMatches_shouldReturnTheNearestFacesWithinTheThreshold() async throws {
-    let dictionary: [String: Data] = [
-      "exact": try FeaturePrintArchiveFixture.archive([1, 0, 0, 0]),
-      "near": try FeaturePrintArchiveFixture.archive([0.5, 0, 0, 0]),
-      "far": try FeaturePrintArchiveFixture.archive([0, 0, 0, 1]),
-    ]
-    let plist = try PropertyListSerialization.data(fromPropertyList: dictionary, format: .binary, options: 0)
-    let index = try await CardFeaturePrintIndex.decoding(plist)
-    let expected = [MatchResult(id: "exact", distance: 0), MatchResult(id: "near", distance: 0.25)]
+  @Test func whenSavingFails_shouldKeepTheConvertedDatabaseForTheSessionWithoutDownloadingTheMaster() async throws {
+    let manifest = try Self.manifest("m1", chunks: 1, patch: 4)
+    let harness = try makeHarness(
+      localDatabase: ["a": 4],
+      localManifest: manifest,
+      serverFiles: [
+        "manifest.json": manifest,
+        "MTG_Hashes_Master_0.lzfse": try Self.encode(["a": 5]),
+      ]
+    )
+    // Given a directory nothing can be written to, like a full disk.
+    try FileManager.default.setAttributes([.posixPermissions: 0o555], ofItemAtPath: harness.directory.path)
+    defer { try? FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: harness.directory.path) }
 
-    #expect(await index.bestMatches(for: [1, 0, 0, 0]) == expected)
-    #expect(await index.compressedForSearch().bestMatches(for: [1, 0, 0, 0]) == expected)
+    // When the scanner opens twice.
+    await harness.manager.sync()
+    await harness.manager.sync()
+
+    // Then the converted database serves both, at its own patch level.
+    #expect(await harness.manager.isReady)
+    #expect(await harness.server.requested == ["manifest.json", "manifest.json"])
+    #expect(FileManager.default.fileExists(atPath: harness.legacyDatabaseURL.path))
   }
 
-  @Test func bestMatches_whenShortlistingFromTheStoredCompressedCopy_shouldFindTheFace() async throws {
-    // 1,000 faces of 256 numbers that vary along 10 directions, so the 128
-    // compressed directions capture them and the 200-face shortlist is a fifth of them.
-    let dimension = 256, faceCount = 1_000
-    let basis = (0..<10).map { k in (0..<dimension).map { Float(sin(Double($0 * (k + 1)) * 0.37)) } }
-    let faces = (0..<faceCount).map { face in
-      (0..<dimension).map { j in
-        (0..<10).reduce(Float(0)) { sum, k in sum + Float(cos(Double(face * 31 + k * 17))) * basis[k][j] }
-      }.map { Float(Float16($0)) }
-    }
-    let vectors = faces.flatMap { $0.map { Float16($0) } }.withUnsafeBytes { Data($0) }
-    let index = await CardFeaturePrintIndex(ids: faces.indices.map(String.init), dimension: dimension, vectors: vectors)
-      .compressedForSearch()
-    let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-    try index.write(to: url)
+  @Test func whenSyncsOverlap_shouldRunOnce() async throws {
+    let manifest = try Self.manifest("m1", chunks: 2, patch: 4)
+    let harness = try makeHarness(
+      localDatabase: ["a": 4],
+      localManifest: manifest,
+      serverFiles: ["manifest.json": manifest],
+      manifestDelay: .milliseconds(200)
+    )
 
-    let stored = try CardFeaturePrintIndex(contentsOf: url)
+    // When the scanner opens again while the first sync is still running.
+    async let first: Void = harness.manager.sync()
+    async let second: Void = harness.manager.sync()
+    _ = await (first, second)
 
-    #expect(stored.shortlistDimension == 128)
-    for face in [0, 123, 999] {
-      #expect(await stored.bestMatches(for: faces[face]).first == MatchResult(id: String(face), distance: 0))
-    }
+    #expect(await harness.server.requested == ["manifest.json"])
+  }
+
+  @Test func whenTheOldDatabaseHoldsNoFeaturePrints_shouldDownloadTheMaster() async throws {
+    let manifest = try Self.manifest("m1", chunks: 1, patch: 4)
+    let harness = try makeHarness(
+      localDatabase: [:],
+      localManifest: manifest,
+      serverFiles: [
+        "manifest.json": manifest,
+        "MTG_Hashes_Master_0.lzfse": try Self.encode(["a": 4]),
+      ]
+    )
+    // Given an old database whose entries aren't archived feature prints.
+    let junk = try PropertyListSerialization.data(fromPropertyList: ["a": Data("junk".utf8)], format: .binary, options: 0)
+    try ((junk as NSData).compressed(using: .lzfse) as Data).write(to: harness.legacyDatabaseURL)
+
+    await harness.manager.sync()
+
+    // Then it isn't taken as current at patch 4; the master replaces it.
+    #expect(await harness.server.requested.contains("MTG_Hashes_Master_0.lzfse"))
+    #expect(try harness.localDatabase() == ["a": 4])
   }
 }

@@ -6,9 +6,9 @@ import Foundation
 ///
 /// The server format (LZFSE binary plists of archived `VNFeaturePrintObservation`s)
 /// takes seconds and gigabytes to decode, so it is decoded once, when downloaded,
-/// and stored like this, little-endian throughout:
+/// and stored like this:
 ///
-/// - a 32-byte header of 32-bit fields: `"MTGV"`, format version 1, face count,
+/// - a 32-byte header of little-endian 32-bit fields: `"MTGV"`, format version 1, face count,
 ///   vector dimension, patch level, master version byte length, ids byte length,
 ///   shortlist dimension;
 /// - `count × dimension` Float16 vectors, row by row, straight after the header so
@@ -18,7 +18,8 @@ import Foundation
 /// - the master version, UTF-8;
 /// - the face ids, UTF-8, joined by newlines.
 ///
-/// Feature prints are computed in half precision on the Neural Engine, and the
+/// Vectors and projection are in the device's byte order, little-endian on
+/// every Apple device. Feature prints are computed in half precision on the Neural Engine, and the
 /// server rounds its own to match, so Float16 loses nothing and halves the file.
 struct CardFeaturePrintIndex: Sendable {
   /// The server master this index holds, or nil when unknown (the bundled
@@ -68,14 +69,19 @@ extension CardFeaturePrintIndex {
     let header = file.withUnsafeBytes { bytes in
       (0..<8).map { UInt32(littleEndian: bytes.loadUnaligned(fromByteOffset: $0 * 4, as: UInt32.self)) }
     }
+    // Checked before any arithmetic on them: sizes from a corrupt header could
+    // overflow and crash every launch, since the same file loads each time.
+    // No field of a real file exceeds its length (the patch level is signed).
+    guard header[0] == 0x5647_544D, header[1] == 1,
+          [2, 3, 5, 6, 7].allSatisfy({ Int(header[$0]) <= file.count }) else {
+      throw SyncError.decodeFailed
+    }
     let count = Int(header[2]), dimension = Int(header[3]), shortlistDimension = Int(header[7])
     let vectorsEnd = 32 + count * dimension * 2
     let projectionEnd = vectorsEnd + shortlistDimension * dimension * 4
     let shortlistEnd = projectionEnd + count * shortlistDimension * 2
     let versionEnd = shortlistEnd + Int(header[5])
-    guard header[0] == 0x5647_544D, header[1] == 1, file.count == versionEnd + Int(header[6]) else {
-      throw SyncError.decodeFailed
-    }
+    guard file.count == versionEnd + Int(header[6]) else { throw SyncError.decodeFailed }
 
     let projection = file[vectorsEnd..<projectionEnd].withUnsafeBytes { bytes in
       (0..<shortlistDimension * dimension).map { bytes.loadUnaligned(fromByteOffset: $0 * 4, as: Float.self) }
@@ -97,8 +103,10 @@ extension CardFeaturePrintIndex {
     )
   }
 
-  /// Writes through a temporary file and renames it over `url`, so a crash
-  /// leaves the previous index intact. Excluded from backup: it can be downloaded again.
+  /// Writes through `<url>.partial` and renames it over `url`, so a crash
+  /// leaves the previous index intact, and the next write reuses the partial
+  /// file rather than leaving another behind. Excluded from backup: it can be
+  /// downloaded again.
   func write(to url: URL) throws {
     let masterVersion = Data((masterVersion ?? "").utf8)
     let ids = Data(ids.joined(separator: "\n").utf8)
@@ -109,10 +117,14 @@ extension CardFeaturePrintIndex {
     let header = fields.map(\.littleEndian).withUnsafeBytes { Data($0) }
     let projection = projection.withUnsafeBytes { Data($0) }
 
-    let temporaryURL = url.deletingLastPathComponent().appendingPathComponent(UUID().uuidString)
+    var temporaryURL = url.appendingPathExtension("partial")
     guard FileManager.default.createFile(atPath: temporaryURL.path, contents: nil) else {
       throw CocoaError(.fileWriteUnknown)
     }
+    // Set before writing, and carried over by the rename.
+    var resourceValues = URLResourceValues()
+    resourceValues.isExcludedFromBackup = true
+    try? temporaryURL.setResourceValues(resourceValues)
     do {
       let handle = try FileHandle(forWritingTo: temporaryURL)
       do {
@@ -130,11 +142,6 @@ extension CardFeaturePrintIndex {
       try? FileManager.default.removeItem(at: temporaryURL)
       throw error
     }
-
-    var resourceValues = URLResourceValues()
-    resourceValues.isExcludedFromBackup = true
-    var storedURL = url
-    try? storedURL.setResourceValues(resourceValues)
   }
 }
 
@@ -240,11 +247,15 @@ extension CardFeaturePrintIndex {
           floats.reserveCapacity(entries.count * dimension)
         }
         guard observation.elementCount == dimension else { return }
-        ids.append(id)
-        floats.append(contentsOf: [Float](unsafeUninitializedCapacity: dimension) { buffer, initializedCount in
+        let vector = [Float](unsafeUninitializedCapacity: dimension) { buffer, initializedCount in
           _ = observation.data.copyBytes(to: buffer)
           initializedCount = dimension
-        })
+        }
+        // A NaN or infinity never matches, and in the sample it would stop the
+        // search's shortlist from being built at all.
+        guard vector.allSatisfy(\.isFinite) else { return }
+        ids.append(id)
+        floats.append(contentsOf: vector)
       }
     }
 
@@ -358,7 +369,7 @@ extension CardFeaturePrintIndex {
         1, projection, __LAPACK_int(dimension), target, 1, 0, &projectedTarget, 1
       )
       shortlist = await Self.nearestRows(
-        to: projectedTarget, in: shortlistVectors, width: shortlistDimension, count: ids.count, limit: 200
+        to: projectedTarget, in: shortlistVectors, width: shortlistDimension, count: ids.count, limit: max(200, limit)
       ).map(\.row)
     } else {
       shortlist = Array(ids.indices)

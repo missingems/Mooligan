@@ -101,10 +101,16 @@ public final actor CardImageHashSyncManager: CardImageHashSyncManagable {
       index = stored
       isReady = true
       syncStatus = "Loaded \(stored.ids.count) cards locally."
+      // Left by a write or a conversion the app didn't live to finish.
+      removeSupersededFiles()
       // Stored without the search's shortlist (building it failed, or an older
-      // build wrote it): searches check every face until it is rebuilt here.
+      // build wrote it): searches check every face until it is rebuilt. Saved
+      // only if the rebuild worked, so a failure isn't rewritten every launch.
       if stored.shortlistDimension == 0, !stored.ids.isEmpty {
-        try? await store(stored)
+        let rebuilt = await stored.compressedForSearch()
+        if rebuilt.shortlistDimension > 0 {
+          try? await store(rebuilt)
+        }
       }
       return
     }
@@ -127,6 +133,7 @@ public final actor CardImageHashSyncManager: CardImageHashSyncManagable {
     syncStatus = "First launch: Unpacking database..."
     do {
       var converted = try await CardFeaturePrintIndex.decoding(Data(contentsOf: databaseURL, options: .alwaysMapped))
+      guard !converted.ids.isEmpty else { throw SyncError.decodeFailed }
       if let manifestURL,
          let manifestData = try? Data(contentsOf: manifestURL),
          let manifest = try? JSONDecoder().decode(CardHashDatabaseManifest.self, from: manifestData) {
@@ -136,7 +143,10 @@ public final actor CardImageHashSyncManager: CardImageHashSyncManagable {
       try await store(converted)
       syncStatus = "Loaded \(converted.ids.count) cards locally."
     } catch {
-      syncStatus = "Failed to load local cache. Corrupted file."
+      // A database that decoded but couldn't be saved still serves this session.
+      syncStatus = index == nil
+        ? "Failed to load local cache. Corrupted file."
+        : "Loaded \(index?.ids.count ?? 0) cards, but could not save them: \(error.localizedDescription)"
     }
   }
 
@@ -185,24 +195,34 @@ public final actor CardImageHashSyncManager: CardImageHashSyncManagable {
       self.syncStatus = "Up to date (\(updated.ids.count) cards)."
     } catch {
       // The stored index is untouched on any failure; the next sync retries.
+      // An update that only failed to save still serves this session.
       self.syncStatus = "Failed to sync: \(error.localizedDescription)"
     }
   }
 
-  /// Builds the search's compressed copy, writes the index and maps it back,
-  /// which releases the in-memory copy of the vectors. Files the old format
-  /// kept are superseded once this succeeds.
+  /// Builds the search's compressed copy if missing and makes the index the one
+  /// searched at once, so it serves the session even if saving it fails. Once
+  /// saved, it is mapped back in, which releases the in-memory vectors, and the
+  /// files it supersedes are removed.
   private func store(_ updated: CardFeaturePrintIndex) async throws {
-    index = try await Self.written(updated, to: indexURL)
+    let searchable = updated.shortlistDimension > 0 ? updated : await updated.compressedForSearch()
+    index = searchable
     isReady = true
-    try? FileManager.default.removeItem(at: legacyDatabaseURL)
-    try? FileManager.default.removeItem(at: legacyManifestURL)
+    index = try await Self.written(searchable, to: indexURL)
+    removeSupersededFiles()
   }
 
   @concurrent
   private static func written(_ index: CardFeaturePrintIndex, to url: URL) async throws -> CardFeaturePrintIndex {
-    try await index.compressedForSearch().write(to: url)
+    try index.write(to: url)
     return try CardFeaturePrintIndex(contentsOf: url)
+  }
+
+  /// The old format's database and manifest, and a partial write.
+  private func removeSupersededFiles() {
+    for url in [legacyDatabaseURL, legacyManifestURL, indexURL.appendingPathExtension("partial")] {
+      try? FileManager.default.removeItem(at: url)
+    }
   }
 
   // MARK: - Download Helpers
