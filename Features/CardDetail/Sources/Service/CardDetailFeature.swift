@@ -9,6 +9,7 @@ import ScryfallKit
   @Dependency(\.priceHistoryClient) private var priceHistoryClient
   @Dependency(\.continuousClock) private var clock
   @Dependency(\.gameSetRequestClient) private var setClient
+  @Dependency(\.cardPullOddsSource) private var pullOddsSource
   
   public init() {}
   
@@ -39,8 +40,10 @@ import ScryfallKit
 
       // Only what has not landed yet: a page that left while loading comes back here with its
       // in-flight loads cancelled, and reloads just those. Every action is checked by each card's
-      // store in the pager, so the sections come back together in one action and price history
-      // in another, instead of one action per fetch.
+      // store in the pager, so the sections come back together in one action, and price history and
+      // the pull odds in one each, instead of one action per fetch. The odds are not folded in with
+      // the sections: the first card of a set waits on a set file of several megabytes for them,
+      // and the prints and related cards should not wait with it.
       var effects: [Effect<Action>] = []
       if state.variants.state.isInitial {
         effects.append(loadAdditionalInformation(
@@ -51,6 +54,9 @@ import ScryfallKit
       }
       if state.priceHistory.status == .loading {
         effects.append(fetchPriceHistory(card: card, state: &state))
+      }
+      if state.pullOdds == .loading {
+        effects.append(loadPullOdds(card: card, queryType: state.content.queryType))
       }
       return .merge(effects)
 
@@ -81,6 +87,10 @@ import ScryfallKit
     case let .updatePriceHistory(update):
       state.updatePriceHistory(update.display)
       return .none
+
+    case let .updatePullOdds(odds):
+      state.pullOdds = odds.map(PullOddsStatus.loaded) ?? .unavailable
+      return .none
     case .viewRulingsTapped:
       return .none
     }
@@ -91,6 +101,7 @@ extension CardDetailFeature {
   enum CancelID: Hashable, Sendable {
     case priceHistory(UUID)
     case additionalInformation(UUID)
+    case pullOdds(UUID)
   }
 
   private func loadAdditionalInformation(
@@ -116,6 +127,26 @@ extension CardDetailFeature {
       )))
     }
     .cancellable(id: CancelID.additionalInformation(card.id), cancelInFlight: true)
+  }
+
+  private func loadPullOdds(card: Card, queryType: QueryType) -> Effect<Action> {
+    .run(priority: .utility) { send in
+      // A commander deck's cards are opened in its parent set's Collector Booster, so the odds need
+      // the parent. Browsing a set already has the set in hand; a search asks the set client, which
+      // answers from the local database.
+      var set: MTGSet?
+      if case let .querySet(browsed, _) = queryType, browsed.code.lowercased() == card.set.lowercased() {
+        set = browsed
+      } else {
+        set = try? await client.getSet(of: card)
+      }
+
+      let odds = await pullOddsSource.odds(for: card, parentSetCode: set?.parentSetCode)
+      // Left in the loading state when the page has gone, so it loads again when it comes back.
+      guard Task.isCancelled == false else { return }
+      await send(.updatePullOdds(odds))
+    }
+    .cancellable(id: CancelID.pullOdds(card.id), cancelInFlight: true)
   }
 
   private func setIconURL(of card: Card) async -> URL? {

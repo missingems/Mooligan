@@ -415,8 +415,10 @@ import Testing
 
   @Test func whenTheSetCannotBeFetched_shouldDeliverTheSectionsWithoutASetIcon() async {
     var settled = CardDetailFeature.State(card: card, queryType: queryType)
-    // Given price history has already settled, so appearing loads only the sections.
+    // Given price history and the pull odds have already settled, so appearing loads only the
+    // sections.
     settled.priceHistory = PriceHistoryDisplay.make(card: card, state: .failed, labels: PriceHistoryLabels())
+    settled.pullOdds = .unavailable
     let otherPrints = MockCardDetailRequestClient.generateMockCards(number: 2)
     let store = makeStore(settled, client: VariantsPageClient(
       variants: ObjectList(data: [card] + otherPrints, hasMore: true, totalCards: 3)

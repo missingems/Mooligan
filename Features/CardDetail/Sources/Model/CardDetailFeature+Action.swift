@@ -22,5 +22,6 @@ public extension CardDetailFeature {
     case updateAdditionalInformation(AdditionalInformation)
     case updateVariants(CardDataSource, page: Int)
     case updatePriceHistory(PriceHistoryUpdate)
+    case updatePullOdds(CardPullOdds?)
   }
 }
