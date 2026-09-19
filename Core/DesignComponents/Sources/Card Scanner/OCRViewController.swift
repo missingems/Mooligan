@@ -125,7 +125,10 @@ extension OCRViewController {
       let input = try? AVCaptureDeviceInput(device: backCamera)
     else { return }
     
-    captureSession.sessionPreset = .hd4K3840x2160
+    // 1080p still gives a card held in frame about 1000 px of height, more than
+    // the 680 px Scryfall images the database was built from, and every frame
+    // costs a quarter of 4K to capture, detect rectangles in and crop.
+    captureSession.sessionPreset = .hd1920x1080
     
     if captureSession.canAddInput(input) {
       captureSession.addInput(input)
