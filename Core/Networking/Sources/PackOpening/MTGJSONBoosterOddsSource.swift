@@ -117,19 +117,9 @@ public actor MTGJSONBoosterOddsSource: BoosterOddsSource {
   }
 }
 
-// MARK: - Decode models
+// MARK: - Odds for the pack roller
 
-/// Deliberately minimal: only the two fields this needs out of a multi-megabyte
-/// file. `Decodable` still has to tokenize the rest of each card's JSON to skip
-/// it, but decodes no Swift representation for any field beyond these two.
-struct MTGJSONSetFile: Decodable {
-  let data: MTGJSONSetData
-}
-
-struct MTGJSONSetData: Decodable {
-  let booster: [String: MTGJSONBoosterConfig]?
-  let cards: [MTGJSONCardStub]
-
+extension MTGJSONSetData {
   /// Real odds for `kind`, or `BoosterPackOdds.fallback` field-by-field where
   /// this set's data doesn't yield a confident number. A set can end up with
   /// some real fields and some fallback fields — mythic rate recovered but the
@@ -181,28 +171,6 @@ struct MTGJSONSetData: Decodable {
     guard kind == .play else { return nil }
     return booster["draft"]
   }
-}
-
-struct MTGJSONCardStub: Decodable {
-  struct Identifiers: Decodable {
-    let scryfallId: String?
-  }
-
-  let uuid: String
-  let rarity: Card.Rarity?
-  /// MTGJSON keys its sheets by its own uuid; the app knows cards by their
-  /// Scryfall id, so the two have to be joined here.
-  let identifiers: Identifiers?
-}
-
-struct MTGJSONBoosterConfig: Decodable {
-  let sheets: [String: MTGJSONBoosterSheet]
-}
-
-struct MTGJSONBoosterSheet: Decodable {
-  /// Card uuid to its weight within this sheet.
-  let cards: [String: Double]
-  let foil: Bool
 }
 
 // MARK: - Sheet matching
