@@ -13,12 +13,16 @@ import ProjectDescriptionHelpers
 /// generated sources.
 let graphQLGenerated = true
 
-/// Compiles in `ApolloPriceHistoryClient`. Without it the live price history
-/// path is left out and `PriceHistoryClientKey` falls back to the unavailable
-/// client, so the chart section simply doesn't render.
-let networkingSettings: SettingsDictionary = graphQLGenerated
-  ? ["SWIFT_ACTIVE_COMPILATION_CONDITIONS": "$(inherited) MTGGRAPHQL_GENERATED"]
-  : [:]
+/// `MTGGRAPHQL_GENERATED` compiles in `ApolloPriceHistoryClient`. Without it the
+/// live price history path is left out and `PriceHistoryClientKey` falls back to
+/// the unavailable client, so the chart section simply doesn't render.
+///
+/// `ACCELERATE_NEW_LAPACK` gives Swift Accelerate's current BLAS and LAPACK
+/// interface, which the card scanner's search index uses; the one it sees by
+/// default is deprecated.
+let networkingSettings: SettingsDictionary = [
+  "OTHER_SWIFT_FLAGS": "$(inherited) -Xcc -DACCELERATE_NEW_LAPACK",
+].merging(graphQLGenerated ? ["SWIFT_ACTIVE_COMPILATION_CONDITIONS": "$(inherited) MTGGRAPHQL_GENERATED"] : [:]) { _, new in new }
 
 let project = Project.core(
   name: "Networking",
