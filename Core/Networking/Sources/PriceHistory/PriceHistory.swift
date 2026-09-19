@@ -1,7 +1,7 @@
 import Foundation
 
 /// A single dated price observation for one card, in one currency, for one finish.
-public struct PricePoint: Sendable, Equatable, Identifiable {
+public struct PricePoint: Sendable, Equatable, Identifiable, Codable {
   public let date: Date
   public let amount: Decimal
 

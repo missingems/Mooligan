@@ -247,6 +247,71 @@ struct CachedMagicCardQueryRequestClientTests {
     #expect(harness.remote.callCount == 1)
   }
 
+  @Test func whenRefreshedOverTheCatalog_shouldKeepScryfallsPageUntilItIsStale() async throws {
+    let scryfall = CardFixtures.set(code: "fdn", count: 3, names: ["C", "A", "B"])
+    let harness = try makeHarness(pages: [1: scryfall], totalCards: 3)
+    try await harness.store.upsert(
+      cards: CardFixtures.set(code: "fdn", count: 3, names: ["X", "Y", "Z"]), source: .bulk)
+    try await markCatalogComplete(harness.store, cards: 3)
+
+    _ = try await harness.client.queryCards(QueryFixtures.setBrowse(), policy: .revalidate)
+    let reopened = try await harness.client.queryCards(QueryFixtures.setBrowse())
+
+    #expect(harness.remote.callCount == 1)
+    #expect(reopened.data.map(\.id) == scryfall.map(\.id))
+  }
+
+  @Test func whenRefreshedOverTheCatalog_shouldTakeLaterPagesFromScryfallToo() async throws {
+    let first = CardFixtures.set(code: "fdn", count: 2)
+    let second = CardFixtures.set(code: "fdn", count: 2)
+    let harness = try makeHarness(pages: [1: first, 2: second], totalCards: 4)
+    try await harness.store.upsert(
+      cards: CardFixtures.set(code: "fdn", count: CardStore.pageSize + 5), source: .bulk)
+    try await markCatalogComplete(harness.store, cards: CardStore.pageSize + 5)
+
+    _ = try await harness.client.queryCards(QueryFixtures.setBrowse(), policy: .revalidate)
+    let page2 = try await harness.client.queryCards(QueryFixtures.setBrowse(page: 2))
+
+    #expect(harness.remote.requestedPages == [1, 2])
+    #expect(page2.data.map(\.id) == second.map(\.id))
+  }
+
+  @Test func whenARefreshedListingGoesStale_shouldReturnToTheCatalogAndDropItsPages() async throws {
+    let harness = try makeHarness(
+      pages: [1: CardFixtures.set(code: "fdn", count: 2), 2: CardFixtures.set(code: "fdn", count: 2)],
+      totalCards: 4
+    )
+    let catalog = CardFixtures.set(code: "fdn", count: CardStore.pageSize + 5)
+    try await harness.store.upsert(cards: catalog, source: .bulk)
+    try await markCatalogComplete(harness.store, cards: catalog.count)
+    _ = try await harness.client.queryCards(QueryFixtures.setBrowse(), policy: .revalidate)
+    _ = try await harness.client.queryCards(QueryFixtures.setBrowse(page: 2))
+
+    harness.clock.advancePastDailyBoundary()
+    let first = try await harness.client.queryCards(QueryFixtures.setBrowse())
+    let second = try await harness.client.queryCards(QueryFixtures.setBrowse(page: 2))
+
+    // The four cards Scryfall gave are in the catalog now too.
+    #expect(harness.remote.callCount == 2)
+    #expect(first.totalCards == catalog.count + 4)
+    #expect(second.data.count == 9)
+  }
+
+  @Test func whenALaterPageIsOlderThanTheFirst_shouldRefetchIt() async throws {
+    let harness = try makeHarness(
+      pages: [1: CardFixtures.set(code: "fdn", count: 2), 2: CardFixtures.set(code: "fdn", count: 2)],
+      totalCards: 4
+    )
+    _ = try await harness.client.queryCards(QueryFixtures.setBrowse())
+    _ = try await harness.client.queryCards(QueryFixtures.setBrowse(page: 2))
+
+    harness.clock.advancePastDailyBoundary()
+    _ = try await harness.client.queryCards(QueryFixtures.setBrowse())
+    _ = try await harness.client.queryCards(QueryFixtures.setBrowse(page: 2))
+
+    #expect(harness.remote.requestedPages == [1, 2, 1, 2])
+  }
+
   @Test func whenACardIsCached_shouldNotHitTheNetwork() async throws {
     let harness = try makeHarness(pages: [:], totalCards: 0)
     let card = CardFixtures.card(name: "Black Lotus")

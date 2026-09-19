@@ -21,12 +21,14 @@ public struct Feature {
     case sets
     case scan
     case collection
+    case settings
     
     public var title: String {
       switch self {
       case .sets: return String(localized: "Sets")
       case .scan: return String(localized: "Scan")
       case .collection: return String(localized: "Collection")
+      case .settings: return String(localized: "Settings")
       }
     }
     
@@ -35,6 +37,7 @@ public struct Feature {
       case .sets: return "text.page"
       case .scan: return "camera.fill"
       case .collection: return "folder"
+      case .settings: return "gearshape"
       }
     }
     
@@ -50,6 +53,7 @@ public struct Feature {
     public var isCollectionPresented = false
     
     @Presents public var scan: CardScannerFeature.State?
+    @Presents public var settings: SettingsFeature.State?
     
     /// The pack currently being opened, presented over whatever set it came
     /// from.
@@ -74,6 +78,7 @@ public struct Feature {
     case menuItemSelected(MenuItem)
     case sets(BrowseFeature.Action)
     case scan(PresentationAction<CardScannerFeature.Action>)
+    case settings(PresentationAction<SettingsFeature.Action>)
     case packSession(PresentationAction<PackSessionFeature.Action>)
     case bulkSync(BulkSyncFeature.Action)
     case path(StackActionOf<Path>)
@@ -101,6 +106,9 @@ public struct Feature {
       .ifLet(\.$packSession, action: \.packSession) {
         PackSessionFeature()
       }
+      .ifLet(\.$settings, action: \.settings) {
+        SettingsFeature()
+      }
   }
   
   public init() {}
@@ -127,6 +135,9 @@ public struct Feature {
         
       case .collection:
         state.isCollectionPresented = true
+
+      case .settings:
+        state.settings = SettingsFeature.State()
       }
       return .none
       
@@ -149,6 +160,9 @@ public struct Feature {
       return .none
       
     case .scan:
+      return .none
+
+    case .settings:
       return .none
       
     case .packSession(.presented(.delegate(.finished))):

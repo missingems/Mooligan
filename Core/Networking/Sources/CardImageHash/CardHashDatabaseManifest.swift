@@ -1,5 +1,5 @@
 /// `manifest.json` published by github.com/missingems/MTGImageHash.
-public struct CardHashDatabaseManifest: Codable, Sendable {
+public struct CardHashDatabaseManifest: Codable, Equatable, Sendable {
   /// Changes when the server rebases; the client must then re-download the master.
   public let masterVersion: String
   public let masterChunks: Int

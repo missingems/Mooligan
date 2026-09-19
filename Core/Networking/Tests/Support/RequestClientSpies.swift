@@ -154,3 +154,32 @@ final class SpyCardDetailRequestClient: MagicCardDetailRequestClient, @unchecked
     }
   }
 }
+
+final class SpyPriceHistoryClient: PriceHistoryClient, @unchecked Sendable {
+  private let lock = NSLock()
+  private var _callCount = 0
+  private var _error: (any Error)?
+  private var _amount: Decimal = 1
+
+  var callCount: Int { lock.withLock { _callCount } }
+
+  func setError(_ error: (any Error)?) { lock.withLock { _error = error } }
+  func setAmount(_ amount: Decimal) { lock.withLock { _amount = amount } }
+
+  func history(
+    for card: Card,
+    provider: PriceProvider,
+    listType: PriceListType
+  ) async throws -> PriceHistory {
+    try lock.withLock {
+      _callCount += 1
+      if let _error { throw _error }
+      return PriceHistory(
+        cardID: card.id.uuidString,
+        provider: provider,
+        listType: listType,
+        series: [.normal: [PricePoint(date: Date(timeIntervalSince1970: 1_700_000_000), amount: _amount)]]
+      )
+    }
+  }
+}

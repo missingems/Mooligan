@@ -28,7 +28,7 @@ public struct CachedBoosterOddsSource: BoosterOddsSource {
 
   public init(upstream: any BoosterOddsSource, session: URLSession? = nil) {
     self.upstream = upstream
-    build = MTGJSONBuild(session: session)
+    build = session.map { MTGJSONBuild(session: $0) } ?? .shared
   }
 
   public func odds(forSet setCode: String, kind: BoosterPackKind) async -> BoosterPackOdds {
@@ -95,56 +95,4 @@ struct BoosterOddsStore: Sendable {
       try BoosterOddsRecord.upsert { record }.execute(connection)
     }
   }
-}
-
-// MARK: - Build stamp
-
-/// MTGJSON's current build version, asked for once per launch.
-///
-/// `Meta.json` is a hundred-odd bytes and answers in well under a second, which
-/// makes it a cheap way to find out whether anything stored is still current
-/// without touching a set file. A failure is not an error: it returns nil, and
-/// the caller treats stored odds as good.
-actor MTGJSONBuild {
-  private let session: URLSession
-  private var cached: String??
-
-  init(session: URLSession? = nil) {
-    if let session {
-      self.session = session
-    } else {
-      let configuration = URLSessionConfiguration.default
-      configuration.timeoutIntervalForRequest = 5
-      configuration.timeoutIntervalForResource = 5
-      self.session = URLSession(configuration: configuration)
-    }
-  }
-
-  func version() async -> String? {
-    if let cached { return cached }
-
-    let value = await fetch()
-    cached = .some(value)
-    return value
-  }
-
-  private func fetch() async -> String? {
-    guard let url = URL(string: "https://mtgjson.com/api/v5/Meta.json") else { return nil }
-
-    guard
-      let (data, response) = try? await session.data(from: url),
-      (response as? HTTPURLResponse)?.statusCode == 200,
-      let meta = try? JSONDecoder().decode(MTGJSONMetaFile.self, from: data)
-    else { return nil }
-
-    return meta.data.version
-  }
-}
-
-private struct MTGJSONMetaFile: Decodable {
-  struct Meta: Decodable {
-    let version: String?
-  }
-
-  let data: Meta
 }

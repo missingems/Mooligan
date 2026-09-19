@@ -33,6 +33,9 @@ let project = Project(
           // expose. Empty would just hide the price-history section
           // (MTGGraphQLEndpoint.fromBundle).
           "MTGGraphQLProxyURL": .string("https://mtggraphql-proxy.mooligan.workers.dev"),
+          // The only encryption is Apple's own (HTTPS through URLSession), which is exempt, so App
+          // Store Connect stops asking about export compliance on every upload.
+          "ITSAppUsesNonExemptEncryption": .boolean(false),
         ]
       ),
       sources: ["Mooligan/Sources/**"],

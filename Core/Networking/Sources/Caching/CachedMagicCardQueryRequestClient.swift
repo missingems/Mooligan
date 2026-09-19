@@ -14,22 +14,20 @@ public struct CachedMagicCardQueryRequestClient: MagicCardQueryRequestClient {
     try await queryCards(query, policy: .cacheFirst)
   }
 
+  /// A listing comes from one place from its first page to its last: the catalog, or Scryfall. A
+  /// stored first page from Scryfall means the listing is Scryfall's (it was refreshed, or the
+  /// catalog could not serve it), and every later page follows it until the next daily boundary,
+  /// rather than being filled in from the catalog, whose order and contents can differ.
   public func queryCards(
     _ query: SearchQuery,
     policy: CachePolicy
   ) async throws -> ObjectList<Card> {
-    if policy == .cacheFirst {
-      if let local = try await localSetBrowse(query) {
-        return local
-      }
-
-      if let cached = try await cachedPage(query, allowStale: false) {
-        return cached
-      }
+    if policy == .cacheFirst, let cached = try await cachedListing(query) {
+      return cached
     }
 
     do {
-      return try await fetchAndStore(query, invalidatingQuery: policy == .revalidate)
+      return try await fetchAndStore(query)
     } catch {
       if let cached = try await cachedPage(query, allowStale: true) {
         return cached
@@ -39,6 +37,43 @@ public struct CachedMagicCardQueryRequestClient: MagicCardQueryRequestClient {
       }
       throw error
     }
+  }
+
+  /// The page from where the listing lives, or nil when it has to be asked of Scryfall.
+  private func cachedListing(_ query: SearchQuery) async throws -> ObjectList<Card>? {
+    let first = try? await store.page(queryKey: query.cacheKey, page: 1)
+
+    if query.page == 1 {
+      if let first, first.isStale(since: now) == false {
+        return try await cachedPage(query, allowStale: false)
+      }
+      guard let local = try await localSetBrowse(query) else {
+        return try await cachedPage(query, allowStale: false)
+      }
+      // The catalog serves the listing again, so the pages Scryfall gave it before are dropped:
+      // they would otherwise take over from the second page on.
+      if first != nil {
+        _ = try? await store.invalidatePages(queryKey: query.cacheKey)
+      }
+      return local
+    }
+
+    guard let first else {
+      if let local = try await localSetBrowse(query) {
+        return local
+      }
+      return try await cachedPage(query, allowStale: false)
+    }
+
+    // Scryfall's listing: a later page only if it was fetched with the first, from the same
+    // snapshot of Scryfall's results.
+    guard
+      let record = try? await store.page(queryKey: query.cacheKey, page: query.page),
+      record.fetchedAt >= first.fetchedAt
+    else {
+      return nil
+    }
+    return try await cachedPage(query, allowStale: true)
   }
 
   public func queryCard(for id: String) async throws -> Card {
@@ -60,7 +95,8 @@ public struct CachedMagicCardQueryRequestClient: MagicCardQueryRequestClient {
       query.isUnfilteredSetBrowse,
       let setCode = query.setCode,
       let state = try? await store.syncState(id: BulkDataItem.defaultCardsType),
-      state.hasCompleteCatalog
+      state.hasCompleteCatalog,
+      (try? await store.hasSortKeys(inSet: setCode)) == true
     else {
       return nil
     }
@@ -107,13 +143,12 @@ public struct CachedMagicCardQueryRequestClient: MagicCardQueryRequestClient {
     )
   }
 
-  private func fetchAndStore(
-    _ query: SearchQuery,
-    invalidatingQuery: Bool
-  ) async throws -> ObjectList<Card> {
+  private func fetchAndStore(_ query: SearchQuery) async throws -> ObjectList<Card> {
     let result = try await remote.queryCards(query)
 
-    if invalidatingQuery, query.page == 1 {
+    // A new first page starts a new listing: the later pages stored with the old one are from an
+    // older snapshot of Scryfall's results, and are fetched again as they are reached.
+    if query.page == 1 {
       _ = try? await store.invalidatePages(queryKey: query.cacheKey)
     }
 

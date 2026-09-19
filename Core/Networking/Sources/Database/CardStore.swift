@@ -125,23 +125,77 @@ public struct CardStore: Sendable {
     .value
   }
   
+  /// The order Scryfall gives the same search, so a set browsed from the catalog lines up card for
+  /// card with Scryfall's pages. Ties break the way Scryfall's do, always ascending: by name, then
+  /// a regular frame before a full-art one, then collector number.
   static func orderingClause(sortMode: SortMode, sortDirection: SortDirection) -> QueryFragment {
     let descending = sortDirection == .desc
     let direction: QueryFragment = descending ? "DESC" : "ASC"
-    
-    let primary: QueryFragment = switch sortMode {
-    case .name: "\(quote: "name") \(direction)"
-    case .released: "\(quote: "releasedAt") \(direction)"
-    case .rarity: "\(quote: "rarityRank") \(direction)"
-    case .color: "\(quote: "colorRank") \(direction)"
-    case .cmc: "\(quote: "cmc") \(direction)"
-    case .usd: "\(quote: "usd") \(direction) NULLS LAST"
+    let ties: QueryFragment = """
+      \(quote: "sortName") ASC, \(quote: "isFullArt") ASC, \(quote: "collectorNumberSort") ASC
+      """
+
+    return switch sortMode {
+    case .name:
+      "\(quote: "sortName") \(direction), \(quote: "isFullArt") ASC, \(quote: "collectorNumberSort") ASC"
+    case .released:
+      "\(quote: "releasedAt") \(direction), \(quote: "collectorNumberSort") ASC"
+    case .rarity:
+      // `rarityRank` is kept in the order booster sampling filters on; Scryfall ranks special
+      // between rare and mythic, and bonus above mythic.
+      """
+      CASE \(quote: "rarityRank") WHEN 2 THEN 0 WHEN 3 THEN 1 WHEN 4 THEN 2 WHEN 1 THEN 3 \
+      WHEN 5 THEN 4 ELSE 5 END \(direction), \(ties)
+      """
+    case .color: "\(quote: "colorRank") \(direction), \(ties)"
+    case .cmc: "\(quote: "cmc") \(direction), \(ties)"
+    case .usd: "\(quote: "sortPrice") \(direction) NULLS LAST, \(ties)"
     default: "\(quote: "collectorNumberSort") \(direction)"
     }
-    
-    return "\(primary), \(quote: "collectorNumberSort") ASC"
   }
-  
+
+  /// Whether every card of the set has the sort keys `orderingClause` reads. Rows stored before
+  /// those keys existed have none until `backfillSortKeys()` reaches them, and a set with any of
+  /// them would come out in the wrong order.
+  public func hasSortKeys(inSet setCode: String) async throws -> Bool {
+    try await Task.detached(priority: .background) { [db = self.database] in
+      try await db.read { connection in
+        try CardRecord
+          .where { $0.setCode.eq(setCode) && $0.sortName.is(nil) }
+          .fetchCount(connection) == 0
+      }
+    }
+    .value
+  }
+
+  /// Works out the sort keys of rows stored before they existed, a batch at a time, from the card
+  /// each row already holds. Returns how many rows it rewrote.
+  @discardableResult public func backfillSortKeys(batchSize: Int = 2_000) async throws -> Int {
+    try await Task.detached(priority: .background) { [db = self.database] in
+      var rewritten = 0
+      while true {
+        try Task.checkCancellation()
+        let records = try await db.read { connection in
+          try CardRecord.where { $0.sortName.is(nil) }.limit(batchSize).fetchAll(connection)
+        }
+        guard records.isEmpty == false else { return rewritten }
+
+        try await db.write { connection in
+          for record in records {
+            let updated = CardRecord(
+              card: record.card,
+              source: CardRecord.Source(rawValue: record.source) ?? .api,
+              ingestedAt: Date(timeIntervalSince1970: Double(record.ingestedAt))
+            )
+            try CardRecord.upsert { updated }.execute(connection)
+          }
+        }
+        rewritten += records.count
+      }
+    }
+    .value
+  }
+
   public func cards(withOracleID oracleID: String, page: Int) async throws -> (cards: [Card], total: Int) {
     try await Task.detached(priority: .background) { [db = self.database] in
       let offset = max(0, page - 1) * Self.pageSize

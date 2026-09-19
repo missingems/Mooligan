@@ -48,7 +48,7 @@ struct CardStoreTests {
       )
     }
 
-    #expect(Set(indexes) == ["cards_set", "cards_name", "cards_oracleID"])
+    #expect(Set(indexes) == ["cards_set", "cards_name", "cards_oracleID", "cards_pendingSortKeys"])
   }
 
   @Test func whenUpsertingCards_shouldRoundTripThroughThePayload() async throws {
@@ -210,7 +210,133 @@ struct CardStoreTests {
       inSet: "fdn", sortMode: .rarity, sortDirection: .asc, page: 1
     )
 
-    #expect(result.cards.map(\.name) == ["B", "C", "R", "M"])
+    #expect(result.cards.map(\.name) == ["C", "R", "M", "B"])
+  }
+
+  @Test func whenSortingByRarity_shouldRankSpecialBetweenRareAndMythic() async throws {
+    let store = try makeStore()
+    try await store.upsert(
+      cards: [
+        CardFixtures.card(name: "M", collectorNumber: "1", rarity: .mythic),
+        CardFixtures.card(name: "S", collectorNumber: "2", rarity: .special),
+        CardFixtures.card(name: "R", collectorNumber: "3", rarity: .rare),
+      ],
+      source: .bulk
+    )
+
+    let result = try await store.cards(
+      inSet: "fdn", sortMode: .rarity, sortDirection: .desc, page: 1
+    )
+
+    #expect(result.cards.map(\.name) == ["M", "S", "R"])
+  }
+
+  @Test func whenSortingByPrice_shouldFallBackToTheFoilPriceAsScryfallDoes() async throws {
+    let store = try makeStore()
+    try await store.upsert(
+      cards: [
+        CardFixtures.card(name: "Nonfoil", collectorNumber: "1", usd: "5.00"),
+        CardFixtures.card(name: "Foil Only", collectorNumber: "2", usd: nil, usdFoil: "30.00"),
+        CardFixtures.card(name: "Unpriced", collectorNumber: "3", usd: nil),
+      ],
+      source: .bulk
+    )
+
+    let result = try await store.cards(
+      inSet: "fdn", sortMode: .usd, sortDirection: .desc, page: 1
+    )
+
+    #expect(result.cards.map(\.name) == ["Foil Only", "Nonfoil", "Unpriced"])
+  }
+
+  @Test func whenSortingByName_shouldIgnorePunctuationSpacesAndAccents() async throws {
+    let store = try makeStore()
+    try await store.upsert(
+      cards: [
+        CardFixtures.card(name: "Kastral, the Windcrested", collectorNumber: "1"),
+        CardFixtures.card(name: "Kastral Thewind", collectorNumber: "2"),
+        CardFixtures.card(name: "Séance Board", collectorNumber: "3"),
+        CardFixtures.card(name: "Seance Bell", collectorNumber: "4"),
+      ],
+      source: .bulk
+    )
+
+    let result = try await store.cards(
+      inSet: "fdn", sortMode: .name, sortDirection: .asc, page: 1
+    )
+
+    #expect(result.cards.map(\.collectorNumber) == ["2", "1", "4", "3"])
+  }
+
+  @Test func whenPrintingsTie_shouldPutRegularFramesBeforeFullArt() async throws {
+    let store = try makeStore()
+    try await store.upsert(
+      cards: [
+        CardFixtures.card(name: "Forest", collectorNumber: "278", isFullArt: true),
+        CardFixtures.card(name: "Forest", collectorNumber: "377"),
+        CardFixtures.card(name: "Forest", collectorNumber: "279", isFullArt: true),
+        CardFixtures.card(name: "Forest", collectorNumber: "378"),
+      ],
+      source: .bulk
+    )
+
+    let result = try await store.cards(
+      inSet: "fdn", sortMode: .name, sortDirection: .asc, page: 1
+    )
+
+    #expect(result.cards.map(\.collectorNumber) == ["377", "378", "278", "279"])
+  }
+
+  @Test func whenSortingByColor_shouldFollowScryfallsGroups() async throws {
+    let store = try makeStore()
+    try await store.upsert(
+      cards: [
+        CardFixtures.card(name: "Wastes", collectorNumber: "1", colors: [], colorIdentity: [], typeLine: "Basic Land"),
+        CardFixtures.card(name: "Plains", collectorNumber: "2", colors: [], colorIdentity: [.W], typeLine: "Basic Land — Plains"),
+        CardFixtures.card(name: "Sword", collectorNumber: "3", colors: [], colorIdentity: [], typeLine: "Artifact"),
+        CardFixtures.card(name: "Naya", collectorNumber: "4", colorIdentity: [.R, .G, .W]),
+        CardFixtures.card(name: "Izzet", collectorNumber: "5", colorIdentity: [.U, .R]),
+        CardFixtures.card(name: "Azorius", collectorNumber: "6", colorIdentity: [.W, .U]),
+        CardFixtures.card(name: "Green", collectorNumber: "7", colorIdentity: [.G]),
+        CardFixtures.card(name: "White", collectorNumber: "8", colorIdentity: [.W]),
+      ],
+      source: .bulk
+    )
+
+    let result = try await store.cards(
+      inSet: "fdn", sortMode: .color, sortDirection: .asc, page: 1
+    )
+
+    #expect(result.cards.map(\.name) == [
+      "White", "Green", "Azorius", "Izzet", "Naya", "Sword", "Plains", "Wastes",
+    ])
+  }
+
+  @Test func whenRowsPredateTheSortKeys_shouldBackfillThemFromTheStoredCard() async throws {
+    let database = try makeTestDatabase()
+    let store = withDependencies {
+      $0.context = .test
+      $0.defaultDatabase = database
+      $0.date = .init { [clock] in clock.now }
+    } operation: {
+      CardStore()
+    }
+    try await store.upsert(
+      cards: [CardFixtures.card(name: "Kastral, the Windcrested", usd: nil, usdFoil: "3.00")],
+      source: .bulk
+    )
+    try await database.write { connection in
+      try #sql(#"UPDATE "cards" SET "sortName" = NULL, "sortPrice" = NULL"#).execute(connection)
+    }
+    #expect(try await store.hasSortKeys(inSet: "fdn") == false)
+
+    #expect(try await store.backfillSortKeys() == 1)
+
+    #expect(try await store.hasSortKeys(inSet: "fdn"))
+    let record = try await database.read { try CardRecord.all.fetchOne($0) }
+    #expect(record?.sortName == "kastralthewindcrested")
+    #expect(record?.sortPrice == 3)
+    #expect(record?.source == CardRecord.Source.bulk.rawValue)
   }
 
   @Test func whenUpsertingSets_shouldRoundTripAndDeduplicate() async throws {
