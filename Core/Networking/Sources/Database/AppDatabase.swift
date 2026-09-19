@@ -179,5 +179,21 @@ public func migrator() -> DatabaseMigrator {
     .execute(connection)
   }
 
+  migrator.registerMigration("v5.priceHistories") { connection in
+    try #sql(
+      """
+      CREATE TABLE "priceHistories" (
+        "id" TEXT NOT NULL PRIMARY KEY,
+        "cardID" TEXT NOT NULL,
+        "currency" TEXT NOT NULL,
+        "payload" BLOB NOT NULL,
+        "mtgjsonVersion" TEXT,
+        "fetchedAt" INTEGER NOT NULL
+      ) STRICT
+      """
+    )
+    .execute(connection)
+  }
+
   return migrator
 }
