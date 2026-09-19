@@ -1,0 +1,1 @@
+../../../../../Core/Networking/Sources/CardImageHash/CardImageHashSyncManagable.swift
