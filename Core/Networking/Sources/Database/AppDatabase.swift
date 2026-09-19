@@ -154,5 +154,18 @@ public func migrator() -> DatabaseMigrator {
     .execute(connection)
   }
 
+  migrator.registerMigration("v3.setPullOdds") { connection in
+    try #sql(
+      """
+      CREATE TABLE "setPullOdds" (
+        "id" TEXT NOT NULL PRIMARY KEY,
+        "payload" BLOB NOT NULL,
+        "fetchedAt" INTEGER NOT NULL
+      ) STRICT
+      """
+    )
+    .execute(connection)
+  }
+
   return migrator
 }

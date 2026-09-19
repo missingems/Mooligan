@@ -3,29 +3,16 @@ import Networking
 import ScryfallKit
 import SwiftUI
 
-struct Widget: Identifiable, View {
-  // Nested kind to preserve associated data
-  enum Kind: Hashable {
-    case powerToughness(power: String, toughness: String)
-    case loyalty(counters: String)
-    case manaValue(String)
-    case collectorNumber(String)
-    case colorIdentity([String])
-    case set(code: String, rarity: Card.Rarity, iconURL: URL?)
-  }
+struct Widget: View {
+  let kind: InformationWidget
+  /// The tile standing alone as a badge, as the explanation shows it: without its name, which the
+  /// title under it already gives, and on a solid face rather than glass, because the badge is
+  /// turned in 3D and glass cannot be (it falls back to a flat grey).
+  var isBadge = false
 
-  // Environment for display scale (to replace deprecated UIScreen.main.nativeScale usage)
-  @Environment(\.displayScale) private var displayScale
-  private var strokeScale: CGFloat { max(displayScale, 1) }
+  /// The sticker's lettering, which grows with the reader's text size as the other tiles' text does.
+  @ScaledMetric(relativeTo: .body) private var stickerSize = 18.0
 
-  // Stored kind
-  private let kind: Kind
-
-  // Identifiable conformance
-  typealias ID = Kind
-  nonisolated var id: Kind { kind }
-
-  // View body
   var body: some View {
     switch kind {
     case let .powerToughness(power, toughness):
@@ -33,6 +20,9 @@ struct Widget: Identifiable, View {
 
     case let .set(code, rarity, iconURL):
       setCodeView(code, rarity: rarity, iconURL: iconURL)
+
+    case let .pullOdds(odds, rarity, tilt):
+      pullOddsView(odds, rarity: rarity, tilt: tilt)
 
     case let .colorIdentity(manaIdentity):
       manaIdentityView(manaIdentity)
@@ -47,14 +37,6 @@ struct Widget: Identifiable, View {
       manaValueView(value)
     }
   }
-
-  // Factory helpers to preserve previous enum-like construction syntax
-  static func powerToughness(power: String, toughness: String) -> Widget { .init(kind: .powerToughness(power: power, toughness: toughness)) }
-  static func loyalty(counters: String) -> Widget { .init(kind: .loyalty(counters: counters)) }
-  static func manaValue(_ value: String) -> Widget { .init(kind: .manaValue(value)) }
-  static func collectorNumber(_ value: String) -> Widget { .init(kind: .collectorNumber(value)) }
-  static func colorIdentity(_ value: [String]) -> Widget { .init(kind: .colorIdentity(value)) }
-  static func set(code: String, rarity: Card.Rarity, iconURL: URL?) -> Widget { .init(kind: .set(code: code, rarity: rarity, iconURL: iconURL)) }
 }
 
 extension Widget {
@@ -64,7 +46,7 @@ extension Widget {
   ) -> some View {
     if let power, let toughness {
       VStack(alignment: .center, spacing: 3) {
-        Self.wrappedContent {
+        tile {
           Image("power", bundle: DesignComponentsResources.bundle)
             .resizable()
             .renderingMode(.template)
@@ -84,11 +66,7 @@ extension Widget {
             .foregroundStyle(.primary)
         }
 
-        Text(String(localized: "Power\nToughness"))
-          .font(.caption)
-          .foregroundStyle(.secondary)
-          .multilineTextAlignment(.center)
-          .frame(maxHeight: .infinity, alignment: .center)
+        caption(String(localized: "Power\nToughness"))
       }
     }
   }
@@ -96,15 +74,11 @@ extension Widget {
   @ContentBuilder private func manaIdentityView(_ identity: [String]) -> some View {
     if identity.isEmpty == false {
       VStack(alignment: .center, spacing: 3.0) {
-        Self.wrappedContent {
+        tile {
           ManaView(identity: identity, size: CGSize(width: 21, height: 21))?.offset(y: -1)
         }
 
-        Text(String(localized: "Color\nIdentity"))
-          .font(.caption)
-          .foregroundStyle(.secondary)
-          .multilineTextAlignment(.center)
-          .frame(maxHeight: .infinity, alignment: .center)
+        caption(String(localized: "Color\nIdentity"))
       }
     }
   }
@@ -112,7 +86,7 @@ extension Widget {
   @ContentBuilder private func loyaltyWidgetView(_ counters: String?) -> some View {
     if let counters {
       VStack(alignment: .center, spacing: 3.0) {
-        Self.wrappedContent {
+        tile {
           ZStack(alignment: .center) {
             Image("loyalty", bundle: DesignComponentsResources.bundle)
               .resizable()
@@ -129,11 +103,7 @@ extension Widget {
           }
         }
 
-        Text(String(localized: "Loyalty\nCounters"))
-          .font(.caption)
-          .foregroundStyle(.secondary)
-          .multilineTextAlignment(.center)
-          .frame(maxHeight: .infinity, alignment: .center)
+        caption(String(localized: "Loyalty\nCounters"))
       }
     }
   }
@@ -141,15 +111,11 @@ extension Widget {
   @ContentBuilder private func collectionNumberView(_ collectorNumber: String?) -> some View {
     if let collectorNumber {
       VStack(alignment: .center, spacing: 3.0) {
-        Self.wrappedContent {
+        tile {
           Text("#\(collectorNumber)".uppercased()).font(.body).fontDesign(.serif)
         }
 
-        Text(String(localized: "Collector\nNumber"))
-          .font(.caption)
-          .foregroundStyle(.secondary)
-          .multilineTextAlignment(.center)
-          .frame(maxHeight: .infinity, alignment: .center)
+        caption(String(localized: "Collector\nNumber"))
       }
     }
   }
@@ -163,64 +129,109 @@ extension Widget {
 
     if let code {
       VStack(alignment: .center, spacing: 3.0) {
-        HStack(spacing: 3.0) {
-          IconLazyImage(iconURL, tintColor: .primary).frame(width: 25, height: 25)
-          Text(code.uppercased())
-            .font(.body)
-            .fontWeight(.medium)
-            .fontWidth(.condensed)
-        }
-        .frame(minWidth: 66, minHeight: 34)
-        .padding(EdgeInsets(top: 5, leading: 11, bottom: 5, trailing: 11))
-        .glassEffect(.clear)
-        .background {
-          if let colors {
-            LinearGradient(
-              colors: colors,
-              startPoint: .topLeading,
-              endPoint: .bottomTrailing
-            )
-            .clipShape(.capsule)
-          } else {
-            Color(.systemFill).clipShape(.capsule)
+        surface(
+          HStack(spacing: 3.0) {
+            IconLazyImage(iconURL, tintColor: .primary).frame(width: 25, height: 25)
+            Text(code.uppercased())
+              .font(.body)
+              .fontWeight(.medium)
+              .fontWidth(.condensed)
           }
-        }
+          .frame(minWidth: 66, minHeight: 34)
+          .padding(EdgeInsets(top: 5, leading: 11, bottom: 5, trailing: 11)),
+          glass: .clear.interactive(),
+          fill: colors.map {
+            AnyShapeStyle(LinearGradient(colors: $0, startPoint: .topLeading, endPoint: .bottomTrailing))
+          } ?? AnyShapeStyle(Color(.systemFill))
+        )
 
-        Text("\(rarity.rawValue.capitalized)\n ")
-          .font(.caption)
-          .foregroundStyle(.secondary)
-          .multilineTextAlignment(.center)
-          .frame(maxHeight: .infinity, alignment: .center)
+        caption("\(rarity.rawValue.capitalized)\n ")
       }
+    }
+  }
+
+  /// The estimate across the set's packs, the one figure that takes every product into account.
+  private func pullOddsView(_ odds: CardPullOdds, rarity: Card.Rarity, tilt: Double) -> some View {
+    VStack(alignment: .center, spacing: 3.0) {
+      tile {
+        // As wide as the odds need, like any tile, but held to the other tiles' height: the sticker
+        // stands a little proud of its glass, the way one slapped on would, without making the row
+        // any taller.
+        OddsSticker(packs: odds.estimatePacks ?? 1, rarity: rarity, size: stickerSize, tilt: tilt)
+          .equatable()
+          .frame(height: stickerSize / 18 * 34)
+      }
+
+      caption(String(localized: "Pull\nRate"))
     }
   }
 
   @ContentBuilder private func manaValueView(_ manaValue: String?) -> some View {
     if let manaValue {
       VStack(alignment: .center, spacing: 3.0) {
-        Self.wrappedContent {
+        tile {
           Text(manaValue)
             .font(.body)
             .fontDesign(.monospaced)
         }
 
-        Text(String(localized: "Mana\nValue"))
-          .font(.caption)
-          .foregroundStyle(.secondary)
-          .multilineTextAlignment(.center)
-          .frame(maxHeight: .infinity, alignment: .center)
+        caption(String(localized: "Mana\nValue"))
       }
     }
   }
 }
 
 extension Widget {
-  @ContentBuilder private static func wrappedContent(@ContentBuilder content: () -> some View) -> some View {
-    HStack(spacing: 5.0) {
-      content()
+  /// The tile's name under it, in two lines like every other tile's.
+  @ViewBuilder private func caption(_ text: String) -> some View {
+    if isBadge == false {
+      Text(text)
+        .font(.caption)
+        .foregroundStyle(.secondary)
+        .multilineTextAlignment(.center)
+        .frame(maxHeight: .infinity, alignment: .center)
     }
-    .frame(minWidth: 66, minHeight: 34)
-    .padding(EdgeInsets(top: 5, leading: 11, bottom: 5, trailing: 11))
-    .glassEffect()
+  }
+}
+
+extension Widget {
+  @ContentBuilder private func tile(@ContentBuilder content: () -> some View) -> some View {
+    surface(
+      HStack(spacing: 5.0) {
+        content()
+      }
+      .frame(minWidth: 66, minHeight: 34)
+      .padding(EdgeInsets(top: 5, leading: 11, bottom: 5, trailing: 11)),
+      glass: .regular.interactive()
+    )
+  }
+
+  /// What the tile stands on: glass in the row, over `fill` where the tile has a colour of its own,
+  /// as the set tile has its rarity's. A badge gets a solid enamel face instead, with a rim lit from
+  /// above: it spins and sways in 3D, and glass under a 3D turn falls back to a flat grey.
+  @ViewBuilder private func surface(_ content: some View, glass: Glass, fill: AnyShapeStyle? = nil) -> some View {
+    if isBadge {
+      content.background {
+        Capsule()
+          .fill(fill ?? AnyShapeStyle(LinearGradient(
+            colors: [Color(.systemBackground), Color(.secondarySystemBackground)],
+            startPoint: .top,
+            endPoint: .bottom
+          )))
+          .overlay {
+            Capsule().strokeBorder(
+              LinearGradient(colors: [.white.opacity(0.9), .white.opacity(0.05)], startPoint: .top, endPoint: .bottom),
+              lineWidth: 1.5
+            )
+          }
+          .shadow(color: .black.opacity(0.2), radius: 10, y: 6)
+      }
+    } else if let fill {
+      content
+        .glassEffect(glass)
+        .background(fill, in: .capsule)
+    } else {
+      content.glassEffect(glass)
+    }
   }
 }

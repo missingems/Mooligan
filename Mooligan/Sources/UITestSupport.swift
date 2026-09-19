@@ -1,4 +1,5 @@
 #if DEBUG
+import CardDetail
 import ComposableArchitecture
 import Foundation
 import Networking
@@ -36,6 +37,8 @@ enum UITestSupport {
       // The mock cards' art does not resolve offline; without this the pack
       // would sit in its preparing phase until every request timed out.
       $0.packImagePrefetcher = ImmediatePackImagePrefetcher()
+      $0.cardPullOddsSource = MockCardPullOddsSource()
+      $0.cardInsightWriter = MockCardInsightWriter()
       $0.priceHistoryClient = ProcessInfo.processInfo.arguments.contains(priceHistoryFailureArgument)
         ? FlakyPriceHistoryClient(failuresPerCard: 3)
         : MockPriceHistoryClient()
