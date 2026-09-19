@@ -1,5 +1,6 @@
 import Foundation
 import UIKit
+import CardDetail
 import ComposableArchitecture
 import Nuke
 import ScryfallKit
@@ -37,7 +38,7 @@ public enum ScannerStatus: Equatable, Sendable {
 @Reducer public struct CardScannerFeature: Sendable {
   
   @ObservableState
-  public struct State: Sendable, Equatable {
+  public struct State: Equatable {
     public var status: ScannerStatus = .loading
     public var dataSource: CardDataSource?
     public var pendingVariants: [Card]? = nil
@@ -51,11 +52,13 @@ public enum ScannerStatus: Equatable, Sendable {
     public var viewSize: CGSize? = nil
     public var topSafeArea: CGFloat = 0
     public var bottomSafeArea: CGFloat = 0
+    /// The scanned card and its printings in the card pager, opened by tapping one of them.
+    @Presents public var cardPager: CardPagerFeature.State?
     
     public init() {}
   }
   
-  public enum Action: Sendable, BindableAction {
+  public enum Action: BindableAction {
     case binding(BindingAction<State>)
     case trackingCornersUpdated(QuadCorners?)
     case didScan(ScannedImage)
@@ -72,6 +75,10 @@ public enum ScannerStatus: Equatable, Sendable {
     case resetScan
     case updateViewSize(CGSize)
     case updateSafeAreas(top: CGFloat, bottom: CGFloat)
+    case cardTapped(UUID)
+    case cardFaceToggled(UUID)
+    case cardPagerPrepared(CardPagerFeature.State)
+    case cardPager(PresentationAction<CardPagerFeature.Action>)
   }
   
   @Dependency(\.cardQueryRequestClient) var client
@@ -87,6 +94,9 @@ public enum ScannerStatus: Equatable, Sendable {
   public var body: some ReducerOf<Self> {
     BindingReducer()
     Reduce(coreReduce)
+      .ifLet(\.$cardPager, action: \.cardPager) {
+        CardPagerFeature()
+      }
   }
   
   private func coreReduce(into state: inout State, action: Action) -> Effect<Action> {
@@ -273,6 +283,43 @@ public enum ScannerStatus: Equatable, Sendable {
       
     case .syncCompleted:
       state.status = .scanning
+      return .none
+      
+    case let .cardTapped(id):
+      guard let cardDetails = state.dataSource?.cardDetails,
+            let card = cardDetails.first(where: { $0.id == id })?.card else { return .none }
+      // The same printings the scanner lists, so the pager's own printings match.
+      let queryType = QueryType.search(SearchQuery(
+        oracleID: card.oracleId ?? card.cardFaces?.first?.oracleId,
+        page: 1,
+        sortMode: .released,
+        sortDirection: .auto
+      ))
+      // Built in an effect, as the root builds the pager for the set grid.
+      return .run { send in
+        await send(.cardPagerPrepared(CardPagerFeature.State(
+          cardDetails: cardDetails,
+          initialSelectedCard: card,
+          queryType: queryType
+        )))
+      }
+      
+    case let .cardFaceToggled(id):
+      guard let index = state.dataSource?.cardDetails.firstIndex(where: { $0.id == id }) else { return .none }
+      let turned = state.dataSource?.cardDetails[index].displayableCardImage?.toggled()
+      state.dataSource?.cardDetails[index].displayableCardImage = turned
+      // The title names the face of the scanned card on show.
+      if index == 0, let card = state.dataSource?.cardDetails[0].card, card.isTransformable,
+         let direction = turned?.faceDirection, case let .cardDetails(_, subtitle) = state.status {
+        state.status = .cardDetails(title: card.name(faceDirection: direction), subtitle: subtitle)
+      }
+      return .none
+      
+    case let .cardPagerPrepared(pagerState):
+      state.cardPager = pagerState
+      return .none
+      
+    case .cardPager:
       return .none
     }
   }
